@@ -1,0 +1,82 @@
+package supabase
+
+import (
+	"context"
+	"fmt"
+	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/interfaces"
+
+	"github.com/supabase-community/supabase-go"
+)
+
+type seriesRepository struct {
+	client *supabase.Client
+}
+
+// NewSeriesRepository creates a new series repository
+func NewSeriesRepository(client *supabase.Client) interfaces.SeriesRepository {
+	return &seriesRepository{
+		client: client,
+	}
+}
+
+func (r *seriesRepository) Create(ctx context.Context, series *models.Series) error {
+	_, err := r.client.From("series").Insert(series, false, "", "", "").ExecuteTo(&series)
+	return err
+}
+
+func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Series, error) {
+	var result []models.Series
+	_, err := r.client.From("series").Select("*", "", false).Eq("id", id).ExecuteTo(&result)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, fmt.Errorf("series not found")
+	}
+	return &result[0], nil
+}
+
+func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+	var result []models.Series
+	query := r.client.From("series").Select("*", "", false)
+
+	if filters != nil {
+		if filters.Limit > 0 {
+			query = query.Limit(filters.Limit, "")
+		}
+		// Note: Offset is not supported by this Supabase client version
+		// Use Range method for pagination if needed
+	}
+
+	_, err := query.ExecuteTo(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to slice of pointers
+	series := make([]*models.Series, len(result))
+	for i := range result {
+		series[i] = &result[i]
+	}
+	return series, nil
+}
+
+func (r *seriesRepository) Update(ctx context.Context, id string, series *models.Series) error {
+	_, err := r.client.From("series").Update(series, "", "").Eq("id", id).ExecuteTo(&series)
+	return err
+}
+
+func (r *seriesRepository) Delete(ctx context.Context, id string) error {
+	_, err := r.client.From("series").Delete("", "").Eq("id", id).ExecuteTo(nil)
+	return err
+}
+
+func (r *seriesRepository) Count(ctx context.Context) (int64, error) {
+	var result []models.Series
+	_, err := r.client.From("series").Select("*", "", false).ExecuteTo(&result)
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(result)), nil
+}

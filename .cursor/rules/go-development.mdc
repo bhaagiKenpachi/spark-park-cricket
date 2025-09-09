@@ -1,0 +1,8 @@
+---
+globs: *.go,go.mod,go.sum
+description: Go development guidelines and best practices
+---
+
+# Go Development Rules
+
+Always use proper Go formatting with `gofmt` and follow Go naming conventions. Use meaningful variable names, proper error handling with explicit error returns, and leverage Go's built-in testing framework for unit tests. Prefer composition over inheritance and use interfaces for abstraction.

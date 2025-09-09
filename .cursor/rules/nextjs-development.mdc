@@ -1,0 +1,8 @@
+---
+globs: *.js,*.jsx,*.ts,*.tsx,next.config.*,package.json
+description: Next.js development guidelines and React best practices
+---
+
+# Next.js Development Rules
+
+Use TypeScript for type safety, implement proper component structure with hooks, and follow Next.js conventions for routing and API routes. Always use proper error boundaries, implement loading states, and optimize for performance with dynamic imports and proper image optimization.

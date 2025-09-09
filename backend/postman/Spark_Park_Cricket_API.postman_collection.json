@@ -1,0 +1,1261 @@
+{
+    "info": {
+        "_postman_id": "spark-park-cricket-api",
+        "name": "Spark Park Cricket API",
+        "description": "Comprehensive API collection for Spark Park Cricket Backend - Cricket Tournament Management System with real-time scoring capabilities",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "spark-park-cricket"
+    },
+    "item": [
+        {
+            "name": "Health Checks",
+            "item": [
+                {
+                    "name": "Home",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                ""
+                            ]
+                        },
+                        "description": "Get welcome message and API version"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Basic health check endpoint"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Database Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/database",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "database"
+                            ]
+                        },
+                        "description": "Check database connectivity"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "WebSocket Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/websocket",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "websocket"
+                            ]
+                        },
+                        "description": "Check WebSocket service health"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "System Health",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/system",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "system"
+                            ]
+                        },
+                        "description": "Check system resources and performance"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Readiness Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/ready",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "ready"
+                            ]
+                        },
+                        "description": "Kubernetes readiness probe endpoint"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Liveness Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/live",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "live"
+                            ]
+                        },
+                        "description": "Kubernetes liveness probe endpoint"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Metrics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health/metrics",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health",
+                                "metrics"
+                            ]
+                        },
+                        "description": "Get application metrics and statistics"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Health check and monitoring endpoints"
+        },
+        {
+            "name": "Series Management",
+            "item": [
+                {
+                    "name": "List Series",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/series?limit=10&offset=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "series"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "10",
+                                    "description": "Number of series to return (1-100)"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0",
+                                    "description": "Number of series to skip"
+                                }
+                            ]
+                        },
+                        "description": "Get list of all cricket series/tournaments"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Series",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"IPL 2024\",\n  \"start_date\": \"2024-03-22T00:00:00Z\",\n  \"end_date\": \"2024-05-26T23:59:59Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/series",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "series"
+                            ]
+                        },
+                        "description": "Create a new cricket series/tournament"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Series",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/series/{{series_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "series",
+                                "{{series_id}}"
+                            ]
+                        },
+                        "description": "Get details of a specific series"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Series",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"IPL 2024 - Updated\",\n  \"end_date\": \"2024-05-30T23:59:59Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/series/{{series_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "series",
+                                "{{series_id}}"
+                            ]
+                        },
+                        "description": "Update an existing series"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Series",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/series/{{series_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "series",
+                                "{{series_id}}"
+                            ]
+                        },
+                        "description": "Delete a series (and all associated matches)"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Series/Tournament management endpoints"
+        },
+        {
+            "name": "Team Management",
+            "item": [
+                {
+                    "name": "List Teams",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams?limit=20&offset=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "20",
+                                    "description": "Number of teams to return (1-100)"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0",
+                                    "description": "Number of teams to skip"
+                                }
+                            ]
+                        },
+                        "description": "Get list of all cricket teams"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Team",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Mumbai Indians\",\n  \"players_count\": 11\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams"
+                            ]
+                        },
+                        "description": "Create a new cricket team"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Team",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams/{{team_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams",
+                                "{{team_id}}"
+                            ]
+                        },
+                        "description": "Get details of a specific team"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Team",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Mumbai Indians - Updated\",\n  \"players_count\": 12\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams/{{team_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams",
+                                "{{team_id}}"
+                            ]
+                        },
+                        "description": "Update team details"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Team Players",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams",
+                                "{{team_id}}",
+                                "players"
+                            ]
+                        },
+                        "description": "Get all players in a specific team"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Player to Team",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Rohit Sharma\",\n  \"team_id\": \"{{team_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "teams",
+                                "{{team_id}}",
+                                "players"
+                            ]
+                        },
+                        "description": "Add a new player to a team"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Team management endpoints"
+        },
+        {
+            "name": "Player Management",
+            "item": [
+                {
+                    "name": "List Players",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/players?limit=50&offset=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "players"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "50",
+                                    "description": "Number of players to return (1-100)"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0",
+                                    "description": "Number of players to skip"
+                                },
+                                {
+                                    "key": "team_id",
+                                    "value": "{{team_id}}",
+                                    "description": "Filter players by team ID (optional)"
+                                }
+                            ]
+                        },
+                        "description": "Get list of all players"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Player",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Virat Kohli\",\n  \"team_id\": \"{{team_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/players",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "players"
+                            ]
+                        },
+                        "description": "Create a new player"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Player",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/players/{{player_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "players",
+                                "{{player_id}}"
+                            ]
+                        },
+                        "description": "Get details of a specific player"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Player",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Virat Kohli - Captain\",\n  \"team_id\": \"{{team_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/players/{{player_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "players",
+                                "{{player_id}}"
+                            ]
+                        },
+                        "description": "Update player details"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Player",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/players/{{player_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "players",
+                                "{{player_id}}"
+                            ]
+                        },
+                        "description": "Delete a player"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Player management endpoints"
+        },
+        {
+            "name": "Match Management",
+            "item": [
+                {
+                    "name": "List Matches",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/matches?limit=20&offset=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "matches"
+                            ],
+                            "query": [
+                                {
+                                    "key": "limit",
+                                    "value": "20",
+                                    "description": "Number of matches to return (1-100)"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0",
+                                    "description": "Number of matches to skip"
+                                },
+                                {
+                                    "key": "series_id",
+                                    "value": "{{series_id}}",
+                                    "description": "Filter matches by series ID (optional)"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "live",
+                                    "description": "Filter matches by status: scheduled, live, completed, cancelled (optional)"
+                                }
+                            ]
+                        },
+                        "description": "Get list of all matches"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Match",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"series_id\": \"{{series_id}}\",\n  \"match_number\": 1,\n  \"date\": \"2024-03-22T19:30:00Z\",\n  \"team1_id\": \"{{team1_id}}\",\n  \"team2_id\": \"{{team2_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/matches",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "matches"
+                            ]
+                        },
+                        "description": "Create a new cricket match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "matches",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Get details of a specific match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Match",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"live\",\n  \"date\": \"2024-03-22T20:00:00Z\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "matches",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Update match details (status, date, etc.)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Match",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "matches",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Delete a match"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Match management endpoints"
+        },
+        {
+            "name": "Live Scoreboard",
+            "item": [
+                {
+                    "name": "Get Scoreboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Get live scoreboard for a match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Ball - Good Ball",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ball_type\": \"good\",\n  \"runs\": 4,\n  \"is_wicket\": false,\n  \"batsman_id\": \"{{batsman_id}}\",\n  \"bowler_id\": \"{{bowler_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/ball",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "ball"
+                            ]
+                        },
+                        "description": "Add a good ball (0-6 runs)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Ball - Wide Ball",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ball_type\": \"wide\",\n  \"runs\": 1,\n  \"is_wicket\": false,\n  \"batsman_id\": \"{{batsman_id}}\",\n  \"bowler_id\": \"{{bowler_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/ball",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "ball"
+                            ]
+                        },
+                        "description": "Add a wide ball (extra runs)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Ball - No Ball",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ball_type\": \"no_ball\",\n  \"runs\": 2,\n  \"is_wicket\": false,\n  \"batsman_id\": \"{{batsman_id}}\",\n  \"bowler_id\": \"{{bowler_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/ball",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "ball"
+                            ]
+                        },
+                        "description": "Add a no ball (extra runs)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Ball - Wicket",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ball_type\": \"good\",\n  \"runs\": 0,\n  \"is_wicket\": true,\n  \"batsman_id\": \"{{batsman_id}}\",\n  \"bowler_id\": \"{{bowler_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/ball",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "ball"
+                            ]
+                        },
+                        "description": "Add a wicket ball"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Ball - Dead Ball",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"ball_type\": \"dead_ball\",\n  \"runs\": 0,\n  \"is_wicket\": false,\n  \"batsman_id\": \"{{batsman_id}}\",\n  \"bowler_id\": \"{{bowler_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/ball",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "ball"
+                            ]
+                        },
+                        "description": "Add a dead ball (no runs, not counted)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Score",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"score\": 150\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/score",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "score"
+                            ]
+                        },
+                        "description": "Manually update match score"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Wickets",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"wickets\": 3\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scoreboard/{{match_id}}/wicket",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scoreboard",
+                                "{{match_id}}",
+                                "wicket"
+                            ]
+                        },
+                        "description": "Manually update wicket count"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "Live scoreboard and ball tracking endpoints"
+        },
+        {
+            "name": "WebSocket",
+            "item": [
+                {
+                    "name": "WebSocket Connection",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Connection",
+                                "value": "Upgrade"
+                            },
+                            {
+                                "key": "Upgrade",
+                                "value": "websocket"
+                            },
+                            {
+                                "key": "Sec-WebSocket-Key",
+                                "value": "dGhlIHNhbXBsZSBub25jZQ=="
+                            },
+                            {
+                                "key": "Sec-WebSocket-Version",
+                                "value": "13"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/ws/match/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ws",
+                                "match",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Connect to WebSocket for real-time match updates"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "WebSocket Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/ws/stats",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ws",
+                                "stats"
+                            ]
+                        },
+                        "description": "Get overall WebSocket connection statistics"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "WebSocket Room Stats",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/ws/stats/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ws",
+                                "stats",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Get WebSocket connection statistics for a specific match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Test WebSocket Broadcast",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"message\": \"Test broadcast message\",\n  \"type\": \"test\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/ws/test/{{match_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "ws",
+                                "test",
+                                "{{match_id}}"
+                            ]
+                        },
+                        "description": "Send a test broadcast message to all WebSocket connections for a match"
+                    },
+                    "response": []
+                }
+            ],
+            "description": "WebSocket endpoints for real-time updates"
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Set default values for variables if not already set",
+                    "if (!pm.environment.get('base_url')) {",
+                    "    pm.environment.set('base_url', 'http://localhost:8080');",
+                    "}",
+                    "",
+                    "// Generate UUIDs for testing if not set",
+                    "if (!pm.environment.get('series_id')) {",
+                    "    pm.environment.set('series_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('team_id')) {",
+                    "    pm.environment.set('team_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('team1_id')) {",
+                    "    pm.environment.set('team1_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('team2_id')) {",
+                    "    pm.environment.set('team2_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('match_id')) {",
+                    "    pm.environment.set('match_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('player_id')) {",
+                    "    pm.environment.set('player_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('batsman_id')) {",
+                    "    pm.environment.set('batsman_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}",
+                    "",
+                    "if (!pm.environment.get('bowler_id')) {",
+                    "    pm.environment.set('bowler_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+                    "}"
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Common test script for all requests",
+                    "pm.test('Response time is less than 5000ms', function () {",
+                    "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+                    "});",
+                    "",
+                    "pm.test('Response has valid JSON', function () {",
+                    "    pm.response.to.be.json;",
+                    "});",
+                    "",
+                    "// Store response data for use in subsequent requests",
+                    "if (pm.response.json() && pm.response.json().data) {",
+                    "    const responseData = pm.response.json().data;",
+                    "    ",
+                    "    // Store IDs from response",
+                    "    if (responseData.id) {",
+                    "        const requestName = pm.info.requestName;",
+                    "        if (requestName.includes('Series')) {",
+                    "            pm.environment.set('series_id', responseData.id);",
+                    "        } else if (requestName.includes('Team')) {",
+                    "            pm.environment.set('team_id', responseData.id);",
+                    "        } else if (requestName.includes('Match')) {",
+                    "            pm.environment.set('match_id', responseData.id);",
+                    "        } else if (requestName.includes('Player')) {",
+                    "            pm.environment.set('player_id', responseData.id);",
+                    "        }",
+                    "    }",
+                    "}"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8080",
+            "type": "string"
+        },
+        {
+            "key": "series_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "team_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "team1_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "team2_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "match_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "player_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "batsman_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "bowler_id",
+            "value": "",
+            "type": "string"
+        }
+    ]
