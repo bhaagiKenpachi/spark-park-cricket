@@ -1,0 +1,71 @@
+package utils
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// APIResponse represents a standard API response
+type APIResponse struct {
+	Data    interface{} `json:"data,omitempty"`
+	Error   *APIError   `json:"error,omitempty"`
+	Message string      `json:"message,omitempty"`
+}
+
+// APIError represents an API error
+type APIError struct {
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
+	Details interface{} `json:"details,omitempty"`
+}
+
+// WriteJSON writes a JSON response
+func WriteJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
+}
+
+// WriteSuccess writes a success response
+func WriteSuccess(w http.ResponseWriter, data interface{}) {
+	response := APIResponse{Data: data}
+	WriteJSON(w, http.StatusOK, response)
+}
+
+// WriteCreated writes a created response
+func WriteCreated(w http.ResponseWriter, data interface{}) {
+	response := APIResponse{Data: data}
+	WriteJSON(w, http.StatusCreated, response)
+}
+
+// WriteError writes an error response
+func WriteError(w http.ResponseWriter, statusCode int, code, message string, details interface{}) {
+	response := APIResponse{
+		Error: &APIError{
+			Code:    code,
+			Message: message,
+			Details: details,
+		},
+	}
+	WriteJSON(w, statusCode, response)
+}
+
+// WriteValidationError writes a validation error response
+func WriteValidationError(w http.ResponseWriter, message string, details interface{}) {
+	WriteError(w, http.StatusUnprocessableEntity, "VALIDATION_ERROR", message, details)
+}
+
+// WriteNotFound writes a not found error response
+func WriteNotFound(w http.ResponseWriter, resource string) {
+	WriteError(w, http.StatusNotFound, "NOT_FOUND", resource+" not found", nil)
+}
+
+// WriteInternalError writes an internal server error response
+func WriteInternalError(w http.ResponseWriter, message string) {
+	WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", message, nil)
+}
+
+// WriteJSONResponse writes a JSON response with the given status code (alias for WriteJSON)
+func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
+	WriteJSON(w, statusCode, data)
+}

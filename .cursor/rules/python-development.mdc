@@ -1,0 +1,8 @@
+---
+globs: *.py,requirements.txt,pyproject.toml,Pipfile
+description: Python development guidelines and best practices
+---
+
+# Python Development Rules
+
+Follow PEP 8 style guidelines, use type hints for better code documentation, and implement proper exception handling with specific exception types. Use virtual environments for dependency management, write comprehensive docstrings, and leverage Python's standard library before adding external dependencies.

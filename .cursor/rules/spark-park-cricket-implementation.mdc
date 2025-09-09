@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+description: Spark Park Cricket backend implementation context and architecture
+---
+
+# Spark Park Cricket Backend Implementation
+
+## Project Overview
+This is a cricket tournament management system with real-time scoring capabilities. The system manages series, matches, teams, players, and live scoreboards with ball-by-ball tracking.
+
+## Architecture
+- **Language**: Go 1.23
+- **Database**: Supabase (PostgreSQL)
+- **Architecture**: Layered architecture with handlers, services, and repository pattern
+- **Real-time**: WebSocket for live updates
+
+## Core Entities
+- **Series**: Tournament/competition management
+- **Matches**: Individual cricket matches within series
+- **Teams**: Cricket teams with variable player counts
+- **Players**: Individual players belonging to teams
+- **Scoreboard**: Live match scoring with runs, wickets, overs
+- **Overs**: Over-by-over tracking
+- **Balls**: Ball-by-ball events (good, wide, no_ball, dead_ball)
+
+## Implementation Phases
+1. **Phase 1**: Foundation setup and project restructuring
+2. **Phase 2**: Core models and database schema
+3. **Phase 3**: Basic CRUD APIs for all entities
+4. **Phase 4**: Live scoring system with ball tracking
+5. **Phase 5**: Real-time WebSocket features
+6. **Phase 6**: Testing and optimization
+
+## Key Features
+- Real-time scoreboard updates
+- Ball-by-ball tracking with different ball types
+- Match state management (scheduled, live, completed)
+- Team and player management
+- Series/tournament organization
+- WebSocket live updates
+
+## Database Schema
+Follow the schema defined in [ARCHITECTURE_DESIGN.md](mdc:backend/docs/ARCHITECTURE_DESIGN.md) with proper foreign key relationships and constraints.
+
+## API Structure
+RESTful APIs under `/api/v1/` with endpoints for series, matches, teams, players, and scoreboard operations. WebSocket endpoint at `/live/:match_id` for real-time updates.
+
+## Development Guidelines
+- Follow Go best practices and clean architecture
+- Use proper error handling and validation
+- Implement comprehensive testing
+- Maintain separation of concerns between layers
+- Use Supabase client for database operations
+- Implement proper logging and monitoring

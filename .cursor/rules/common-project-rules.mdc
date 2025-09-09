@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+description: Common project rules that apply to all files
+---
+
+# Common Project Rules
+
+**No shell scripting allowed** - Do not create any shell scripts (.sh, .bash, .zsh files) or include shell commands in any part of the project. **No debugging scripts allowed** - Do not create any debugging scripts, console.log statements for debugging, or temporary debugging code in any language. All code should be production-ready and properly tested without relying on debugging utilities.
