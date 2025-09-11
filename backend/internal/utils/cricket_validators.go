@@ -20,31 +20,25 @@ func (v *CricketValidator) ValidateBallEvent(ballEvent *models.BallEvent) error 
 		return fmt.Errorf("invalid ball type: %s", ballEvent.BallType)
 	}
 
-	// Validate runs based on ball type
+	// Validate run type based on ball type
 	switch ballEvent.BallType {
 	case models.BallTypeGood:
-		if ballEvent.Runs < 0 || ballEvent.Runs > 6 {
-			return fmt.Errorf("good balls can only have 0-6 runs")
+		if !ballEvent.RunType.IsValidRun() {
+			return fmt.Errorf("invalid run type for good ball: %s", ballEvent.RunType)
 		}
-		if ballEvent.Runs == 5 {
+		if ballEvent.RunType == "5" {
 			return fmt.Errorf("5 runs is not possible in cricket")
 		}
 	case models.BallTypeWide:
-		if ballEvent.Runs < 1 {
+		if ballEvent.RunType != models.RunTypeWD && ballEvent.RunType.GetRunValue() < 1 {
 			return fmt.Errorf("wide balls must have at least 1 run")
 		}
-		if ballEvent.Runs > 7 {
-			return fmt.Errorf("wide balls cannot have more than 7 runs")
-		}
 	case models.BallTypeNoBall:
-		if ballEvent.Runs < 1 {
+		if ballEvent.RunType != models.RunTypeNB && ballEvent.RunType.GetRunValue() < 1 {
 			return fmt.Errorf("no balls must have at least 1 run")
 		}
-		if ballEvent.Runs > 7 {
-			return fmt.Errorf("no balls cannot have more than 7 runs")
-		}
 	case models.BallTypeDeadBall:
-		if ballEvent.Runs != 0 {
+		if ballEvent.RunType.GetRunValue() != 0 {
 			return fmt.Errorf("dead balls cannot have runs")
 		}
 	}
@@ -54,7 +48,7 @@ func (v *CricketValidator) ValidateBallEvent(ballEvent *models.BallEvent) error 
 		if ballEvent.BallType == models.BallTypeWide || ballEvent.BallType == models.BallTypeNoBall {
 			return fmt.Errorf("wickets cannot be taken on wide or no balls")
 		}
-		if ballEvent.Runs > 0 && ballEvent.IsWicket {
+		if ballEvent.RunType.GetRunValue() > 0 && ballEvent.IsWicket {
 			return fmt.Errorf("wickets cannot be taken with runs on the same ball")
 		}
 	}
@@ -107,7 +101,7 @@ func (v *CricketValidator) ValidateScoreboard(scoreboard *models.LiveScoreboard)
 // ValidateMatchStatus validates match status transitions
 func (v *CricketValidator) ValidateMatchStatus(currentStatus, newStatus models.MatchStatus) error {
 	validTransitions := map[models.MatchStatus][]models.MatchStatus{
-		models.MatchStatusScheduled: {models.MatchStatusLive, models.MatchStatusCancelled},
+		// Removed MatchStatusScheduled as matches are always live by default
 		models.MatchStatusLive:      {models.MatchStatusCompleted, models.MatchStatusCancelled},
 		models.MatchStatusCompleted: {}, // No transitions from completed
 		models.MatchStatusCancelled: {}, // No transitions from cancelled
@@ -151,9 +145,7 @@ func (v *CricketValidator) ValidateTeamComposition(team *models.Team, players []
 
 // ValidateMatchSetup validates match setup
 func (v *CricketValidator) ValidateMatchSetup(match *models.Match) error {
-	if match.Team1ID == match.Team2ID {
-		return fmt.Errorf("team1 and team2 must be different")
-	}
+	// Teams are now Team A and Team B, so no need to check for duplicates
 
 	if match.MatchNumber < 1 {
 		return fmt.Errorf("match number must be positive")
@@ -195,4 +187,146 @@ func (v *CricketValidator) IsInningsComplete(wickets int, overs float64, maxOver
 	}
 
 	return false
+}
+
+// ValidateBallEventRequest validates a ball event request for scorecard
+func ValidateBallEventRequest(req *models.BallEventRequest) error {
+	// Validate innings number
+	if req.InningsNumber < 1 || req.InningsNumber > 2 {
+		return fmt.Errorf("innings number must be 1 or 2")
+	}
+
+	// Validate ball type
+	if !IsValidBallType(string(req.BallType)) {
+		return fmt.Errorf("invalid ball type: %s", req.BallType)
+	}
+
+	// Validate run type
+	if !req.RunType.IsValidRun() {
+		return fmt.Errorf("invalid run type: %s", req.RunType)
+	}
+
+	// Validate byes (0-6)
+	if req.Byes < 0 || req.Byes > 6 {
+		return fmt.Errorf("byes must be between 0 and 6")
+	}
+
+	// Validate wicket logic
+	if req.IsWicket {
+		if req.BallType == models.BallTypeWide || req.BallType == models.BallTypeNoBall {
+			return fmt.Errorf("wickets cannot be taken on wide or no balls")
+		}
+		if req.RunType == models.RunTypeWC {
+			// WC (wicket) is valid
+		} else if req.RunType.GetRunValue() > 0 {
+			return fmt.Errorf("wickets cannot be taken with runs on the same ball")
+		}
+	}
+
+	// Validate wicket type if wicket is taken
+	if req.IsWicket && req.WicketType != "" {
+		validWicketTypes := []string{"bowled", "caught", "lbw", "run_out", "stumped", "hit_wicket"}
+		isValid := false
+		for _, wt := range validWicketTypes {
+			if req.WicketType == wt {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid wicket type: %s", req.WicketType)
+		}
+	}
+
+	return nil
+}
+
+// ValidateInnings validates innings data
+func ValidateInnings(innings *models.Innings) error {
+	if innings.InningsNumber < 1 || innings.InningsNumber > 2 {
+		return fmt.Errorf("innings number must be 1 or 2")
+	}
+
+	if innings.TotalRuns < 0 {
+		return fmt.Errorf("total runs cannot be negative")
+	}
+
+	if innings.TotalWickets < 0 || innings.TotalWickets > 10 {
+		return fmt.Errorf("total wickets must be between 0 and 10")
+	}
+
+	if innings.TotalOvers < 0 {
+		return fmt.Errorf("total overs cannot be negative")
+	}
+
+	if innings.TotalBalls < 0 {
+		return fmt.Errorf("total balls cannot be negative")
+	}
+
+	if innings.Status != string(models.InningsStatusInProgress) && innings.Status != string(models.InningsStatusCompleted) {
+		return fmt.Errorf("invalid innings status: %s", innings.Status)
+	}
+
+	return nil
+}
+
+// ValidateOver validates over data
+func ValidateOver(over *models.ScorecardOver) error {
+	if over.OverNumber < 1 {
+		return fmt.Errorf("over number must be positive")
+	}
+
+	if over.TotalRuns < 0 {
+		return fmt.Errorf("total runs cannot be negative")
+	}
+
+	if over.TotalBalls < 0 || over.TotalBalls > 6 {
+		return fmt.Errorf("total balls must be between 0 and 6")
+	}
+
+	if over.TotalWickets < 0 {
+		return fmt.Errorf("total wickets cannot be negative")
+	}
+
+	if over.Status != string(models.OverStatusInProgress) && over.Status != string(models.OverStatusCompleted) {
+		return fmt.Errorf("invalid over status: %s", over.Status)
+	}
+
+	return nil
+}
+
+// ValidateBall validates ball data
+func ValidateBall(ball *models.ScorecardBall) error {
+	if ball.BallNumber < 1 || ball.BallNumber > 6 {
+		return fmt.Errorf("ball number must be between 1 and 6")
+	}
+
+	if !IsValidBallType(string(ball.BallType)) {
+		return fmt.Errorf("invalid ball type: %s", ball.BallType)
+	}
+
+	if !ball.RunType.IsValidRun() {
+		return fmt.Errorf("invalid run type: %s", ball.RunType)
+	}
+
+	if ball.Runs < 0 {
+		return fmt.Errorf("runs cannot be negative")
+	}
+
+	// Validate wicket type if wicket is taken
+	if ball.IsWicket && ball.WicketType != "" {
+		validWicketTypes := []string{"bowled", "caught", "lbw", "run_out", "stumped", "hit_wicket"}
+		isValid := false
+		for _, wt := range validWicketTypes {
+			if ball.WicketType == wt {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return fmt.Errorf("invalid wicket type: %s", ball.WicketType)
+		}
+	}
+
+	return nil
 }

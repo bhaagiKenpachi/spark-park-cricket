@@ -1,237 +1,301 @@
 # Spark Park Cricket API - Postman Collection
 
-This directory contains Postman collections and environments for testing the Spark Park Cricket Backend API.
+## Overview
 
-## Files
+This Postman collection provides a simplified cricket tournament management system with Team A vs Team B matches and toss functionality.
 
-- `Spark_Park_Cricket_API.postman_collection.json` - Main API collection with all endpoints
-- `Spark_Park_Cricket_Environment.postman_environment.json` - Environment variables for different stages
-- `README.md` - This documentation file
+## Features
 
-## Import Instructions
+- **Simplified Team Structure**: Team A and Team B with configurable player counts
+- **Toss System**: Heads/Tails toss with winner batting first
+- **Match Management**: Create, update, and manage cricket matches
+- **Series Management**: Organize matches into tournaments/series
+- **Real-time Updates**: WebSocket support for live match updates
+- **Live by Default**: All matches start with "live" status
 
-1. **Import Collection**: Import `Spark_Park_Cricket_API.postman_collection.json` into Postman
-2. **Import Environment**: Import `Spark_Park_Cricket_Environment.postman_environment.json` into Postman
-3. **Select Environment**: Choose the appropriate environment in Postman (Development/Staging/Production)
+## Setup
 
-## API Endpoints Overview
+1. **Import Collection**: Import `Spark_Park_Cricket_API.postman_collection.json`
+2. **Import Environment**: Import `Spark_Park_Cricket_Environment.postman_environment.json`
+3. **Start Server**: Ensure the backend server is running on `http://localhost:8080`
+4. **Select Environment**: Choose "Spark Park Cricket Environment" in Postman
+
+## API Structure
 
 ### Health Checks
-- `GET /` - Welcome message and API version
+- `GET /` - Home endpoint
 - `GET /health` - Basic health check
-- `GET /health/database` - Database connectivity check
-- `GET /health/websocket` - WebSocket service health
-- `GET /health/system` - System resources and performance
-- `GET /health/ready` - Kubernetes readiness probe
-- `GET /health/live` - Kubernetes liveness probe
-- `GET /health/metrics` - Application metrics
+- `GET /health/database` - Database health check
 
 ### Series Management
-- `GET /api/v1/series` - List all series/tournaments
-- `POST /api/v1/series` - Create new series
-- `GET /api/v1/series/{id}` - Get series details
+- `POST /api/v1/series` - Create series
+- `GET /api/v1/series` - List all series
+- `GET /api/v1/series/{id}` - Get specific series
 - `PUT /api/v1/series/{id}` - Update series
 - `DELETE /api/v1/series/{id}` - Delete series
 
-### Team Management
-- `GET /api/v1/teams` - List all teams
-- `POST /api/v1/teams` - Create new team
-- `GET /api/v1/teams/{id}` - Get team details
-- `PUT /api/v1/teams/{id}` - Update team
-- `GET /api/v1/teams/{id}/players` - List team players
-- `POST /api/v1/teams/{id}/players` - Add player to team
-
-### Player Management
-- `GET /api/v1/players` - List all players
-- `POST /api/v1/players` - Create new player
-- `GET /api/v1/players/{id}` - Get player details
-- `PUT /api/v1/players/{id}` - Update player
-- `DELETE /api/v1/players/{id}` - Delete player
-
 ### Match Management
+- `POST /api/v1/matches` - Create match with toss
 - `GET /api/v1/matches` - List all matches
-- `POST /api/v1/matches` - Create new match
-- `GET /api/v1/matches/{id}` - Get match details
+- `GET /api/v1/matches/{id}` - Get specific match
 - `PUT /api/v1/matches/{id}` - Update match
 - `DELETE /api/v1/matches/{id}` - Delete match
+- `GET /api/v1/matches/series/{series_id}` - Get matches by series
 
-### Live Scoreboard
-- `GET /api/v1/scoreboard/{match_id}` - Get live scoreboard
-- `POST /api/v1/scoreboard/{match_id}/ball` - Add ball event
-- `PUT /api/v1/scoreboard/{match_id}/score` - Update score
-- `PUT /api/v1/scoreboard/{match_id}/wicket` - Update wickets
+### Scorecard Management
+- `POST /api/v1/scorecard/start` - Start scoring for a match
+- `POST /api/v1/scorecard/ball` - Add ball events
+- `GET /api/v1/scorecard/{match_id}` - Get complete scorecard
+- `GET /api/v1/scorecard/{match_id}/current-over` - Get current over
+- `GET /api/v1/scorecard/{match_id}/innings/{innings_number}` - Get innings details
+- `GET /api/v1/scorecard/{match_id}/innings/{innings_number}/over/{over_number}` - Get over details
 
 ### WebSocket
 - `GET /api/v1/ws/match/{match_id}` - WebSocket connection
-- `GET /api/v1/ws/stats` - WebSocket statistics
-- `GET /api/v1/ws/stats/{match_id}` - Match-specific WebSocket stats
-- `POST /api/v1/ws/test/{match_id}` - Test WebSocket broadcast
+- `GET /api/v1/ws/stats` - Connection statistics
+- `GET /api/v1/ws/stats/{match_id}` - Room statistics
+- `POST /api/v1/ws/test/{match_id}` - Test broadcast
 
 ## Environment Variables
 
-The collection uses the following environment variables:
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `base_url` | API base URL | `http://localhost:8080` |
+| `series_id` | Series UUID | `d577f3b7-c8aa-413e-8c43-021f233aaa33` |
+| `match_id` | Match UUID | `99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7` |
+| `team_a_player_count` | Team A players | `11` |
+| `team_b_player_count` | Team B players | `11` |
+| `total_overs` | Match overs | `20` |
+| `toss_winner` | Toss winner | `A` or `B` |
+| `toss_type` | Toss result | `H` (Heads) or `T` (Tails) |
+| `batting_team` | Current batting team | `A` or `B` |
 
-- `base_url` - API base URL (default: http://localhost:8080)
-- `api_version` - API version (default: v1)
-- `series_id` - Series ID for testing (auto-generated)
-- `team_id` - Team ID for testing (auto-generated)
-- `team1_id` - First team ID for matches (auto-generated)
-- `team2_id` - Second team ID for matches (auto-generated)
-- `match_id` - Match ID for testing (auto-generated)
-- `player_id` - Player ID for testing (auto-generated)
-- `batsman_id` - Batsman ID for scoreboard (auto-generated)
-- `bowler_id` - Bowler ID for scoreboard (auto-generated)
-- `auth_token` - Authentication token (if required)
+## Example Workflow
 
-## Testing Workflow
-
-### 1. Setup Test Data
-1. **Create Series**: Use "Create Series" request to create a tournament
-2. **Create Teams**: Use "Create Team" requests to create two teams
-3. **Create Players**: Use "Create Player" requests to add players to teams
-4. **Create Match**: Use "Create Match" request to create a match between teams
-
-### 2. Test Live Scoring
-1. **Get Scoreboard**: Retrieve initial scoreboard for the match
-2. **Add Balls**: Use various "Add Ball" requests to simulate match events:
-   - Good balls (0-6 runs)
-   - Wide balls (extra runs)
-   - No balls (extra runs)
-   - Wickets
-   - Dead balls
-3. **Update Score/Wickets**: Test manual score updates
-
-### 3. Test WebSocket
-1. **Connect WebSocket**: Use WebSocket connection for real-time updates
-2. **Check Stats**: Monitor WebSocket connection statistics
-3. **Test Broadcast**: Send test messages to WebSocket clients
-
-## Ball Types and Validation
-
-### Ball Types
-- `good` - Regular ball (0-6 runs)
-- `wide` - Wide ball (extra runs)
-- `no_ball` - No ball (extra runs)
-- `dead_ball` - Dead ball (no runs, not counted)
-
-### Validation Rules
-- **Runs**: 0-6 for good balls, 0+ for extras
-- **Wickets**: 0-10 maximum
-- **Ball Types**: Must be one of the valid types
-- **Player IDs**: Must be valid player IDs
-- **Match Status**: scheduled, live, completed, cancelled
-
-## Error Handling
-
-The API returns standardized error responses:
-
+### 1. Create Series
 ```json
+POST /api/v1/series
 {
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid request data",
-    "details": {
-      "field": "runs",
-      "reason": "must be between 0 and 6"
-    }
-  }
+  "name": "Vijay vs Venkat",
+  "start_date": "2024-03-22T00:00:00Z",
+  "end_date": "2024-03-23T23:59:59Z"
 }
 ```
 
-## Rate Limiting
+### 2. Create Match with Toss
+```json
+POST /api/v1/matches
+{
+  "series_id": "{{series_id}}",
+  "match_number": 1,
+  "date": "2024-03-22T20:00:00Z",
+  "team_a_player_count": 11,
+  "team_b_player_count": 11,
+  "total_overs": 20,
+  "toss_winner": "A",
+  "toss_type": "H"
+}
+```
 
-- **Rate Limit**: 100 requests per minute per IP
-- **Timeout**: 60 seconds for requests
-- **CORS**: Enabled for all origins
+### 3. Start Scoring
+```json
+POST /api/v1/scorecard/start
+{
+  "match_id": "{{match_id}}"
+}
+```
 
-## WebSocket Testing
+### 4. Add Ball Events
+```json
+POST /api/v1/scorecard/ball
+{
+  "match_id": "{{match_id}}",
+  "innings_number": 1,
+  "ball_type": "good",
+  "run_type": "1",
+  "is_wicket": false,
+  "byes": 0
+}
+```
 
-For WebSocket testing in Postman:
+### 5. Add Wicket
+```json
+POST /api/v1/scorecard/ball
+{
+  "match_id": "{{match_id}}",
+  "innings_number": 1,
+  "ball_type": "good",
+  "run_type": "WC",
+  "is_wicket": true,
+  "wicket_type": "bowled",
+  "byes": 0
+}
+```
 
-1. Use the "WebSocket Connection" request
-2. Connect to the WebSocket endpoint
-3. Send messages and receive real-time updates
-4. Monitor connection statistics
+### 6. Add Wide Ball with Byes
+```json
+POST /api/v1/scorecard/ball
+{
+  "match_id": "{{match_id}}",
+  "innings_number": 1,
+  "ball_type": "wide",
+  "run_type": "WD",
+  "is_wicket": false,
+  "byes": 2
+}
+```
 
-## Sample Test Data
+### 7. Get Scorecard
+```json
+GET /api/v1/scorecard/{{match_id}}
+```
+
+### 8. Update Match (Change Batting Team)
+```json
+PUT /api/v1/matches/{{match_id}}
+{
+  "batting_team": "B"
+}
+```
+
+## Data Models
 
 ### Series
 ```json
 {
-  "name": "IPL 2024",
+  "id": "uuid",
+  "name": "Series Name",
   "start_date": "2024-03-22T00:00:00Z",
-  "end_date": "2024-05-26T23:59:59Z"
-}
-```
-
-### Team
-```json
-{
-  "name": "Mumbai Indians",
-  "players_count": 11
-}
-```
-
-### Player
-```json
-{
-  "name": "Rohit Sharma",
-  "team_id": "{{team_id}}"
+  "end_date": "2024-03-23T23:59:59Z",
+  "created_at": "2024-03-22T00:00:00Z",
+  "updated_at": "2024-03-22T00:00:00Z"
 }
 ```
 
 ### Match
 ```json
 {
-  "series_id": "{{series_id}}",
+  "id": "uuid",
+  "series_id": "uuid",
   "match_number": 1,
-  "date": "2024-03-22T19:30:00Z",
-  "team1_id": "{{team1_id}}",
-  "team2_id": "{{team2_id}}"
+  "date": "2024-03-22T20:00:00Z",
+  "status": "live",
+  "team_a_player_count": 11,
+  "team_b_player_count": 11,
+  "total_overs": 20,
+  "toss_winner": "A",
+  "toss_type": "H",
+  "batting_team": "A",
+  "created_at": "2024-03-22T00:00:00Z",
+  "updated_at": "2024-03-22T00:00:00Z"
 }
 ```
 
-### Ball Event
+## Ball Types and Run Types
+
+### Ball Types
+- `good` - Legal delivery
+- `wide` - Wide ball (extra)
+- `no_ball` - No ball (extra)
+- `dead_ball` - Dead ball
+
+### Run Types
+- `0` - Dot ball (0 runs)
+- `1-9` - Regular runs (1-9)
+- `NB` - No ball (1 run + extra)
+- `WD` - Wide (1 run + extra)
+- `LB` - Leg byes
+- `WC` - Wicket
+
+### Ball Event Request Structure
 ```json
 {
-  "ball_type": "good",
-  "runs": 4,
-  "is_wicket": false,
-  "batsman_id": "{{batsman_id}}",
-  "bowler_id": "{{bowler_id}}"
+    "match_id": "uuid",
+    "innings_number": 1,
+    "ball_type": "good",
+    "run_type": "1",
+    "is_wicket": false,
+    "wicket_type": "bowled", // Required if is_wicket is true
+    "byes": 0 // Additional runs from byes (0-6)
 }
 ```
 
-## Troubleshooting
+### Wicket Types
+- `bowled` - Bowled out
+- `caught` - Caught out
+- `lbw` - Leg before wicket
+- `run_out` - Run out
+- `stumped` - Stumped
+- `hit_wicket` - Hit wicket
 
-### Common Issues
+## Field Validation
 
-1. **Connection Refused**: Ensure the backend server is running on the correct port
-2. **CORS Errors**: Check CORS configuration in the backend
-3. **Validation Errors**: Verify request body format and required fields
-4. **WebSocket Connection Failed**: Ensure WebSocket endpoint is accessible
+### Match Fields
+- **team_a_player_count**: 1-11 players
+- **team_b_player_count**: 1-11 players
+- **total_overs**: 1-20 overs
+- **toss_winner**: "A" or "B"
+- **toss_type**: "H" (Heads) or "T" (Tails)
+- **batting_team**: "A" or "B"
+- **status**: "live", "completed", "cancelled"
 
-### Debug Tips
+## Auto-Generated Features
 
+The collection includes automatic features:
+
+1. **Auto UUID Generation**: Generates UUIDs for series_id and match_id if not set
+2. **Auto ID Extraction**: Extracts IDs from responses and sets environment variables
+3. **Pre-request Scripts**: Automatically populate missing variables
+4. **Test Scripts**: Validate responses and extract data
+
+## Error Handling
+
+All endpoints return standardized error responses:
+
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable error message"
+  }
+}
+```
+
+Common error codes:
+- `VALIDATION_ERROR`: Invalid input data
+- `NOT_FOUND`: Resource not found
+- `INTERNAL_ERROR`: Server error
+
+## Testing
+
+1. **Health Check**: Start with health endpoints to verify server
+2. **Create Series**: Create a test series
+3. **Create Match**: Create a match with toss
+4. **Start Scoring**: Begin scoring for the match
+5. **Add Balls**: Test different ball types and run combinations
+6. **Add Wickets**: Test wicket scenarios
+7. **Test Extras**: Try wide balls, no balls, and byes
+8. **Get Scorecard**: Verify complete scorecard data
+9. **WebSocket**: Test real-time connections
+10. **Update Match**: Test match updates
+
+## Notes
+
+- **Simplified Architecture**: No complex team/player management
+- **Toss Integration**: Toss winner automatically bats first
+- **Live by Default**: Matches start in "live" status
+- **Configurable**: Adjust player counts and overs per match
+- **Ball-by-Ball Scoring**: Complete tracking of all ball types and run types
+- **Extras Support**: Wide balls, no balls, byes, leg byes
+- **Wicket Tracking**: Multiple wicket types with proper validation
+- **Automatic Over Management**: Automatic over and ball number detection
+- **Match Completion Logic**: Automatic innings and match completion handling
+- **Real-time Ready**: WebSocket infrastructure for live scoring
+
+## Support
+
+For issues or questions:
 1. Check server logs for detailed error messages
-2. Use Postman Console to view request/response details
-3. Verify environment variables are set correctly
-4. Test with curl commands for comparison
-
-## Development Setup
-
-1. Start the backend server: `go run cmd/server/main.go`
-2. Server runs on `http://localhost:8080` by default
-3. Import the Postman collection
-4. Select the appropriate environment
-5. Start testing the API endpoints
-
-## Contributing
-
-When adding new endpoints:
-
-1. Update the Postman collection with new requests
-2. Add appropriate test scripts
-3. Update this README with new endpoint documentation
-4. Ensure environment variables are properly configured
+2. Verify environment variables are set correctly
+3. Ensure server is running on the correct port
+4. Check database connection health

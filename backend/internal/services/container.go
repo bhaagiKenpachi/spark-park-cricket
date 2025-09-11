@@ -10,9 +10,7 @@ import (
 type Container struct {
 	Series      *SeriesService
 	Match       *MatchService
-	Team        *TeamService
-	Player      *PlayerService
-	Scoreboard  *RealtimeScoreboardService
+	Scorecard   *ScorecardService
 	Hub         *websocket.Hub
 	Broadcaster *events.EventBroadcaster
 }
@@ -28,18 +26,11 @@ func NewContainer(repos *database.Repositories) *Container {
 	// Create container
 	container := &Container{
 		Series:      NewSeriesService(repos.Series),
-		Match:       NewMatchService(repos.Match, repos.Series, repos.Team),
-		Team:        NewTeamService(repos.Team, repos.Player),
-		Player:      NewPlayerService(repos.Player, repos.Team),
+		Match:       NewMatchService(repos.Match, repos.Series),
+		Scorecard:   NewScorecardService(repos.Scorecard, repos.Match),
 		Hub:         hub,
 		Broadcaster: broadcaster,
 	}
-
-	// Create real-time scoreboard service with broadcaster
-	container.Scoreboard = NewRealtimeScoreboardService(
-		repos.Scoreboard, repos.Over, repos.Ball, repos.Match, repos.Team, repos.Player,
-		broadcaster,
-	)
 
 	return container
 }

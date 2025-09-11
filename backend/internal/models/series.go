@@ -6,12 +6,12 @@ import (
 
 // Series represents a cricket tournament or competition
 type Series struct {
-	ID        string    `json:"id" db:"id"`
+	ID        string    `json:"id,omitempty" db:"id,omitempty"`
 	Name      string    `json:"name" db:"name"`
 	StartDate time.Time `json:"start_date" db:"start_date"`
 	EndDate   time.Time `json:"end_date" db:"end_date"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }
 
 // CreateSeriesRequest represents the request to create a new series

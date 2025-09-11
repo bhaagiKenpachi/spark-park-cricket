@@ -21,8 +21,19 @@ func NewSeriesRepository(client *supabase.Client) interfaces.SeriesRepository {
 }
 
 func (r *seriesRepository) Create(ctx context.Context, series *models.Series) error {
-	_, err := r.client.From("series").Insert(series, false, "", "", "").ExecuteTo(&series)
-	return err
+	// Supabase returns an array even for single inserts, so we need to handle that
+	var result []models.Series
+	_, err := r.client.From("series").Insert(series, false, "", "", "").ExecuteTo(&result)
+	if err != nil {
+		return err
+	}
+
+	if len(result) > 0 {
+		// Copy the result back to the original series
+		*series = result[0]
+	}
+
+	return nil
 }
 
 func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Series, error) {
@@ -63,8 +74,19 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 }
 
 func (r *seriesRepository) Update(ctx context.Context, id string, series *models.Series) error {
-	_, err := r.client.From("series").Update(series, "", "").Eq("id", id).ExecuteTo(&series)
-	return err
+	// Supabase returns an array even for single updates, so we need to handle that
+	var result []models.Series
+	_, err := r.client.From("series").Update(series, "", "").Eq("id", id).ExecuteTo(&result)
+	if err != nil {
+		return err
+	}
+
+	if len(result) > 0 {
+		// Copy the result back to the original series
+		*series = result[0]
+	}
+
+	return nil
 }
 
 func (r *seriesRepository) Delete(ctx context.Context, id string) error {

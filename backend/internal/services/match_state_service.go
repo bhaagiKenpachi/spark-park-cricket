@@ -42,11 +42,8 @@ func (s *MatchStateService) StartMatch(ctx context.Context, matchID string) (*mo
 		return nil, fmt.Errorf("match not found: %w", err)
 	}
 
-	if match.Status != models.MatchStatusScheduled {
-		return nil, fmt.Errorf("match must be scheduled to start")
-	}
-
-	match.Status = models.MatchStatusLive
+	// Matches are now always live by default, so no need to check status
+	// Just return the match as is
 	match.UpdatedAt = time.Now()
 
 	err = s.matchRepo.Update(ctx, matchID, match)

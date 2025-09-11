@@ -14,9 +14,8 @@ import (
 type Repositories struct {
 	Series     interfaces.SeriesRepository
 	Match      interfaces.MatchRepository
-	Team       interfaces.TeamRepository
-	Player     interfaces.PlayerRepository
 	Scoreboard interfaces.ScoreboardRepository
+	Scorecard  interfaces.ScorecardRepository
 	Over       interfaces.OverRepository
 	Ball       interfaces.BallRepository
 }
@@ -42,9 +41,8 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	repositories := &Repositories{
 		Series:     supabase.NewSeriesRepository(client),
 		Match:      supabase.NewMatchRepository(client),
-		Team:       supabase.NewTeamRepository(client),
-		Player:     supabase.NewPlayerRepository(client),
 		Scoreboard: supabase.NewScoreboardRepository(client),
+		Scorecard:  supabase.NewScorecardRepository(client),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 	}

@@ -32,8 +32,6 @@ func (s *SeriesService) CreateSeries(ctx context.Context, req *models.CreateSeri
 		Name:      req.Name,
 		StartDate: req.StartDate,
 		EndDate:   req.EndDate,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 	}
 
 	// Save to repository

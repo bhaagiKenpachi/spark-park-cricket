@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -11,6 +14,11 @@ type Config struct {
 }
 
 func Load() *Config {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found: %v", err)
+	}
+
 	return &Config{
 		SupabaseURL:    getEnv("SUPABASE_URL", ""),
 		SupabaseAPIKey: getEnv("SUPABASE_API_KEY", ""),
