@@ -137,7 +137,7 @@ func (s *RealtimeScoreboardService) AddBallWithOverCompletion(ctx context.Contex
 	}
 
 	// Get current over
-	over, err := s.getCurrentOver(ctx, matchID, scoreboard.BattingTeamID)
+	over, err := s.getCurrentOver(ctx, matchID, string(scoreboard.BattingTeam))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current over: %w", err)
 	}

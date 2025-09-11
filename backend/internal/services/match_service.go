@@ -12,15 +12,13 @@ import (
 type MatchService struct {
 	matchRepo  interfaces.MatchRepository
 	seriesRepo interfaces.SeriesRepository
-	teamRepo   interfaces.TeamRepository
 }
 
 // NewMatchService creates a new match service
-func NewMatchService(matchRepo interfaces.MatchRepository, seriesRepo interfaces.SeriesRepository, teamRepo interfaces.TeamRepository) *MatchService {
+func NewMatchService(matchRepo interfaces.MatchRepository, seriesRepo interfaces.SeriesRepository) *MatchService {
 	return &MatchService{
 		matchRepo:  matchRepo,
 		seriesRepo: seriesRepo,
-		teamRepo:   teamRepo,
 	}
 }
 
@@ -32,32 +30,41 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 		return nil, fmt.Errorf("series not found: %w", err)
 	}
 
-	// Validate teams exist
-	_, err = s.teamRepo.GetByID(ctx, req.Team1ID)
-	if err != nil {
-		return nil, fmt.Errorf("team1 not found: %w", err)
+	// Determine match number - use provided number or auto-increment
+	var matchNumber int
+	if req.MatchNumber != nil {
+		matchNumber = *req.MatchNumber
+		
+		// Validate that the match number doesn't already exist for this series
+		exists, err := s.matchRepo.ExistsBySeriesAndMatchNumber(ctx, req.SeriesID, matchNumber)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check match number uniqueness: %w", err)
+		}
+		if exists {
+			return nil, fmt.Errorf("match number %d already exists for series %s", matchNumber, req.SeriesID)
+		}
+	} else {
+		// Auto-increment match number for the series
+		matchNumber, err = s.matchRepo.GetNextMatchNumber(ctx, req.SeriesID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get next match number: %w", err)
+		}
 	}
 
-	_, err = s.teamRepo.GetByID(ctx, req.Team2ID)
-	if err != nil {
-		return nil, fmt.Errorf("team2 not found: %w", err)
-	}
-
-	// Validate teams are different
-	if req.Team1ID == req.Team2ID {
-		return nil, fmt.Errorf("team1 and team2 must be different")
-	}
-
-	// Create match model
+	// Create match model with toss winner as batting team by default
 	match := &models.Match{
-		SeriesID:    req.SeriesID,
-		MatchNumber: req.MatchNumber,
-		Date:        req.Date,
-		Status:      models.MatchStatusScheduled,
-		Team1ID:     req.Team1ID,
-		Team2ID:     req.Team2ID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		SeriesID:         req.SeriesID,
+		MatchNumber:      matchNumber,
+		Date:             req.Date,
+		Status:           models.MatchStatusLive, // Always live by default
+		TeamAPlayerCount: req.TeamAPlayerCount,
+		TeamBPlayerCount: req.TeamBPlayerCount,
+		TotalOvers:       req.TotalOvers,
+		TossWinner:       req.TossWinner,
+		TossType:         req.TossType,
+		BattingTeam:      req.TossWinner, // Winner of toss bats first
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
 
 	// Save to repository
@@ -123,16 +130,17 @@ func (s *MatchService) UpdateMatch(ctx context.Context, id string, req *models.U
 	if req.Status != nil {
 		match.Status = *req.Status
 	}
-	if req.Team1ID != nil {
-		match.Team1ID = *req.Team1ID
+	if req.TeamAPlayerCount != nil {
+		match.TeamAPlayerCount = *req.TeamAPlayerCount
 	}
-	if req.Team2ID != nil {
-		match.Team2ID = *req.Team2ID
+	if req.TeamBPlayerCount != nil {
+		match.TeamBPlayerCount = *req.TeamBPlayerCount
 	}
-
-	// Validate business rules
-	if match.Team1ID == match.Team2ID {
-		return nil, fmt.Errorf("team1 and team2 must be different")
+	if req.TotalOvers != nil {
+		match.TotalOvers = *req.TotalOvers
+	}
+	if req.BattingTeam != nil {
+		match.BattingTeam = *req.BattingTeam
 	}
 
 	match.UpdatedAt = time.Now()

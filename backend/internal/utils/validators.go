@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -49,5 +50,35 @@ func ValidateRange(value, min, max int, fieldName string) error {
 	if value < min || value > max {
 		return errors.New(fieldName + " must be between " + string(rune(min)) + " and " + string(rune(max)))
 	}
+	return nil
+}
+
+// ValidateStruct validates a struct using reflection (basic implementation)
+func ValidateStruct(s interface{}) error {
+	v := reflect.ValueOf(s)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return errors.New("not a struct")
+	}
+
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+
+		// Check for required fields (basic validation)
+		if fieldType.Tag.Get("validate") != "" {
+			if field.Kind() == reflect.String && field.String() == "" {
+				return errors.New(fieldType.Name + " is required")
+			}
+			if field.Kind() == reflect.Int && field.Int() == 0 {
+				return errors.New(fieldType.Name + " is required")
+			}
+		}
+	}
+
 	return nil
 }

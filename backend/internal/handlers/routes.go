@@ -64,39 +64,24 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 
 		// Match routes
 		r.Route("/matches", func(r chi.Router) {
-			r.Get("/", listMatchesHandler)
-			r.Post("/", createMatchHandler)
-			r.Get("/{id}", getMatchHandler)
-			r.Put("/{id}", updateMatchHandler)
-			r.Delete("/{id}", deleteMatchHandler)
+			matchHandler := NewMatchHandler(serviceContainer.Match)
+			r.Get("/", matchHandler.ListMatches)
+			r.Post("/", matchHandler.CreateMatch)
+			r.Get("/{id}", matchHandler.GetMatch)
+			r.Put("/{id}", matchHandler.UpdateMatch)
+			r.Delete("/{id}", matchHandler.DeleteMatch)
+			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
 		})
 
-		// Team routes
-		r.Route("/teams", func(r chi.Router) {
-			r.Get("/", listTeamsHandler)
-			r.Post("/", createTeamHandler)
-			r.Get("/{id}", getTeamHandler)
-			r.Put("/{id}", updateTeamHandler)
-			r.Get("/{id}/players", listTeamPlayersHandler)
-			r.Post("/{id}/players", addTeamPlayerHandler)
-		})
-
-		// Player routes
-		r.Route("/players", func(r chi.Router) {
-			r.Get("/", listPlayersHandler)
-			r.Post("/", createPlayerHandler)
-			r.Get("/{id}", getPlayerHandler)
-			r.Put("/{id}", updatePlayerHandler)
-			r.Delete("/{id}", deletePlayerHandler)
-		})
-
-		// Scoreboard routes
-		r.Route("/scoreboard", func(r chi.Router) {
-			scoreboardHandler := NewScoreboardHandler(serviceContainer.Scoreboard)
-			r.Get("/{match_id}", scoreboardHandler.GetScoreboard)
-			r.Post("/{match_id}/ball", scoreboardHandler.AddBall)
-			r.Put("/{match_id}/score", scoreboardHandler.UpdateScore)
-			r.Put("/{match_id}/wicket", scoreboardHandler.UpdateWicket)
+		// Scorecard routes
+		r.Route("/scorecard", func(r chi.Router) {
+			scorecardHandler := NewScorecardHandler(serviceContainer.Scorecard)
+			r.Post("/start", scorecardHandler.StartScoring)
+			r.Post("/ball", scorecardHandler.AddBall)
+			r.Get("/{match_id}", scorecardHandler.GetScorecard)
+			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
+			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
+			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
 		})
 
 		// WebSocket routes
@@ -192,64 +177,4 @@ func updateMatchHandler(w http.ResponseWriter, r *http.Request) {
 
 func deleteMatchHandler(w http.ResponseWriter, r *http.Request) {
 	utils.WriteSuccess(w, map[string]string{"message": "Match deleted"})
-}
-
-func listTeamsHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, []interface{}{})
-}
-
-func createTeamHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteCreated(w, map[string]string{"message": "Team created"})
-}
-
-func getTeamHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Team details"})
-}
-
-func updateTeamHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Team updated"})
-}
-
-func listTeamPlayersHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, []interface{}{})
-}
-
-func addTeamPlayerHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteCreated(w, map[string]string{"message": "Player added to team"})
-}
-
-func listPlayersHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, []interface{}{})
-}
-
-func createPlayerHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteCreated(w, map[string]string{"message": "Player created"})
-}
-
-func getPlayerHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Player details"})
-}
-
-func updatePlayerHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Player updated"})
-}
-
-func deletePlayerHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Player deleted"})
-}
-
-func getScoreboardHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Scoreboard details"})
-}
-
-func addBallHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteCreated(w, map[string]string{"message": "Ball added"})
-}
-
-func updateScoreHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Score updated"})
-}
-
-func updateWicketHandler(w http.ResponseWriter, r *http.Request) {
-	utils.WriteSuccess(w, map[string]string{"message": "Wicket updated"})
 }

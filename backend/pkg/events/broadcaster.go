@@ -27,19 +27,17 @@ func (eb *EventBroadcaster) BroadcastBallEvent(ctx context.Context, matchID stri
 		RoomID: matchID,
 		Data: map[string]interface{}{
 			"ball_event": map[string]interface{}{
-				"ball_type":  ballEvent.BallType,
-				"runs":       ballEvent.Runs,
-				"is_wicket":  ballEvent.IsWicket,
-				"batsman_id": ballEvent.BatsmanID,
-				"bowler_id":  ballEvent.BowlerID,
-				"timestamp":  time.Now().Unix(),
+				"ball_type": ballEvent.BallType,
+				"run_type":  ballEvent.RunType,
+				"is_wicket": ballEvent.IsWicket,
+				"timestamp": time.Now().Unix(),
 			},
 			"scoreboard": map[string]interface{}{
 				"score":        scoreboard.Score,
 				"wickets":      scoreboard.Wickets,
 				"overs":        scoreboard.Overs,
 				"balls":        scoreboard.Balls,
-				"batting_team": scoreboard.BattingTeamID,
+				"batting_team": scoreboard.BattingTeam,
 				"updated_at":   scoreboard.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),
@@ -47,7 +45,7 @@ func (eb *EventBroadcaster) BroadcastBallEvent(ctx context.Context, matchID stri
 	}
 
 	eb.hub.BroadcastToRoom(matchID, message)
-	log.Printf("Broadcasted ball event for match %s: %s, %d runs", matchID, ballEvent.BallType, ballEvent.Runs)
+	log.Printf("Broadcasted ball event for match %s: %s, %s", matchID, ballEvent.BallType, ballEvent.RunType)
 }
 
 // BroadcastScoreUpdate broadcasts a score update to all clients watching the match
@@ -61,7 +59,7 @@ func (eb *EventBroadcaster) BroadcastScoreUpdate(ctx context.Context, matchID st
 				"wickets":      scoreboard.Wickets,
 				"overs":        scoreboard.Overs,
 				"balls":        scoreboard.Balls,
-				"batting_team": scoreboard.BattingTeamID,
+				"batting_team": scoreboard.BattingTeam,
 				"updated_at":   scoreboard.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),
@@ -87,7 +85,7 @@ func (eb *EventBroadcaster) BroadcastWicketUpdate(ctx context.Context, matchID s
 				"wickets":      scoreboard.Wickets,
 				"overs":        scoreboard.Overs,
 				"balls":        scoreboard.Balls,
-				"batting_team": scoreboard.BattingTeamID,
+				"batting_team": scoreboard.BattingTeam,
 				"updated_at":   scoreboard.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),
@@ -108,7 +106,7 @@ func (eb *EventBroadcaster) BroadcastOverCompletion(ctx context.Context, matchID
 				"over_number":  over.OverNumber,
 				"total_runs":   over.TotalRuns,
 				"total_balls":  over.TotalBalls,
-				"batting_team": over.BattingTeamID,
+				"batting_team": over.BattingTeam,
 				"completed_at": time.Now().Unix(),
 			},
 			"scoreboard": map[string]interface{}{
@@ -116,7 +114,7 @@ func (eb *EventBroadcaster) BroadcastOverCompletion(ctx context.Context, matchID
 				"wickets":      scoreboard.Wickets,
 				"overs":        scoreboard.Overs,
 				"balls":        scoreboard.Balls,
-				"batting_team": scoreboard.BattingTeamID,
+				"batting_team": scoreboard.BattingTeam,
 				"updated_at":   scoreboard.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),
@@ -134,12 +132,12 @@ func (eb *EventBroadcaster) BroadcastMatchStatusUpdate(ctx context.Context, matc
 		RoomID: matchID,
 		Data: map[string]interface{}{
 			"match": map[string]interface{}{
-				"id":           match.ID,
-				"status":       match.Status,
-				"match_number": match.MatchNumber,
-				"team1_id":     match.Team1ID,
-				"team2_id":     match.Team2ID,
-				"updated_at":   match.UpdatedAt.Unix(),
+				"id":                  match.ID,
+				"status":              match.Status,
+				"match_number":        match.MatchNumber,
+				"team_a_player_count": match.TeamAPlayerCount,
+				"team_b_player_count": match.TeamBPlayerCount,
+				"updated_at":          match.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),
 		},
@@ -156,12 +154,12 @@ func (eb *EventBroadcaster) BroadcastMatchStart(ctx context.Context, matchID str
 		RoomID: matchID,
 		Data: map[string]interface{}{
 			"match": map[string]interface{}{
-				"id":           match.ID,
-				"status":       match.Status,
-				"match_number": match.MatchNumber,
-				"team1_id":     match.Team1ID,
-				"team2_id":     match.Team2ID,
-				"started_at":   time.Now().Unix(),
+				"id":                  match.ID,
+				"status":              match.Status,
+				"match_number":        match.MatchNumber,
+				"team_a_player_count": match.TeamAPlayerCount,
+				"team_b_player_count": match.TeamBPlayerCount,
+				"started_at":          time.Now().Unix(),
 			},
 			"timestamp": time.Now().Unix(),
 		},
@@ -178,19 +176,19 @@ func (eb *EventBroadcaster) BroadcastMatchEnd(ctx context.Context, matchID strin
 		RoomID: matchID,
 		Data: map[string]interface{}{
 			"match": map[string]interface{}{
-				"id":           match.ID,
-				"status":       match.Status,
-				"match_number": match.MatchNumber,
-				"team1_id":     match.Team1ID,
-				"team2_id":     match.Team2ID,
-				"ended_at":     time.Now().Unix(),
+				"id":                  match.ID,
+				"status":              match.Status,
+				"match_number":        match.MatchNumber,
+				"team_a_player_count": match.TeamAPlayerCount,
+				"team_b_player_count": match.TeamBPlayerCount,
+				"ended_at":            time.Now().Unix(),
 			},
 			"final_scoreboard": map[string]interface{}{
 				"score":        finalScoreboard.Score,
 				"wickets":      finalScoreboard.Wickets,
 				"overs":        finalScoreboard.Overs,
 				"balls":        finalScoreboard.Balls,
-				"batting_team": finalScoreboard.BattingTeamID,
+				"batting_team": finalScoreboard.BattingTeam,
 				"updated_at":   finalScoreboard.UpdatedAt.Unix(),
 			},
 			"timestamp": time.Now().Unix(),

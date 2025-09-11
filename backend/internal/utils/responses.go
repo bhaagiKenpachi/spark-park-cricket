@@ -69,3 +69,13 @@ func WriteInternalError(w http.ResponseWriter, message string) {
 func WriteJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
 	WriteJSON(w, statusCode, data)
 }
+
+// WriteErrorResponse writes an error response (alias for WriteError)
+func WriteErrorResponse(w http.ResponseWriter, statusCode int, code, message string) {
+	WriteError(w, statusCode, code, message, nil)
+}
+
+// WriteSuccessResponse writes a success response (alias for WriteSuccess)
+func WriteSuccessResponse(w http.ResponseWriter, data interface{}) {
+	WriteSuccess(w, data)
+}

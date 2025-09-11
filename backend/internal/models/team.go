@@ -6,7 +6,7 @@ import (
 
 // Team represents a cricket team
 type Team struct {
-	ID           string    `json:"id" db:"id"`
+	ID           string    `json:"id,omitempty" db:"id,omitempty"`
 	Name         string    `json:"name" db:"name"`
 	PlayersCount int       `json:"players_count" db:"players_count"`
 	CreatedAt    time.Time `json:"created_at" db:"created_at"`
@@ -17,6 +17,14 @@ type Team struct {
 type CreateTeamRequest struct {
 	Name         string `json:"name" validate:"required,min=3,max=255"`
 	PlayersCount int    `json:"players_count" validate:"required,min=1,max=20"`
+}
+
+// CreateTeamData represents the data structure for team creation (without ID)
+type CreateTeamData struct {
+	Name         string    `json:"name" db:"name"`
+	PlayersCount int       `json:"players_count" db:"players_count"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // UpdateTeamRequest represents the request to update a team
