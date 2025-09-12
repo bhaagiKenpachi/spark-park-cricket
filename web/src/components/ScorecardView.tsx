@@ -144,7 +144,40 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
 
     const renderBallCircle = (ball: BallSummary, index: number) => {
         const isWicket = ball.is_wicket;
-        const display = isWicket ? 'W' : ball.runs.toString();
+
+        // Determine display based on ball type and run type
+        let display: string;
+        if (isWicket) {
+            display = 'W';
+        } else {
+            // Check ball_type first for special deliveries
+            switch (ball.ball_type) {
+                case 'wide':
+                    display = 'Wd';
+                    break;
+                case 'no_ball':
+                    display = 'Nb';
+                    break;
+                case 'dead_ball':
+                    display = 'Db';
+                    break;
+                default:
+                    // For good balls, check run_type for special cases
+                    switch (ball.run_type) {
+                        case 'LB':
+                            display = 'Lb';
+                            break;
+                        case 'WC':
+                            display = 'W';
+                            break;
+                        default:
+                            display = ball.runs.toString();
+                            break;
+                    }
+                    break;
+            }
+        }
+
         const displayWithByes = ball.byes > 0 ? `${display}+${ball.byes}` : display;
 
         return (
@@ -152,13 +185,21 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                 key={index}
                 className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
                     ? 'border-red-500 bg-red-100 text-red-700'
-                    : ball.runs === 4
-                        ? 'border-blue-500 bg-blue-100 text-blue-700'
-                        : ball.runs === 6
-                            ? 'border-purple-500 bg-purple-100 text-purple-700'
-                            : ball.runs === 0
-                                ? 'border-gray-300 bg-gray-100 text-gray-600'
-                                : 'border-green-500 bg-green-100 text-green-700'
+                    : ball.ball_type === 'wide'
+                        ? 'border-yellow-500 bg-yellow-100 text-yellow-700'
+                        : ball.ball_type === 'no_ball'
+                            ? 'border-orange-500 bg-orange-100 text-orange-700'
+                            : ball.ball_type === 'dead_ball'
+                                ? 'border-gray-500 bg-gray-100 text-gray-700'
+                                : ball.run_type === 'LB'
+                                    ? 'border-amber-500 bg-amber-100 text-amber-700'
+                                    : ball.runs === 4
+                                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                                        : ball.runs === 6
+                                            ? 'border-purple-500 bg-purple-100 text-purple-700'
+                                            : ball.runs === 0
+                                                ? 'border-gray-300 bg-gray-100 text-gray-600'
+                                                : 'border-green-500 bg-green-100 text-green-700'
                     }`}
             >
                 {displayWithByes}
@@ -260,9 +301,16 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                             onClick={handleStartScoring}
                             className="bg-green-600 hover:bg-green-700"
                             title={scorecardData.match_status === 'live' ? 'Open Live Scoring' : 'Start Live Scoring'}
+                            disabled={scoring}
                         >
-                            <Play className="h-4 w-4 mr-2" />
-                            Live Scoring
+                            {scoring ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Live Scoring
+                                </>
+                            )}
                         </Button>
                     )}
                 </div>
@@ -309,20 +357,40 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                         {innings.status === 'in_progress' ? 'Live' : 'Completed'}
                                                     </Badge>
                                                 </div>
-                                                <div className="text-xl font-bold">
+                                                <div className="text-xl font-bold flex items-center">
+                                                    {scoring ? (
+                                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                                                    ) : null}
                                                     {innings.total_runs}/{innings.total_wickets}
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-gray-600 mb-2">
+                                            <div className="text-xs text-gray-600 mb-2 flex items-center">
+                                                {scoring ? (
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
+                                                ) : null}
                                                 {innings.total_overs} overs
                                             </div>
+
+                                            {/* Extras Display */}
+                                            {innings.extras && (
+                                                <div className="text-xs text-gray-500 mb-2">
+                                                    <span className="font-medium">Extras:</span> {innings.extras.total}
+                                                    {innings.extras.byes > 0 && ` (b ${innings.extras.byes})`}
+                                                    {innings.extras.leg_byes > 0 && ` (lb ${innings.extras.leg_byes})`}
+                                                    {innings.extras.wides > 0 && ` (w ${innings.extras.wides})`}
+                                                    {innings.extras.no_balls > 0 && ` (nb ${innings.extras.no_balls})`}
+                                                </div>
+                                            )}
 
                                             {/* Latest Over Only */}
                                             {latestOver && (
                                                 <div className="mb-2">
                                                     <div className="flex items-center justify-between mb-1">
                                                         <span className="text-sm font-medium">Latest Over {latestOver.over_number}</span>
-                                                        <span className="text-xs text-gray-600">
+                                                        <span className="text-xs text-gray-600 flex items-center">
+                                                            {scoring ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
+                                                            ) : null}
                                                             {latestOver.total_runs} runs, {latestOver.total_wickets} wickets
                                                         </span>
                                                     </div>
@@ -409,20 +477,40 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                         {innings.status === 'in_progress' ? 'Live' : 'Completed'}
                                                     </Badge>
                                                 </div>
-                                                <div className="text-xl font-bold">
+                                                <div className="text-xl font-bold flex items-center">
+                                                    {scoring ? (
+                                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                                                    ) : null}
                                                     {innings.total_runs}/{innings.total_wickets}
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-gray-600 mb-2">
+                                            <div className="text-xs text-gray-600 mb-2 flex items-center">
+                                                {scoring ? (
+                                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
+                                                ) : null}
                                                 {innings.total_overs} overs
                                             </div>
+
+                                            {/* Extras Display */}
+                                            {innings.extras && (
+                                                <div className="text-xs text-gray-500 mb-2">
+                                                    <span className="font-medium">Extras:</span> {innings.extras.total}
+                                                    {innings.extras.byes > 0 && ` (b ${innings.extras.byes})`}
+                                                    {innings.extras.leg_byes > 0 && ` (lb ${innings.extras.leg_byes})`}
+                                                    {innings.extras.wides > 0 && ` (w ${innings.extras.wides})`}
+                                                    {innings.extras.no_balls > 0 && ` (nb ${innings.extras.no_balls})`}
+                                                </div>
+                                            )}
 
                                             {/* Latest Over Only */}
                                             {latestOver && (
                                                 <div className="mb-2">
                                                     <div className="flex items-center justify-between mb-1">
                                                         <span className="text-sm font-medium">Latest Over {latestOver.over_number}</span>
-                                                        <span className="text-xs text-gray-600">
+                                                        <span className="text-xs text-gray-600 flex items-center">
+                                                            {scoring ? (
+                                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
+                                                            ) : null}
                                                             {latestOver.total_runs} runs, {latestOver.total_wickets} wickets
                                                         </span>
                                                     </div>
@@ -483,7 +571,14 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                            <span>Live Scoring</span>
+                            <div className="flex items-center">
+                                <span>Live Scoring</span>
+                                {scoring && (
+                                    <div className="ml-3">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex items-center space-x-2">
                                 <Badge variant="default" className="bg-green-600">
                                     Innings {currentInnings}
@@ -493,6 +588,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                     size="sm"
                                     onClick={() => setShowLiveScoring(false)}
                                     className="h-8 w-8 p-0"
+                                    disabled={scoring}
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -510,7 +606,10 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                         >
                                             {innings.status === 'in_progress' ? 'In Progress' : 'Completed'}
                                         </Badge>
-                                        <span>
+                                        <span className="flex items-center">
+                                            {scoring ? (
+                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
+                                            ) : null}
                                             {innings.batting_team === 'A' ? scorecardData.team_a : scorecardData.team_b}
                                             - {innings.total_runs}/{innings.total_wickets} ({innings.total_overs} overs)
                                         </span>
@@ -532,8 +631,13 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                         size="lg"
                                         variant={runs === 4 ? 'default' : runs === 6 ? 'secondary' : 'outline'}
                                         className={runs === 4 ? 'bg-blue-600 hover:bg-blue-700' : runs === 6 ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
+                                        disabled={scoring}
                                     >
-                                        {runs}
+                                        {scoring ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        ) : (
+                                            runs
+                                        )}
                                     </Button>
                                 ))}
                             </div>
@@ -548,16 +652,26 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                     size="lg"
                                     variant="outline"
                                     className="border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                                    disabled={scoring}
                                 >
-                                    Wide
+                                    {scoring ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+                                    ) : (
+                                        'Wide'
+                                    )}
                                 </Button>
                                 <Button
                                     onClick={() => handleBallScore(1, 'no_ball')}
                                     size="lg"
                                     variant="outline"
                                     className="border-orange-500 text-orange-700 hover:bg-orange-50"
+                                    disabled={scoring}
                                 >
-                                    No Ball
+                                    {scoring ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-700"></div>
+                                    ) : (
+                                        'No Ball'
+                                    )}
                                 </Button>
                             </div>
                         </div>
@@ -572,8 +686,13 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                         onClick={() => handleBallScore(0, wicketType)}
                                         size="lg"
                                         variant="destructive"
+                                        disabled={scoring}
                                     >
-                                        {wicketType.replace('_', ' ').toUpperCase()}
+                                        {scoring ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        ) : (
+                                            wicketType.replace('_', ' ').toUpperCase()
+                                        )}
                                     </Button>
                                 ))}
                             </div>
@@ -588,10 +707,11 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                         <button
                                             key={byes}
                                             onClick={() => handleByesChange(byes)}
+                                            disabled={scoring}
                                             className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors ${byes === currentByes
                                                 ? 'border-blue-500 bg-blue-100 text-blue-700'
                                                 : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                                                }`}
+                                                } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             {byes}
                                         </button>
