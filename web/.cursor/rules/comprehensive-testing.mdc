@@ -1,0 +1,208 @@
+---
+globs: web/**/*.ts,web/**/*.tsx
+description: Comprehensive testing requirements for all functionality
+---
+
+# Comprehensive Testing Requirements
+
+## Testing Strategy Overview
+
+Every functionality in the web frontend must have comprehensive test coverage including:
+1. **Unit Tests** - Individual functions and components
+2. **Integration Tests** - Component interactions and Redux flow
+3. **End-to-End (E2E) Tests** - Complete user workflows
+
+## 1. Unit Testing Requirements
+
+### Component Unit Tests
+- Test component rendering with different props
+- Test user interactions (clicks, form inputs, etc.)
+- Test conditional rendering logic
+- Test error states and loading states
+- Use React Testing Library best practices
+
+### Redux Unit Tests
+- Test action creators
+- Test reducers with different state scenarios
+- Test selectors
+- Test saga functions with mocked API calls
+
+### Utility Function Tests
+- Test all utility functions with various inputs
+- Test edge cases and error conditions
+- Test type safety and validation functions
+
+### Example Unit Test Structure
+```typescript
+describe('UserComponent', () => {
+  it('should render user information correctly', () => {
+    // Test implementation
+  });
+
+  it('should handle loading state', () => {
+    // Test implementation
+  });
+
+  it('should handle error state', () => {
+    // Test implementation
+  });
+});
+```
+
+## 2. Integration Testing Requirements
+
+### Redux Integration Tests
+- Test complete Redux flow from action dispatch to state update
+- Test saga integration with API calls
+- Test component integration with Redux store
+- Mock external dependencies (API calls, WebSocket connections)
+
+### Component Integration Tests
+- Test parent-child component interactions
+- Test form submission flows
+- Test navigation between components
+- Test data flow between components
+
+### Example Integration Test Structure
+```typescript
+describe('User Management Integration', () => {
+  it('should fetch and display users', async () => {
+    // Test complete user fetching flow
+  });
+
+  it('should handle user creation flow', async () => {
+    // Test user creation from form to API
+  });
+});
+```
+
+## 3. End-to-End Testing Requirements
+
+### User Workflow Tests
+- Test complete user journeys
+- Test critical business flows
+- Test cross-browser compatibility
+- Test responsive design on different screen sizes
+
+### E2E Test Scenarios
+- User registration and login flow
+- Series creation and management
+- Match creation and live scoring
+- Team and player management
+- Real-time scoreboard updates
+
+### Example E2E Test Structure
+```typescript
+describe('Cricket Tournament Management E2E', () => {
+  it('should create a new series and add matches', () => {
+    // Test complete series creation workflow
+  });
+
+  it('should manage live match scoring', () => {
+    // Test live scoring functionality
+  });
+});
+```
+
+## Testing Tools and Configuration
+
+### Required Testing Libraries
+- **Jest** - Unit and integration testing framework
+- **React Testing Library** - Component testing utilities
+- **Cypress** - End-to-end testing framework
+- **MSW (Mock Service Worker)** - API mocking for tests
+
+### Test File Organization
+```
+web/
+├── src/
+│   ├── components/
+│   │   ├── UserComponent.tsx
+│   │   └── __tests__/
+│   │       ├── UserComponent.test.tsx
+│   │       └── UserComponent.integration.test.tsx
+│   ├── store/
+│   │   ├── reducers/
+│   │   │   └── __tests__/
+│   │   │       └── userSlice.test.ts
+│   │   └── sagas/
+│   │       └── __tests__/
+│   │           └── userSaga.test.ts
+│   └── utils/
+│       └── __tests__/
+│           └── helpers.test.ts
+├── cypress/
+│   ├── e2e/
+│   │   ├── user-management.cy.ts
+│   │   └── match-scoring.cy.ts
+│   └── fixtures/
+└── __tests__/
+    └── setup.ts
+```
+
+## Test Coverage Requirements
+
+### Minimum Coverage Thresholds
+- **Unit Tests**: 90% code coverage
+- **Integration Tests**: 80% coverage of component interactions
+- **E2E Tests**: 100% coverage of critical user workflows
+
+### Coverage Reporting
+- Generate coverage reports for all test types
+- Fail CI/CD pipeline if coverage thresholds not met
+- Use Istanbul/nyc for coverage reporting
+
+## Test Data Management
+
+### Mock Data
+- Create comprehensive mock data for all entities
+- Use factories for generating test data
+- Maintain consistency between mock data and API schemas
+
+### Test Database
+- Use in-memory database for integration tests
+- Reset database state between tests
+- Use fixtures for consistent test data
+
+## Continuous Integration
+
+### Pre-commit Hooks
+- Run unit tests before commits
+- Run linting and type checking
+- Ensure all tests pass before allowing commits
+
+### CI/CD Pipeline
+- Run all test suites on every PR
+- Generate and publish coverage reports
+- Run E2E tests on staging environment
+- Fail deployment if any tests fail
+
+## Testing Best Practices
+
+### Test Naming
+- Use descriptive test names that explain the scenario
+- Follow pattern: "should [expected behavior] when [condition]"
+- Group related tests using `describe` blocks
+
+### Test Isolation
+- Each test should be independent
+- Clean up after each test
+- Use proper setup and teardown
+
+### Performance Testing
+- Test component rendering performance
+- Test Redux state update performance
+- Monitor bundle size impact of new features
+
+## Documentation Requirements
+
+### Test Documentation
+- Document complex test scenarios
+- Explain mock data setup
+- Document test utilities and helpers
+- Maintain README for testing setup
+
+### API Testing Documentation
+- Document API contract testing
+- Maintain API mock specifications
+- Document WebSocket testing strategies

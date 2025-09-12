@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"spark-park-cricket-backend/internal/utils"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -40,13 +41,17 @@ func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
 
 // RateLimitMiddleware provides basic rate limiting
 func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler {
-	// Simple in-memory rate limiter
+	// Simple in-memory rate limiter with mutex protection
 	clients := make(map[string][]time.Time)
+	var mutex sync.RWMutex
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			clientIP := r.RemoteAddr
 			now := time.Now()
+
+			// Lock for write operations
+			mutex.Lock()
 
 			// Clean old requests
 			if requests, exists := clients[clientIP]; exists {
@@ -61,6 +66,8 @@ func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler 
 
 			// Check rate limit
 			if len(clients[clientIP]) >= requestsPerMinute {
+				mutex.Unlock() // Unlock before logging and responding
+
 				utils.LogWarn("Rate limit exceeded", map[string]interface{}{
 					"client_ip": clientIP,
 					"requests":  len(clients[clientIP]),
@@ -74,6 +81,7 @@ func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler 
 
 			// Add current request
 			clients[clientIP] = append(clients[clientIP], now)
+			mutex.Unlock() // Unlock after all write operations
 
 			next.ServeHTTP(w, r)
 		})
