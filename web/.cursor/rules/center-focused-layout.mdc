@@ -1,0 +1,336 @@
+---
+globs: web/**/*.tsx,web/**/*.css,web/**/*.scss
+description: Center-focused layout design for mobile-optimized web applications
+---
+
+# Center-Focused Layout Rules
+
+## Core Principle
+**Use only the center part of the screen for content, optimizing for mobile viewports where the center area is the most accessible and user-friendly zone.**
+
+## Layout Guidelines
+
+### 1. Content Centering
+- All main content must be centered horizontally
+- Use maximum width constraints to prevent content from stretching too wide
+- Implement consistent horizontal padding for content areas
+- Center all interactive elements within their containers
+
+### 2. Mobile-First Width Constraints
+```tsx
+// ✅ Good: Center-focused with mobile constraints
+<div className="
+  w-full max-w-sm mx-auto px-4
+  sm:max-w-md sm:px-6
+  md:max-w-lg md:px-8
+  lg:max-w-xl
+">
+  Content
+</div>
+
+// ❌ Bad: Full-width without constraints
+<div className="w-full px-4">
+  Content
+</div>
+```
+
+### 3. Container Patterns
+
+#### Primary Content Container
+```tsx
+// Standard content container for mobile-first design
+<div className="
+  w-full max-w-sm mx-auto px-4 py-6
+  sm:max-w-md sm:px-6 sm:py-8
+  md:max-w-lg md:px-8 md:py-10
+  lg:max-w-xl lg:py-12
+">
+  {children}
+</div>
+```
+
+#### Form Container
+```tsx
+// Centered form layout
+<div className="
+  w-full max-w-xs mx-auto px-4
+  sm:max-w-sm sm:px-6
+  md:max-w-md md:px-8
+">
+  <form className="space-y-4">
+    {/* Form fields */}
+  </form>
+</div>
+```
+
+#### Card Grid Container
+```tsx
+// Centered card grid
+<div className="
+  w-full max-w-sm mx-auto px-4
+  sm:max-w-md sm:px-6
+  md:max-w-2xl md:px-8
+  lg:max-w-4xl
+">
+  <div className="grid gap-4 sm:gap-6">
+    {/* Cards */}
+  </div>
+</div>
+```
+
+### 4. Navigation Centering
+- Center navigation elements within the available space
+- Use consistent spacing around navigation items
+- Ensure navigation is easily accessible with one hand on mobile
+
+```tsx
+// Centered navigation
+<nav className="
+  w-full max-w-sm mx-auto px-4 py-3
+  sm:max-w-md sm:px-6
+  md:max-w-lg md:px-8
+">
+  <div className="flex justify-center space-x-6">
+    {/* Navigation items */}
+  </div>
+</nav>
+```
+
+### 5. Button and Interactive Element Centering
+- Center all primary action buttons
+- Use consistent button widths within their containers
+- Ensure buttons are easily reachable on mobile devices
+
+```tsx
+// Centered button layout
+<div className="
+  w-full max-w-xs mx-auto px-4
+  sm:max-w-sm sm:px-6
+">
+  <button className="w-full py-3 px-6 bg-blue-600 text-white rounded-lg">
+    Primary Action
+  </button>
+</div>
+```
+
+## Responsive Width Constraints
+
+### Mobile (320px - 640px)
+- Maximum width: 384px (max-w-sm)
+- Horizontal padding: 16px (px-4)
+- Center all content with `mx-auto`
+
+### Small Mobile (640px - 768px)
+- Maximum width: 448px (max-w-md)
+- Horizontal padding: 24px (px-6)
+- Maintain center alignment
+
+### Tablet (768px - 1024px)
+- Maximum width: 512px (max-w-lg)
+- Horizontal padding: 32px (px-8)
+- Keep content centered
+
+### Desktop (1024px+)
+- Maximum width: 576px (max-w-xl)
+- Maintain center alignment
+- Avoid stretching content too wide
+
+## Component Examples
+
+### Centered Page Layout
+```tsx
+export function CenteredPageLayout({ children }: LayoutProps) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="
+        w-full max-w-sm mx-auto px-4 py-6
+        sm:max-w-md sm:px-6 sm:py-8
+        md:max-w-lg md:px-8 md:py-10
+        lg:max-w-xl lg:py-12
+      ">
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+### Centered Card Component
+```tsx
+export function CenteredCard({ title, content, action }: CardProps) {
+  return (
+    <div className="
+      w-full max-w-xs mx-auto px-4 py-6
+      sm:max-w-sm sm:px-6 sm:py-8
+      md:max-w-md md:px-8
+    ">
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-center mb-4">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-600 text-center mb-6">
+          {content}
+        </p>
+        <div className="flex justify-center">
+          <button className="
+            w-full max-w-48 py-3 px-6 bg-blue-600 text-white rounded-lg
+            sm:w-auto sm:px-8
+          ">
+            {action}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### Centered Form Layout
+```tsx
+export function CenteredForm({ onSubmit, children }: FormProps) {
+  return (
+    <div className="
+      w-full max-w-xs mx-auto px-4 py-6
+      sm:max-w-sm sm:px-6 sm:py-8
+      md:max-w-md md:px-8
+    ">
+      <form onSubmit={onSubmit} className="space-y-4">
+        {children}
+        <div className="flex justify-center pt-4">
+          <button
+            type="submit"
+            className="
+              w-full py-3 px-6 bg-blue-600 text-white rounded-lg
+              sm:w-auto sm:px-8
+            "
+          >
+            Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+```
+
+## Layout Patterns
+
+### 1. Single Column Layout
+- Use for most content on mobile
+- Center all elements within the column
+- Maintain consistent spacing
+
+### 2. Centered Grid Layout
+- Use for card-based content
+- Center the entire grid
+- Ensure cards are properly spaced
+
+### 3. Centered List Layout
+- Center list items within their container
+- Use consistent spacing between items
+- Ensure list items are easily tappable
+
+## Spacing and Padding Rules
+
+### Consistent Spacing
+```tsx
+// Standard spacing pattern
+<div className="
+  w-full max-w-sm mx-auto px-4 py-6
+  sm:max-w-md sm:px-6 sm:py-8
+  md:max-w-lg md:px-8 md:py-10
+">
+  {/* Content with consistent internal spacing */}
+  <div className="space-y-4">
+    {/* Child elements */}
+  </div>
+</div>
+```
+
+### Internal Spacing
+- Use `space-y-4` for vertical spacing between elements
+- Use `space-x-4` for horizontal spacing between elements
+- Maintain consistent spacing throughout the application
+
+## Accessibility Considerations
+
+### Touch Target Sizing
+- Ensure all interactive elements are at least 44px in height
+- Center interactive elements within their containers
+- Provide adequate spacing between touch targets
+
+### Visual Hierarchy
+- Center headings and important text
+- Use consistent text alignment within centered containers
+- Ensure proper contrast for centered content
+
+## Performance Optimization
+
+### Layout Stability
+- Use consistent width constraints to prevent layout shifts
+- Implement proper loading states for centered content
+- Ensure smooth transitions between different screen sizes
+
+### Content Loading
+- Center loading indicators within their containers
+- Use skeleton screens that match the centered layout
+- Implement progressive loading for centered content areas
+
+## Enforcement Rules
+
+### Code Review Checklist
+- [ ] All content is centered horizontally
+- [ ] Maximum width constraints are applied
+- [ ] Consistent padding is used across components
+- [ ] Mobile-first responsive design is implemented
+- [ ] Touch targets are appropriately sized and centered
+- [ ] Layout works well on mobile devices
+
+### Design Validation
+- Test on actual mobile devices
+- Verify content is easily accessible with one hand
+- Ensure readability on small screens
+- Validate touch interactions work properly
+
+## Common Anti-Patterns to Avoid
+
+### ❌ Full-Width Content
+```tsx
+// Don't do this
+<div className="w-full px-4">
+  <div className="w-full">
+    Content stretches across entire screen
+  </div>
+</div>
+```
+
+### ❌ Left-Aligned Layouts
+```tsx
+// Don't do this
+<div className="w-full px-4">
+  <div className="text-left">
+    Content aligned to the left
+  </div>
+</div>
+```
+
+### ❌ Inconsistent Spacing
+```tsx
+// Don't do this
+<div className="w-full px-2 py-8">
+  <div className="px-6 py-2">
+    Inconsistent spacing
+  </div>
+</div>
+```
+
+## Best Practices Summary
+
+1. **Always center content** within appropriate width constraints
+2. **Use mobile-first responsive design** with progressive enhancement
+3. **Maintain consistent spacing** throughout the application
+4. **Ensure touch-friendly interactions** for mobile users
+5. **Test on actual devices** to validate the centered layout
+6. **Keep content width reasonable** to prevent eye strain on larger screens
+7. **Use semantic HTML** with proper accessibility attributes
+8. **Implement proper loading states** for centered content areas

@@ -1,0 +1,85 @@
+---
+globs: web/**/*.ts,web/**/*.tsx
+description: Strict TypeScript code quality rules for the web frontend
+---
+
+# Strict TypeScript Code Quality Rules
+
+## Type Safety Requirements
+
+### 1. Strict TypeScript Configuration
+- All TypeScript files must have `strict: true` enabled
+- No `any` types allowed - use proper type definitions
+- All function parameters and return types must be explicitly typed
+- Use `unknown` instead of `any` when type is truly unknown
+
+### 2. Interface and Type Definitions
+- All API responses must have proper TypeScript interfaces
+- Use discriminated unions for state management
+- Prefer `interface` over `type` for object shapes
+- Use `type` for unions, primitives, and computed types
+
+### 3. Redux Toolkit Best Practices
+- All Redux slices must use `createSlice` with proper typing
+- State interfaces must be explicitly defined
+- Action creators must be properly typed with `PayloadAction<T>`
+- Use `TypedUseSelectorHook` and `AppDispatch` for hooks
+
+### 4. Component Props and State
+- All React component props must be typed with interfaces
+- Use `React.FC<Props>` or explicit function signatures
+- State variables must have explicit types
+- Event handlers must be properly typed
+
+### 5. Error Handling
+- All async operations must have proper error typing
+- Use `Result<T, E>` pattern for operations that can fail
+- API errors must be typed with specific error interfaces
+
+### 6. Code Organization
+- Separate type definitions into dedicated files when reused
+- Use barrel exports for clean imports
+- Group related types together in the same file
+
+## Examples
+
+### Good TypeScript Usage
+```typescript
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface UserState {
+  users: User[];
+  loading: boolean;
+  error: string | null;
+}
+
+const fetchUser = async (id: string): Promise<User> => {
+  // Implementation
+};
+```
+
+### Bad TypeScript Usage
+```typescript
+// ❌ Using any
+const user: any = await fetchUser();
+
+// ❌ Untyped function
+const fetchUser = async (id) => {
+  // Implementation
+};
+
+// ❌ Untyped props
+const UserComponent = ({ user }) => {
+  // Implementation
+};
+```
+
+## Enforcement
+- ESLint rules must be configured to enforce these standards
+- Prettier must be used for consistent formatting
+- All code must pass TypeScript compilation without warnings
+- Use `noImplicitAny: true` and `strictNullChecks: true`
