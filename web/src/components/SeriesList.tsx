@@ -20,6 +20,8 @@ export function SeriesList(): React.JSX.Element {
     const [editingSeries, setEditingSeries] = useState<Series | undefined>();
     const [viewingScorecard, setViewingScorecard] = useState<string | null>(null);
 
+
+
     useEffect(() => {
         dispatch(fetchSeriesRequest());
     }, [dispatch]);

@@ -134,9 +134,15 @@ class ApiService {
     }
 
     async createMatch(matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Match>> {
+        // Remove match_number if it's 1 (default value) to let backend auto-generate
+        const dataToSend = { ...matchData };
+        if (dataToSend.match_number === 1) {
+            delete (dataToSend as Partial<typeof dataToSend>).match_number;
+        }
+
         return this.request<Match>('/matches', {
             method: 'POST',
-            body: JSON.stringify(matchData),
+            body: JSON.stringify(dataToSend),
         });
     }
 

@@ -47,7 +47,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
 
     const [formData, setFormData] = useState<FormData>({
         series_id: seriesId || match?.series_id || '',
-        match_number: match?.match_number || 1,
+        match_number: match?.match_number || 0, // 0 means auto-generate
         date: (match?.date ? match.date.split('T')[0] : new Date().toISOString().split('T')[0]) || '',
         team_player_count: match?.team_a_player_count || 0,
         total_overs: match?.total_overs ?? 0,
@@ -116,7 +116,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
         // Convert date string to RFC3339 format for the API
         const apiData: Omit<Match, 'id' | 'created_at' | 'updated_at'> = {
             series_id: formData.series_id,
-            match_number: formData.match_number,
+            match_number: formData.match_number > 0 ? formData.match_number : 1, // Use provided number or default to 1
             date: `${formData.date}T00:00:00Z`,
             status: 'live' as const,
             team_a_player_count: formData.team_player_count,
@@ -271,7 +271,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                                 value={formData.match_number || ''}
                                 onChange={(e) => handleInputChange('match_number', e.target.value ? parseInt(e.target.value) : 0)}
                                 min="1"
-                                placeholder="Auto-generated if not provided"
+                                placeholder="Leave empty for auto-generation"
                                 data-cy="match-number"
                             />
                         </div>
