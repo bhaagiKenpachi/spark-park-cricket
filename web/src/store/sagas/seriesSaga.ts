@@ -16,13 +16,13 @@ import {
 import { Series } from '../reducers/seriesSlice';
 import { ApiService, ApiError, ApiResponse } from '@/services/api';
 
-export function* fetchSeriesSaga(): Generator<CallEffect | PutEffect, void, ApiResponse<Series[]>> {
+export function* fetchSeriesSaga(): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: Series[] }>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.getSeries.bind(apiService));
 
-        // Extract the actual array from the response
-        const seriesArray = response.data;
+        // Extract the actual array from the nested response structure
+        const seriesArray = response.data.data || response.data;
 
         yield put(fetchSeriesSuccess(seriesArray));
     } catch (error) {
@@ -36,11 +36,11 @@ export function* fetchSeriesSaga(): Generator<CallEffect | PutEffect, void, ApiR
     }
 }
 
-export function* createSeriesSaga(action: ReturnType<typeof createSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<Series>> {
+export function* createSeriesSaga(action: ReturnType<typeof createSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: Series }>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.createSeries.bind(apiService), action.payload);
-        yield put(createSeriesSuccess(response.data));
+        yield put(createSeriesSuccess(response.data.data || response.data));
     } catch (error) {
         const errorMessage = error instanceof ApiError
             ? error.message
@@ -49,12 +49,12 @@ export function* createSeriesSaga(action: ReturnType<typeof createSeriesRequest>
     }
 }
 
-export function* updateSeriesSaga(action: ReturnType<typeof updateSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<Series>> {
+export function* updateSeriesSaga(action: ReturnType<typeof updateSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: Series }>> {
     try {
         const apiService = new ApiService();
         const { id, seriesData } = action.payload;
         const response = yield call(apiService.updateSeries.bind(apiService), id, seriesData);
-        yield put(updateSeriesSuccess(response.data));
+        yield put(updateSeriesSuccess(response.data.data || response.data));
     } catch (error) {
         const errorMessage = error instanceof ApiError
             ? error.message
@@ -63,7 +63,7 @@ export function* updateSeriesSaga(action: ReturnType<typeof updateSeriesRequest>
     }
 }
 
-export function* deleteSeriesSaga(action: ReturnType<typeof deleteSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<void>> {
+export function* deleteSeriesSaga(action: ReturnType<typeof deleteSeriesRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: void }>> {
     try {
         const apiService = new ApiService();
         yield call(apiService.deleteSeries.bind(apiService), action.payload);

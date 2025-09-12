@@ -45,5 +45,9 @@ next-env.d.ts
 *.out
 go.work
 
-server.log
-server
+# backend specific
+backend/main
+backend/server.log
+backend/supabase/
+backend/internal/database/schema_v1_prod.sql
+backend/api/

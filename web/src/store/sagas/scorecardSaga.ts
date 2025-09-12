@@ -17,11 +17,11 @@ import {
 } from '../reducers/scorecardSlice';
 import { ApiService, ApiError, ApiResponse } from '@/services/api';
 
-export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<ScorecardResponse>> {
+export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: ScorecardResponse }>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.getScorecard.bind(apiService), action.payload);
-        yield put(fetchScorecardSuccess(response.data));
+        yield put(fetchScorecardSuccess(response.data.data || response.data));
     } catch (error) {
         const errorMessage = error instanceof ApiError
             ? error.message
@@ -63,12 +63,12 @@ export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generat
     }
 }
 
-export function* fetchInningsSaga(action: ReturnType<typeof fetchInningsRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<InningsSummary>> {
+export function* fetchInningsSaga(action: ReturnType<typeof fetchInningsRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ data: InningsSummary }>> {
     try {
         const apiService = new ApiService();
         const { matchId, inningsNumber } = action.payload;
         const response = yield call(apiService.getInnings.bind(apiService), matchId, inningsNumber);
-        yield put(fetchInningsSuccess(response.data));
+        yield put(fetchInningsSuccess(response.data.data || response.data));
     } catch (error) {
         const errorMessage = error instanceof ApiError
             ? error.message
