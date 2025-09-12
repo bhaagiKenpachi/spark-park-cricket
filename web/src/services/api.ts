@@ -163,10 +163,25 @@ class ApiService {
     }
 
     async startScoring(matchId: string): Promise<ApiResponse<{ message: string; match_id: string }>> {
-        return this.request<{ message: string; match_id: string }>('/scorecard/start', {
-            method: 'POST',
-            body: JSON.stringify({ match_id: matchId }),
-        });
+        try {
+            return await this.request<{ message: string; match_id: string }>('/scorecard/start', {
+                method: 'POST',
+                body: JSON.stringify({ match_id: matchId }),
+            });
+        } catch (error) {
+            // If scoring is already started, return success response instead of error
+            if (error instanceof ApiError && (
+                error.message.includes('scoring already started') ||
+                error.message.includes('already started for this match')
+            )) {
+                return {
+                    data: { message: 'Scoring already active', match_id: matchId },
+                    success: true,
+                    message: 'Scoring already active'
+                };
+            }
+            throw error;
+        }
     }
 
     async addBall(ballEvent: BallEventRequest): Promise<ApiResponse<{
@@ -183,6 +198,38 @@ class ApiService {
             method: 'POST',
             body: JSON.stringify(ballEvent),
         });
+    }
+
+    // Common ball scoring function
+    async scoreBall(
+        matchId: string,
+        inningsNumber: number,
+        ballType: string,
+        runType: string,
+        runs: number,
+        byes: number = 0,
+        isWicket: boolean = false
+    ): Promise<ApiResponse<{
+        message: string;
+        match_id: string;
+        innings_number: number;
+        ball_type: string;
+        run_type: string;
+        runs: number;
+        byes: number;
+        is_wicket: boolean;
+    }>> {
+        const ballEvent: BallEventRequest = {
+            match_id: matchId,
+            innings_number: inningsNumber,
+            ball_type: ballType,
+            run_type: runType,
+            runs,
+            byes,
+            is_wicket: isWicket,
+        };
+
+        return this.addBall(ballEvent);
     }
 
     async getCurrentOver(matchId: string, inningsNumber: number = 1): Promise<ApiResponse<any>> {

@@ -71,6 +71,7 @@ export interface BallEventRequest {
     innings_number: number;
     ball_type: BallType;
     run_type: RunType;
+    runs: number;
     is_wicket: boolean;
     wicket_type?: string;
     byes?: number;
@@ -129,6 +130,26 @@ export const scorecardSlice = createSlice({
             state.scoring = false;
             state.error = action.payload;
         },
+        fetchInningsRequest: (state, _action: PayloadAction<{ matchId: string; inningsNumber: number }>) => {
+            state.loading = true;
+            state.error = null;
+        },
+        fetchInningsSuccess: (state, action: PayloadAction<InningsSummary>) => {
+            state.loading = false;
+            // Update the specific innings in the scorecard
+            if (state.scorecard) {
+                const inningsIndex = state.scorecard.innings.findIndex(
+                    innings => innings.innings_number === action.payload.innings_number
+                );
+                if (inningsIndex !== -1) {
+                    state.scorecard.innings[inningsIndex] = action.payload;
+                }
+            }
+        },
+        fetchInningsFailure: (state, action: PayloadAction<string>) => {
+            state.loading = false;
+            state.error = action.payload;
+        },
         clearScorecard: (state) => {
             state.scorecard = null;
             state.error = null;
@@ -146,6 +167,9 @@ export const {
     addBallRequest,
     addBallSuccess,
     addBallFailure,
+    fetchInningsRequest,
+    fetchInningsSuccess,
+    fetchInningsFailure,
     clearScorecard,
 } = scorecardSlice.actions;
 

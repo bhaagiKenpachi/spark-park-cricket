@@ -11,7 +11,7 @@ import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Plus, Edit, Trash2, Calendar, Clock, Play } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 
 interface SeriesWithMatchesProps {
@@ -27,6 +27,20 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
     const [showMatchForm, setShowMatchForm] = useState(false);
     const [editingMatch, setEditingMatch] = useState<Match | undefined>();
     const [expanded, setExpanded] = useState(false);
+
+    // Format date to human readable format
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch {
+            return dateString;
+        }
+    };
 
     // Filter matches for this series
     const seriesMatches = matches.filter(match => match.series_id === series.id);
@@ -88,11 +102,15 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
             </CardHeader>
             <CardContent>
                 <div className="space-y-2 text-sm">
-                    <div>
-                        <span className="font-medium">Start:</span> {series.start_date}
+                    <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="font-medium">Start:</span>
+                        <span className="ml-2">{formatDate(series.start_date)}</span>
                     </div>
-                    <div>
-                        <span className="font-medium">End:</span> {series.end_date}
+                    <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                        <span className="font-medium">End:</span>
+                        <span className="ml-2">{formatDate(series.end_date)}</span>
                     </div>
                 </div>
 
@@ -107,16 +125,18 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                                     onClick={() => dispatch(fetchMatchesRequest())}
                                     disabled={matchesLoading}
                                     data-cy="refresh-matches-button"
+                                    title="Refresh"
                                 >
-                                    <RefreshCw className={`h-4 w-4 mr-1 ${matchesLoading ? 'animate-spin' : ''}`} />
-                                    Refresh
+                                    <RefreshCw className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`} />
                                 </Button>
                                 <Button
                                     size="sm"
                                     onClick={() => setShowMatchForm(true)}
                                     data-cy="create-match-button"
+                                    title="Add Match"
                                 >
-                                    Add Match
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Match
                                 </Button>
                             </div>
                         </div>
@@ -183,24 +203,28 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                                                         size="sm"
                                                         onClick={() => onViewScorecard?.(match.id)}
                                                         data-cy="view-scorecard-button"
+                                                        title="View Scorecard"
                                                     >
-                                                        View Scorecard
+                                                        <Play className="h-4 w-4 mr-2" />
+                                                        Scorecard
                                                     </Button>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleEditMatch(match)}
                                                         data-cy="edit-match-button"
+                                                        title="Edit Match"
                                                     >
-                                                        Edit
+                                                        <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDeleteMatch(match.id)}
                                                         data-cy="delete-match-button"
+                                                        title="Delete Match"
                                                     >
-                                                        Delete
+                                                        <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -218,16 +242,20 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                         size="sm"
                         onClick={() => onEditSeries(series)}
                         data-cy="edit-series-button"
+                        title="Edit Series"
                     >
-                        Edit Series
+                        <Edit className="h-4 w-4 mr-2" />
+                        Series
                     </Button>
                     <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => onDeleteSeries(series.id)}
                         data-cy="delete-series-button"
+                        title="Delete Series"
                     >
-                        Delete Series
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Series
                     </Button>
                 </div>
             </CardContent>

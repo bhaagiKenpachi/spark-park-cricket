@@ -18,41 +18,6 @@ export default function Home(): React.JSX.Element {
             ">
               Spark Park Cricket
             </h1>
-            <nav className="
-              flex flex-wrap justify-center space-x-4
-              sm:space-x-6 md:space-x-8
-            ">
-              <a
-                href="/series"
-                className="
-                  text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md
-                  text-sm font-medium active:bg-gray-100
-                  sm:text-base
-                "
-              >
-                Series
-              </a>
-              <a
-                href="/matches"
-                className="
-                  text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md
-                  text-sm font-medium active:bg-gray-100
-                  sm:text-base
-                "
-              >
-                Matches
-              </a>
-              <a
-                href="/teams"
-                className="
-                  text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md
-                  text-sm font-medium active:bg-gray-100
-                  sm:text-base
-                "
-              >
-                Teams
-              </a>
-            </nav>
           </div>
         </div>
       </header>
