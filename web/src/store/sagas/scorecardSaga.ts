@@ -1,4 +1,4 @@
-import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
+import { call, put, takeEvery, takeLatest, CallEffect, PutEffect } from 'redux-saga/effects';
 import {
     fetchScorecardRequest,
     fetchScorecardSuccess,
@@ -12,10 +12,12 @@ import {
     fetchInningsRequest,
     fetchInningsSuccess,
     fetchInningsFailure,
+    ScorecardResponse,
+    InningsSummary,
 } from '../reducers/scorecardSlice';
-import { ApiService, ApiError } from '@/services/api';
+import { ApiService, ApiError, ApiResponse } from '@/services/api';
 
-export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequest>): Generator<any, void, any> {
+export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<ScorecardResponse>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.getScorecard.bind(apiService), action.payload);
@@ -28,10 +30,10 @@ export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequ
     }
 }
 
-export function* startScoringSaga(action: ReturnType<typeof startScoringRequest>): Generator<any, void, any> {
+export function* startScoringSaga(action: ReturnType<typeof startScoringRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ message: string; match_id: string }>> {
     try {
         const apiService = new ApiService();
-        const response = yield call(apiService.startScoring.bind(apiService), action.payload);
+        yield call(apiService.startScoring.bind(apiService), action.payload);
         yield put(startScoringSuccess());
         // Refresh scorecard after starting scoring
         yield put(fetchScorecardRequest(action.payload));
@@ -43,14 +45,14 @@ export function* startScoringSaga(action: ReturnType<typeof startScoringRequest>
     }
 }
 
-export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generator<any, void, any> {
+export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<{ message: string; match_id: string; innings_number: number; ball_type: string; run_type: string; runs: number; byes: number; is_wicket: boolean }>> {
     try {
         const apiService = new ApiService();
         const ballEvent = action.payload;
 
         // Use the addBall method directly with the complete ball event
-        const response = yield call(apiService.addBall.bind(apiService), ballEvent);
-        yield put(addBallSuccess(response.data));
+        yield call(apiService.addBall.bind(apiService), ballEvent);
+        yield put(addBallSuccess());
         // Refresh scorecard after adding ball
         yield put(fetchScorecardRequest(ballEvent.match_id));
     } catch (error) {
@@ -61,7 +63,7 @@ export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generat
     }
 }
 
-export function* fetchInningsSaga(action: ReturnType<typeof fetchInningsRequest>): Generator<any, void, any> {
+export function* fetchInningsSaga(action: ReturnType<typeof fetchInningsRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<InningsSummary>> {
     try {
         const apiService = new ApiService();
         const { matchId, inningsNumber } = action.payload;

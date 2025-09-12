@@ -11,7 +11,7 @@ import { SeriesForm } from './SeriesForm';
 import { SeriesWithMatches } from './SeriesWithMatches';
 import { ScorecardView } from './ScorecardView';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Plus, Edit, Trash2, Calendar, Clock } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 
 export function SeriesList(): React.JSX.Element {
     const dispatch = useAppDispatch();

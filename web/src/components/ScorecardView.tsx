@@ -7,16 +7,17 @@ import {
     startScoringRequest,
     addBallRequest,
     clearScorecard,
-    ScorecardResponse,
     BallEventRequest,
     BallType,
     RunType,
-    WicketType
+    BallSummary,
+    OverSummary,
+    InningsSummary
 } from '@/store/reducers/scorecardSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Play, Plus, X, ChevronDown, ChevronUp, Edit, Trash2, RefreshCw, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Play, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ScorecardViewProps {
     matchId: string;
@@ -29,8 +30,6 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
 
     const [showLiveScoring, setShowLiveScoring] = useState(false);
     const [currentInnings, setCurrentInnings] = useState(1);
-    const [currentOver, setCurrentOver] = useState(1);
-    const [currentBall, setCurrentBall] = useState(1);
     const [currentByes, setCurrentByes] = useState(0);
     const [scoringMessage, setScoringMessage] = useState<string | null>(null);
     const [expandedOvers, setExpandedOvers] = useState<{ [key: string]: boolean }>({});
@@ -44,21 +43,21 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
 
     // Auto-show live scoring if match is already live
     useEffect(() => {
-        if (scorecard?.data?.match_status === 'live') {
+        if (scorecard?.match_status === 'live') {
             setShowLiveScoring(true);
         }
     }, [scorecard]);
 
     // Auto-detect current innings from scorecard data
     useEffect(() => {
-        if (scorecard?.data?.innings && Array.isArray(scorecard.data.innings)) {
-            const currentInningsData = scorecard.data.innings.find(
+        if (scorecard?.innings && Array.isArray(scorecard.innings)) {
+            const currentInningsData = scorecard.innings.find(
                 innings => innings.status === 'in_progress'
             );
             if (currentInningsData) {
                 setCurrentInnings(currentInningsData.innings_number);
             }
-        } else if (scorecard?.data?.innings === null) {
+        } else if (scorecard?.innings === null) {
             // If no innings exist yet, start with innings 1
             setCurrentInnings(1);
         }
@@ -123,15 +122,13 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
             runs,
             byes: currentByes,
             is_wicket: isWicket,
-            wicket_type: wicketType,
+            ...(wicketType && { wicket_type: wicketType }),
         };
 
         dispatch(addBallRequest(ballEvent));
         setCurrentByes(0); // Reset byes after scoring
 
-        if (ballType !== 'wide' && ballType !== 'no_ball') {
-            setCurrentBall(prev => prev + 1);
-        }
+        // Ball counting is handled by the backend
     };
 
     const handleByesChange = (byes: number) => {
@@ -145,7 +142,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
         }));
     };
 
-    const renderBallCircle = (ball: any, index: number) => {
+    const renderBallCircle = (ball: BallSummary, index: number) => {
         const isWicket = ball.is_wicket;
         const display = isWicket ? 'W' : ball.runs.toString();
         const displayWithByes = ball.byes > 0 ? `${display}+${ball.byes}` : display;
@@ -169,7 +166,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
         );
     };
 
-    const renderOverDetails = (over: any) => (
+    const renderOverDetails = (over: OverSummary) => (
         <div key={over.over_number} className="mb-4">
             <div className="flex items-center justify-between mb-2">
                 <h5 className="font-medium text-sm">Over {over.over_number}</h5>
@@ -179,7 +176,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
             </div>
             <div className="flex flex-wrap gap-1">
                 {over.balls && Array.isArray(over.balls) && over.balls.length > 0
-                    ? over.balls.map((ball: any, index: number) => renderBallCircle(ball, index))
+                    ? over.balls.map((ball: BallSummary, index: number) => renderBallCircle(ball, index))
                     : <div className="text-xs text-gray-400">No balls</div>
                 }
             </div>
@@ -217,7 +214,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
         );
     }
 
-    if (!scorecard || !scorecard.data) {
+    if (!scorecard) {
         return (
             <div className="w-full max-w-6xl mx-auto p-6">
                 <div className="text-center py-8">
@@ -228,7 +225,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
         );
     }
 
-    const scorecardData = scorecard.data;
+    const scorecardData = scorecard;
 
     return (
         <div className="w-full max-w-6xl mx-auto p-6">
@@ -290,8 +287,8 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                     <CardContent>
                         {scorecardData.innings && Array.isArray(scorecardData.innings) && scorecardData.innings.length > 0 ? (
                             scorecardData.innings
-                                .filter((innings: any) => innings.batting_team === 'A')
-                                .map((innings: any) => {
+                                .filter((innings: InningsSummary) => innings.batting_team === 'A')
+                                .map((innings: InningsSummary) => {
                                     const inningsKey = `A-${innings.innings_number}`;
                                     const latestOver = innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0
                                         ? innings.overs.reduce((latest, current) =>
@@ -331,7 +328,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                     </div>
                                                     <div className="flex flex-wrap gap-1">
                                                         {latestOver.balls && Array.isArray(latestOver.balls) && latestOver.balls.length > 0
-                                                            ? latestOver.balls.map((ball: any, index: number) => renderBallCircle(ball, index))
+                                                            ? latestOver.balls.map((ball: BallSummary, index: number) => renderBallCircle(ball, index))
                                                             : <div className="text-xs text-gray-400">No balls</div>
                                                         }
                                                     </div>
@@ -363,7 +360,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                             {/* All Overs (Expanded) */}
                                             {isExpanded && innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0 && (
                                                 <div className="mt-2 space-y-2 border-t pt-2">
-                                                    {innings.overs.map((over: any) => renderOverDetails(over))}
+                                                    {innings.overs.map((over: OverSummary) => renderOverDetails(over))}
                                                 </div>
                                             )}
                                         </div>
@@ -372,7 +369,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         ) : scorecardData.innings === null ? (
                             <div className="text-sm text-gray-500 text-center py-4">
                                 <div className="mb-2">Match ready to start</div>
-                                <div className="text-xs">Click "Open Live Scoring" to begin</div>
+                                <div className="text-xs">Click &quot;Open Live Scoring&quot; to begin</div>
                             </div>
                         ) : (
                             <div className="text-sm text-gray-400">No innings data</div>
@@ -390,8 +387,8 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                     <CardContent>
                         {scorecardData.innings && Array.isArray(scorecardData.innings) && scorecardData.innings.length > 0 ? (
                             scorecardData.innings
-                                .filter((innings: any) => innings.batting_team === 'B')
-                                .map((innings: any) => {
+                                .filter((innings: InningsSummary) => innings.batting_team === 'B')
+                                .map((innings: InningsSummary) => {
                                     const inningsKey = `B-${innings.innings_number}`;
                                     const latestOver = innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0
                                         ? innings.overs.reduce((latest, current) =>
@@ -431,7 +428,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                     </div>
                                                     <div className="flex flex-wrap gap-1">
                                                         {latestOver.balls && Array.isArray(latestOver.balls) && latestOver.balls.length > 0
-                                                            ? latestOver.balls.map((ball: any, index: number) => renderBallCircle(ball, index))
+                                                            ? latestOver.balls.map((ball: BallSummary, index: number) => renderBallCircle(ball, index))
                                                             : <div className="text-xs text-gray-400">No balls</div>
                                                         }
                                                     </div>
@@ -463,7 +460,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                             {/* All Overs (Expanded) */}
                                             {isExpanded && innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0 && (
                                                 <div className="mt-2 space-y-2 border-t pt-2">
-                                                    {innings.overs.map((over: any) => renderOverDetails(over))}
+                                                    {innings.overs.map((over: OverSummary) => renderOverDetails(over))}
                                                 </div>
                                             )}
                                         </div>
@@ -472,7 +469,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         ) : scorecardData.innings === null ? (
                             <div className="text-sm text-gray-500 text-center py-4">
                                 <div className="mb-2">Match ready to start</div>
-                                <div className="text-xs">Click "Open Live Scoring" to begin</div>
+                                <div className="text-xs">Click &quot;Open Live Scoring&quot; to begin</div>
                             </div>
                         ) : (
                             <div className="text-sm text-gray-400">No innings data</div>
@@ -504,7 +501,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         {/* Current Innings Info */}
                         {scorecardData.innings && Array.isArray(scorecardData.innings) && (
                             <div className="mt-2 text-sm text-gray-600">
-                                {scorecardData.innings.map((innings: any) => (
+                                {scorecardData.innings.map((innings: InningsSummary) => (
                                     <div key={innings.innings_number} className="flex items-center space-x-2">
                                         <span>Innings {innings.innings_number}:</span>
                                         <Badge

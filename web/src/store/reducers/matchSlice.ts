@@ -61,7 +61,7 @@ export const matchSlice = createSlice({
             state.loading = false;
             state.error = action.payload;
         },
-        updateMatchRequest: (state, _action: PayloadAction<{ id: string; matchData: Partial<Match> }>) => {
+        updateMatchRequest: (state, _action: PayloadAction<{ id: string; matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'> }>) => {
             state.loading = true;
             state.error = null;
         },

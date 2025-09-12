@@ -23,12 +23,22 @@ interface MatchFormProps {
 
 interface FormData {
     series_id: string;
-    match_number?: number;
+    match_number: number;
     date: string;
     team_player_count: number;
     total_overs: number;
     toss_winner: 'A' | 'B';
     toss_type: 'H' | 'T';
+}
+
+interface FormErrors {
+    series_id?: string;
+    match_number?: string;
+    date?: string;
+    team_player_count?: string;
+    total_overs?: string;
+    toss_winner?: string;
+    toss_type?: string;
 }
 
 export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormProps): React.JSX.Element {
@@ -37,22 +47,22 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
 
     const [formData, setFormData] = useState<FormData>({
         series_id: seriesId || match?.series_id || '',
-        match_number: match?.match_number,
-        date: match?.date ? match.date.split('T')[0] : '',
+        match_number: match?.match_number || 1,
+        date: (match?.date ? match.date.split('T')[0] : new Date().toISOString().split('T')[0]) || '',
         team_player_count: match?.team_a_player_count || 0,
         total_overs: match?.total_overs ?? 0,
         toss_winner: match?.toss_winner || 'A',
         toss_type: match?.toss_type || 'H',
     });
 
-    const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
+    const [formErrors, setFormErrors] = useState<FormErrors>({});
 
     useEffect(() => {
         if (match) {
             setFormData({
                 series_id: match.series_id,
                 match_number: match.match_number,
-                date: match.date.split('T')[0],
+                date: match.date.split('T')[0] || '',
                 team_player_count: match.team_a_player_count,
                 total_overs: match.total_overs,
                 toss_winner: match.toss_winner,
@@ -62,7 +72,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
     }, [match]);
 
     const validateForm = (): boolean => {
-        const errors: Partial<FormData> = {};
+        const errors: FormErrors = {};
 
         if (!formData.series_id.trim()) {
             errors.series_id = 'Series ID is required';
@@ -104,23 +114,21 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
         }
 
         // Convert date string to RFC3339 format for the API
-        const apiData: any = {
+        const apiData: Omit<Match, 'id' | 'created_at' | 'updated_at'> = {
             series_id: formData.series_id,
+            match_number: formData.match_number,
             date: `${formData.date}T00:00:00Z`,
+            status: 'live' as const,
             team_a_player_count: formData.team_player_count,
             team_b_player_count: formData.team_player_count,
             total_overs: formData.total_overs,
             toss_winner: formData.toss_winner,
             toss_type: formData.toss_type,
+            batting_team: formData.toss_winner, // Default batting team is toss winner
         };
 
         console.log('Form data being submitted:', formData);
         console.log('API data being sent:', apiData);
-
-        // Only include match_number if it's provided
-        if (formData.match_number !== undefined && formData.match_number !== null) {
-            apiData.match_number = formData.match_number;
-        }
 
         if (match) {
             dispatch(updateMatchRequest({
@@ -261,7 +269,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                                 type="number"
                                 id="match_number"
                                 value={formData.match_number || ''}
-                                onChange={(e) => handleInputChange('match_number', e.target.value ? parseInt(e.target.value) : undefined)}
+                                onChange={(e) => handleInputChange('match_number', e.target.value ? parseInt(e.target.value) : 0)}
                                 min="1"
                                 placeholder="Auto-generated if not provided"
                                 data-cy="match-number"

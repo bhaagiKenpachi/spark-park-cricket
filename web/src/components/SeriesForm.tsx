@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, Save, X } from 'lucide-react';
+import { Calendar, Save, X } from 'lucide-react';
 
 interface SeriesFormProps {
     series?: Series | undefined;
@@ -31,8 +31,8 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
 
     const [formData, setFormData] = useState<FormData>({
         name: series?.name || '',
-        start_date: series?.start_date ? series.start_date.split('T')[0] : '',
-        end_date: series?.end_date ? series.end_date.split('T')[0] : '',
+        start_date: (series?.start_date ? series.start_date.split('T')[0] : new Date().toISOString().split('T')[0]) || '',
+        end_date: (series?.end_date ? series.end_date.split('T')[0] : new Date().toISOString().split('T')[0]) || '',
     });
 
     const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
@@ -40,8 +40,8 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
     useEffect(() => {
         if (series) {
             // Convert RFC3339 dates to YYYY-MM-DD format for HTML date inputs
-            const formatDateForInput = (dateString: string) => {
-                return dateString.split('T')[0];
+            const formatDateForInput = (dateString: string): string => {
+                return dateString.split('T')[0] || '';
             };
 
             setFormData({
@@ -87,6 +87,7 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
             ...formData,
             start_date: `${formData.start_date}T00:00:00Z`,
             end_date: `${formData.end_date}T00:00:00Z`,
+            status: 'upcoming' as const,
         };
 
         if (series) {

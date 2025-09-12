@@ -11,7 +11,7 @@ import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Edit, Trash2, Calendar, Clock, Play } from 'lucide-react';
+import { RefreshCw, Plus, Edit, Trash2, Calendar, Play } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 
 interface SeriesWithMatchesProps {
