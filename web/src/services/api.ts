@@ -1,6 +1,6 @@
 import { Series } from '@/store/reducers/seriesSlice';
 import { Match } from '@/store/reducers/matchSlice';
-import { ScorecardResponse, BallEventRequest } from '@/store/reducers/scorecardSlice';
+import { ScorecardResponse, BallEventRequest, OverSummary, InningsSummary, BallType, RunType } from '@/store/reducers/scorecardSlice';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -204,8 +204,8 @@ class ApiService {
     async scoreBall(
         matchId: string,
         inningsNumber: number,
-        ballType: string,
-        runType: string,
+        ballType: BallType,
+        runType: RunType,
         runs: number,
         byes: number = 0,
         isWicket: boolean = false
@@ -232,16 +232,16 @@ class ApiService {
         return this.addBall(ballEvent);
     }
 
-    async getCurrentOver(matchId: string, inningsNumber: number = 1): Promise<ApiResponse<any>> {
-        return this.request(`/scorecard/${matchId}/current-over?innings=${inningsNumber}`);
+    async getCurrentOver(matchId: string, inningsNumber: number = 1): Promise<ApiResponse<OverSummary>> {
+        return this.request<OverSummary>(`/scorecard/${matchId}/current-over?innings=${inningsNumber}`);
     }
 
-    async getInnings(matchId: string, inningsNumber: number): Promise<ApiResponse<any>> {
-        return this.request(`/scorecard/${matchId}/innings/${inningsNumber}`);
+    async getInnings(matchId: string, inningsNumber: number): Promise<ApiResponse<InningsSummary>> {
+        return this.request<InningsSummary>(`/scorecard/${matchId}/innings/${inningsNumber}`);
     }
 
-    async getOver(matchId: string, inningsNumber: number, overNumber: number): Promise<ApiResponse<any>> {
-        return this.request(`/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`);
+    async getOver(matchId: string, inningsNumber: number, overNumber: number): Promise<ApiResponse<OverSummary>> {
+        return this.request<OverSummary>(`/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`);
     }
 }
 

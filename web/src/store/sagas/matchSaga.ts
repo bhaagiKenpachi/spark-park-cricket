@@ -1,4 +1,4 @@
-import { call, put, takeEvery, takeLatest } from 'redux-saga/effects';
+import { call, put, takeEvery, takeLatest, CallEffect, PutEffect } from 'redux-saga/effects';
 import {
     fetchMatchesRequest,
     fetchMatchesSuccess,
@@ -13,15 +13,16 @@ import {
     deleteMatchSuccess,
     deleteMatchFailure,
 } from '../reducers/matchSlice';
-import { ApiService, ApiError } from '@/services/api';
+import { ApiService, ApiError, ApiResponse } from '@/services/api';
+import { Match } from '../reducers/matchSlice';
 
-export function* fetchMatchesSaga(): Generator<any, void, any> {
+export function* fetchMatchesSaga(): Generator<CallEffect | PutEffect, void, ApiResponse<Match[]>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.getMatches.bind(apiService));
 
-        // Extract the actual array from the nested response structure
-        const matchesArray = response.data.data || response.data;
+        // Extract the actual array from the response
+        const matchesArray = response.data;
         yield put(fetchMatchesSuccess(matchesArray));
     } catch (error) {
         const errorMessage = error instanceof ApiError
@@ -31,7 +32,7 @@ export function* fetchMatchesSaga(): Generator<any, void, any> {
     }
 }
 
-export function* createMatchSaga(action: ReturnType<typeof createMatchRequest>): Generator<any, void, any> {
+export function* createMatchSaga(action: ReturnType<typeof createMatchRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<Match>> {
     try {
         const apiService = new ApiService();
         const response = yield call(apiService.createMatch.bind(apiService), action.payload);
@@ -44,7 +45,7 @@ export function* createMatchSaga(action: ReturnType<typeof createMatchRequest>):
     }
 }
 
-export function* updateMatchSaga(action: ReturnType<typeof updateMatchRequest>): Generator<any, void, any> {
+export function* updateMatchSaga(action: ReturnType<typeof updateMatchRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<Match>> {
     try {
         const apiService = new ApiService();
         const { id, matchData } = action.payload;
@@ -58,7 +59,7 @@ export function* updateMatchSaga(action: ReturnType<typeof updateMatchRequest>):
     }
 }
 
-export function* deleteMatchSaga(action: ReturnType<typeof deleteMatchRequest>): Generator<any, void, any> {
+export function* deleteMatchSaga(action: ReturnType<typeof deleteMatchRequest>): Generator<CallEffect | PutEffect, void, ApiResponse<void>> {
     try {
         const apiService = new ApiService();
         yield call(apiService.deleteMatch.bind(apiService), action.payload);
