@@ -9,6 +9,9 @@ import {
     addBallRequest,
     addBallSuccess,
     addBallFailure,
+    fetchInningsRequest,
+    fetchInningsSuccess,
+    fetchInningsFailure,
 } from '../reducers/scorecardSlice';
 import { ApiService, ApiError } from '@/services/api';
 
@@ -28,7 +31,7 @@ export function* fetchScorecardSaga(action: ReturnType<typeof fetchScorecardRequ
 export function* startScoringSaga(action: ReturnType<typeof startScoringRequest>): Generator<any, void, any> {
     try {
         const apiService = new ApiService();
-        yield call(apiService.startScoring.bind(apiService), action.payload);
+        const response = yield call(apiService.startScoring.bind(apiService), action.payload);
         yield put(startScoringSuccess());
         // Refresh scorecard after starting scoring
         yield put(fetchScorecardRequest(action.payload));
@@ -43,10 +46,13 @@ export function* startScoringSaga(action: ReturnType<typeof startScoringRequest>
 export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generator<any, void, any> {
     try {
         const apiService = new ApiService();
-        yield call(apiService.addBall.bind(apiService), action.payload);
-        yield put(addBallSuccess());
+        const ballEvent = action.payload;
+
+        // Use the addBall method directly with the complete ball event
+        const response = yield call(apiService.addBall.bind(apiService), ballEvent);
+        yield put(addBallSuccess(response.data));
         // Refresh scorecard after adding ball
-        yield put(fetchScorecardRequest(action.payload.match_id));
+        yield put(fetchScorecardRequest(ballEvent.match_id));
     } catch (error) {
         const errorMessage = error instanceof ApiError
             ? error.message
@@ -55,8 +61,23 @@ export function* addBallSaga(action: ReturnType<typeof addBallRequest>): Generat
     }
 }
 
+export function* fetchInningsSaga(action: ReturnType<typeof fetchInningsRequest>): Generator<any, void, any> {
+    try {
+        const apiService = new ApiService();
+        const { matchId, inningsNumber } = action.payload;
+        const response = yield call(apiService.getInnings.bind(apiService), matchId, inningsNumber);
+        yield put(fetchInningsSuccess(response.data));
+    } catch (error) {
+        const errorMessage = error instanceof ApiError
+            ? error.message
+            : 'Failed to fetch innings';
+        yield put(fetchInningsFailure(errorMessage));
+    }
+}
+
 export function* scorecardSaga() {
     yield takeLatest(fetchScorecardRequest.type, fetchScorecardSaga);
     yield takeEvery(startScoringRequest.type, startScoringSaga);
     yield takeEvery(addBallRequest.type, addBallSaga);
+    yield takeLatest(fetchInningsRequest.type, fetchInningsSaga);
 }

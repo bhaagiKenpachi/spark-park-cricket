@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, Clock, Save, X } from 'lucide-react';
 
 interface SeriesFormProps {
     series?: Series | undefined;
@@ -143,7 +144,10 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
 
 
                         <div className="space-y-2">
-                            <Label htmlFor="start_date">Start Date *</Label>
+                            <Label htmlFor="start_date" className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Start Date *
+                            </Label>
                             <Input
                                 type="date"
                                 id="start_date"
@@ -158,7 +162,10 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="end_date">End Date *</Label>
+                            <Label htmlFor="end_date" className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                End Date *
+                            </Label>
                             <Input
                                 type="date"
                                 id="end_date"
@@ -179,8 +186,10 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
                                 disabled={loading}
                                 className="w-full sm:w-auto"
                                 data-cy={series ? 'update-series-button' : 'create-series-button'}
+                                title={loading ? 'Saving...' : (series ? 'Update Series' : 'Create Series')}
                             >
-                                {loading ? 'Saving...' : (series ? 'Update Series' : 'Create Series')}
+                                <Save className="h-4 w-4 mr-2" />
+                                {loading ? 'Saving...' : 'Series'}
                             </Button>
 
                             {onCancel && (
@@ -189,8 +198,9 @@ export function SeriesForm({ series, onSuccess, onCancel }: SeriesFormProps): Re
                                     variant="outline"
                                     onClick={onCancel}
                                     className="w-full sm:w-auto"
+                                    title="Cancel"
                                 >
-                                    Cancel
+                                    <X className="h-4 w-4" />
                                 </Button>
                             )}
                         </div>

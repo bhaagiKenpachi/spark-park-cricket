@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Save, X, Calendar, Users, Target, Trophy, Coins } from 'lucide-react';
 
 interface MatchFormProps {
     match?: Match | undefined;
@@ -159,20 +160,10 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="match_number">Match Number (Optional)</Label>
-                            <Input
-                                type="number"
-                                id="match_number"
-                                value={formData.match_number || ''}
-                                onChange={(e) => handleInputChange('match_number', e.target.value ? parseInt(e.target.value) : undefined)}
-                                min="1"
-                                placeholder="Auto-generated if not provided"
-                                data-cy="match-number"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="date">Date *</Label>
+                            <Label htmlFor="date" className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Date *
+                            </Label>
                             <Input
                                 type="date"
                                 id="date"
@@ -187,7 +178,10 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="team_player_count">Team Player Count *</Label>
+                            <Label htmlFor="team_player_count" className="flex items-center">
+                                <Users className="h-4 w-4 mr-2" />
+                                Team Player Count *
+                            </Label>
                             <Input
                                 type="number"
                                 id="team_player_count"
@@ -204,7 +198,10 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="total_overs">Total Overs *</Label>
+                            <Label htmlFor="total_overs" className="flex items-center">
+                                <Target className="h-4 w-4 mr-2" />
+                                Total Overs *
+                            </Label>
                             <Input
                                 type="number"
                                 id="total_overs"
@@ -221,7 +218,10 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="toss_winner">Toss Winner *</Label>
+                            <Label htmlFor="toss_winner" className="flex items-center">
+                                <Trophy className="h-4 w-4 mr-2" />
+                                Toss Winner *
+                            </Label>
                             <Select
                                 value={formData.toss_winner}
                                 onValueChange={(value) => handleInputChange('toss_winner', value as 'A' | 'B')}
@@ -237,7 +237,10 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="toss_type">Toss Type *</Label>
+                            <Label htmlFor="toss_type" className="flex items-center">
+                                <Coins className="h-4 w-4 mr-2" />
+                                Toss Type *
+                            </Label>
                             <Select
                                 value={formData.toss_type}
                                 onValueChange={(value) => handleInputChange('toss_type', value as 'H' | 'T')}
@@ -252,14 +255,29 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                             </Select>
                         </div>
 
+                        <div className="space-y-2">
+                            <Label htmlFor="match_number">Match Number (Optional)</Label>
+                            <Input
+                                type="number"
+                                id="match_number"
+                                value={formData.match_number || ''}
+                                onChange={(e) => handleInputChange('match_number', e.target.value ? parseInt(e.target.value) : undefined)}
+                                min="1"
+                                placeholder="Auto-generated if not provided"
+                                data-cy="match-number"
+                            />
+                        </div>
+
                         <div className="flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center">
                             <Button
                                 type="submit"
                                 disabled={loading}
                                 className="w-full sm:w-auto"
                                 data-cy={match ? 'update-match-button' : 'create-match-button'}
+                                title={loading ? 'Saving...' : (match ? 'Update Match' : 'Create Match')}
                             >
-                                {loading ? 'Saving...' : (match ? 'Update Match' : 'Create Match')}
+                                <Save className="h-4 w-4 mr-2" />
+                                {loading ? 'Saving...' : 'Match'}
                             </Button>
 
                             {onCancel && (
@@ -268,8 +286,9 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                                     variant="outline"
                                     onClick={onCancel}
                                     className="w-full sm:w-auto"
+                                    title="Cancel"
                                 >
-                                    Cancel
+                                    <X className="h-4 w-4" />
                                 </Button>
                             )}
                         </div>

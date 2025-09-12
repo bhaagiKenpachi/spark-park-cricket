@@ -11,7 +11,7 @@ import { SeriesForm } from './SeriesForm';
 import { SeriesWithMatches } from './SeriesWithMatches';
 import { ScorecardView } from './ScorecardView';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Plus, Edit, Trash2, Calendar, Clock } from 'lucide-react';
 
 export function SeriesList(): React.JSX.Element {
     const dispatch = useAppDispatch();
@@ -129,15 +129,17 @@ export function SeriesList(): React.JSX.Element {
                         onClick={() => dispatch(fetchSeriesRequest())}
                         disabled={loading}
                         data-cy="refresh-series-button"
+                        title="Refresh"
                     >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     </Button>
                     <Button
                         onClick={() => setShowForm(true)}
                         data-cy="create-series-button"
+                        title="Create Series"
                     >
-                        Create Series
+                        <Plus className="h-4 w-4 mr-2" />
+                        Series
                     </Button>
                 </div>
             </div>
@@ -148,8 +150,10 @@ export function SeriesList(): React.JSX.Element {
                     <Button
                         onClick={() => setShowForm(true)}
                         data-cy="create-first-series-button"
+                        title="Create Your First Series"
                     >
-                        Create Your First Series
+                        <Plus className="h-4 w-4 mr-2" />
+                        Your First Series
                     </Button>
                 </div>
             ) : (
