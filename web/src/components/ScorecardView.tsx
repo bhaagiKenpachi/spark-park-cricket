@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Play, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Play, X, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 
 interface ScorecardViewProps {
     matchId: string;
@@ -133,6 +133,10 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
 
     const handleByesChange = (byes: number) => {
         setCurrentByes(byes);
+    };
+
+    const handleRefresh = () => {
+        dispatch(fetchScorecardRequest(matchId));
     };
 
     const toggleExpandedOvers = (inningsKey: string) => {
@@ -280,9 +284,21 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         {scorecardData.team_a} vs {scorecardData.team_b}
                     </p>
                 </div>
-                <div className="flex justify-center">
+                <div className="flex justify-center space-x-2">
                     <Button variant="outline" onClick={onBack} title="Back">
                         <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handleRefresh}
+                        title="Refresh Scorecard"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        ) : (
+                            <RefreshCw className="h-4 w-4" />
+                        )}
                     </Button>
                 </div>
             </div>
