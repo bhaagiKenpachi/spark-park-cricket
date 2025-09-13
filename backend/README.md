@@ -1,5 +1,10 @@
 # Spark Park Cricket Backend
 
+[![Backend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml)
+[![Go Version](https://img.shields.io/badge/Go-1.23-blue.svg)](https://golang.org/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/luffybhaagi/spark-park-cricket)](https://goreportcard.com/report/github.com/luffybhaagi/spark-park-cricket)
+[![Coverage](https://codecov.io/gh/luffybhaagi/spark-park-cricket/branch/main/graph/badge.svg)](https://codecov.io/gh/luffybhaagi/spark-park-cricket)
+
 A Go backend service with Supabase integration for the Spark Park Cricket application.
 
 ## Features

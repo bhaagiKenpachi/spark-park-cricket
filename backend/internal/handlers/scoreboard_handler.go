@@ -25,26 +25,20 @@ func NewScoreboardHandler(service *services.RealtimeScoreboardService) *Scoreboa
 
 // GetScoreboard handles GET /api/v1/scoreboard/{match_id}
 func (h *ScoreboardHandler) GetScoreboard(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: GetScoreboard handler called")
 
 	matchID := chi.URLParam(r, "match_id")
-	log.Printf("DEBUG: Extracted matchID from URL: %s", matchID)
 
 	if matchID == "" {
-		log.Printf("DEBUG: Match ID is empty")
 		utils.WriteValidationError(w, "Match ID is required", nil)
 		return
 	}
 
-	log.Printf("DEBUG: Calling service.GetScoreboard with matchID: %s", matchID)
 	scoreboard, err := h.service.GetScoreboard(r.Context(), matchID)
 	if err != nil {
-		log.Printf("DEBUG: service.GetScoreboard failed: %v", err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
 
-	log.Printf("DEBUG: Scoreboard retrieved successfully: %+v", scoreboard)
 	utils.WriteSuccess(w, scoreboard)
 }
 

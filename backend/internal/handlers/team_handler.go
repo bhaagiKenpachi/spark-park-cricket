@@ -64,27 +64,21 @@ func (h *TeamHandler) ListTeams(w http.ResponseWriter, r *http.Request) {
 
 // CreateTeam handles POST /api/v1/teams
 func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: CreateTeam handler called")
 
 	var req models.CreateTeamRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("DEBUG: Failed to decode request body: %v", err)
 		utils.WriteValidationError(w, "Invalid request body", err.Error())
 		return
 	}
 
-	log.Printf("DEBUG: Decoded request: %+v", req)
 
 	// Create team
-	log.Printf("DEBUG: Calling service.CreateTeam")
 	team, err := h.service.CreateTeam(r.Context(), &req)
 	if err != nil {
-		log.Printf("DEBUG: service.CreateTeam failed: %v", err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
 
-	log.Printf("DEBUG: Team created successfully, writing response: %+v", team)
 	utils.WriteCreated(w, team)
 }
 

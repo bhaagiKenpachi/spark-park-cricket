@@ -25,7 +25,7 @@ func NewContainer(repos *database.Repositories) *Container {
 
 	// Create container
 	container := &Container{
-		Series:      NewSeriesService(repos.Series),
+		Series:      NewSeriesService(repos.Series, repos.Match),
 		Match:       NewMatchService(repos.Match, repos.Series),
 		Scorecard:   NewScorecardService(repos.Scorecard, repos.Match),
 		Hub:         hub,

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -34,7 +35,7 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	var matchNumber int
 	if req.MatchNumber != nil {
 		matchNumber = *req.MatchNumber
-		
+
 		// Validate that the match number doesn't already exist for this series
 		exists, err := s.matchRepo.ExistsBySeriesAndMatchNumber(ctx, req.SeriesID, matchNumber)
 		if err != nil {
@@ -161,10 +162,19 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 	}
 
 	// Check if match exists
-	_, err := s.matchRepo.GetByID(ctx, id)
+	match, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("match not found: %w", err)
 	}
+
+	// CRITICAL SAFEGUARD: Prevent deletion of live matches
+	if match.Status == models.MatchStatusLive {
+		log.Printf("SECURITY ALERT: Attempted to delete LIVE match %s - BLOCKED", id)
+		return fmt.Errorf("cannot delete a live match - match must be completed or cancelled first")
+	}
+
+	// Log the deletion attempt for audit trail
+	log.Printf("AUDIT: Deleting match %s (status: %s, series: %s)", id, match.Status, match.SeriesID)
 
 	// Delete match
 	err = s.matchRepo.Delete(ctx, id)
@@ -172,6 +182,7 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete match: %w", err)
 	}
 
+	log.Printf("AUDIT: Match %s deleted successfully", id)
 	return nil
 }
 

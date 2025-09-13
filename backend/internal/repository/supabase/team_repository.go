@@ -22,7 +22,6 @@ func NewTeamRepository(client *supabase.Client) interfaces.TeamRepository {
 }
 
 func (r *teamRepository) Create(ctx context.Context, team *models.Team) error {
-	log.Printf("DEBUG: teamRepository.Create called with team: %+v", team)
 
 	// Create a map without ID for insertion
 	teamData := map[string]interface{}{
@@ -32,28 +31,22 @@ func (r *teamRepository) Create(ctx context.Context, team *models.Team) error {
 		"updated_at":    team.UpdatedAt,
 	}
 
-	log.Printf("DEBUG: Created teamData map: %+v", teamData)
 
 	// Create a slice of maps for insertion
 	teamDataSlice := []map[string]interface{}{teamData}
 
-	log.Printf("DEBUG: Created teamDataSlice: %+v", teamDataSlice)
 
 	// Supabase returns an array even for single inserts, so we need to handle that
 	var result []models.Team
-	log.Printf("DEBUG: Calling Supabase Insert with teamDataSlice")
 	_, err := r.client.From("teams").Insert(teamDataSlice, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
-		log.Printf("DEBUG: Supabase Insert failed: %v", err)
 		return err
 	}
 
-	log.Printf("DEBUG: Supabase Insert successful, result: %+v", result)
 
 	if len(result) > 0 {
 		// Copy the result back to the original team
 		*team = result[0]
-		log.Printf("DEBUG: Copied result back to team: %+v", team)
 	}
 
 	return nil

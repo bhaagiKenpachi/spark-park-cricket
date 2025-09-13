@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	"context"
@@ -11,46 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockSeriesRepository is a mock implementation of SeriesRepository
-type MockSeriesRepository struct {
-	mock.Mock
-}
-
-func (m *MockSeriesRepository) Create(ctx context.Context, series *models.Series) error {
-	args := m.Called(ctx, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) GetByID(ctx context.Context, id string) (*models.Series, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
-	args := m.Called(ctx, filters)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) Update(ctx context.Context, id string, series *models.Series) error {
-	args := m.Called(ctx, id, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Delete(ctx context.Context, id string) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Count(ctx context.Context) (int64, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(int64), args.Error(1)
-}
+// MockSeriesRepository is defined in match_completion_unit_test.go
 
 func TestSeriesService_CreateSeries(t *testing.T) {
 	tests := []struct {
@@ -103,7 +64,7 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo)
+			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
 			ctx := context.Background()
 
 			result, err := service.CreateSeries(ctx, tt.request)
@@ -170,7 +131,7 @@ func TestSeriesService_GetSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo)
+			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
 			ctx := context.Background()
 
 			result, err := service.GetSeries(ctx, tt.seriesID)
@@ -215,6 +176,24 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			expectedLen: 2,
 		},
 		{
+			name: "filters limit adjustment - too high",
+			filters: &models.SeriesFilters{
+				Limit:  150, // Over the max limit of 100
+				Offset: 0,
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				series := []*models.Series{
+					{ID: "1", Name: "Series 1"},
+				}
+				// Expect the service to adjust the limit to 100
+				mockRepo.On("GetAll", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
+					return filters.Limit == 100
+				})).Return(series, nil)
+			},
+			expectError: false,
+			expectedLen: 1,
+		},
+		{
 			name:    "default filters",
 			filters: &models.SeriesFilters{},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
@@ -243,7 +222,7 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo)
+			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
 			ctx := context.Background()
 
 			result, err := service.ListSeries(ctx, tt.filters)
@@ -272,7 +251,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 		errorMsg    string
 	}{
 		{
-			name:     "successful series update",
+			name:     "successful series update - name only",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
 				Name: stringPtr("Updated Series"),
@@ -288,6 +267,44 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
 			},
 			expectError: false,
+		},
+		{
+			name:     "successful series update - dates only",
+			seriesID: "test-series-id",
+			request: &models.UpdateSeriesRequest{
+				StartDate: timePtr(time.Now().AddDate(0, 0, 1)),
+				EndDate:   timePtr(time.Now().AddDate(0, 0, 8)),
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				existingSeries := &models.Series{
+					ID:        "test-series-id",
+					Name:      "Original Series",
+					StartDate: time.Now(),
+					EndDate:   time.Now().AddDate(0, 0, 7),
+				}
+				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
+				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name:     "invalid date range in update",
+			seriesID: "test-series-id",
+			request: &models.UpdateSeriesRequest{
+				StartDate: timePtr(time.Now().AddDate(0, 0, 7)),
+				EndDate:   timePtr(time.Now()), // End date before start date
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				existingSeries := &models.Series{
+					ID:        "test-series-id",
+					Name:      "Original Series",
+					StartDate: time.Now(),
+					EndDate:   time.Now().AddDate(0, 0, 7),
+				}
+				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
+			},
+			expectError: true,
+			errorMsg:    "end date must be after start date",
 		},
 		{
 			name:        "empty series ID",
@@ -314,7 +331,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo)
+			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
 			ctx := context.Background()
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
@@ -372,9 +389,15 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
+			mockMatchRepo := new(MockMatchRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo)
+			// Set up match repository expectations for DeleteSeries only for successful cases
+			if !tt.expectError {
+				mockMatchRepo.On("GetBySeriesID", mock.Anything, mock.Anything).Return([]*models.Match{}, nil)
+			}
+
+			service := services.NewSeriesService(mockRepo, mockMatchRepo)
 			ctx := context.Background()
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
@@ -387,6 +410,7 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			}
 
 			mockRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
 		})
 	}
 }
@@ -394,4 +418,9 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 // Helper function to create string pointer
 func stringPtr(s string) *string {
 	return &s
+}
+
+// Helper function to create time pointer
+func timePtr(t time.Time) *time.Time {
+	return &t
 }

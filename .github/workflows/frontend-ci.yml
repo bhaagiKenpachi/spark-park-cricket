@@ -1,0 +1,302 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ main, develop, feat/*, fix/* ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/frontend-ci.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+        - none
+      skip_e2e_tests:
+        description: 'Skip E2E tests (requires running application)'
+        required: false
+        default: false
+        type: boolean
+      skip_security_scan:
+        description: 'Skip security scanning'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '20'
+  WORKING_DIRECTORY: './web'
+
+jobs:
+  # Code Quality Checks
+  code-quality:
+    name: Code Quality
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:ci
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./web/coverage/lcov.info
+          flags: unit-tests
+          name: frontend-unit-tests-coverage
+          fail_ci_if_error: false
+
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: self-hosted
+    needs: [code-quality, unit-tests]
+    if: ${{ !inputs.skip_e2e_tests }}
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+          echo "Application started"
+
+      - name: Run E2E tests
+        run: npm run cypress:run
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-results
+          path: web/cypress/results/
+          retention-days: 7
+
+  # Build Verification
+  build:
+    name: Build Verification
+    runs-on: self-hosted
+    needs: [code-quality, unit-tests]
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: web/.next/
+          retention-days: 7
+
+  # Security Scan
+  security-scan:
+    name: Security Scan
+    runs-on: self-hosted
+    needs: [code-quality]
+    if: ${{ !inputs.skip_security_scan }}
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # Deploy to Staging (only on develop branch or manual trigger)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: self-hosted
+    needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for staging
+        run: |
+          echo "🔨 Building for staging..."
+          npm run build
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging..."
+          # Add your staging deployment logic here
+          # This could be Vercel, Netlify, or custom server deployment
+          echo "✅ Staging deployment completed"
+
+  # Deploy to Production (only on main branch or manual trigger)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: self-hosted
+    needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: |
+          echo "🔨 Building for production..."
+          npm run build
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production..."
+          # Add your production deployment logic here
+          # This could be Vercel, Netlify, or custom server deployment
+          echo "✅ Production deployment completed"
+
+  # Notification on failure
+  notify-failure:
+    name: Notify on Failure
+    runs-on: self-hosted
+    needs: [code-quality, unit-tests, build]
+    if: always() && (needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.build.result == 'failure')
+    
+    steps:
+      - name: Notify failure
+        run: |
+          echo "❌ Frontend CI/CD pipeline failed!"
+          echo "Check the logs for details."
+          # Add notification logic here (Slack, email, etc.)
