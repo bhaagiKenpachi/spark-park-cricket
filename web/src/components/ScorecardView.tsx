@@ -226,7 +226,8 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
             }
         }
 
-        const displayWithByes = ball.byes > 0 ? `${display}+${ball.byes}` : display;
+        // Special handling for no ball with byes - vertical layout
+        const isNoBallWithByes = ball.ball_type === 'no_ball' && ball.byes > 0;
 
         return (
             <div
@@ -250,7 +251,15 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                 : 'border-green-500 bg-green-100 text-green-700'
                     }`}
             >
-                {displayWithByes}
+                {isNoBallWithByes ? (
+                    <div className="flex flex-col items-center leading-none">
+                        <div className="text-[10px]">Nb</div>
+                        <div className="text-[8px]">+</div>
+                        <div className="text-[10px]">{ball.byes}</div>
+                    </div>
+                ) : (
+                    ball.byes > 0 ? `${display}+${ball.byes}` : display
+                )}
             </div>
         );
     };
@@ -809,8 +818,8 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         {/* Byes Selection - Moved to Bottom */}
                         <div className="border-t pt-4">
                             <h4 className="font-medium mb-3 text-gray-700">Byes (Optional)</h4>
-                            <div className="flex items-center justify-start space-x-2">
-                                <div className="flex space-x-1">
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap gap-1 justify-center">
                                     {[0, 1, 2, 3, 4, 5, 6].map((byes) => (
                                         <button
                                             key={byes}
@@ -825,9 +834,11 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                         </button>
                                     ))}
                                 </div>
-                                <div className="ml-4 text-sm text-gray-600">
-                                    {currentByes > 0 ? `+${currentByes} byes selected` : ''}
-                                </div>
+                                {currentByes > 0 && (
+                                    <div className="text-center text-sm text-gray-600">
+                                        +{currentByes} byes selected
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </CardContent>
