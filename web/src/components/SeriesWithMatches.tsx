@@ -199,65 +199,68 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                                     <Card key={match.id || `match-${index}`} className="bg-gray-50">
                                         <CardContent className="pt-4">
                                             <div className="space-y-3">
-                                                {/* Match Details */}
-                                                <div
-                                                    className="space-y-1 cursor-pointer"
-                                                    onClick={() => onViewScorecard?.(match.id)}
-                                                >
-                                                    <div className="font-medium">
-                                                        Match #{match.match_number}
-                                                    </div>
-                                                    <div className="text-sm text-gray-600">
-                                                        {match.date.split('T')[0]} • {match.team_a_player_count} vs {match.team_b_player_count} players • {match.total_overs} overs
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <Badge
-                                                            variant={
-                                                                match.status === 'live'
-                                                                    ? 'default'
-                                                                    : match.status === 'completed'
-                                                                        ? 'secondary'
-                                                                        : 'outline'
-                                                            }
-                                                        >
-                                                            {match.status}
-                                                        </Badge>
-                                                        <span className="text-xs text-gray-500">
-                                                            Toss: Team {match.toss_winner} ({match.toss_type === 'H' ? 'Heads' : 'Tails'})
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Action Buttons */}
-                                                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
+                                                {/* Match Header with Actions */}
+                                                <div className="flex items-start justify-between">
+                                                    <div
+                                                        className="space-y-1 cursor-pointer flex-1"
                                                         onClick={() => onViewScorecard?.(match.id)}
-                                                        data-cy="view-scorecard-button"
-                                                        title="View Scorecard"
                                                     >
-                                                        <Play className="h-4 w-4 mr-2" />
-                                                        Scorecard
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleEditMatch(match)}
-                                                        data-cy="edit-match-button"
-                                                        title="Edit Match"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteMatch(match.id)}
-                                                        data-cy="delete-match-button"
-                                                        title="Delete Match"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                        <div className="font-medium">
+                                                            Match #{match.match_number}
+                                                        </div>
+                                                        <div className="text-sm text-gray-600">
+                                                            {match.date.split('T')[0]} • {match.team_a_player_count} vs {match.team_b_player_count} players • {match.total_overs} overs
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <Badge
+                                                                variant={
+                                                                    match.status === 'live'
+                                                                        ? 'default'
+                                                                        : match.status === 'completed'
+                                                                            ? 'secondary'
+                                                                            : 'outline'
+                                                                }
+                                                            >
+                                                                {match.status}
+                                                            </Badge>
+                                                            <span className="text-xs text-gray-500">
+                                                                Toss: Team {match.toss_winner} ({match.toss_type === 'H' ? 'Heads' : 'Tails'})
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Match Actions Dropdown */}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm" data-cy="match-menu-button">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={() => onViewScorecard?.(match.id)}
+                                                                data-cy="view-scorecard-menu-item"
+                                                            >
+                                                                <Play className="h-4 w-4 mr-2" />
+                                                                View Scorecard
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleEditMatch(match)}
+                                                                data-cy="edit-match-menu-item"
+                                                            >
+                                                                <Edit className="h-4 w-4 mr-2" />
+                                                                Edit Match
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleDeleteMatch(match.id)}
+                                                                data-cy="delete-match-menu-item"
+                                                                className="text-red-600 focus:text-red-600"
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                Delete Match
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </div>
                                         </CardContent>
