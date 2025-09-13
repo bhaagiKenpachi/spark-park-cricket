@@ -84,8 +84,8 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
 
         if (formData.team_player_count === 0) {
             errors.team_player_count = 'Team player count is required';
-        } else if (formData.team_player_count < 1 || formData.team_player_count > 11) {
-            errors.team_player_count = 'Team player count must be between 1 and 11';
+        } else if (formData.team_player_count < 1 || formData.team_player_count > 19) {
+            errors.team_player_count = 'Team player count must be between 1 and 19';
         }
 
         if (formData.total_overs === 0) {
@@ -196,7 +196,7 @@ export function MatchForm({ match, seriesId, onSuccess, onCancel }: MatchFormPro
                                 value={formData.team_player_count || ''}
                                 onChange={(e) => handleInputChange('team_player_count', e.target.value === '' ? 0 : parseInt(e.target.value) || 0)}
                                 min="1"
-                                max="11"
+                                max="19"
                                 data-cy="team-player-count"
                                 className={formErrors.team_player_count ? 'border-red-500' : ''}
                             />
