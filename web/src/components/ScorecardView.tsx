@@ -12,7 +12,8 @@ import {
     RunType,
     BallSummary,
     OverSummary,
-    InningsSummary
+    InningsSummary,
+    ScorecardResponse
 } from '@/store/reducers/scorecardSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -155,7 +156,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
     };
 
     // Helper function to calculate required runs for 2nd innings
-    const calculateRequiredRuns = (scorecardData: any, currentInnings: InningsSummary) => {
+    const calculateRequiredRuns = (scorecardData: ScorecardResponse, currentInnings: InningsSummary) => {
         if (currentInnings.innings_number === 1) return null; // First innings, no target
         
         // Find the first innings score
