@@ -11,7 +11,13 @@ import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Edit, Trash2, Calendar, Play } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { RefreshCw, Plus, Edit, Trash2, Calendar, Play, MoreVertical } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 
 interface SeriesWithMatchesProps {
@@ -91,13 +97,39 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                     <CardTitle data-cy="series-name">
                         {series.name}
                     </CardTitle>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setExpanded(!expanded)}
-                    >
-                        {expanded ? 'Hide Matches' : 'Show Matches'}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExpanded(!expanded)}
+                        >
+                            {expanded ? 'Hide Matches' : 'Show Matches'}
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" data-cy="series-menu-button">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                    onClick={() => onEditSeries(series)}
+                                    data-cy="edit-series-menu-item"
+                                >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Series
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => onDeleteSeries(series.id)}
+                                    data-cy="delete-series-menu-item"
+                                    className="text-red-600 focus:text-red-600"
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Series
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -236,28 +268,6 @@ export function SeriesWithMatches({ series, onEditSeries, onDeleteSeries, onView
                     </div>
                 )}
 
-                <div className="flex space-x-2 mt-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onEditSeries(series)}
-                        data-cy="edit-series-button"
-                        title="Edit Series"
-                    >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Series
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => onDeleteSeries(series.id)}
-                        data-cy="delete-series-button"
-                        title="Delete Series"
-                    >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Series
-                    </Button>
-                </div>
             </CardContent>
         </Card>
     );

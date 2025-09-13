@@ -146,6 +146,49 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
         }));
     };
 
+    // Helper function to format current overs (e.g., "1.2/12 overs")
+    const formatCurrentOvers = (innings: InningsSummary) => {
+        const completedOvers = Math.floor(innings.total_balls / 6);
+        const currentBalls = innings.total_balls % 6;
+        // In cricket, overs are shown as completedOvers.currentBalls (e.g., 1.2 means 1 over and 2 balls)
+        return `${completedOvers}.${currentBalls}/${scorecardData.total_overs} overs`;
+    };
+
+    // Helper function to calculate required runs for 2nd innings
+    const calculateRequiredRuns = (scorecardData: any, currentInnings: InningsSummary) => {
+        if (currentInnings.innings_number === 1) return null; // First innings, no target
+        
+        // Find the first innings score
+        const firstInnings = scorecardData.innings?.find((innings: InningsSummary) => 
+            innings.innings_number === 1 && innings.batting_team !== currentInnings.batting_team
+        );
+        
+        if (!firstInnings) return null;
+        
+        const target = firstInnings.total_runs + 1; // Target is first innings score + 1
+        const required = target - currentInnings.total_runs;
+        
+        // Calculate remaining overs correctly: total match overs - current overs bowled
+        const currentOversBowled = currentInnings.total_balls / 6;
+        const remainingOversDecimal = scorecardData.total_overs - currentOversBowled;
+        
+        // Convert remaining overs to cricket format (overs.balls)
+        const remainingOversCompleted = Math.floor(remainingOversDecimal);
+        const remainingBalls = Math.round((remainingOversDecimal - remainingOversCompleted) * 6);
+        
+        // Format as cricket overs (e.g., 11.4 instead of 11.7)
+        const remainingOversFormatted = remainingBalls === 6 
+            ? `${remainingOversCompleted + 1}.0` 
+            : `${remainingOversCompleted}.${remainingBalls}`;
+        
+        return {
+            required,
+            target,
+            remainingOvers: Math.max(0, remainingOversDecimal),
+            remainingOversFormatted
+        };
+    };
+
     const renderBallCircle = (ball: BallSummary, index: number) => {
         const isWicket = ball.is_wicket;
 
@@ -384,7 +427,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                 {scoring ? (
                                                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                                                 ) : null}
-                                                {innings.total_overs} overs
+                                                {formatCurrentOvers(innings)}
                                             </div>
 
                                             {/* Extras Display */}
@@ -398,11 +441,33 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                 </div>
                                             )}
 
+                                            {/* Required Runs Display for 2nd Innings */}
+                                            {(() => {
+                                                const requiredInfo = calculateRequiredRuns(scorecardData, innings);
+                                                if (requiredInfo) {
+                                                    const { required, target, remainingOversFormatted } = requiredInfo;
+                                                    return (
+                                                        <div className="text-xs mb-2">
+                                                            <div className={`font-medium ${required > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                                {required > 0 
+                                                                    ? `${required} runs required in ${remainingOversFormatted} overs`
+                                                                    : 'Target achieved!'
+                                                                }
+                                                            </div>
+                                                            <div className="text-gray-500">
+                                                                Target: {target} runs
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+
                                             {/* Latest Over Only */}
                                             {latestOver && (
                                                 <div className="mb-2">
                                                     <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-sm font-medium">Latest Over {latestOver.over_number}</span>
+                                                        <span className="text-sm font-medium">Latest Over </span>
                                                         <span className="text-xs text-gray-600 flex items-center">
                                                             {scoring ? (
                                                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
@@ -444,7 +509,9 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                             {/* All Overs (Expanded) */}
                                             {isExpanded && innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0 && (
                                                 <div className="mt-2 space-y-2 border-t pt-2">
-                                                    {innings.overs.map((over: OverSummary) => renderOverDetails(over))}
+                                                    {[...innings.overs]
+                                                        .sort((a, b) => b.over_number - a.over_number)
+                                                        .map((over: OverSummary) => renderOverDetails(over))}
                                                 </div>
                                             )}
                                         </div>
@@ -504,7 +571,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                 {scoring ? (
                                                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                                                 ) : null}
-                                                {innings.total_overs} overs
+                                                {formatCurrentOvers(innings)}
                                             </div>
 
                                             {/* Extras Display */}
@@ -518,11 +585,33 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                                 </div>
                                             )}
 
+                                            {/* Required Runs Display for 2nd Innings */}
+                                            {(() => {
+                                                const requiredInfo = calculateRequiredRuns(scorecardData, innings);
+                                                if (requiredInfo) {
+                                                    const { required, target, remainingOversFormatted } = requiredInfo;
+                                                    return (
+                                                        <div className="text-xs mb-2">
+                                                            <div className={`font-medium ${required > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                                {required > 0 
+                                                                    ? `${required} runs required in ${remainingOversFormatted} overs`
+                                                                    : 'Target achieved!'
+                                                                }
+                                                            </div>
+                                                            <div className="text-gray-500">
+                                                                Target: {target} runs
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+
                                             {/* Latest Over Only */}
                                             {latestOver && (
                                                 <div className="mb-2">
                                                     <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-sm font-medium">Latest Over {latestOver.over_number}</span>
+                                                        <span className="text-sm font-medium">Latest Over</span>
                                                         <span className="text-xs text-gray-600 flex items-center">
                                                             {scoring ? (
                                                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
@@ -564,7 +653,9 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                             {/* All Overs (Expanded) */}
                                             {isExpanded && innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0 && (
                                                 <div className="mt-2 space-y-2 border-t pt-2">
-                                                    {innings.overs.map((over: OverSummary) => renderOverDetails(over))}
+                                                    {[...innings.overs]
+                                                        .sort((a, b) => b.over_number - a.over_number)
+                                                        .map((over: OverSummary) => renderOverDetails(over))}
                                                 </div>
                                             )}
                                         </div>
@@ -614,7 +705,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         {scorecardData.innings && Array.isArray(scorecardData.innings) && (
                             <div className="mt-2 text-sm text-gray-600">
                                 {scorecardData.innings.map((innings: InningsSummary) => (
-                                    <div key={innings.innings_number} className="flex items-center space-x-2">
+                                    <div key={innings.innings_number} className="flex items-center space-x-2 space-y-2">
                                         <span>Innings {innings.innings_number}:</span>
                                         <Badge
                                             variant={innings.status === 'in_progress' ? 'default' : 'secondary'}
@@ -717,9 +808,9 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                         {/* Byes Selection - Moved to Bottom */}
                         <div className="border-t pt-4">
                             <h4 className="font-medium mb-3 text-gray-700">Byes (Optional)</h4>
-                            <div className="flex items-center justify-center space-x-2">
+                            <div className="flex items-center justify-start space-x-2">
                                 <div className="flex space-x-1">
-                                    {[0, 1, 2, 3, 4].map((byes) => (
+                                    {[0, 1, 2, 3, 4, 5, 6].map((byes) => (
                                         <button
                                             key={byes}
                                             onClick={() => handleByesChange(byes)}
@@ -734,7 +825,7 @@ export function ScorecardView({ matchId, onBack }: ScorecardViewProps): React.JS
                                     ))}
                                 </div>
                                 <div className="ml-4 text-sm text-gray-600">
-                                    {currentByes > 0 ? `+${currentByes} byes selected` : 'No byes'}
+                                    {currentByes > 0 ? `+${currentByes} byes selected` : ''}
                                 </div>
                             </div>
                         </div>
