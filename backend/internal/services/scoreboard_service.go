@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -193,7 +192,6 @@ func (s *ScoreboardService) initializeScoreboard(ctx context.Context, match *mod
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-
 
 	err := s.scoreboardRepo.Create(ctx, scoreboard)
 	if err != nil {

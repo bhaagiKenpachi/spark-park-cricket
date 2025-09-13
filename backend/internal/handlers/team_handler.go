@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
@@ -70,7 +69,6 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		utils.WriteValidationError(w, "Invalid request body", err.Error())
 		return
 	}
-
 
 	// Create team
 	team, err := h.service.CreateTeam(r.Context(), &req)

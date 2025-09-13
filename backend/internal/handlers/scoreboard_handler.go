@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"

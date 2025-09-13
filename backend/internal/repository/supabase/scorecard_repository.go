@@ -300,8 +300,8 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 
 // CreateBall creates a new ball
 func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.ScorecardBall) error {
-	log.Printf("Creating ball %d for over %s", ball.BallNumber, ball.OverID)
-		string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
+	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
+		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
 	data := map[string]interface{}{
 		"over_id":     ball.OverID,
@@ -319,7 +319,6 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 		data["wicket_type"] = ball.WicketType
 	} else {
 	}
-
 
 	var result []models.ScorecardBall
 	_, err := r.client.From("balls").Insert(data, false, "", "", "").ExecuteTo(&result)

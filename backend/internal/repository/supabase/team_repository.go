@@ -3,7 +3,6 @@ package supabase
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 
@@ -31,10 +30,8 @@ func (r *teamRepository) Create(ctx context.Context, team *models.Team) error {
 		"updated_at":    team.UpdatedAt,
 	}
 
-
 	// Create a slice of maps for insertion
 	teamDataSlice := []map[string]interface{}{teamData}
-
 
 	// Supabase returns an array even for single inserts, so we need to handle that
 	var result []models.Team
@@ -42,7 +39,6 @@ func (r *teamRepository) Create(ctx context.Context, team *models.Team) error {
 	if err != nil {
 		return err
 	}
-
 
 	if len(result) > 0 {
 		// Copy the result back to the original team

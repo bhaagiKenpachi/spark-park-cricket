@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -38,7 +37,6 @@ func (s *TeamService) CreateTeam(ctx context.Context, req *models.CreateTeamRequ
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
-
 
 	// Save to repository
 	err := s.teamRepo.Create(ctx, team)
