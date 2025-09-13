@@ -2,7 +2,7 @@
 
 [![Backend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml)
 [![Frontend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml)
-[![Self-Hosted Runner](https://img.shields.io/badge/Runner-Self--Hosted-orange.svg)]()
+[![Self-Hosted Runner](https://img.shields.io/badge/Runner-Self--Hosted-orange.svg)](https://github.com/bhaagiKenpachi/spark-park-cricket/settings/actions/runners)
 [![Go Version](https://img.shields.io/badge/Go-1.23-blue.svg)](https://golang.org/)
 [![Node.js Version](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
 
@@ -12,7 +12,7 @@ This directory contains GitHub Actions workflows for the Spark Park Cricket proj
 
 ### Backend CI/CD (`backend-ci.yml`)
 
-Comprehensive CI/CD pipeline for the Go backend service.
+Comprehensive CI/CD pipeline for the Go backend service using self-hosted runners.
 
 #### Triggers
 - **Push**: `main`, `develop`, `feat/*`, `fix/*` branches (only when backend files change)
@@ -59,7 +59,7 @@ Comprehensive CI/CD pipeline for the Go backend service.
 
 ### Frontend CI/CD (`frontend-ci.yml`)
 
-Comprehensive CI/CD pipeline for the Next.js frontend application.
+Comprehensive CI/CD pipeline for the Next.js frontend application using self-hosted runners.
 
 #### Triggers
 - **Push**: `main`, `develop`, `feat/*`, `fix/*` branches (only when frontend files change)

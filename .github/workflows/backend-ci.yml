@@ -43,7 +43,7 @@ jobs:
   # Code Quality Checks
   code-quality:
     name: Code Quality
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -100,7 +100,7 @@ jobs:
   # Unit Tests (no database required)
   unit-tests:
     name: Unit Tests
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -148,7 +148,7 @@ jobs:
   # Integration Tests (requires Supabase database)
   integration-tests:
     name: Integration Tests
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     if: ${{ !inputs.skip_integration_tests }}
     defaults:
@@ -222,7 +222,7 @@ jobs:
   # Build Verification
   build:
     name: Build Verification
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     defaults:
       run:
@@ -272,7 +272,7 @@ jobs:
   # Security Scan
   security-scan:
     name: Security Scan
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
     if: ${{ !inputs.skip_security_scan }}
     defaults:
@@ -305,7 +305,7 @@ jobs:
   # Deploy to Environment (manual trigger only)
   deploy:
     name: Deploy to ${{ inputs.environment }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, build]
     if: github.event_name == 'workflow_dispatch' && inputs.environment != 'none'
     defaults:
@@ -372,7 +372,7 @@ jobs:
   # Notification on failure
   notify-failure:
     name: Notify on Failure
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, build]
     if: always() && (needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.build.result == 'failure')
     

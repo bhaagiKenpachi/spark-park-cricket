@@ -41,7 +41,7 @@ jobs:
   # Code Quality Checks
   code-quality:
     name: Code Quality
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -72,7 +72,7 @@ jobs:
   # Unit Tests
   unit-tests:
     name: Unit Tests
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -105,7 +105,7 @@ jobs:
   # E2E Tests
   e2e-tests:
     name: E2E Tests
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     if: ${{ !inputs.skip_e2e_tests }}
     defaults:
@@ -151,7 +151,7 @@ jobs:
   # Build Verification
   build:
     name: Build Verification
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     defaults:
       run:
@@ -184,7 +184,7 @@ jobs:
   # Security Scan
   security-scan:
     name: Security Scan
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
     if: ${{ !inputs.skip_security_scan }}
     defaults:
@@ -218,7 +218,7 @@ jobs:
   # Deploy to Staging (only on develop branch or manual trigger)
   deploy-staging:
     name: Deploy to Staging
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
     if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
     defaults:
@@ -254,7 +254,7 @@ jobs:
   # Deploy to Production (only on main branch or manual trigger)
   deploy-production:
     name: Deploy to Production
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     defaults:
@@ -290,7 +290,7 @@ jobs:
   # Notification on failure
   notify-failure:
     name: Notify on Failure
-    runs-on: self-hosted
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, build]
     if: always() && (needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.build.result == 'failure')
     
