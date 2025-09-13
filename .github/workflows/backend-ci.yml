@@ -13,8 +13,19 @@ on:
       - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
     inputs:
+      run_type:
+        description: 'Type of run to perform'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - tests-only
+        - build-only
+        - deploy-only
+        - code-quality-only
       environment:
-        description: 'Environment to deploy to'
+        description: 'Environment to deploy to (only used for deploy-only runs)'
         required: false
         default: 'development'
         type: choice
@@ -34,16 +45,61 @@ on:
         required: false
         default: false
         type: boolean
+      run_e2e_tests:
+        description: 'Run end-to-end tests (requires database)'
+        required: false
+        default: true
+        type: boolean
 
 env:
   GO_VERSION: '1.23'
   WORKING_DIRECTORY: './backend'
 
 jobs:
+  # Workflow Summary
+  workflow-summary:
+    name: Workflow Summary
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Display workflow summary
+        run: |
+          echo "🚀 Backend CI/CD Workflow Started"
+          echo "=================================="
+          echo "Run Type: ${{ inputs.run_type }}"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Skip Integration Tests: ${{ inputs.skip_integration_tests }}"
+          echo "Skip Security Scan: ${{ inputs.skip_security_scan }}"
+          echo "Run E2E Tests: ${{ inputs.run_e2e_tests }}"
+          echo "=================================="
+          echo ""
+          case "${{ inputs.run_type }}" in
+            "full")
+              echo "📋 Running: Code Quality + Unit Tests + Integration Tests + Build + Deploy"
+              ;;
+            "tests-only")
+              echo "🧪 Running: Code Quality + Unit Tests + Integration Tests"
+              ;;
+            "build-only")
+              echo "🔨 Running: Code Quality + Unit Tests + Build"
+              ;;
+            "deploy-only")
+              echo "🚀 Running: Code Quality + Unit Tests + Build + Deploy"
+              ;;
+            "code-quality-only")
+              echo "🔍 Running: Code Quality + Security Scan"
+              ;;
+            *)
+              echo "❓ Unknown run type: ${{ inputs.run_type }}"
+              ;;
+          esac
+
   # Code Quality Checks
   code-quality:
     name: Code Quality
     runs-on: [self-hosted, ovh, ubuntu-22.04]
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' || inputs.run_type == 'code-quality-only' || inputs.run_type == 'build-only' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -101,6 +157,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -150,7 +207,7 @@ jobs:
     name: Integration Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ !inputs.skip_integration_tests }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && !inputs.skip_integration_tests }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -211,6 +268,7 @@ jobs:
           TEST_SCHEMA: testing_db
 
       - name: Run E2E tests
+        if: ${{ inputs.run_e2e_tests != false }}
         run: |
           echo "🌐 Running End-to-End Tests..."
           go test ./tests/e2e/... -v -timeout=10m
@@ -224,6 +282,7 @@ jobs:
     name: Build Verification
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'build-only' || inputs.run_type == 'deploy-only' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -274,7 +333,7 @@ jobs:
     name: Security Scan
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
-    if: ${{ !inputs.skip_security_scan }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && !inputs.skip_security_scan }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -307,7 +366,7 @@ jobs:
     name: Deploy to ${{ inputs.environment }}
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, build]
-    if: github.event_name == 'workflow_dispatch' && inputs.environment != 'none'
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'deploy-only') && inputs.environment != 'none' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
