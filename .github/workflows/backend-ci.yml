@@ -124,6 +124,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Clean Go cache directories
+        run: |
+          rm -rf ~/.cache/go-build
+          rm -rf ~/go/pkg/mod
+
       - name: Download dependencies
         run: go mod download
 
@@ -183,6 +188,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Clean Go cache directories
+        run: |
+          rm -rf ~/.cache/go-build
+          rm -rf ~/go/pkg/mod
+
       - name: Download dependencies
         run: go mod download
 
@@ -233,16 +243,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Clean Go cache directories
+        run: |
+          rm -rf ~/.cache/go-build
+          rm -rf ~/go/pkg/mod
+
       - name: Download dependencies
         run: go mod download
 
       - name: Set up test environment
         run: |
-          cp env.test.example .env
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_API_KEY=${{ secrets.SUPABASE_API_KEY }}" >> .env
-          echo "TEST_SCHEMA=testing_db" >> .env
-          echo "PORT=8080" >> .env
+          echo "🔧 Setting up test environment..."
+          echo "Environment variables will be provided via GitHub Actions env"
 
       - name: Run database migrations
         run: |
@@ -312,6 +324,11 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+
+      - name: Clean Go cache directories
+        run: |
+          rm -rf ~/.cache/go-build
+          rm -rf ~/go/pkg/mod
 
       - name: Download dependencies
         run: go mod download
