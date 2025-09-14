@@ -11,14 +11,12 @@ import (
 
 type playerRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewPlayerRepository creates a new player repository
-func NewPlayerRepository(client *supabase.Client, schema string) interfaces.PlayerRepository {
+func NewPlayerRepository(client *supabase.Client) interfaces.PlayerRepository {
 	return &playerRepository{
 		client: client,
-		schema: schema,
 	}
 }
 
@@ -41,7 +39,7 @@ func (r *playerRepository) GetByID(ctx context.Context, id string) (*models.Play
 
 func (r *playerRepository) GetAll(ctx context.Context, filters *models.PlayerFilters) ([]*models.Player, error) {
 	var result []models.Player
-	tableName := fmt.Sprintf("%s.players", r.schema)
+	tableName := "players"
 	query := r.client.From(tableName).Select("*", "", false)
 
 	if filters != nil {

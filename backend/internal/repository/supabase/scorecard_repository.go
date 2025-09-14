@@ -13,14 +13,12 @@ import (
 
 type scorecardRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewScorecardRepository creates a new scorecard repository
-func NewScorecardRepository(client *supabase.Client, schema string) interfaces.ScorecardRepository {
+func NewScorecardRepository(client *supabase.Client) interfaces.ScorecardRepository {
 	return &scorecardRepository{
 		client: client,
-		schema: schema,
 	}
 }
 
@@ -42,8 +40,7 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 	}
 
 	var result []models.Innings
-	tableName := fmt.Sprintf("%s.innings", r.schema)
-	_, err := r.client.From(tableName).Insert(data, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From("innings").Insert(data, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		log.Printf("Error creating innings: %v", err)
 		return fmt.Errorf("failed to create innings: %w", err)

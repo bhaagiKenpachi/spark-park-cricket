@@ -11,14 +11,12 @@ import (
 
 type matchRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewMatchRepository creates a new match repository
-func NewMatchRepository(client *supabase.Client, schema string) interfaces.MatchRepository {
+func NewMatchRepository(client *supabase.Client) interfaces.MatchRepository {
 	return &matchRepository{
 		client: client,
-		schema: schema,
 	}
 }
 
@@ -68,7 +66,7 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*models.Match
 
 func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilters) ([]*models.Match, error) {
 	var result []models.Match
-	tableName := fmt.Sprintf("%s.matches", r.schema)
+	tableName := "matches"
 	query := r.client.From(tableName).Select("*", "", false)
 
 	if filters.SeriesID != nil {

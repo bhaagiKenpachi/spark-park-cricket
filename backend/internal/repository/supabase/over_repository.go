@@ -11,14 +11,12 @@ import (
 
 type overRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewOverRepository creates a new over repository
-func NewOverRepository(client *supabase.Client, schema string) interfaces.OverRepository {
+func NewOverRepository(client *supabase.Client) interfaces.OverRepository {
 	return &overRepository{
 		client: client,
-		schema: schema,
 	}
 }
 

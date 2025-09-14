@@ -1,24 +1,15 @@
 name: Frontend CI/CD
 
 on:
-  push:
-    branches: [ main, develop, feat/*, fix/* ]
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend-ci.yml'
   workflow_dispatch:
     inputs:
       environment:
         description: 'Environment to deploy to'
         required: false
-        default: 'staging'
+        default: 'development'
         type: choice
         options:
+        - development
         - staging
         - production
         - none
@@ -215,12 +206,48 @@ jobs:
         with:
           args: --severity-threshold=high
 
-  # Deploy to Staging (only on develop branch or manual trigger)
+  # Deploy to Development (manual trigger only)
+  deploy-development:
+    name: Deploy to Development
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'development'
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for development
+        run: |
+          echo "🔨 Building for development..."
+          npm run build
+
+      - name: Deploy to development
+        run: |
+          echo "🚀 Deploying to development..."
+          # Add your development deployment logic here
+          # This could be Vercel, Netlify, or custom server deployment
+          echo "✅ Development deployment completed"
+
+  # Deploy to Staging (manual trigger only)
   deploy-staging:
     name: Deploy to Staging
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -251,12 +278,12 @@ jobs:
           # This could be Vercel, Netlify, or custom server deployment
           echo "✅ Staging deployment completed"
 
-  # Deploy to Production (only on main branch or manual trigger)
+  # Deploy to Production (manual trigger only)
   deploy-production:
     name: Deploy to Production
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
