@@ -11,14 +11,12 @@ import (
 
 type teamRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewTeamRepository creates a new team repository
-func NewTeamRepository(client *supabase.Client, schema string) interfaces.TeamRepository {
+func NewTeamRepository(client *supabase.Client) interfaces.TeamRepository {
 	return &teamRepository{
 		client: client,
-		schema: schema,
 	}
 }
 
@@ -64,7 +62,7 @@ func (r *teamRepository) GetByID(ctx context.Context, id string) (*models.Team, 
 
 func (r *teamRepository) GetAll(ctx context.Context, filters *models.TeamFilters) ([]*models.Team, error) {
 	var result []models.Team
-	tableName := fmt.Sprintf("%s.teams", r.schema)
+	tableName := "teams"
 	query := r.client.From(tableName).Select("*", "", false)
 
 	if filters != nil {

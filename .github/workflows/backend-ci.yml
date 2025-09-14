@@ -1,16 +1,6 @@
 name: Backend CI/CD
 
 on:
-  push:
-    branches: [ main, develop, feat/*, fix/* ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
     inputs:
       run_type:

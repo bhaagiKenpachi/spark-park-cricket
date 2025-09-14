@@ -11,14 +11,12 @@ import (
 
 type scoreboardRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewScoreboardRepository creates a new scoreboard repository
-func NewScoreboardRepository(client *supabase.Client, schema string) interfaces.ScoreboardRepository {
+func NewScoreboardRepository(client *supabase.Client) interfaces.ScoreboardRepository {
 	return &scoreboardRepository{
 		client: client,
-		schema: schema,
 	}
 }
 

@@ -42,14 +42,14 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to create supabase client: %w", err)
 	}
 
-	// Initialize repositories with schema
+	// Initialize repositories
 	repositories := &Repositories{
-		Series:     supabase.NewSeriesRepository(client, cfg.DatabaseSchema),
-		Match:      supabase.NewMatchRepository(client, cfg.DatabaseSchema),
-		Scoreboard: supabase.NewScoreboardRepository(client, cfg.DatabaseSchema),
-		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema),
-		Over:       supabase.NewOverRepository(client, cfg.DatabaseSchema),
-		Ball:       supabase.NewBallRepository(client, cfg.DatabaseSchema),
+		Series:     supabase.NewSeriesRepository(client),
+		Match:      supabase.NewMatchRepository(client),
+		Scoreboard: supabase.NewScoreboardRepository(client),
+		Scorecard:  supabase.NewScorecardRepository(client),
+		Over:       supabase.NewOverRepository(client),
+		Ball:       supabase.NewBallRepository(client),
 	}
 
 	return &Client{

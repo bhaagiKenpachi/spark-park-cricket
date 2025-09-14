@@ -67,6 +67,25 @@ func setupScorecardWorkflowTestRouter(scorecardHandler *handlers.ScorecardHandle
 	return router
 }
 
+// CORS middleware
+func corsMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // Helper function to clean up test data
 func cleanupScorecardWorkflowTestData(t *testing.T, dbClient *database.Client) {
 	// Clean up scorecard related tables in reverse order of dependencies
