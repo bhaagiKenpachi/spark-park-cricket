@@ -112,8 +112,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
+          cache: false
 
       - name: Set up Go environment
         run: |
@@ -212,8 +211,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
+          cache: false
 
       - name: Set up Go environment
         run: |
@@ -272,8 +270,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
+          cache: false
 
       - name: Set up Go environment
         run: |
@@ -364,8 +361,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
-          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
+          cache: false
 
       - name: Set up Go environment
         run: |
