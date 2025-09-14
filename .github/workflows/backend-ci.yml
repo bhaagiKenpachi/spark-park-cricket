@@ -247,6 +247,8 @@ jobs:
       - name: Run database migrations
         run: |
           echo "🗄️ Running database migrations..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -262,6 +264,9 @@ jobs:
       - name: Run integration tests
         run: |
           echo "🔗 Running Integration Tests..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          echo "TEST_SCHEMA: $TEST_SCHEMA"
           go test ./tests/integration/... -v -timeout=10m
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
