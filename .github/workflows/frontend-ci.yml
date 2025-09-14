@@ -1,6 +1,16 @@
 name: Frontend CI/CD
 
 on:
+  push:
+    branches: [ main, develop, feat/*, fix/* ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'web/**'
+      - '.github/workflows/frontend-ci.yml'
   workflow_dispatch:
     inputs:
       environment:
@@ -206,12 +216,12 @@ jobs:
         with:
           args: --severity-threshold=high
 
-  # Deploy to Development (manual trigger only)
-  deploy-development:
-    name: Deploy to Development
+  # Deploy to Staging (only on develop branch or manual trigger)
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'development'
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -242,12 +252,12 @@ jobs:
           # This could be Vercel, Netlify, or custom server deployment
           echo "✅ Development deployment completed"
 
-  # Deploy to Staging (manual trigger only)
-  deploy-staging:
-    name: Deploy to Staging
+  # Deploy to Production (only on main branch or manual trigger)
+  deploy-production:
+    name: Deploy to Production
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'staging'
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -278,12 +288,12 @@ jobs:
           # This could be Vercel, Netlify, or custom server deployment
           echo "✅ Staging deployment completed"
 
-  # Deploy to Production (manual trigger only)
+  # Deploy to Production (only on main branch or manual trigger)
   deploy-production:
     name: Deploy to Production
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'production'
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
