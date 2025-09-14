@@ -113,43 +113,19 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
 
       - name: Set up Go environment
         run: |
-          # Set up Go environment with user-writable cache directories
+          # Set up Go environment with explicit configuration
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
-          
-          # Create cache directories in user's home directory
-          mkdir -p "$HOME/.cache/go-build" "$HOME/.cache/go-tmp"
           
           # Add to environment for subsequent steps
           echo "PATH=/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH" >> $GITHUB_ENV
-          echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
-          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
-          echo "GOROOT=/usr/local/go" >> $GITHUB_ENV
-          echo "GOTMPDIR=$HOME/.cache/go-tmp" >> $GITHUB_ENV
-          echo "GOMODCACHE=$HOME/go/pkg/mod" >> $GITHUB_ENV
           echo "GOSUMDB=sum.golang.org" >> $GITHUB_ENV
           echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
-          echo "TMPDIR=$HOME/.cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: |
@@ -163,14 +139,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           # Update go.mod before formatting
           go mod tidy
@@ -185,14 +155,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           go vet ./...
 
@@ -200,14 +164,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           go install honnef.co/go/tools/cmd/staticcheck@latest
 
@@ -215,14 +173,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           staticcheck -checks="all,-S1000,-ST1000" ./...
 
@@ -230,14 +182,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           go mod download
           go mod verify
@@ -267,43 +213,19 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
 
       - name: Set up Go environment
         run: |
-          # Set up Go environment with user-writable cache directories
+          # Set up Go environment with explicit configuration
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
-          
-          # Create cache directories in user's home directory
-          mkdir -p "$HOME/.cache/go-build" "$HOME/.cache/go-tmp"
           
           # Add to environment for subsequent steps
           echo "PATH=/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH" >> $GITHUB_ENV
-          echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
-          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
-          echo "GOROOT=/usr/local/go" >> $GITHUB_ENV
-          echo "GOTMPDIR=$HOME/.cache/go-tmp" >> $GITHUB_ENV
-          echo "GOMODCACHE=$HOME/go/pkg/mod" >> $GITHUB_ENV
           echo "GOSUMDB=sum.golang.org" >> $GITHUB_ENV
           echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
-          echo "TMPDIR=$HOME/.cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: |
@@ -314,14 +236,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🧪 Running Unit Tests..."
           go test ./tests/unit/... -v -race -coverprofile=coverage.out
@@ -357,43 +273,19 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
 
       - name: Set up Go environment
         run: |
-          # Set up Go environment with user-writable cache directories
+          # Set up Go environment with explicit configuration
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
-          
-          # Create cache directories in user's home directory
-          mkdir -p "$HOME/.cache/go-build" "$HOME/.cache/go-tmp"
           
           # Add to environment for subsequent steps
           echo "PATH=/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH" >> $GITHUB_ENV
-          echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
-          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
-          echo "GOROOT=/usr/local/go" >> $GITHUB_ENV
-          echo "GOTMPDIR=$HOME/.cache/go-tmp" >> $GITHUB_ENV
-          echo "GOMODCACHE=$HOME/go/pkg/mod" >> $GITHUB_ENV
           echo "GOSUMDB=sum.golang.org" >> $GITHUB_ENV
           echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
-          echo "TMPDIR=$HOME/.cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: |
@@ -426,14 +318,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🔗 Running Integration Tests..."
           echo "SUPABASE_URL: $SUPABASE_URL"
@@ -450,14 +336,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🌐 Running End-to-End Tests..."
           go test ./tests/e2e/... -v -timeout=10m
@@ -485,43 +365,19 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/go.sum
 
       - name: Set up Go environment
         run: |
-          # Set up Go environment with user-writable cache directories
+          # Set up Go environment with explicit configuration
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
-          
-          # Create cache directories in user's home directory
-          mkdir -p "$HOME/.cache/go-build" "$HOME/.cache/go-tmp"
           
           # Add to environment for subsequent steps
           echo "PATH=/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH" >> $GITHUB_ENV
-          echo "GOCACHE=$HOME/.cache/go-build" >> $GITHUB_ENV
-          echo "GOPATH=$HOME/go" >> $GITHUB_ENV
-          echo "GOROOT=/usr/local/go" >> $GITHUB_ENV
-          echo "GOTMPDIR=$HOME/.cache/go-tmp" >> $GITHUB_ENV
-          echo "GOMODCACHE=$HOME/go/pkg/mod" >> $GITHUB_ENV
           echo "GOSUMDB=sum.golang.org" >> $GITHUB_ENV
           echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
-          echo "TMPDIR=$HOME/.cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: |
@@ -532,14 +388,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🔨 Building application..."
           go build -o bin/server cmd/server/main.go
@@ -584,14 +434,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🔍 Running basic security checks..."
           # Run go vet for basic security checks
@@ -625,14 +469,8 @@ jobs:
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOCACHE="$HOME/.cache/go-build"
-          export GOPATH="$HOME/go"
-          export GOROOT="/usr/local/go"
-          export GOTMPDIR="$HOME/.cache/go-tmp"
-          export GOMODCACHE="$HOME/go/pkg/mod"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
-          export TMPDIR="$HOME/.cache"
           
           echo "🔨 Building for ${{ inputs.environment }}..."
           if [ "${{ inputs.environment }}" = "production" ]; then
