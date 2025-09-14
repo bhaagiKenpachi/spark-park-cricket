@@ -89,7 +89,7 @@ jobs:
   code-quality:
     name: Code Quality
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' || inputs.run_type == 'code-quality-only' || inputs.run_type == 'build-only' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'tests-only' || inputs.run_type == 'code-quality-only' || inputs.run_type == 'build-only') }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -148,7 +148,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'tests-only') }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -198,7 +198,7 @@ jobs:
     name: Integration Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && !inputs.skip_integration_tests }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'tests-only') && !inputs.skip_integration_tests }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -273,7 +273,7 @@ jobs:
     name: Build Verification
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'build-only' || inputs.run_type == 'deploy-only' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'build-only' || inputs.run_type == 'deploy-only') }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -324,7 +324,7 @@ jobs:
     name: Security Scan
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && !inputs.skip_security_scan }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && !inputs.skip_security_scan }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
