@@ -51,3 +51,4 @@ backend/server.log
 backend/supabase/
 backend/internal/database/schema_v1_prod.sql
 backend/api/
+backend/server

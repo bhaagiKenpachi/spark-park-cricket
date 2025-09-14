@@ -51,8 +51,8 @@ type CreateMatchRequest struct {
 	SeriesID         string    `json:"series_id" validate:"required"`
 	MatchNumber      *int      `json:"match_number,omitempty" validate:"omitempty,min=1"`
 	Date             time.Time `json:"date" validate:"required"`
-	TeamAPlayerCount int       `json:"team_a_player_count" validate:"required,min=1,max=11"`
-	TeamBPlayerCount int       `json:"team_b_player_count" validate:"required,min=1,max=11"`
+	TeamAPlayerCount int       `json:"team_a_player_count" validate:"required,min=1,max=20"`
+	TeamBPlayerCount int       `json:"team_b_player_count" validate:"required,min=1,max=20"`
 	TotalOvers       int       `json:"total_overs" validate:"required,min=1,max=20"`
 	TossWinner       TeamType  `json:"toss_winner" validate:"required,oneof=A B"`
 	TossType         TossType  `json:"toss_type" validate:"required,oneof=H T"`
@@ -63,8 +63,8 @@ type UpdateMatchRequest struct {
 	MatchNumber      *int         `json:"match_number,omitempty" validate:"omitempty,min=1"`
 	Date             *time.Time   `json:"date,omitempty"`
 	Status           *MatchStatus `json:"status,omitempty" validate:"omitempty,oneof=live completed cancelled"`
-	TeamAPlayerCount *int         `json:"team_a_player_count,omitempty" validate:"omitempty,min=1,max=11"`
-	TeamBPlayerCount *int         `json:"team_b_player_count,omitempty" validate:"omitempty,min=1,max=11"`
+	TeamAPlayerCount *int         `json:"team_a_player_count,omitempty" validate:"omitempty,min=1,max=20"`
+	TeamBPlayerCount *int         `json:"team_b_player_count,omitempty" validate:"omitempty,min=1,max=20"`
 	TotalOvers       *int         `json:"total_overs,omitempty" validate:"omitempty,min=1,max=20"`
 	BattingTeam      *TeamType    `json:"batting_team,omitempty" validate:"omitempty,oneof=A B"`
 }

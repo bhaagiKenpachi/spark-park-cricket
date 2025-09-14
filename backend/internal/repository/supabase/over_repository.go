@@ -11,11 +11,15 @@ import (
 
 type overRepository struct {
 	client *supabase.Client
+	schema string
 }
 
 // NewOverRepository creates a new over repository
-func NewOverRepository(client *supabase.Client) interfaces.OverRepository {
-	return &overRepository{client: client}
+func NewOverRepository(client *supabase.Client, schema string) interfaces.OverRepository {
+	return &overRepository{
+		client: client,
+		schema: schema,
+	}
 }
 
 func (r *overRepository) Create(ctx context.Context, over *models.Over) error {
