@@ -120,7 +120,11 @@ func (mr *MigrationRunner) ApplyMigration(ctx context.Context, migration Migrati
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("Failed to rollback transaction: %v", err)
+		}
+	}()
 
 	// Execute migration SQL
 	if _, err := tx.ExecContext(ctx, content); err != nil {

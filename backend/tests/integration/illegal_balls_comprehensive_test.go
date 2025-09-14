@@ -48,9 +48,12 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": scorecard,
-			})
+			}); err != nil {
+				http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+				return
+			}
 		} else {
 			http.NotFound(w, r)
 		}
@@ -310,9 +313,12 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": scorecard,
-			})
+			}); err != nil {
+				http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+				return
+			}
 		} else {
 			http.NotFound(w, r)
 		}

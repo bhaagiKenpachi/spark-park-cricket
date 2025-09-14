@@ -65,12 +65,13 @@ func RateLimitMiddleware(requestsPerMinute int) func(http.Handler) http.Handler 
 			}
 
 			// Check rate limit
-			if len(clients[clientIP]) >= requestsPerMinute {
+			requestCount := len(clients[clientIP])
+			if requestCount >= requestsPerMinute {
 				mutex.Unlock() // Unlock before logging and responding
 
 				utils.LogWarn("Rate limit exceeded", map[string]interface{}{
 					"client_ip": clientIP,
-					"requests":  len(clients[clientIP]),
+					"requests":  requestCount,
 					"limit":     requestsPerMinute,
 				})
 
