@@ -30,7 +30,7 @@ func setupScorecardWorkflowTestRouter(scorecardHandler *handlers.ScorecardHandle
 	router.Use(chimiddleware.RequestID)
 	router.Use(chimiddleware.RealIP)
 	router.Use(chimiddleware.Timeout(60 * time.Second))
-	router.Use(corsMiddleware())
+	router.Use(scorecardCorsMiddleware())
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -67,8 +67,8 @@ func setupScorecardWorkflowTestRouter(scorecardHandler *handlers.ScorecardHandle
 	return router
 }
 
-// CORS middleware
-func corsMiddleware() func(http.Handler) http.Handler {
+// CORS middleware for scorecard tests
+func scorecardCorsMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
