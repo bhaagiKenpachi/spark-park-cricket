@@ -16,10 +16,10 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: false
-        default: 'development'
+        default: 'dev'
         type: choice
         options:
-        - development
+        - dev
         - staging
         - production
         - none
@@ -215,6 +215,42 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
+
+  # Deploy to Dev (manual trigger only)
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
+    if: github.event_name == 'workflow_dispatch' && inputs.environment == 'dev'
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for dev
+        run: |
+          echo "🔨 Building for dev..."
+          npm run build
+
+      - name: Deploy to dev
+        run: |
+          echo "🚀 Deploying to dev..."
+          # Add your dev deployment logic here
+          # This could be Vercel, Netlify, or custom server deployment
+          echo "✅ Dev deployment completed"
 
   # Deploy to Staging (only on develop branch or manual trigger)
   deploy-staging:
