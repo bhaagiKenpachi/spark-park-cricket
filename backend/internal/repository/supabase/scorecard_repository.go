@@ -317,7 +317,6 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 	// Only include wicket_type if it's a wicket
 	if ball.IsWicket && ball.WicketType != "" {
 		data["wicket_type"] = ball.WicketType
-	} else {
 	}
 
 	var result []models.ScorecardBall

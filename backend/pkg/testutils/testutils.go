@@ -211,22 +211,22 @@ func SetupScorecardTestRouter(scorecardHandler *handlers.ScorecardHandler, servi
 	return router
 }
 
-// Helper function to create string pointer
+// StringPtr creates a pointer to a string value
 func StringPtr(s string) *string {
 	return &s
 }
 
-// Helper function to create time pointer
+// TimePtr creates a pointer to a time.Time value
 func TimePtr(t time.Time) *time.Time {
 	return &t
 }
 
-// Helper function to create team type pointer
+// TeamTypePtr creates a pointer to a TeamType value
 func TeamTypePtr(teamType models.TeamType) *models.TeamType {
 	return &teamType
 }
 
-// Helper function to create match status pointer
+// MatchStatusPtr creates a pointer to a MatchStatus value
 func MatchStatusPtr(status models.MatchStatus) *models.MatchStatus {
 	return &status
 }

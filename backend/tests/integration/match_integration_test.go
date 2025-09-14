@@ -174,7 +174,6 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	seriesID := createTestSeries(t, router)
 
 	// Create multiple matches for pagination testing
-	var createdMatches []models.Match
 	for i := 1; i <= 5; i++ {
 		createReq := models.CreateMatchRequest{
 			SeriesID:         seriesID,
@@ -196,13 +195,6 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusCreated, w.Code)
-
-		var createResponse struct {
-			Data models.Match `json:"data"`
-		}
-		err = json.Unmarshal(w.Body.Bytes(), &createResponse)
-		require.NoError(t, err)
-		createdMatches = append(createdMatches, createResponse.Data)
 	}
 
 	// Test pagination with limit
@@ -384,11 +376,6 @@ func cleanupMatchTestData(t *testing.T, dbClient *database.Client) {
 	}
 }
 
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
-}
-
 // Helper function to create int pointer
 func intPtr(i int) *int {
 	return &i
@@ -397,16 +384,6 @@ func intPtr(i int) *int {
 // Helper function to create match status pointer
 func matchStatusPtr(status models.MatchStatus) *models.MatchStatus {
 	return &status
-}
-
-// Helper function to create team type pointer
-func teamTypePtr(teamType models.TeamType) *models.TeamType {
-	return &teamType
-}
-
-// Helper function to create time pointer
-func timePtr(t time.Time) *time.Time {
-	return &t
 }
 
 // Helper function to setup test router for match tests

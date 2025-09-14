@@ -103,23 +103,6 @@ func cleanupScorecardWorkflowTestData(t *testing.T, dbClient *database.Client) {
 	}
 }
 
-// Helper function to update match status to live
-func updateMatchToLiveForWorkflow(t *testing.T, router http.Handler, matchID string) {
-	updateReq := map[string]interface{}{
-		"status": "live",
-	}
-
-	body, err := json.Marshal(updateReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest("PUT", "/api/v1/matches/"+matchID, bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
-}
-
 // Helper function to add a ball
 func addBallToMatch(t *testing.T, router http.Handler, matchID string, inningsNumber int, ballType, runType string, isWicket bool, byes int, wicketType ...string) {
 	req := map[string]interface{}{

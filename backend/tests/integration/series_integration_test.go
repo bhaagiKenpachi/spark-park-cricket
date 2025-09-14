@@ -154,7 +154,6 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.Client) {
 	// Create multiple series for pagination testing
 	seriesNames := []string{"Series 1", "Series 2", "Series 3", "Series 4", "Series 5"}
-	var createdSeries []models.Series
 
 	for i, name := range seriesNames {
 		createReq := models.CreateSeriesRequest{
@@ -172,13 +171,6 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusCreated, w.Code)
-
-		var createResponse struct {
-			Data models.Series `json:"data"`
-		}
-		err = json.Unmarshal(w.Body.Bytes(), &createResponse)
-		require.NoError(t, err)
-		createdSeries = append(createdSeries, createResponse.Data)
 	}
 
 	// Test pagination with limit

@@ -444,16 +444,6 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// Helper function to create match status pointer
-func matchStatusPtr(status models.MatchStatus) *models.MatchStatus {
-	return &status
-}
-
-// Helper function to create team type pointer
-func teamTypePtr(teamType models.TeamType) *models.TeamType {
-	return &teamType
-}
-
 // Helper function to setup test router for match workflow tests
 func setupMatchWorkflowTestRouter(matchHandler *handlers.MatchHandler, serviceContainer *services.Container) http.Handler {
 	router := chi.NewRouter()

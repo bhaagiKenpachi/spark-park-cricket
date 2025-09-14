@@ -221,7 +221,7 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	defer c.conn.Close()
 
-	for {
+	for { //nolint:S1000 // websocket write pump requires for{select{}} pattern
 		select {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
