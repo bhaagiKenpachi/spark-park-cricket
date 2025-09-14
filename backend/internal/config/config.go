@@ -8,9 +8,12 @@ import (
 )
 
 type Config struct {
-	SupabaseURL    string
-	SupabaseAPIKey string
-	Port           string
+	SupabaseURL            string
+	SupabaseAPIKey         string
+	SupabasePublishableKey string
+	SupabaseSecretKey      string
+	Port                   string
+	DatabaseSchema         string
 }
 
 func Load() *Config {
@@ -20,9 +23,12 @@ func Load() *Config {
 	}
 
 	return &Config{
-		SupabaseURL:    getEnv("SUPABASE_URL", ""),
-		SupabaseAPIKey: getEnv("SUPABASE_API_KEY", ""),
-		Port:           getEnv("PORT", "8081"),
+		SupabaseURL:            getEnv("SUPABASE_URL", ""),
+		SupabaseAPIKey:         getEnv("SUPABASE_API_KEY", ""),
+		SupabasePublishableKey: getEnv("SUPABASE_PUBLISHABLE_KEY", ""),
+		SupabaseSecretKey:      getEnv("SUPABASE_SECRET_KEY", ""),
+		Port:                   getEnv("PORT", "8081"),
+		DatabaseSchema:         getEnv("DATABASE_SCHEMA", "prod_v1"),
 	}
 }
 
