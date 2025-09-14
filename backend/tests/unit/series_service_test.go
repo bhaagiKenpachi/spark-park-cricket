@@ -4,6 +4,7 @@ import (
 	"context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -64,7 +65,7 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
+			service := services.NewSeriesService(mockRepo)
 			ctx := context.Background()
 
 			result, err := service.CreateSeries(ctx, tt.request)
@@ -131,7 +132,7 @@ func TestSeriesService_GetSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
+			service := services.NewSeriesService(mockRepo)
 			ctx := context.Background()
 
 			result, err := service.GetSeries(ctx, tt.seriesID)
@@ -222,7 +223,7 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
+			service := services.NewSeriesService(mockRepo)
 			ctx := context.Background()
 
 			result, err := service.ListSeries(ctx, tt.filters)
@@ -254,7 +255,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			name:     "successful series update - name only",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
-				Name: stringPtr("Updated Series"),
+				Name: testutils.StringPtr("Updated Series"),
 			},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				existingSeries := &models.Series{
@@ -272,8 +273,8 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			name:     "successful series update - dates only",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
-				StartDate: timePtr(time.Now().AddDate(0, 0, 1)),
-				EndDate:   timePtr(time.Now().AddDate(0, 0, 8)),
+				StartDate: testutils.TimePtr(time.Now().AddDate(0, 0, 1)),
+				EndDate:   testutils.TimePtr(time.Now().AddDate(0, 0, 8)),
 			},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				existingSeries := &models.Series{
@@ -291,8 +292,8 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			name:     "invalid date range in update",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
-				StartDate: timePtr(time.Now().AddDate(0, 0, 7)),
-				EndDate:   timePtr(time.Now()), // End date before start date
+				StartDate: testutils.TimePtr(time.Now().AddDate(0, 0, 7)),
+				EndDate:   testutils.TimePtr(time.Now()), // End date before start date
 			},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				existingSeries := &models.Series{
@@ -331,7 +332,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockRepo)
 
-			service := services.NewSeriesService(mockRepo, new(MockMatchRepository))
+			service := services.NewSeriesService(mockRepo)
 			ctx := context.Background()
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
@@ -389,15 +390,9 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepo := new(MockSeriesRepository)
-			mockMatchRepo := new(MockMatchRepository)
 			tt.mockSetup(mockRepo)
 
-			// Set up match repository expectations for DeleteSeries only for successful cases
-			if !tt.expectError {
-				mockMatchRepo.On("GetBySeriesID", mock.Anything, mock.Anything).Return([]*models.Match{}, nil)
-			}
-
-			service := services.NewSeriesService(mockRepo, mockMatchRepo)
+			service := services.NewSeriesService(mockRepo)
 			ctx := context.Background()
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
@@ -410,17 +405,6 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			}
 
 			mockRepo.AssertExpectations(t)
-			mockMatchRepo.AssertExpectations(t)
 		})
 	}
-}
-
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
-}
-
-// Helper function to create time pointer
-func timePtr(t time.Time) *time.Time {
-	return &t
 }

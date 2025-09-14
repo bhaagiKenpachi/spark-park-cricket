@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -298,7 +299,7 @@ func TestSeriesHandler_UpdateSeries(t *testing.T) {
 			name:     "successful series update",
 			seriesID: "test-series-id",
 			requestBody: models.UpdateSeriesRequest{
-				Name: stringPtr("Updated Series"),
+				Name: testutils.StringPtr("Updated Series"),
 			},
 			mockSetup: func(mockService *MockSeriesService) {
 				series := &models.Series{
@@ -330,7 +331,7 @@ func TestSeriesHandler_UpdateSeries(t *testing.T) {
 			name:     "service error",
 			seriesID: "test-series-id",
 			requestBody: models.UpdateSeriesRequest{
-				Name: stringPtr("Updated Series"),
+				Name: testutils.StringPtr("Updated Series"),
 			},
 			mockSetup: func(mockService *MockSeriesService) {
 				mockService.On("UpdateSeries", mock.Anything, "test-series-id", mock.AnythingOfType("*models.UpdateSeriesRequest")).Return(nil, assert.AnError)

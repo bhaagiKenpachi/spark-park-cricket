@@ -10,11 +10,10 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -100,95 +99,6 @@ func updateMatchToLive(t *testing.T, router http.Handler, matchID string) {
 	require.Equal(t, http.StatusOK, w.Code)
 }
 
-// Helper function to setup test router for scorecard tests
-func setupScorecardTestRouter(scorecardHandler *handlers.ScorecardHandler, serviceContainer *services.Container) http.Handler {
-	router := chi.NewRouter()
-
-	// Add middleware
-	router.Use(chimiddleware.Recoverer)
-	router.Use(chimiddleware.Logger)
-	router.Use(chimiddleware.RequestID)
-	router.Use(chimiddleware.RealIP)
-	router.Use(chimiddleware.Timeout(60 * time.Second))
-	router.Use(corsMiddleware())
-
-	// API routes
-	router.Route("/api/v1", func(r chi.Router) {
-		// Series routes (needed for creating matches)
-		r.Route("/series", func(r chi.Router) {
-			seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
-			r.Post("/", seriesHandler.CreateSeries)
-			r.Get("/{id}", seriesHandler.GetSeries)
-			r.Put("/{id}", seriesHandler.UpdateSeries)
-		})
-		// Match routes (needed for creating matches)
-		r.Route("/matches", func(r chi.Router) {
-			matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
-			r.Post("/", matchHandler.CreateMatch)
-			r.Get("/{id}", matchHandler.GetMatch)
-			r.Put("/{id}", matchHandler.UpdateMatch)
-		})
-		// Scorecard routes
-		r.Route("/scorecard", func(r chi.Router) {
-			r.Post("/start", scorecardHandler.StartScoring)
-			r.Post("/ball", scorecardHandler.AddBall)
-			r.Get("/{match_id}", scorecardHandler.GetScorecard)
-			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
-			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
-			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
-		})
-	})
-
-	return router
-}
-
-func corsMiddleware() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "*")
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// Helper function to clean up test data
-func cleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
-	// Clean up scorecard related tables in reverse order of dependencies
-	// Balls -> Overs -> Innings -> Matches -> Series
-
-	// Clean up balls
-	_, err := dbClient.Supabase.From("scorecard_balls").Delete("", "").Gte("id", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup balls: %v", err)
-	}
-
-	// Clean up overs
-	_, err = dbClient.Supabase.From("scorecard_overs").Delete("", "").Gte("id", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup overs: %v", err)
-	}
-
-	// Clean up innings
-	_, err = dbClient.Supabase.From("scorecard_innings").Delete("", "").Gte("id", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup innings: %v", err)
-	}
-
-	// Clean up matches
-	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("id", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup matches: %v", err)
-	}
-
-	// Clean up series
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("id", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series: %v", err)
-	}
-}
-
 func TestScorecardIntegration(t *testing.T) {
 	// Load test configuration
 	testConfig := config.LoadTestConfig()
@@ -199,14 +109,14 @@ func TestScorecardIntegration(t *testing.T) {
 	defer dbClient.Close()
 
 	// Clean up any existing test data
-	cleanupScorecardTestData(t, dbClient)
+	testutils.CleanupScorecardTestData(t, dbClient)
 
 	// Initialize services
 	serviceContainer := services.NewContainer(dbClient.Repositories)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	// Setup router
-	router := setupScorecardTestRouter(scorecardHandler, serviceContainer)
+	router := testutils.SetupScorecardTestRouter(scorecardHandler, serviceContainer)
 
 	// Create test series
 	seriesID := createTestSeriesForScorecard(t, router)
@@ -415,5 +325,5 @@ func TestScorecardIntegration(t *testing.T) {
 	})
 
 	// Clean up test data
-	cleanupScorecardTestData(t, dbClient)
+	testutils.CleanupScorecardTestData(t, dbClient)
 }

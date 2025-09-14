@@ -10,6 +10,7 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -99,7 +100,7 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	// Update the series
 	updateReq := models.UpdateSeriesRequest{
-		Name: stringPtr("Updated Cricket Series"),
+		Name: testutils.StringPtr("Updated Cricket Series"),
 	}
 
 	updateBody, err := json.Marshal(updateReq)
@@ -279,7 +280,7 @@ func testSeriesErrorHandling(t *testing.T, router http.Handler) {
 
 	// Test updating non-existent series
 	updateReq := models.UpdateSeriesRequest{
-		Name: stringPtr("Updated Name"),
+		Name: testutils.StringPtr("Updated Name"),
 	}
 
 	updateBody, err := json.Marshal(updateReq)
@@ -306,11 +307,6 @@ func testSeriesErrorHandling(t *testing.T, router http.Handler) {
 	router.ServeHTTP(w, req)
 	// This actually hits the list endpoint, so it should return 200
 	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
 }
 
 // Helper function to clean up test data

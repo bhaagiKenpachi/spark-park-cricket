@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -422,7 +423,7 @@ func setupMatchTestRouter(matchHandler *handlers.MatchHandler, serviceContainer 
 	router.Use(middleware.ValidationMiddleware)
 	router.Use(middleware.MetricsMiddleware)
 	router.Use(middleware.RateLimitMiddleware(100))
-	router.Use(corsMiddleware())
+	router.Use(testutils.CORSMiddleware())
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {
@@ -443,23 +444,4 @@ func setupMatchTestRouter(matchHandler *handlers.MatchHandler, serviceContainer 
 	})
 
 	return router
-}
-
-// CORS middleware
-func corsMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
-			w.Header().Set("Access-Control-Max-Age", "86400")
-
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
 }

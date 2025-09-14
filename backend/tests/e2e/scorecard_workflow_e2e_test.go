@@ -10,6 +10,7 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -66,17 +67,6 @@ func setupScorecardWorkflowTestRouter(scorecardHandler *handlers.ScorecardHandle
 	return router
 }
 
-func corsMiddleware() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "*")
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 // Helper function to clean up test data
 func cleanupScorecardWorkflowTestData(t *testing.T, dbClient *database.Client) {
 	// Clean up scorecard related tables in reverse order of dependencies
@@ -111,68 +101,6 @@ func cleanupScorecardWorkflowTestData(t *testing.T, dbClient *database.Client) {
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup series: %v", err)
 	}
-}
-
-// Helper function to create a test series for workflow tests
-func createTestSeriesForWorkflow(t *testing.T, router http.Handler) string {
-	seriesReq := map[string]interface{}{
-		"name":        "E2E Test Series " + time.Now().Format("2006-01-02 15:04:05"),
-		"description": "E2E test series for scorecard workflow tests",
-		"start_date":  time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
-		"end_date":    time.Now().AddDate(0, 0, 7).Format(time.RFC3339),
-	}
-
-	body, err := json.Marshal(seriesReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusCreated, w.Code)
-
-	var response struct {
-		Data models.Series `json:"data"`
-	}
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-
-	return response.Data.ID
-}
-
-// Helper function to create a test match for workflow tests
-func createTestMatchForWorkflow(t *testing.T, router http.Handler, seriesID string) string {
-	matchReq := map[string]interface{}{
-		"series_id":           seriesID,
-		"match_number":        1,
-		"date":                time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
-		"venue":               "E2E Test Venue",
-		"team_a_player_count": 11,
-		"team_b_player_count": 11,
-		"total_overs":         20,
-		"toss_winner":         "A",
-		"toss_type":           "H",
-		"batting_team":        "A",
-	}
-
-	body, err := json.Marshal(matchReq)
-	require.NoError(t, err)
-
-	req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-	require.Equal(t, http.StatusCreated, w.Code)
-
-	var response struct {
-		Data models.Match `json:"data"`
-	}
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-
-	return response.Data.ID
 }
 
 // Helper function to update match status to live
@@ -240,15 +168,15 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 	t.Run("CompleteMatchWorkflow", func(t *testing.T) {
 		// Create test series
-		seriesID := createTestSeriesForWorkflow(t, router)
+		seriesID := testutils.CreateTestSeriesForWorkflow(t, router)
 		assert.NotEmpty(t, seriesID)
 
 		// Create test match
-		matchID := createTestMatchForWorkflow(t, router, seriesID)
+		matchID := testutils.CreateTestMatchForWorkflow(t, router, seriesID)
 		assert.NotEmpty(t, matchID)
 
 		// Update match to live status
-		updateMatchToLiveForWorkflow(t, router, matchID)
+		testutils.UpdateMatchToLiveForWorkflow(t, router, matchID)
 
 		// Start scoring
 		startReq := map[string]interface{}{
@@ -345,9 +273,9 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 	t.Run("MultipleOversWorkflow", func(t *testing.T) {
 		// Create a new series and match for this test
-		seriesID := createTestSeriesForWorkflow(t, router)
-		matchID := createTestMatchForWorkflow(t, router, seriesID)
-		updateMatchToLiveForWorkflow(t, router, matchID)
+		seriesID := testutils.CreateTestSeriesForWorkflow(t, router)
+		matchID := testutils.CreateTestMatchForWorkflow(t, router, seriesID)
+		testutils.UpdateMatchToLiveForWorkflow(t, router, matchID)
 
 		// Start scoring
 		startReq := map[string]interface{}{
@@ -418,9 +346,9 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 	t.Run("WideAndNoBallWorkflow", func(t *testing.T) {
 		// Create a new series and match for this test
-		seriesID := createTestSeriesForWorkflow(t, router)
-		matchID := createTestMatchForWorkflow(t, router, seriesID)
-		updateMatchToLiveForWorkflow(t, router, matchID)
+		seriesID := testutils.CreateTestSeriesForWorkflow(t, router)
+		matchID := testutils.CreateTestMatchForWorkflow(t, router, seriesID)
+		testutils.UpdateMatchToLiveForWorkflow(t, router, matchID)
 
 		// Start scoring
 		startReq := map[string]interface{}{
