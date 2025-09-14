@@ -11,12 +11,14 @@ import (
 
 type seriesRepository struct {
 	client *supabase.Client
+	schema string
 }
 
 // NewSeriesRepository creates a new series repository
-func NewSeriesRepository(client *supabase.Client) interfaces.SeriesRepository {
+func NewSeriesRepository(client *supabase.Client, schema string) interfaces.SeriesRepository {
 	return &seriesRepository{
 		client: client,
+		schema: schema,
 	}
 }
 
