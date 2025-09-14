@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
@@ -118,24 +117,17 @@ func (h *SeriesHandler) UpdateSeries(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSeries handles DELETE /api/v1/series/{id}
 func (h *SeriesHandler) DeleteSeries(w http.ResponseWriter, r *http.Request) {
-	log.Printf("SECURITY: DeleteSeries handler called from %s", r.RemoteAddr)
-
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		log.Printf("SECURITY: DeleteSeries attempted without ID from %s", r.RemoteAddr)
 		utils.WriteValidationError(w, "Series ID is required", nil)
 		return
 	}
 
-	log.Printf("SECURITY: DeleteSeries request for ID: %s from %s (User-Agent: %s)", id, r.RemoteAddr, r.UserAgent())
-
 	err := h.service.DeleteSeries(r.Context(), id)
 	if err != nil {
-		log.Printf("SECURITY: DeleteSeries failed for %s: %v", id, err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
 
-	log.Printf("SECURITY: Series %s deleted successfully by %s", id, r.RemoteAddr)
 	utils.WriteSuccess(w, map[string]string{"message": "Series deleted successfully"})
 }

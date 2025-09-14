@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -12,14 +11,12 @@ import (
 // SeriesService handles business logic for series operations
 type SeriesService struct {
 	seriesRepo interfaces.SeriesRepository
-	matchRepo  interfaces.MatchRepository
 }
 
 // NewSeriesService creates a new series service
-func NewSeriesService(seriesRepo interfaces.SeriesRepository, matchRepo interfaces.MatchRepository) *SeriesService {
+func NewSeriesService(seriesRepo interfaces.SeriesRepository) *SeriesService {
 	return &SeriesService{
 		seriesRepo: seriesRepo,
-		matchRepo:  matchRepo,
 	}
 }
 
@@ -124,34 +121,16 @@ func (s *SeriesService) DeleteSeries(ctx context.Context, id string) error {
 	}
 
 	// Check if series exists
-	series, err := s.seriesRepo.GetByID(ctx, id)
+	_, err := s.seriesRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("series not found: %w", err)
 	}
 
-	// CRITICAL SAFEGUARD: Check for live matches before deleting series
-	matches, err := s.matchRepo.GetBySeriesID(ctx, id)
-	if err != nil {
-		return fmt.Errorf("failed to check matches in series: %w", err)
-	}
-
-	// Check if any matches are live
-	for _, match := range matches {
-		if match.Status == models.MatchStatusLive {
-			log.Printf("SECURITY ALERT: Attempted to delete series %s with LIVE match %s - BLOCKED", id, match.ID)
-			return fmt.Errorf("cannot delete series with live matches - all matches must be completed or cancelled first")
-		}
-	}
-
-	// Log the deletion attempt for audit trail
-	log.Printf("AUDIT: Deleting series %s (%s) with %d matches", id, series.Name, len(matches))
-
-	// Delete series (this will cascade delete all matches and related data)
+	// Delete series
 	err = s.seriesRepo.Delete(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete series: %w", err)
 	}
 
-	log.Printf("AUDIT: Series %s and all associated data deleted successfully", id)
 	return nil
 }
