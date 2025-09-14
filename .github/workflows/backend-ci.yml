@@ -27,10 +27,10 @@ on:
       environment:
         description: 'Environment to deploy to (only used for deploy-only runs)'
         required: false
-        default: 'development'
+        default: 'dev'
         type: choice
         options:
-        - development
+        - dev
         - staging
         - production
         - testing
@@ -399,9 +399,9 @@ jobs:
           echo "🚀 Deploying to ${{ inputs.environment }}..."
           # Add your deployment logic here based on environment
           case "${{ inputs.environment }}" in
-            "development")
-              echo "Deploying to development environment..."
-              # Add development deployment logic
+            "dev")
+              echo "Deploying to dev environment..."
+              # Add dev deployment logic
               ;;
             "staging")
               echo "Deploying to staging environment..."
