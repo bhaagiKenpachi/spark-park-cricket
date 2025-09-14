@@ -296,9 +296,28 @@ jobs:
 
       - name: Run database migrations
         run: |
+          # Set up Go environment explicitly
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
           echo "🗄️ Running database migrations..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          
+          # Check if secrets are available
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "❌ ERROR: SUPABASE_URL secret is not set in GitHub repository"
+            echo "Please configure SUPABASE_URL in repository settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          
+          if [ -z "$SUPABASE_API_KEY" ]; then
+            echo "❌ ERROR: SUPABASE_API_KEY secret is not set in GitHub repository"
+            echo "Please configure SUPABASE_API_KEY in repository settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          
           go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
