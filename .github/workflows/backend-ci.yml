@@ -118,16 +118,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            /opt/go-cache/go-build
+            /opt/go-cache/go-mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Clean Go cache directories
+      - name: Set up Go environment
         run: |
-          rm -rf ~/.cache/go-build
-          rm -rf ~/go/pkg/mod
+          # Set up Go environment with custom cache directories
+          export GOCACHE="/opt/go-cache/go-build"
+          export GOMODCACHE="/opt/go-cache/go-mod"
+          export GOTMPDIR="/opt/go-cache/go-tmp"
+          export TMPDIR="/opt/go-cache"
+          
+          # Create cache directories
+          mkdir -p /opt/go-cache/go-build /opt/go-cache/go-mod /opt/go-cache/go-tmp
+          
+          # Add to environment for subsequent steps
+          echo "GOCACHE=/opt/go-cache/go-build" >> $GITHUB_ENV
+          echo "GOMODCACHE=/opt/go-cache/go-mod" >> $GITHUB_ENV
+          echo "GOTMPDIR=/opt/go-cache/go-tmp" >> $GITHUB_ENV
+          echo "TMPDIR=/opt/go-cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: go mod download
@@ -182,16 +194,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            /opt/go-cache/go-build
+            /opt/go-cache/go-mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Clean Go cache directories
+      - name: Set up Go environment
         run: |
-          rm -rf ~/.cache/go-build
-          rm -rf ~/go/pkg/mod
+          # Set up Go environment with custom cache directories
+          export GOCACHE="/opt/go-cache/go-build"
+          export GOMODCACHE="/opt/go-cache/go-mod"
+          export GOTMPDIR="/opt/go-cache/go-tmp"
+          export TMPDIR="/opt/go-cache"
+          
+          # Create cache directories
+          mkdir -p /opt/go-cache/go-build /opt/go-cache/go-mod /opt/go-cache/go-tmp
+          
+          # Add to environment for subsequent steps
+          echo "GOCACHE=/opt/go-cache/go-build" >> $GITHUB_ENV
+          echo "GOMODCACHE=/opt/go-cache/go-mod" >> $GITHUB_ENV
+          echo "GOTMPDIR=/opt/go-cache/go-tmp" >> $GITHUB_ENV
+          echo "TMPDIR=/opt/go-cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: go mod download
@@ -237,16 +261,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            /opt/go-cache/go-build
+            /opt/go-cache/go-mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Clean Go cache directories
+      - name: Set up Go environment
         run: |
-          rm -rf ~/.cache/go-build
-          rm -rf ~/go/pkg/mod
+          # Set up Go environment with custom cache directories
+          export GOCACHE="/opt/go-cache/go-build"
+          export GOMODCACHE="/opt/go-cache/go-mod"
+          export GOTMPDIR="/opt/go-cache/go-tmp"
+          export TMPDIR="/opt/go-cache"
+          
+          # Create cache directories
+          mkdir -p /opt/go-cache/go-build /opt/go-cache/go-mod /opt/go-cache/go-tmp
+          
+          # Add to environment for subsequent steps
+          echo "GOCACHE=/opt/go-cache/go-build" >> $GITHUB_ENV
+          echo "GOMODCACHE=/opt/go-cache/go-mod" >> $GITHUB_ENV
+          echo "GOTMPDIR=/opt/go-cache/go-tmp" >> $GITHUB_ENV
+          echo "TMPDIR=/opt/go-cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: go mod download
@@ -319,16 +355,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
+            /opt/go-cache/go-build
+            /opt/go-cache/go-mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Clean Go cache directories
+      - name: Set up Go environment
         run: |
-          rm -rf ~/.cache/go-build
-          rm -rf ~/go/pkg/mod
+          # Set up Go environment with custom cache directories
+          export GOCACHE="/opt/go-cache/go-build"
+          export GOMODCACHE="/opt/go-cache/go-mod"
+          export GOTMPDIR="/opt/go-cache/go-tmp"
+          export TMPDIR="/opt/go-cache"
+          
+          # Create cache directories
+          mkdir -p /opt/go-cache/go-build /opt/go-cache/go-mod /opt/go-cache/go-tmp
+          
+          # Add to environment for subsequent steps
+          echo "GOCACHE=/opt/go-cache/go-build" >> $GITHUB_ENV
+          echo "GOMODCACHE=/opt/go-cache/go-mod" >> $GITHUB_ENV
+          echo "GOTMPDIR=/opt/go-cache/go-tmp" >> $GITHUB_ENV
+          echo "TMPDIR=/opt/go-cache" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: go mod download
