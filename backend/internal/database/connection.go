@@ -24,7 +24,6 @@ type Repositories struct {
 type Client struct {
 	Supabase     *supabaseclient.Client
 	Repositories *Repositories
-	Schema       string
 }
 
 // NewClient creates a new database client with all repositories
@@ -33,11 +32,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("supabase URL and API key are required")
 	}
 
-	// Create Supabase client with schema configuration
-	clientOptions := &supabaseclient.ClientOptions{
-		Schema: cfg.DatabaseSchema,
-	}
-	client, err := supabaseclient.NewClient(cfg.SupabaseURL, cfg.SupabaseAPIKey, clientOptions)
+	client, err := supabaseclient.NewClient(cfg.SupabaseURL, cfg.SupabaseAPIKey, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create supabase client: %w", err)
 	}
@@ -55,14 +50,13 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	return &Client{
 		Supabase:     client,
 		Repositories: repositories,
-		Schema:       cfg.DatabaseSchema,
 	}, nil
 }
 
 // HealthCheck performs a simple health check on the database
 func (c *Client) HealthCheck() error {
-	// Simple health check by attempting to connect to a known table
-	_, _, err := c.Supabase.From("series").Select("id", "exact", false).Limit(1, "").Execute()
+	// Simple health check by attempting to connect
+	_, _, err := c.Supabase.From("_health_check").Select("*", "exact", false).Execute()
 	if err != nil {
 		// If the table doesn't exist, that's okay for health check
 		return nil

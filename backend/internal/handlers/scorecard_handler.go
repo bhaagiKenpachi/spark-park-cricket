@@ -13,11 +13,11 @@ import (
 )
 
 type ScorecardHandler struct {
-	scorecardService services.ScorecardServiceInterface
+	scorecardService *services.ScorecardService
 }
 
 // NewScorecardHandler creates a new scorecard handler
-func NewScorecardHandler(scorecardService services.ScorecardServiceInterface) *ScorecardHandler {
+func NewScorecardHandler(scorecardService *services.ScorecardService) *ScorecardHandler {
 	return &ScorecardHandler{
 		scorecardService: scorecardService,
 	}
@@ -61,6 +61,7 @@ func (h *ScorecardHandler) StartScoring(w http.ResponseWriter, r *http.Request) 
 
 // AddBall adds a ball to the scorecard
 func (h *ScorecardHandler) AddBall(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Adding ball request")
 
 	var req models.BallEventRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

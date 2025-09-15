@@ -15,9 +15,7 @@ type overRepository struct {
 
 // NewOverRepository creates a new over repository
 func NewOverRepository(client *supabase.Client) interfaces.OverRepository {
-	return &overRepository{
-		client: client,
-	}
+	return &overRepository{client: client}
 }
 
 func (r *overRepository) Create(ctx context.Context, over *models.Over) error {

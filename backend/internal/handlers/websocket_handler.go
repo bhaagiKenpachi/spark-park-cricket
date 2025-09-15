@@ -34,20 +34,14 @@ func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	// In a real implementation, you would upgrade the connection to WebSocket
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(`{"message": "WebSocket endpoint for match ` + matchID + `"}`)); err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	w.Write([]byte(`{"message": "WebSocket endpoint for match ` + matchID + `"}`))
 }
 
 // GetConnectionStats returns WebSocket connection statistics
 func (h *WebSocketHandler) GetConnectionStats(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(`{"connections": 0, "rooms": 0}`)); err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	w.Write([]byte(`{"connections": 0, "rooms": 0}`))
 }
 
 // GetRoomStats returns statistics for a specific room/match
@@ -55,10 +49,7 @@ func (h *WebSocketHandler) GetRoomStats(w http.ResponseWriter, r *http.Request) 
 	matchID := chi.URLParam(r, "match_id")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(`{"match_id": "` + matchID + `", "connections": 0}`)); err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	w.Write([]byte(`{"match_id": "` + matchID + `", "connections": 0}`))
 }
 
 // TestBroadcast sends a test broadcast to a specific match room
@@ -66,8 +57,5 @@ func (h *WebSocketHandler) TestBroadcast(w http.ResponseWriter, r *http.Request)
 	matchID := chi.URLParam(r, "match_id")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(`{"message": "Test broadcast sent to match ` + matchID + `"}`)); err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	w.Write([]byte(`{"message": "Test broadcast sent to match ` + matchID + `"}`))
 }
