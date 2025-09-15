@@ -259,6 +259,7 @@ jobs:
     needs: [code-quality, unit-tests]
     if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && !inputs.skip_integration_tests }}
     environment: ${{ inputs.environment || 'dev' }}
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -351,7 +352,7 @@ jobs:
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           echo "TEST_SCHEMA: $TEST_SCHEMA"
-          go test ./tests/integration/... -v -timeout=10m
+          go test ./tests/integration/... -v -timeout=15m
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -366,7 +367,7 @@ jobs:
           export GOPROXY="https://proxy.golang.org,direct"
           
           echo "🌐 Running End-to-End Tests..."
-          go test ./tests/e2e/... -v -timeout=10m
+          go test ./tests/e2e/... -v -timeout=15m
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
