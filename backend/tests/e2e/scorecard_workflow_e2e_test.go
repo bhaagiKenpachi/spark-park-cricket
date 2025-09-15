@@ -212,12 +212,12 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		addBallToMatch(t, router, matchID, 1, "good", "1", false, 0)
 		addBallToMatch(t, router, matchID, 1, "good", "2", false, 0)
 
-		// Check that there's a current over (over 3) since system creates new overs automatically
+		// Check that there's no current over since all overs are completed
 		req = httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/current-over?innings=1", nil)
 		w = httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusOK, w.Code) // Current over should exist (over 3)
+		assert.Equal(t, http.StatusInternalServerError, w.Code) // No current over should exist when all overs are completed
 
 		// Check scorecard after first 2 overs
 		req = httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID, nil)
@@ -236,7 +236,7 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Equal(t, 1, scorecardResponse.Data.Innings[0].InningsNumber)
 		assert.Equal(t, 22, scorecardResponse.Data.Innings[0].TotalRuns) // 14 + 8
 		assert.Equal(t, 1, scorecardResponse.Data.Innings[0].TotalWickets)
-		assert.Equal(t, 2.2, scorecardResponse.Data.Innings[0].TotalOvers) // 2 completed overs + 2 balls in 3rd over
+		assert.Equal(t, 2.0, scorecardResponse.Data.Innings[0].TotalOvers) // 2 completed overs
 
 		// Check specific innings
 		req = httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1", nil)
@@ -253,7 +253,7 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Equal(t, 1, inningsResponse.Data.InningsNumber)
 		assert.Equal(t, 22, inningsResponse.Data.TotalRuns)
 		assert.Equal(t, 1, inningsResponse.Data.TotalWickets)
-		assert.Equal(t, 2.2, inningsResponse.Data.TotalOvers) // 2 completed overs + 2 balls in 3rd over
+		assert.Equal(t, 2.0, inningsResponse.Data.TotalOvers) // 2 completed overs
 
 		// Check specific over
 		req = httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1/over/1", nil)
@@ -268,8 +268,8 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		err = json.Unmarshal(w.Body.Bytes(), &overResponse)
 		require.NoError(t, err)
 		assert.Equal(t, 1, overResponse.Data.OverNumber)
-		assert.Equal(t, 13, overResponse.Data.TotalRuns) // 4+1+0+6+2 = 13 runs from 5 balls
-		assert.Equal(t, 5, overResponse.Data.TotalBalls) // 5 balls in first over (6th ball goes to second over)
+		assert.Equal(t, 14, overResponse.Data.TotalRuns) // 4+1+0+6+2+1 = 14 runs from 6 balls
+		assert.Equal(t, 6, overResponse.Data.TotalBalls) // 6 balls in first over
 		assert.Equal(t, 0, overResponse.Data.TotalWickets)
 	})
 
@@ -336,14 +336,14 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Equal(t, 1, scorecardResponse.Data.Innings[0].InningsNumber)
 		assert.Equal(t, 52, scorecardResponse.Data.Innings[0].TotalRuns) // 21 + 15 + 16
 		assert.Equal(t, 0, scorecardResponse.Data.Innings[0].TotalWickets)
-		assert.Equal(t, 3.3, scorecardResponse.Data.Innings[0].TotalOvers) // 3 completed overs + 3 balls in 4th over
+		assert.Equal(t, 3.0, scorecardResponse.Data.Innings[0].TotalOvers) // 3 completed overs
 
-		// Check that there's a current over (over 4) since system creates new overs automatically
+		// Check that there's no current over since all overs are completed
 		req = httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/current-over?innings=1", nil)
 		w = httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
-		assert.Equal(t, http.StatusOK, w.Code) // Current over should exist (over 4)
+		assert.Equal(t, http.StatusInternalServerError, w.Code) // No current over should exist when all overs are completed
 	})
 
 	t.Run("WideAndNoBallWorkflow", func(t *testing.T) {
