@@ -132,45 +132,29 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("over is not in progress, cannot add ball")
 	}
 
-	// We'll add the ball first, then check if the over is complete
-
-	// Check if this ball would complete the over BEFORE adding it
+	// Check if this ball would complete the over (for legal balls only)
 	wouldCompleteOver := false
-	if req.BallType == models.BallTypeGood {
-		// Get current legal ball count
-		balls, err := s.scorecardRepo.GetBallsByOver(ctx, over.ID)
-		if err != nil {
-			log.Printf("Error getting balls for over: %v", err)
-			return fmt.Errorf("failed to get balls: %w", err)
-		}
-
-		legalBalls := 0
-		for _, ball := range balls {
-			if ball.BallType == models.BallTypeGood {
-				legalBalls++
-			}
-		}
-
-		// If this would be the 6th legal ball, it completes the over
-		if legalBalls >= 5 {
-			wouldCompleteOver = true
-		}
+	if req.BallType == models.BallTypeGood && over.TotalBalls >= 5 {
+		wouldCompleteOver = true
 	}
 
-	// If this ball would complete the over, complete the current over first
+	// If this ball would complete the over, get the new over first
 	if wouldCompleteOver {
+		log.Printf("This ball will complete over %d, creating new over first", over.OverNumber)
+
+		// Mark current over as complete
 		over.Status = string(models.OverStatusCompleted)
 		err = s.scorecardRepo.UpdateOver(ctx, over)
 		if err != nil {
-			log.Printf("Error completing over: %v", err)
-			return fmt.Errorf("failed to complete over: %w", err)
+			log.Printf("Error updating over: %v", err)
+			return fmt.Errorf("failed to update over: %w", err)
 		}
 
-		// Get a new over for this ball
+		// Get new over (this will create one if needed)
 		over, err = s.getCurrentOver(ctx, innings.ID)
 		if err != nil {
-			log.Printf("Error getting new over: %v", err)
-			return fmt.Errorf("failed to get new over: %w", err)
+			log.Printf("Error getting new current over: %v", err)
+			return fmt.Errorf("failed to get new current over: %w", err)
 		}
 	}
 
@@ -277,12 +261,11 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	// For first innings: complete when all wickets are taken or all overs are completed
 	// For second innings: completion is handled by shouldCompleteMatch method
 	maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
-	maxBalls := match.TotalOvers * 6         // Maximum legal balls in an innings
 	if req.InningsNumber == 1 {
-		if innings.TotalWickets >= maxWickets || innings.TotalBalls >= maxBalls {
+		if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(match.TotalOvers) {
 			innings.Status = string(models.InningsStatusCompleted)
-			log.Printf("First innings %d completed for match %s: wickets=%d/%d, balls=%d/%d",
-				innings.InningsNumber, match.ID, innings.TotalWickets, maxWickets, innings.TotalBalls, maxBalls)
+			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
+				innings.InningsNumber, match.ID, innings.TotalWickets, maxWickets, innings.TotalOvers, match.TotalOvers)
 		}
 	}
 	// For second innings, we don't automatically complete here - let shouldCompleteMatch handle it
@@ -563,10 +546,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 				return fmt.Errorf("failed to get first innings: %w", err)
 			}
 
-			// Check if first innings is complete (all wickets down or all balls completed)
-			maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
-			maxBalls := match.TotalOvers * 6         // Maximum legal balls in an innings
-			firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalBalls >= maxBalls
+			// Check if first innings is complete (all wickets down or overs completed)
+			firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 			if !firstInningsComplete {
 				// First innings is not complete, only toss winner can bat
@@ -594,10 +575,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 			return fmt.Errorf("failed to get first innings: %w", err)
 		}
 
-		// First innings is complete if all wickets are down or all balls are completed
-		maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
-		maxBalls := match.TotalOvers * 6         // Maximum legal balls in an innings
-		firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalBalls >= maxBalls
+		// First innings is complete if all wickets are down or overs are completed
+		firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 		if !firstInningsComplete {
 			return fmt.Errorf("first innings is not complete, cannot start second innings")
