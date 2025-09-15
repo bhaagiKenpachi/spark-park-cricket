@@ -132,6 +132,32 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("over is not in progress, cannot add ball")
 	}
 
+	// Check if this ball would complete the over (for legal balls only)
+	wouldCompleteOver := false
+	if req.BallType == models.BallTypeGood && over.TotalBalls >= 5 {
+		wouldCompleteOver = true
+	}
+
+	// If this ball would complete the over, get the new over first
+	if wouldCompleteOver {
+		log.Printf("This ball will complete over %d, creating new over first", over.OverNumber)
+
+		// Mark current over as complete
+		over.Status = string(models.OverStatusCompleted)
+		err = s.scorecardRepo.UpdateOver(ctx, over)
+		if err != nil {
+			log.Printf("Error updating over: %v", err)
+			return fmt.Errorf("failed to update over: %w", err)
+		}
+
+		// Get new over (this will create one if needed)
+		over, err = s.getCurrentOver(ctx, innings.ID)
+		if err != nil {
+			log.Printf("Error getting new current over: %v", err)
+			return fmt.Errorf("failed to get new current over: %w", err)
+		}
+	}
+
 	// Get next ball number
 	ballNumber, err := s.getNextBallNumber(ctx, over.ID)
 	if err != nil {
@@ -186,18 +212,6 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	if err != nil {
 		log.Printf("Error updating over: %v", err)
 		return fmt.Errorf("failed to update over: %w", err)
-	}
-
-	// If over is completed, create new over for next ball
-	if over.Status == string(models.OverStatusCompleted) {
-		log.Printf("Over %d is complete with %d legal balls, creating new over", over.OverNumber, over.TotalBalls)
-
-		// Get new over (this will create one if needed)
-		_, err = s.getCurrentOver(ctx, innings.ID)
-		if err != nil {
-			log.Printf("Error getting new current over: %v", err)
-			return fmt.Errorf("failed to get new current over: %w", err)
-		}
 	}
 
 	// Update innings statistics
