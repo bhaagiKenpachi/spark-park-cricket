@@ -1047,6 +1047,64 @@
                         "description": "Add leg byes. Leg byes are runs scored off the batsman's body/legs."
                     },
                     "response": []
+                },
+                {
+                    "name": "Undo Last Ball",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scorecard",
+                                "{{match_id}}",
+                                "ball"
+                            ],
+                            "query": [
+                                {
+                                    "key": "innings",
+                                    "value": "1",
+                                    "description": "Innings number (1 or 2)"
+                                }
+                            ]
+                        },
+                        "description": "Undo the last ball from the current over. Removes the most recently added ball and recalculates all statistics (runs, balls, wickets, overs)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Undo Last Ball - Innings 2",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scorecard",
+                                "{{match_id}}",
+                                "ball"
+                            ],
+                            "query": [
+                                {
+                                    "key": "innings",
+                                    "value": "2",
+                                    "description": "Second innings"
+                                }
+                            ]
+                        },
+                        "description": "Undo the last ball from the second innings. Use this when the match has progressed to the second innings."
+                    },
+                    "response": []
                 }
             ]
         }

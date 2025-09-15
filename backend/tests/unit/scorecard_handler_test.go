@@ -62,6 +62,11 @@ func (m *MockScorecardService) GetNonTossWinner(tossWinner models.TeamType) mode
 	return args.Get(0).(models.TeamType)
 }
 
+func (m *MockScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
+	args := m.Called(ctx, matchID, inningsNumber)
+	return args.Error(0)
+}
+
 func TestScorecardHandler_StartScoring(t *testing.T) {
 	tests := []struct {
 		name           string
