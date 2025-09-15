@@ -95,11 +95,14 @@ func TestUndoBallIntegration(t *testing.T) {
 		router.ServeHTTP(getW, getReq)
 		assert.Equal(t, http.StatusOK, getW.Code)
 
-		var scorecardBefore models.ScorecardResponse
-		err = json.Unmarshal(getW.Body.Bytes(), &scorecardBefore)
+		var responseBefore struct {
+			Data models.ScorecardResponse `json:"data"`
+		}
+		err = json.Unmarshal(getW.Body.Bytes(), &responseBefore)
 		require.NoError(t, err)
-		assert.Equal(t, 3, scorecardBefore.Innings[0].TotalRuns)  // 1 + 2 = 3 runs
-		assert.Equal(t, 2, scorecardBefore.Innings[0].TotalBalls) // 2 legal balls
+		require.NotEmpty(t, responseBefore.Data.Innings, "Scorecard should have innings data")
+		assert.Equal(t, 3, responseBefore.Data.Innings[0].TotalRuns)  // 1 + 2 = 3 runs
+		assert.Equal(t, 2, responseBefore.Data.Innings[0].TotalBalls) // 2 legal balls
 
 		// Undo last ball
 		undoReq := httptest.NewRequest("DELETE", "/api/v1/scorecard/"+matchID+"/ball?innings=1", nil)
@@ -113,12 +116,16 @@ func TestUndoBallIntegration(t *testing.T) {
 		router.ServeHTTP(getW2, getReq2)
 		assert.Equal(t, http.StatusOK, getW2.Code)
 
-		var scorecardAfter models.ScorecardResponse
-		err = json.Unmarshal(getW2.Body.Bytes(), &scorecardAfter)
+		var responseAfter struct {
+			Data models.ScorecardResponse `json:"data"`
+		}
+		err = json.Unmarshal(getW2.Body.Bytes(), &responseAfter)
 		require.NoError(t, err)
-		assert.Equal(t, 1, scorecardAfter.Innings[0].TotalRuns)           // Only 1 run left
-		assert.Equal(t, 1, scorecardAfter.Innings[0].TotalBalls)          // Only 1 legal ball left
-		assert.Equal(t, 1, len(scorecardAfter.Innings[0].Overs[0].Balls)) // Only 1 ball in over
+		require.NotEmpty(t, responseAfter.Data.Innings, "Scorecard should have innings data after undo")
+		require.NotEmpty(t, responseAfter.Data.Innings[0].Overs, "Innings should have overs data after undo")
+		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalRuns)           // Only 1 run left
+		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalBalls)          // Only 1 legal ball left
+		assert.Equal(t, 1, len(responseAfter.Data.Innings[0].Overs[0].Balls)) // Only 1 ball in over
 	})
 
 	t.Run("undo ball - no balls to undo", func(t *testing.T) {
@@ -148,10 +155,14 @@ func TestUndoBallIntegration(t *testing.T) {
 		router.ServeHTTP(undoW, undoReq)
 		assert.Equal(t, http.StatusInternalServerError, undoW.Code)
 
-		var errorResponse map[string]interface{}
+		var errorResponse struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
 		err = json.Unmarshal(undoW.Body.Bytes(), &errorResponse)
 		require.NoError(t, err)
-		assert.Contains(t, errorResponse["message"], "no balls to undo")
+		assert.Contains(t, errorResponse.Error.Message, "no current over found")
 	})
 
 	t.Run("undo ball - match not found", func(t *testing.T) {
@@ -161,10 +172,14 @@ func TestUndoBallIntegration(t *testing.T) {
 		router.ServeHTTP(undoW, undoReq)
 		assert.Equal(t, http.StatusInternalServerError, undoW.Code)
 
-		var errorResponse map[string]interface{}
+		var errorResponse struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
 		err := json.Unmarshal(undoW.Body.Bytes(), &errorResponse)
 		require.NoError(t, err)
-		assert.Contains(t, errorResponse["message"], "match not found")
+		assert.Contains(t, errorResponse.Error.Message, "match not found")
 	})
 
 	t.Run("undo ball - invalid innings number", func(t *testing.T) {
@@ -180,9 +195,13 @@ func TestUndoBallIntegration(t *testing.T) {
 		router.ServeHTTP(undoW, undoReq)
 		assert.Equal(t, http.StatusBadRequest, undoW.Code)
 
-		var errorResponse map[string]interface{}
+		var errorResponse struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
 		err := json.Unmarshal(undoW.Body.Bytes(), &errorResponse)
 		require.NoError(t, err)
-		assert.Contains(t, errorResponse["message"], "innings must be 1 or 2")
+		assert.Contains(t, errorResponse.Error.Message, "innings must be 1 or 2")
 	})
 }

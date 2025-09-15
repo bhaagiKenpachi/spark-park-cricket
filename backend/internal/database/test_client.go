@@ -16,7 +16,8 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 
 	// Create Supabase client with test schema
 	clientOptions := &supabaseclient.ClientOptions{
-		Schema: cfg.TestSchema,
+		Schema:  cfg.TestSchema,
+		Headers: cfg.GetSupabaseHeaders(),
 	}
 	client, err := supabaseclient.NewClient(cfg.SupabaseURL, cfg.SupabaseAPIKey, clientOptions)
 	if err != nil {
