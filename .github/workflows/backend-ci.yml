@@ -257,7 +257,7 @@ jobs:
     name: Integration Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && !inputs.skip_integration_tests }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && (github.event_name == 'workflow_dispatch' && inputs.skip_integration_tests) == false }}
     environment: ${{ inputs.environment || 'dev' }}
     timeout-minutes: 15
     defaults:
@@ -363,7 +363,7 @@ jobs:
     name: E2E Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, integration-tests]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && inputs.run_e2e_tests != false }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_type == 'full' || inputs.run_type == 'tests-only') }}
     environment: ${{ inputs.environment || 'dev' }}
     timeout-minutes: 15
     defaults:
@@ -522,7 +522,7 @@ jobs:
     name: Security Scan
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && !inputs.skip_security_scan }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && (github.event_name == 'workflow_dispatch' && inputs.skip_security_scan) == false }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
