@@ -224,6 +224,7 @@ func SetupScorecardTestRouter(scorecardHandler *handlers.ScorecardHandler, servi
 		r.Route("/scorecard", func(r chi.Router) {
 			r.Post("/start", scorecardHandler.StartScoring)
 			r.Post("/ball", scorecardHandler.AddBall)
+			r.Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 			r.Get("/{match_id}", scorecardHandler.GetScorecard)
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
