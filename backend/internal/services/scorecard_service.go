@@ -464,7 +464,7 @@ func (s *ScorecardService) GetCurrentOver(ctx context.Context, matchID string, i
 		return nil, fmt.Errorf("innings not found: %w", err)
 	}
 
-	// Get current over
+	// Get current over (only existing ones, don't create new)
 	over, err := s.scorecardRepo.GetCurrentOver(ctx, innings.ID)
 	if err != nil {
 		log.Printf("Error getting current over: %v", err)
