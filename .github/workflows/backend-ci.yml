@@ -305,6 +305,7 @@ jobs:
           echo "🗄️ Running database migrations..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          echo "DATABASE_PASSWORD: $DATABASE_PASSWORD"
           
           # Check if secrets are available
           if [ -z "$SUPABASE_URL" ]; then
@@ -319,10 +320,18 @@ jobs:
             exit 1
           fi
           
+          if [ -z "$DATABASE_PASSWORD" ]; then
+            echo "❌ ERROR: DATABASE_PASSWORD secret is not set in GitHub repository"
+            echo "Please configure DATABASE_PASSWORD in repository settings > Secrets and variables > Actions"
+            echo "This should be your Supabase database password for direct PostgreSQL access"
+            exit 1
+          fi
+          
           go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
       - name: Set up test database schema
         run: |
