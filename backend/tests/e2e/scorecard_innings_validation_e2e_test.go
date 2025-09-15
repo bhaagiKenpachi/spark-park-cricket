@@ -247,7 +247,9 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		require.NoError(t, err)
 		ballResp.Body.Close()
 
-		assert.Equal(t, "Ball added successfully", successResp["message"])
+		// The response is wrapped in a "data" field
+		data := successResp["data"].(map[string]interface{})
+		assert.Equal(t, "Ball added successfully", data["message"])
 	})
 
 	// Clean up after test

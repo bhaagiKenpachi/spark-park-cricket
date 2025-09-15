@@ -61,10 +61,18 @@ func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server 
 			matchID := path[len("/api/v1/scorecard/"):]
 			switch r.Method {
 			case http.MethodGet:
-				scorecardHandler.GetScorecard(w, r)
+				// Call service directly since we're using http.ServeMux
+				scorecard, err := serviceContainer.Scorecard.GetScorecard(r.Context(), matchID)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"data": scorecard,
+				})
 			}
-			// Store matchID in context for handlers to use
-			_ = matchID
 		}
 	})
 
@@ -140,9 +148,18 @@ func SetupE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client)
 			matchID := path[len("/api/v1/scorecard/"):]
 			switch r.Method {
 			case http.MethodGet:
-				scorecardHandler.GetScorecard(w, r)
+				// Call service directly since we're using http.ServeMux
+				scorecard, err := serviceContainer.Scorecard.GetScorecard(r.Context(), matchID)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"data": scorecard,
+				})
 			}
-			_ = matchID
 		}
 	})
 
