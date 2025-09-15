@@ -68,7 +68,6 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 
 // AddBall adds a ball to the scorecard
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
-	log.Printf("DEBUG: AddBall called for match %s, innings %d", req.MatchID, req.InningsNumber)
 
 	// Validate ball event
 	if err := utils.ValidateBallEventRequest(req); err != nil {
@@ -89,13 +88,9 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	}
 
 	// Validate innings order
-	log.Printf("DEBUG: Starting innings validation for match %s, innings %d, batting team %s, toss winner %s",
-		req.MatchID, req.InningsNumber, match.BattingTeam, match.TossWinner)
 	if err := s.ValidateInningsOrder(ctx, req.MatchID, match, req.InningsNumber); err != nil {
-		log.Printf("DEBUG: Innings validation failed: %v", err)
 		return fmt.Errorf("innings validation failed: %w", err)
 	}
-	log.Printf("DEBUG: Innings validation passed for match %s, innings %d", req.MatchID, req.InningsNumber)
 
 	// Get innings or create if doesn't exist
 	innings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, req.MatchID, req.InningsNumber)
@@ -469,7 +464,7 @@ func (s *ScorecardService) GetCurrentOver(ctx context.Context, matchID string, i
 		return nil, fmt.Errorf("innings not found: %w", err)
 	}
 
-	// Get current over
+	// Get current over (only existing ones, don't create new)
 	over, err := s.scorecardRepo.GetCurrentOver(ctx, innings.ID)
 	if err != nil {
 		log.Printf("Error getting current over: %v", err)
@@ -482,32 +477,23 @@ func (s *ScorecardService) GetCurrentOver(ctx context.Context, matchID string, i
 
 // ValidateInningsOrder validates that balls can only be added to the correct innings
 func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
-	log.Printf("DEBUG: validateInningsOrder called - matchID: %s, inningsNumber: %d, battingTeam: %s, tossWinner: %s",
-		matchID, inningsNumber, match.BattingTeam, match.TossWinner)
 
 	// Get all innings for this match to determine current state
 	innings, err := s.scorecardRepo.GetInningsByMatchID(ctx, matchID)
 	if err != nil {
-		log.Printf("DEBUG: No existing innings found for match %s, error: %v", matchID, err)
 		// If no innings exist, this is the first ball of the match
 		// The first innings should always be the toss-winning team
 		if inningsNumber == 1 {
 			// Check if the batting team matches the toss winner
 			if match.BattingTeam != match.TossWinner {
-				log.Printf("DEBUG: Validation failed - first innings must be played by toss winner %s, but batting team is %s",
-					match.TossWinner, match.BattingTeam)
 				return fmt.Errorf("first innings must be played by the toss-winning team (%s), but current batting team is %s",
 					match.TossWinner, match.BattingTeam)
 			}
-			log.Printf("DEBUG: Validation passed - first innings with correct team")
 			return nil
 		} else {
-			log.Printf("DEBUG: Validation failed - cannot start with innings %d, first innings must be played first", inningsNumber)
 			return fmt.Errorf("cannot start with innings %d, first innings must be played first", inningsNumber)
 		}
 	}
-
-	log.Printf("DEBUG: Found %d existing innings for match %s", len(innings), matchID)
 
 	// Determine which innings exist
 	firstInningsExists := false

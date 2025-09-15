@@ -8,17 +8,18 @@ import (
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
 
 // MatchHandler handles HTTP requests for match operations
 type MatchHandler struct {
-	service *services.MatchService
+	service services.MatchServiceInterface
 }
 
 // NewMatchHandler creates a new match handler
-func NewMatchHandler(service *services.MatchService) *MatchHandler {
+func NewMatchHandler(service services.MatchServiceInterface) *MatchHandler {
 	return &MatchHandler{
 		service: service,
 	}
@@ -135,6 +136,15 @@ func (h *MatchHandler) UpdateMatch(w http.ResponseWriter, r *http.Request) {
 	log.Printf("DEBUG: UpdateMatch handler called")
 
 	id := chi.URLParam(r, "id")
+
+	// Fallback: Extract ID manually if chi.URLParam fails (e.g., in E2E tests)
+	if id == "" {
+		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/matches/"), "/")
+		if len(parts) > 0 && parts[0] != "" {
+			id = parts[0]
+		}
+	}
+
 	if id == "" {
 		log.Printf("DEBUG: Match ID is required")
 		utils.WriteValidationError(w, "Match ID is required", nil)

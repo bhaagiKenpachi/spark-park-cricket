@@ -11,14 +11,12 @@ import (
 
 type ballRepository struct {
 	client *supabase.Client
-	schema string
 }
 
 // NewBallRepository creates a new ball repository
-func NewBallRepository(client *supabase.Client, schema string) interfaces.BallRepository {
+func NewBallRepository(client *supabase.Client) interfaces.BallRepository {
 	return &ballRepository{
 		client: client,
-		schema: schema,
 	}
 }
 

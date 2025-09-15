@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -25,11 +24,9 @@ func NewTeamService(teamRepo interfaces.TeamRepository, playerRepo interfaces.Pl
 
 // CreateTeam creates a new team
 func (s *TeamService) CreateTeam(ctx context.Context, req *models.CreateTeamRequest) (*models.Team, error) {
-	log.Printf("DEBUG: CreateTeam called with request: %+v", req)
 
 	// Validate business rules
 	if req.PlayersCount < 1 || req.PlayersCount > 20 {
-		log.Printf("DEBUG: Validation failed - players count out of range: %d", req.PlayersCount)
 		return nil, fmt.Errorf("players count must be between 1 and 20")
 	}
 
@@ -41,17 +38,12 @@ func (s *TeamService) CreateTeam(ctx context.Context, req *models.CreateTeamRequ
 		UpdatedAt:    time.Now(),
 	}
 
-	log.Printf("DEBUG: Created team model: ID='%s', Name='%s', PlayersCount=%d", team.ID, team.Name, team.PlayersCount)
-
 	// Save to repository
-	log.Printf("DEBUG: Calling teamRepo.Create with team: %+v", team)
 	err := s.teamRepo.Create(ctx, team)
 	if err != nil {
-		log.Printf("DEBUG: teamRepo.Create failed: %v", err)
 		return nil, fmt.Errorf("failed to create team: %w", err)
 	}
 
-	log.Printf("DEBUG: Team created successfully: %+v", team)
 	return team, nil
 }
 

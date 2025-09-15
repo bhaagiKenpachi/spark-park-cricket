@@ -1,5 +1,11 @@
 # Spark Park Cricket - Frontend
 
+[![Frontend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml)
+[![Node.js Version](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
+[![Next.js Version](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Coverage](https://codecov.io/gh/luffybhaagi/spark-park-cricket/branch/main/graph/badge.svg)](https://codecov.io/gh/luffybhaagi/spark-park-cricket)
+
 A modern Next.js frontend for the Spark Park Cricket tournament management system, built with TypeScript, Redux Toolkit, and Redux Saga.
 
 ## 🚀 Tech Stack

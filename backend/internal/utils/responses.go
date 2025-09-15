@@ -23,7 +23,13 @@ type APIError struct {
 func WriteJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// If we can't write the response, we can't do much more
+		// The client will receive a partial response
+		GetLogger().Error("Failed to encode JSON response", map[string]interface{}{
+			"error": err.Error(),
+		})
+	}
 }
 
 // WriteSuccess writes a success response
