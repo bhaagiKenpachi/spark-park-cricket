@@ -13,11 +13,11 @@ import (
 
 // SeriesHandler handles series-related HTTP requests
 type SeriesHandler struct {
-	service *services.SeriesService
+	service services.SeriesServiceInterface
 }
 
 // NewSeriesHandler creates a new series handler
-func NewSeriesHandler(service *services.SeriesService) *SeriesHandler {
+func NewSeriesHandler(service services.SeriesServiceInterface) *SeriesHandler {
 	return &SeriesHandler{
 		service: service,
 	}

@@ -16,27 +16,27 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 
 	// Create Supabase client with test schema
 	clientOptions := &supabaseclient.ClientOptions{
-		Schema: cfg.DatabaseSchema,
+		Schema: cfg.TestSchema,
 	}
 	client, err := supabaseclient.NewClient(cfg.SupabaseURL, cfg.SupabaseAPIKey, clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create supabase client: %w", err)
 	}
 
-	// Initialize repositories with test schema
+	// Initialize repositories
 	repositories := &Repositories{
-		Series:     supabase.NewSeriesRepository(client, cfg.DatabaseSchema),
-		Match:      supabase.NewMatchRepository(client, cfg.DatabaseSchema),
-		Scoreboard: supabase.NewScoreboardRepository(client, cfg.DatabaseSchema),
-		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema),
-		Over:       supabase.NewOverRepository(client, cfg.DatabaseSchema),
-		Ball:       supabase.NewBallRepository(client, cfg.DatabaseSchema),
+		Series:     supabase.NewSeriesRepository(client),
+		Match:      supabase.NewMatchRepository(client),
+		Scoreboard: supabase.NewScoreboardRepository(client),
+		Scorecard:  supabase.NewScorecardRepository(client),
+		Over:       supabase.NewOverRepository(client),
+		Ball:       supabase.NewBallRepository(client),
 	}
 
 	return &Client{
 		Supabase:     client,
 		Repositories: repositories,
-		Schema:       cfg.DatabaseSchema,
+		Schema:       cfg.TestSchema,
 	}, nil
 }
 

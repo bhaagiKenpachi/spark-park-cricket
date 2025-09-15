@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -67,7 +66,7 @@ func (mr *MigrationRunner) GetAppliedMigrations(ctx context.Context) (map[string
 
 // GetMigrationFiles returns sorted list of migration files
 func (mr *MigrationRunner) GetMigrationFiles(migrationsDir string) ([]Migration, error) {
-	files, err := ioutil.ReadDir(migrationsDir)
+	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +98,7 @@ func (mr *MigrationRunner) GetMigrationFiles(migrationsDir string) ([]Migration,
 
 // ReadMigrationFile reads the content of a migration file
 func (mr *MigrationRunner) ReadMigrationFile(path string) (string, error) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +120,11 @@ func (mr *MigrationRunner) ApplyMigration(ctx context.Context, migration Migrati
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("Failed to rollback transaction: %v", err)
+		}
+	}()
 
 	// Execute migration SQL
 	if _, err := tx.ExecContext(ctx, content); err != nil {

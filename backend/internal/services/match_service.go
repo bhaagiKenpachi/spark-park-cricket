@@ -34,7 +34,7 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	var matchNumber int
 	if req.MatchNumber != nil {
 		matchNumber = *req.MatchNumber
-		
+
 		// Validate that the match number doesn't already exist for this series
 		exists, err := s.matchRepo.ExistsBySeriesAndMatchNumber(ctx, req.SeriesID, matchNumber)
 		if err != nil {
@@ -161,9 +161,14 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 	}
 
 	// Check if match exists
-	_, err := s.matchRepo.GetByID(ctx, id)
+	match, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Cannot delete a live match
+	if match.Status == models.MatchStatusLive {
+		return fmt.Errorf("cannot delete a live match")
 	}
 
 	// Delete match
