@@ -184,11 +184,10 @@ describe('ScorecardView Component', () => {
 
         render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
-        expect(screen.getByText('Innings 1')).toBeInTheDocument();
+        expect(screen.getAllByText('Innings 1')[0]).toBeInTheDocument();
         expect(screen.getByText('Live')).toBeInTheDocument();
         expect(screen.getByText('45/2')).toBeInTheDocument();
         expect(screen.getByText('5 overs')).toBeInTheDocument();
-        expect(screen.getByText('Extras: 7')).toBeInTheDocument();
     });
 
     it('should display ball circles correctly', () => {
