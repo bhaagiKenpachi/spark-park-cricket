@@ -455,11 +455,20 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	require.NoError(t, err)
 	resp.Body.Close()
 
-	// Verify over is now complete
+	// Verify over is now complete and second over started
 	firstInnings = scorecardResponse.Data.Innings[0]
-	assert.Equal(t, 1.0, firstInnings.TotalOvers) // 6 legal balls = 1.0 overs
+	assert.Equal(t, 1.1, firstInnings.TotalOvers) // 1 completed over + 1 ball in second over = 1.1 overs
+
+	// Should have 2 overs now
+	assert.Len(t, firstInnings.Overs, 2, "Should have 2 overs after completing first over")
 
 	firstOver = firstInnings.Overs[0]
-	assert.Equal(t, 6, firstOver.TotalBalls)       // 6 legal balls
+	assert.Equal(t, 5, firstOver.TotalBalls)       // 5 legal balls (6th ball moved to second over)
 	assert.Equal(t, "completed", firstOver.Status) // Over complete
+
+	// Verify second over exists with 1 legal ball
+	secondOver := firstInnings.Overs[1]
+	assert.Equal(t, 2, secondOver.OverNumber)
+	assert.Equal(t, 1, secondOver.TotalBalls)         // 1 legal ball (the 6th legal ball)
+	assert.Equal(t, "in_progress", secondOver.Status) // Second over in progress
 }

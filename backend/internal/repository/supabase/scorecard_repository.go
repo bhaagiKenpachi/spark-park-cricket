@@ -8,6 +8,7 @@ import (
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
 
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -236,6 +237,7 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 	_, err := r.client.From("overs").
 		Select("*", "", false).
 		Eq("innings_id", inningsID).
+		Order("over_number", &postgrest.OrderOpts{Ascending: true}).
 		ExecuteTo(&overs)
 
 	if err != nil {
@@ -449,6 +451,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 		_, err := r.client.From("overs").
 			Select("*", "", false).
 			Eq("innings_id", inn.ID).
+			Order("over_number", &postgrest.OrderOpts{Ascending: true}).
 			ExecuteTo(&overs)
 
 		if err != nil {

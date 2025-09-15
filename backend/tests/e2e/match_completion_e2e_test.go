@@ -407,20 +407,20 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 
 	matchID := matchResponse.Data.ID
 
-	// Step 3: Complete First Innings with 10 runs
+	// Step 3: Complete First Innings with 5 runs (so target is 6, won't be reached with 12 balls of 1 run each)
 	firstInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
 	}
 
 	for _, ballReq := range firstInningsBalls {
@@ -434,14 +434,14 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 		resp.Body.Close()
 	}
 
-	// Step 4: Add 12 balls to second innings to complete all overs
+	// Step 4: Add 12 balls to second innings to complete all overs (score 0 runs so target is never reached)
 	secondInningsBalls := make([]models.BallEventRequest, 12)
 	for i := 0; i < 12; i++ {
 		secondInningsBalls[i] = models.BallEventRequest{
 			MatchID:       matchID,
 			InningsNumber: 2,
 			BallType:      models.BallTypeGood,
-			RunType:       models.RunTypeOne,
+			RunType:       models.RunTypeZero,
 			IsWicket:      false,
 			Byes:          0,
 		}
