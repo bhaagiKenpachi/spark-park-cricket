@@ -224,6 +224,7 @@ func SetupScorecardTestRouter(scorecardHandler *handlers.ScorecardHandler, servi
 		r.Route("/scorecard", func(r chi.Router) {
 			r.Post("/start", scorecardHandler.StartScoring)
 			r.Post("/ball", scorecardHandler.AddBall)
+			r.Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 			r.Get("/{match_id}", scorecardHandler.GetScorecard)
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
@@ -256,14 +257,14 @@ func MatchStatusPtr(status models.MatchStatus) *models.MatchStatus {
 
 // CleanupTestData cleans up test data from the database
 func CleanupTestData(t *testing.T, testDB *database.Client) {
-	// Clean up matches
-	_, err := testDB.Supabase.From("matches").Delete("", "").ExecuteTo(nil)
+	// Clean up matches - use a condition that will match all records
+	_, err := testDB.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup matches: %v", err)
 	}
 
-	// Clean up series
-	_, err = testDB.Supabase.From("series").Delete("", "").ExecuteTo(nil)
+	// Clean up series - use a condition that will match all records
+	_, err = testDB.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup series: %v", err)
 	}
@@ -353,32 +354,32 @@ func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
 	// Clean up scorecard related tables in reverse order of dependencies
 	// Balls -> Overs -> Innings -> Matches -> Series
 
-	// Clean up balls
-	_, err := dbClient.Supabase.From("scorecard_balls").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	// Clean up balls - use a condition that will match all records
+	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup balls: %v", err)
 	}
 
-	// Clean up overs
-	_, err = dbClient.Supabase.From("scorecard_overs").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	// Clean up overs - use a condition that will match all records
+	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup overs: %v", err)
 	}
 
-	// Clean up innings
-	_, err = dbClient.Supabase.From("scorecard_innings").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	// Clean up innings - use a condition that will match all records
+	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup innings: %v", err)
 	}
 
-	// Clean up matches
-	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	// Clean up matches - use a condition that will match all records
+	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup matches: %v", err)
 	}
 
-	// Clean up series
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	// Clean up series - use a condition that will match all records
+	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup series: %v", err)
 	}

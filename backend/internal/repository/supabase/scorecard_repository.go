@@ -388,6 +388,24 @@ func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*
 	return balls[0], nil
 }
 
+// DeleteBall deletes a ball by ID
+func (r *scorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
+	log.Printf("Deleting ball %s", ballID)
+
+	_, _, err := r.client.From("balls").
+		Delete("", "").
+		Eq("id", ballID).
+		Execute()
+
+	if err != nil {
+		log.Printf("Error deleting ball: %v", err)
+		return fmt.Errorf("failed to delete ball: %w", err)
+	}
+
+	log.Printf("Successfully deleted ball %s", ballID)
+	return nil
+}
+
 // StartScoring starts scoring for a match
 func (r *scorecardRepository) StartScoring(ctx context.Context, matchID string) error {
 	log.Printf("Starting scoring for match %s", matchID)

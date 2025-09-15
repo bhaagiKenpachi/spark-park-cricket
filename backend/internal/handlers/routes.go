@@ -78,6 +78,7 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 			scorecardHandler := NewScorecardHandler(serviceContainer.Scorecard)
 			r.Post("/start", scorecardHandler.StartScoring)
 			r.Post("/ball", scorecardHandler.AddBall)
+			r.Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 			r.Get("/{match_id}", scorecardHandler.GetScorecard)
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
