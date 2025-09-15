@@ -26,13 +26,15 @@ import {
 import { ApiService, ApiError } from '../../services/api';
 
 // Mock the API service
+const mockApiService = {
+    getScorecard: jest.fn(),
+    startScoring: jest.fn(),
+    addBall: jest.fn(),
+    getInnings: jest.fn(),
+};
+
 jest.mock('../../services/api', () => ({
-    ApiService: jest.fn().mockImplementation(() => ({
-        getScorecard: jest.fn(),
-        startScoring: jest.fn(),
-        addBall: jest.fn(),
-        getInnings: jest.fn(),
-    })),
+    ApiService: jest.fn().mockImplementation(() => mockApiService),
     ApiError: class extends Error {
         constructor(message: string) {
             super(message);
@@ -42,12 +44,11 @@ jest.mock('../../services/api', () => ({
 }));
 
 describe('Scorecard Sagas', () => {
-    let mockApiService: jest.Mocked<ApiService>;
     let dispatched: any[];
 
     beforeEach(() => {
-        mockApiService = new ApiService() as jest.Mocked<ApiService>;
         dispatched = [];
+        jest.clearAllMocks();
     });
 
     const mockStore = {
