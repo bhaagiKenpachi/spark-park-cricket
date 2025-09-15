@@ -122,3 +122,59 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		"version": "1.0.0",
 	})
 }
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{
+		"status":  "OK",
+		"service": "spark-park-cricket-backend",
+	})
+}
+
+func dbHealthHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO: Implement database health check
+	utils.WriteSuccess(w, map[string]string{
+		"status":   "OK",
+		"database": "connected",
+	})
+}
+
+// Placeholder handlers for API endpoints
+func listSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, []interface{}{})
+}
+
+func createSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteCreated(w, map[string]string{"message": "Series created"})
+}
+
+func getSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Series details"})
+}
+
+func updateSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Series updated"})
+}
+
+func deleteSeriesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Series deleted"})
+}
+
+func listMatchesHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, []interface{}{})
+}
+
+func createMatchHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteCreated(w, map[string]string{"message": "Match created"})
+}
+
+func getMatchHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Match details"})
+}
+
+func updateMatchHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Match updated"})
+}
+
+func deleteMatchHandler(w http.ResponseWriter, r *http.Request) {
+	utils.WriteSuccess(w, map[string]string{"message": "Match deleted"})
+}

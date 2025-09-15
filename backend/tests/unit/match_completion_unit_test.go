@@ -1,4 +1,4 @@
-package unit
+package tests
 
 import (
 	"context"
@@ -108,9 +108,6 @@ func (m *MockMatchRepository) Create(ctx context.Context, match *models.Match) e
 
 func (m *MockMatchRepository) GetByID(ctx context.Context, id string) (*models.Match, error) {
 	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
 	return args.Get(0).(*models.Match), args.Error(1)
 }
 
@@ -126,17 +123,11 @@ func (m *MockMatchRepository) Count(ctx context.Context) (int64, error) {
 
 func (m *MockMatchRepository) GetAll(ctx context.Context, filters *models.MatchFilters) ([]*models.Match, error) {
 	args := m.Called(ctx, filters)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
 	return args.Get(0).([]*models.Match), args.Error(1)
 }
 
 func (m *MockMatchRepository) GetBySeriesID(ctx context.Context, seriesID string) ([]*models.Match, error) {
 	args := m.Called(ctx, seriesID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
 	return args.Get(0).([]*models.Match), args.Error(1)
 }
 
@@ -153,47 +144,6 @@ func (m *MockMatchRepository) GetNextMatchNumber(ctx context.Context, seriesID s
 func (m *MockMatchRepository) ExistsBySeriesAndMatchNumber(ctx context.Context, seriesID string, matchNumber int) (bool, error) {
 	args := m.Called(ctx, seriesID, matchNumber)
 	return args.Get(0).(bool), args.Error(1)
-}
-
-// MockSeriesRepository is a mock implementation of SeriesRepository
-type MockSeriesRepository struct {
-	mock.Mock
-}
-
-func (m *MockSeriesRepository) GetByID(ctx context.Context, id string) (*models.Series, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
-	args := m.Called(ctx, filters)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) Create(ctx context.Context, series *models.Series) error {
-	args := m.Called(ctx, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Update(ctx context.Context, id string, series *models.Series) error {
-	args := m.Called(ctx, id, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Delete(ctx context.Context, id string) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Count(ctx context.Context) (int64, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(int64), args.Error(1)
 }
 
 func TestShouldCompleteMatch_TargetReached(t *testing.T) {

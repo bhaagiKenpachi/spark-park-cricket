@@ -204,10 +204,7 @@ func (c *Client) readPump() {
 	}()
 
 	c.conn.SetReadLimit(512)
-	if err := c.conn.SetReadDeadline(time.Now().Add(60 * time.Second)); err != nil {
-		log.Printf("Failed to set read deadline: %v", err)
-		return
-	}
+	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	for {
 		_, _, err := c.conn.ReadMessage()
@@ -224,17 +221,12 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	defer c.conn.Close()
 
-	for { //nolint:gosimple // websocket write pump requires for{select{}} pattern
+	for {
 		select {
 		case message, ok := <-c.send:
-			if err := c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
-				log.Printf("Failed to set write deadline: %v", err)
-				return
-			}
+			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				if err := c.conn.WriteMessage(websocket.CloseMessage, []byte{}); err != nil {
-					log.Printf("Failed to write close message: %v", err)
-				}
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -242,22 +234,13 @@ func (c *Client) writePump() {
 			if err != nil {
 				return
 			}
-			if _, err := w.Write(message); err != nil {
-				log.Printf("Failed to write message: %v", err)
-				return
-			}
+			w.Write(message)
 
 			// Add queued chat messages to the current websocket message
 			n := len(c.send)
 			for i := 0; i < n; i++ {
-				if _, err := w.Write([]byte{'\n'}); err != nil {
-					log.Printf("Failed to write newline: %v", err)
-					return
-				}
-				if _, err := w.Write(<-c.send); err != nil {
-					log.Printf("Failed to write queued message: %v", err)
-					return
-				}
+				w.Write([]byte{'\n'})
+				w.Write(<-c.send)
 			}
 
 			if err := w.Close(); err != nil {
