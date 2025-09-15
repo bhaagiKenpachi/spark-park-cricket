@@ -349,6 +349,15 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 		return nil, fmt.Errorf("failed to get balls: %w", err)
 	}
 
+	// Sort balls by ball_number to ensure consistent ordering
+	for i := 0; i < len(balls)-1; i++ {
+		for j := i + 1; j < len(balls); j++ {
+			if balls[i].BallNumber > balls[j].BallNumber {
+				balls[i], balls[j] = balls[j], balls[i]
+			}
+		}
+	}
+
 	log.Printf("Found %d balls for over %s", len(balls), overID)
 	return balls, nil
 }
