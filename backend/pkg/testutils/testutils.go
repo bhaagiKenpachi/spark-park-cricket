@@ -69,9 +69,12 @@ func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server 
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				if err := json.NewEncoder(w).Encode(map[string]interface{}{
 					"data": scorecard,
-				})
+				}); err != nil {
+					http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 	})
@@ -156,9 +159,12 @@ func SetupE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(map[string]interface{}{
+				if err := json.NewEncoder(w).Encode(map[string]interface{}{
 					"data": scorecard,
-				})
+				}); err != nil {
+					http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 	})

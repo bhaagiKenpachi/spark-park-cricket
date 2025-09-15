@@ -188,12 +188,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("failed to update over: %w", err)
 	}
 
-	// If over is completed and we need to add more balls, create new over
-	if over.Status == string(models.OverStatusCompleted) && req.BallType == models.BallTypeGood && over.TotalBalls > 6 {
+	// If over is completed, create new over for next ball
+	if over.Status == string(models.OverStatusCompleted) {
 		log.Printf("Over %d is complete with %d legal balls, creating new over", over.OverNumber, over.TotalBalls)
 
-		// Get new over
-		over, err = s.getCurrentOver(ctx, innings.ID)
+		// Get new over (this will create one if needed)
+		_, err = s.getCurrentOver(ctx, innings.ID)
 		if err != nil {
 			log.Printf("Error getting new current over: %v", err)
 			return fmt.Errorf("failed to get new current over: %w", err)
