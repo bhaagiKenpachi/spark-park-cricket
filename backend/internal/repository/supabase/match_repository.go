@@ -15,7 +15,9 @@ type matchRepository struct {
 
 // NewMatchRepository creates a new match repository
 func NewMatchRepository(client *supabase.Client) interfaces.MatchRepository {
-	return &matchRepository{client: client}
+	return &matchRepository{
+		client: client,
+	}
 }
 
 func (r *matchRepository) Create(ctx context.Context, match *models.Match) error {
@@ -64,7 +66,8 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*models.Match
 
 func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilters) ([]*models.Match, error) {
 	var result []models.Match
-	query := r.client.From("matches").Select("*", "", false)
+	tableName := "matches"
+	query := r.client.From(tableName).Select("*", "", false)
 
 	if filters.SeriesID != nil {
 		query = query.Eq("series_id", *filters.SeriesID)

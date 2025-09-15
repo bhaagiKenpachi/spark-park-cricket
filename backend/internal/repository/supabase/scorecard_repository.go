@@ -8,6 +8,7 @@ import (
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
 
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -236,6 +237,7 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 	_, err := r.client.From("overs").
 		Select("*", "", false).
 		Eq("innings_id", inningsID).
+		Order("over_number", &postgrest.OrderOpts{Ascending: true}).
 		ExecuteTo(&overs)
 
 	if err != nil {
@@ -300,7 +302,8 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 
 // CreateBall creates a new ball
 func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.ScorecardBall) error {
-	log.Printf("Creating ball %d for over %s", ball.BallNumber, ball.OverID)
+	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
+		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
 	data := map[string]interface{}{
 		"over_id":     ball.OverID,
@@ -346,6 +349,15 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 	if err != nil {
 		log.Printf("Error getting balls: %v", err)
 		return nil, fmt.Errorf("failed to get balls: %w", err)
+	}
+
+	// Sort balls by ball_number to ensure consistent ordering
+	for i := 0; i < len(balls)-1; i++ {
+		for j := i + 1; j < len(balls); j++ {
+			if balls[i].BallNumber > balls[j].BallNumber {
+				balls[i], balls[j] = balls[j], balls[i]
+			}
+		}
 	}
 
 	log.Printf("Found %d balls for over %s", len(balls), overID)
@@ -439,6 +451,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 		_, err := r.client.From("overs").
 			Select("*", "", false).
 			Eq("innings_id", inn.ID).
+			Order("over_number", &postgrest.OrderOpts{Ascending: true}).
 			ExecuteTo(&overs)
 
 		if err != nil {
