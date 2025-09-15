@@ -170,8 +170,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+5+6 (good balls) + 5 (byes) = 28
 	assert.Equal(t, 28, firstInnings.TotalRuns)
 
-	// Verify total overs: 1.0 (6 legal balls = 1 completed over)
-	assert.Equal(t, 1.0, firstInnings.TotalOvers)
+	// Verify total overs: 1.1 (1 completed over + 1 ball in second over)
+	assert.Equal(t, 1.1, firstInnings.TotalOvers)
 
 	// Verify total balls: 6 (only legal balls count towards over completion)
 	assert.Equal(t, 6, firstInnings.TotalBalls)
@@ -182,16 +182,17 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, 1, firstInnings.Extras.NoBalls) // From no_ball
 	assert.Equal(t, 7, firstInnings.Extras.Total)   // 5 + 1 + 1
 
-	// Verify over data
+	// Verify over data - first over should be completed with 5 legal balls (6th legal ball goes to second over)
 	firstOver := firstInnings.Overs[0]
 	assert.Equal(t, 1, firstOver.OverNumber)
-	assert.Equal(t, 28, firstOver.TotalRuns)
-	assert.Equal(t, 6, firstOver.TotalBalls) // Only legal balls count for over completion
+	assert.Equal(t, 22, firstOver.TotalRuns) // 6+1+1+2+3+4+5 = 22 runs from all balls in first over
+	assert.Equal(t, 5, firstOver.TotalBalls) // Only legal balls count for over completion
 	assert.Equal(t, "completed", firstOver.Status)
 
-	// Verify ball details
-	assert.Len(t, firstOver.Balls, 8) // All 8 balls should be recorded
+	// Verify ball details - first over should have 7 balls (2 illegal + 5 legal)
+	assert.Len(t, firstOver.Balls, 7, "First over should have 7 balls (2 illegal + 5 legal)")
 
+	// First over should contain all 7 balls (2 illegal + 5 legal)
 	// Ball 1: No ball with byes
 	assert.Equal(t, 1, firstOver.Balls[0].BallNumber)
 	assert.Equal(t, "no_ball", firstOver.Balls[0].BallType)
@@ -216,31 +217,44 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, 0, firstOver.Balls[2].Byes)
 	assert.False(t, firstOver.Balls[2].IsWicket)
 
-	// Continue for remaining balls...
+	// Ball 4: Good ball - 2 runs
 	assert.Equal(t, 4, firstOver.Balls[3].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[3].BallType)
 	assert.Equal(t, "2", firstOver.Balls[3].RunType)
 	assert.Equal(t, 2, firstOver.Balls[3].Runs)
 
+	// Ball 5: Good ball - 3 runs
 	assert.Equal(t, 5, firstOver.Balls[4].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[4].BallType)
 	assert.Equal(t, "3", firstOver.Balls[4].RunType)
 	assert.Equal(t, 3, firstOver.Balls[4].Runs)
 
+	// Ball 6: Good ball - 4 runs
 	assert.Equal(t, 6, firstOver.Balls[5].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[5].BallType)
 	assert.Equal(t, "4", firstOver.Balls[5].RunType)
 	assert.Equal(t, 4, firstOver.Balls[5].Runs)
 
+	// Ball 7: Good ball - 5 runs
 	assert.Equal(t, 7, firstOver.Balls[6].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[6].BallType)
 	assert.Equal(t, "5", firstOver.Balls[6].RunType)
 	assert.Equal(t, 5, firstOver.Balls[6].Runs)
 
-	assert.Equal(t, 8, firstOver.Balls[7].BallNumber)
-	assert.Equal(t, "good", firstOver.Balls[7].BallType)
-	assert.Equal(t, "6", firstOver.Balls[7].RunType)
-	assert.Equal(t, 6, firstOver.Balls[7].Runs)
+	// Verify second over exists and contains the 6th legal ball
+	assert.Len(t, firstInnings.Overs, 2, "Should have 2 overs")
+	secondOver := firstInnings.Overs[1]
+	assert.Equal(t, 2, secondOver.OverNumber)
+	assert.Equal(t, "in_progress", secondOver.Status)
+	assert.Len(t, secondOver.Balls, 1, "Second over should have 1 legal ball")
+
+	// Ball 1: Good ball - 6 runs (should be in second over, ball numbering resets per over)
+	assert.Equal(t, 1, secondOver.Balls[0].BallNumber)
+	assert.Equal(t, "good", secondOver.Balls[0].BallType)
+	assert.Equal(t, "6", secondOver.Balls[0].RunType)
+	assert.Equal(t, 6, secondOver.Balls[0].Runs)
+	assert.Equal(t, 0, secondOver.Balls[0].Byes)
+	assert.False(t, secondOver.Balls[0].IsWicket)
 
 	// Test adding one more ball to start second over
 	nextBallReq := models.BallEventRequest{
@@ -275,14 +289,14 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 
 	// Verify second over started
 	firstInnings = scorecardResponse.Data.Innings[0]
-	assert.Equal(t, 1.1, firstInnings.TotalOvers) // 1 completed over + 1 ball in current over
+	assert.Equal(t, 1.2, firstInnings.TotalOvers) // 1 completed over + 2 balls in current over
 	assert.Len(t, firstInnings.Overs, 2)          // Two overs now
 
 	// Verify second over is in progress
-	secondOver := firstInnings.Overs[1]
-	assert.Equal(t, 2, secondOver.OverNumber)
-	assert.Equal(t, "in_progress", secondOver.Status)
-	assert.Len(t, secondOver.Balls, 1) // One ball in second over
+	secondOverAfterBall := firstInnings.Overs[1]
+	assert.Equal(t, 2, secondOverAfterBall.OverNumber)
+	assert.Equal(t, "in_progress", secondOverAfterBall.Status)
+	assert.Len(t, secondOverAfterBall.Balls, 2) // Two balls in second over
 }
 
 func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
