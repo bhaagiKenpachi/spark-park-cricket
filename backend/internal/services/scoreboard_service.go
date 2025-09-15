@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -39,27 +40,36 @@ func NewScoreboardService(
 
 // GetScoreboard retrieves the live scoreboard for a match
 func (s *ScoreboardService) GetScoreboard(ctx context.Context, matchID string) (*models.LiveScoreboard, error) {
+	log.Printf("DEBUG: ScoreboardService.GetScoreboard called with matchID: %s", matchID)
 
 	if matchID == "" {
+		log.Printf("DEBUG: Match ID is empty")
 		return nil, fmt.Errorf("match ID is required")
 	}
 
 	// Check if match exists
+	log.Printf("DEBUG: Checking if match exists for ID: %s", matchID)
 	match, err := s.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
+		log.Printf("DEBUG: Match not found: %v", err)
 		return nil, fmt.Errorf("match not found: %w", err)
 	}
+	log.Printf("DEBUG: Match found: %+v", match)
 
 	// Get scoreboard
+	log.Printf("DEBUG: Getting scoreboard for matchID: %s", matchID)
 	scoreboard, err := s.scoreboardRepo.GetByMatchID(ctx, matchID)
 	if err != nil {
+		log.Printf("DEBUG: Failed to get scoreboard: %v", err)
 		// If no scoreboard exists, create one
 		if err.Error() == "scoreboard not found" {
+			log.Printf("DEBUG: Scoreboard not found, creating new one")
 			return s.initializeScoreboard(ctx, match)
 		}
 		return nil, fmt.Errorf("failed to get scoreboard: %w", err)
 	}
 
+	log.Printf("DEBUG: Scoreboard found: %+v", scoreboard)
 	return scoreboard, nil
 }
 
@@ -180,6 +190,7 @@ func (s *ScoreboardService) UpdateWicket(ctx context.Context, matchID string, re
 
 // initializeScoreboard creates a new scoreboard for a match
 func (s *ScoreboardService) initializeScoreboard(ctx context.Context, match *models.Match) (*models.LiveScoreboard, error) {
+	log.Printf("DEBUG: initializeScoreboard called for match: %+v", match)
 
 	// Ensure the first innings always starts with the toss-winning team
 	scoreboard := &models.LiveScoreboard{
@@ -193,11 +204,15 @@ func (s *ScoreboardService) initializeScoreboard(ctx context.Context, match *mod
 		UpdatedAt:   time.Now(),
 	}
 
+	log.Printf("DEBUG: Created scoreboard object: %+v", scoreboard)
+
 	err := s.scoreboardRepo.Create(ctx, scoreboard)
 	if err != nil {
+		log.Printf("DEBUG: Failed to create scoreboard: %v", err)
 		return nil, fmt.Errorf("failed to create scoreboard: %w", err)
 	}
 
+	log.Printf("DEBUG: Scoreboard created successfully: %+v", scoreboard)
 	return scoreboard, nil
 }
 

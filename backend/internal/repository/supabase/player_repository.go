@@ -39,8 +39,7 @@ func (r *playerRepository) GetByID(ctx context.Context, id string) (*models.Play
 
 func (r *playerRepository) GetAll(ctx context.Context, filters *models.PlayerFilters) ([]*models.Player, error) {
 	var result []models.Player
-	tableName := "players"
-	query := r.client.From(tableName).Select("*", "", false)
+	query := r.client.From("players").Select("*", "", false)
 
 	if filters != nil {
 		if filters.Limit > 0 {

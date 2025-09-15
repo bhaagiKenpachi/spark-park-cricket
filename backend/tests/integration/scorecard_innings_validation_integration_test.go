@@ -8,6 +8,7 @@ import (
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/supabase"
 	"spark-park-cricket-backend/internal/services"
 
 	"github.com/stretchr/testify/assert"
@@ -24,10 +25,10 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	// Clean up before test
 	cleanupTestData(t, testDB)
 
-	// Use repositories from test client
-	seriesRepo := testDB.Repositories.Series
-	matchRepo := testDB.Repositories.Match
-	scorecardRepo := testDB.Repositories.Scorecard
+	// Create repositories
+	seriesRepo := supabase.NewSeriesRepository(testDB.Supabase)
+	matchRepo := supabase.NewMatchRepository(testDB.Supabase)
+	scorecardRepo := supabase.NewScorecardRepository(testDB.Supabase)
 
 	// Create services
 	seriesService := services.NewSeriesService(seriesRepo)

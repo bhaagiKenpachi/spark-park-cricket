@@ -119,9 +119,7 @@ func runTest(testName, testFile string) error {
 		}
 		return nil
 	case <-time.After(5 * time.Minute):
-		if err := cmd.Process.Kill(); err != nil {
-			return fmt.Errorf("test timed out after 5 minutes and failed to kill process: %w", err)
-		}
+		cmd.Process.Kill()
 		return fmt.Errorf("test timed out after 5 minutes")
 	}
 }

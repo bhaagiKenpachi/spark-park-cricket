@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -88,7 +88,7 @@ func main() {
 			continue
 		}
 
-		_, _ = io.ReadAll(resp.Body)
+		_, _ = ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
@@ -106,7 +106,7 @@ func main() {
 
 	// Read the migration script
 	migrationPath := "scripts/reset_supabase.sql"
-	migrationSQL, err := os.ReadFile(migrationPath)
+	migrationSQL, err := ioutil.ReadFile(migrationPath)
 	if err != nil {
 		log.Fatalf("Failed to read migration file: %v", err)
 	}
@@ -174,7 +174,7 @@ func main() {
 			continue
 		}
 
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 
 		if resp.StatusCode == 200 {
