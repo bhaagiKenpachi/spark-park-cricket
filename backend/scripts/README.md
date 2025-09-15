@@ -29,29 +29,23 @@ This folder contains utility scripts for the Spark Park Cricket backend system.
 - Creates indexes and constraints
 - Adds documentation comments
 
-### 🌱 **seed.go**
-**Purpose**: Seed database with sample data (legacy)
-**Usage**: `go run scripts/seed.go`
-
-**Note**: This script is from the old system and may not be compatible with the new simplified schema.
-
-### 🧪 **test_scoring.go**
-**Purpose**: Test cricket scoring functionality
-**Usage**: `go run scripts/test_scoring.go`
+### 🧪 **setup_test_db.sql**
+**Purpose**: Setup test database schema
+**Usage**: Copy and paste into Supabase SQL Editor
 
 **What it does**:
-- Tests ball-by-ball scoring
-- Validates run types and ball types
-- Tests over completion logic
+- Creates test database schema
+- Sets up test tables and constraints
+- Prepares isolated test environment
 
-### 🔌 **test_websocket.go**
-**Purpose**: Test WebSocket functionality
-**Usage**: `go run scripts/test_websocket.go`
+### 🧹 **cleanup_test_db.sql**
+**Purpose**: Clean up test database
+**Usage**: Copy and paste into Supabase SQL Editor
 
 **What it does**:
-- Tests real-time WebSocket connections
-- Validates event broadcasting
-- Tests match room functionality
+- Removes test data and tables
+- Cleans up test database
+- Resets test environment
 
 ## Quick Start
 
@@ -72,11 +66,11 @@ curl http://localhost:8080/api/v1/matches
 
 ### For Testing:
 ```bash
-# Test scoring functionality
-go run scripts/test_scoring.go
+# Setup test database
+# Copy setup_test_db.sql content to Supabase SQL Editor and run
 
-# Test WebSocket functionality  
-go run scripts/test_websocket.go
+# Clean up test database after testing
+# Copy cleanup_test_db.sql content to Supabase SQL Editor and run
 ```
 
 ## Environment Requirements
@@ -91,3 +85,4 @@ All scripts require the following environment variables in `.env`:
 - Manual SQL execution is required due to Supabase API limitations for DDL operations
 - All scripts include comprehensive error handling and status reporting
 - The simplified system uses Team A vs Team B instead of complex team management
+- Migration scripts have been cleaned up after successful prod_v1 schema migration

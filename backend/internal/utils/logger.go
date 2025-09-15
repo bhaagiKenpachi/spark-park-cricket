@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -9,43 +10,44 @@ import (
 
 // Logger is the global logger instance
 var Logger *logrus.Logger
+var loggerOnce sync.Once
 
 // InitLogger initializes the structured logger
 func InitLogger() {
-	Logger = logrus.New()
+	loggerOnce.Do(func() {
+		Logger = logrus.New()
 
-	// Set log level based on environment
-	logLevel := os.Getenv("LOG_LEVEL")
-	if logLevel == "" {
-		logLevel = "info"
-	}
+		// Set log level based on environment
+		logLevel := os.Getenv("LOG_LEVEL")
+		if logLevel == "" {
+			logLevel = "info"
+		}
 
-	level, err := logrus.ParseLevel(logLevel)
-	if err != nil {
-		level = logrus.InfoLevel
-	}
-	Logger.SetLevel(level)
+		level, err := logrus.ParseLevel(logLevel)
+		if err != nil {
+			level = logrus.InfoLevel
+		}
+		Logger.SetLevel(level)
 
-	// Set JSON formatter for structured logging
-	Logger.SetFormatter(&logrus.JSONFormatter{
-		TimestampFormat: time.RFC3339,
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "timestamp",
-			logrus.FieldKeyLevel: "level",
-			logrus.FieldKeyMsg:   "message",
-			logrus.FieldKeyFunc:  "function",
-		},
+		// Set JSON formatter for structured logging
+		Logger.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339,
+			FieldMap: logrus.FieldMap{
+				logrus.FieldKeyTime:  "timestamp",
+				logrus.FieldKeyLevel: "level",
+				logrus.FieldKeyMsg:   "message",
+				logrus.FieldKeyFunc:  "function",
+			},
+		})
+
+		// Set output to stdout
+		Logger.SetOutput(os.Stdout)
 	})
-
-	// Set output to stdout
-	Logger.SetOutput(os.Stdout)
 }
 
 // GetLogger returns the global logger instance
 func GetLogger() *logrus.Logger {
-	if Logger == nil {
-		InitLogger()
-	}
+	InitLogger() // This is safe to call multiple times due to sync.Once
 	return Logger
 }
 

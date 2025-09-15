@@ -4,15 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
-	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,10 +24,10 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 	defer testDB.Close()
 
 	// Clean up before test
-	cleanupTestData(t, testDB)
+	testutils.CleanupTestData(t, testDB)
 
 	// Start test server
-	server := setupE2ETestServer(t, testDB)
+	server := testutils.SetupE2ETestServer(t, testDB)
 	defer server.Close()
 
 	t.Run("API prevents adding ball to second innings before first innings", func(t *testing.T) {
@@ -249,63 +247,11 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		require.NoError(t, err)
 		ballResp.Body.Close()
 
-		assert.Equal(t, "Ball added successfully", successResp["message"])
+		// The response is wrapped in a "data" field
+		data := successResp["data"].(map[string]interface{})
+		assert.Equal(t, "Ball added successfully", data["message"])
 	})
 
 	// Clean up after test
-	cleanupTestData(t, testDB)
-}
-
-func setupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server {
-	// Create service container
-	serviceContainer := services.NewContainer(testDB.Repositories)
-
-	// Create handlers
-	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
-	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
-	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
-
-	// Create router and register routes
-	router := http.NewServeMux()
-
-	// Series routes
-	router.HandleFunc("/api/v1/series", seriesHandler.CreateSeries)
-
-	// Match routes
-	router.HandleFunc("/api/v1/matches", matchHandler.CreateMatch)
-	router.HandleFunc("/api/v1/matches/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if len(path) > len("/api/v1/matches/") {
-			matchID := path[len("/api/v1/matches/"):]
-			switch r.Method {
-			case http.MethodGet:
-				matchHandler.GetMatch(w, r)
-			case http.MethodPut:
-				matchHandler.UpdateMatch(w, r)
-			case http.MethodDelete:
-				matchHandler.DeleteMatch(w, r)
-			}
-			// Store matchID in context for handlers to use
-			_ = matchID
-		}
-	})
-
-	// Scorecard routes
-	router.HandleFunc("/api/v1/scorecard/ball", scorecardHandler.AddBall)
-
-	return httptest.NewServer(router)
-}
-
-func cleanupTestData(t *testing.T, testDB *database.Client) {
-	// Clean up matches
-	_, err := testDB.Supabase.From("matches").Delete("", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup matches: %v", err)
-	}
-
-	// Clean up series
-	_, err = testDB.Supabase.From("series").Delete("", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series: %v", err)
-	}
+	testutils.CleanupTestData(t, testDB)
 }

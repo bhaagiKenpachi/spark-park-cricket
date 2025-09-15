@@ -15,7 +15,9 @@ type ballRepository struct {
 
 // NewBallRepository creates a new ball repository
 func NewBallRepository(client *supabase.Client) interfaces.BallRepository {
-	return &ballRepository{client: client}
+	return &ballRepository{
+		client: client,
+	}
 }
 
 func (r *ballRepository) Create(ctx context.Context, ball *models.Ball) error {

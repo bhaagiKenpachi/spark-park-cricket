@@ -1,5 +1,12 @@
 # 🏏 Spark Park Cricket
 
+[![Backend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/backend-ci.yml)
+[![Frontend CI/CD](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/luffybhaagi/spark-park-cricket/actions/workflows/frontend-ci.yml)
+[![Go Version](https://img.shields.io/badge/Go-1.23-blue.svg)](https://golang.org/)
+[![Node.js Version](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
+[![Next.js Version](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/License-Private-red.svg)]()
+
 A comprehensive cricket tournament management system with real-time scoring capabilities, built with Go backend and Next.js frontend.
 
 ## 📋 Table of Contents
