@@ -110,23 +110,27 @@ func (r *RedisClient) HealthCheck() error {
 	return err
 }
 
-// Cache key generators for different data types
+// GetSeriesKey generates a cache key for series data
 func (r *RedisClient) GetSeriesKey(seriesID string) string {
 	return fmt.Sprintf("series:%s", seriesID)
 }
 
+// GetMatchKey generates a cache key for match data
 func (r *RedisClient) GetMatchKey(matchID string) string {
 	return fmt.Sprintf("match:%s", matchID)
 }
 
+// GetScorecardKey generates a cache key for scorecard data
 func (r *RedisClient) GetScorecardKey(matchID string) string {
 	return fmt.Sprintf("scorecard:%s", matchID)
 }
 
+// GetScorecardVersionKey generates a cache key for scorecard version data
 func (r *RedisClient) GetScorecardVersionKey(matchID string) string {
 	return fmt.Sprintf("scorecard:version:%s", matchID)
 }
 
+// GetMatchesBySeriesKey generates a cache key for matches by series data
 func (r *RedisClient) GetMatchesBySeriesKey(seriesID string) string {
 	return fmt.Sprintf("matches:series:%s", seriesID)
 }
