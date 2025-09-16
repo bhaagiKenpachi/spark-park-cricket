@@ -108,21 +108,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -224,21 +244,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -315,21 +355,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -452,21 +512,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -572,21 +652,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -666,21 +766,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -743,21 +863,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
@@ -795,21 +935,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Check Redis availability
+      - name: Check and start Redis
         run: |
           echo "🔍 Checking Redis availability on self-hosted runner..."
           if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "✅ Redis is already running and accessible on localhost:6379"
             echo "Redis version: $(redis-cli --version)"
             echo "Redis info:"
             redis-cli info server | head -5
           else
-            echo "❌ Redis is not accessible on localhost:6379"
-            echo "Checking if Redis process is running..."
-            ps aux | grep redis || echo "No Redis process found"
-            echo "Checking port 6379..."
-            netstat -an | grep 6379 || echo "Port 6379 not listening"
-            exit 1
+            echo "❌ Redis is not running, starting Redis service..."
+            echo "Installing Redis if not present..."
+            sudo apt-get update
+            sudo apt-get install -y redis-server redis-tools
+            
+            echo "Starting Redis service..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+            
+            echo "Waiting for Redis to start..."
+            sleep 5
+            
+            echo "Testing Redis connection..."
+            if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+              echo "✅ Redis started successfully and is accessible"
+              echo "Redis version: $(redis-cli --version)"
+              echo "Redis info:"
+              redis-cli info server | head -5
+            else
+              echo "❌ Failed to start Redis"
+              echo "Checking Redis service status..."
+              sudo systemctl status redis-server || echo "Service status check failed"
+              echo "Checking Redis logs..."
+              sudo journalctl -u redis-server --no-pager -n 20 || echo "Log check failed"
+              exit 1
+            fi
           fi
 
       - name: Set up Go
