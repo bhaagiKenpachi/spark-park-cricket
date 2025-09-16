@@ -32,7 +32,7 @@ func (r *CachedScorecardRepository) CreateInnings(ctx context.Context, innings *
 	// Invalidate scorecard cache for this match
 	if innings.MatchID != "" {
 		scorecardKey := r.cache.GetScorecardKey(innings.MatchID)
-		r.cache.Invalidate(scorecardKey)
+		_ = r.cache.Invalidate(scorecardKey)
 	}
 
 	return nil
@@ -80,13 +80,13 @@ func (r *CachedScorecardRepository) UpdateInnings(ctx context.Context, innings *
 	// Invalidate related caches
 	if innings.MatchID != "" {
 		scorecardKey := r.cache.GetScorecardKey(innings.MatchID)
-		r.cache.Invalidate(scorecardKey)
+		_ = r.cache.Invalidate(scorecardKey)
 
 		inningsKey := fmt.Sprintf("innings:match:%s", innings.MatchID)
-		r.cache.Invalidate(inningsKey)
+		_ = r.cache.Invalidate(inningsKey)
 
 		specificInningsKey := fmt.Sprintf("innings:match:%s:number:%d", innings.MatchID, innings.InningsNumber)
-		r.cache.Invalidate(specificInningsKey)
+		_ = r.cache.Invalidate(specificInningsKey)
 	}
 
 	return nil
@@ -176,13 +176,13 @@ func (r *CachedScorecardRepository) UpdateOver(ctx context.Context, over *models
 	// Note: We would need to get matchID from innings to invalidate scorecard cache
 	// For now, we'll invalidate over-specific caches
 	overKey := fmt.Sprintf("over:innings:%s:number:%d", over.InningsID, over.OverNumber)
-	r.cache.Invalidate(overKey)
+	_ = r.cache.Invalidate(overKey)
 
 	currentOverKey := fmt.Sprintf("over:current:innings:%s", over.InningsID)
-	r.cache.Invalidate(currentOverKey)
+	_ = r.cache.Invalidate(currentOverKey)
 
 	oversKey := fmt.Sprintf("overs:innings:%s", over.InningsID)
-	r.cache.Invalidate(oversKey)
+	_ = r.cache.Invalidate(oversKey)
 
 	return nil
 }
@@ -281,7 +281,7 @@ func (r *CachedScorecardRepository) StartScoring(ctx context.Context, matchID st
 
 	// Invalidate scorecard cache to ensure fresh data
 	scorecardKey := r.cache.GetScorecardKey(matchID)
-	r.cache.Invalidate(scorecardKey)
+	_ = r.cache.Invalidate(scorecardKey)
 
 	return nil
 }

@@ -72,7 +72,7 @@ func (cm *CacheManager) GetOrSet(key string, dest interface{}, ttl time.Duration
 	}
 
 	// Set in cache for next time
-	cm.cache.Set(key, value, ttl)
+	_ = cm.cache.Set(key, value, ttl)
 
 	// Copy value to destination
 	return copyValue(value, dest)

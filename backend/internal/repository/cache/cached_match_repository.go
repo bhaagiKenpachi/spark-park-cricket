@@ -30,16 +30,16 @@ func (r *CachedMatchRepository) Create(ctx context.Context, match *models.Match)
 	}
 
 	// Invalidate caches
-	r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate("match:list")
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
-		r.cache.Invalidate(seriesKey)
+		_ = r.cache.Invalidate(seriesKey)
 	}
 
 	// Cache the new match
 	if match.ID != "" {
 		key := r.cache.GetMatchKey(match.ID)
-		r.cache.Set(key, match, cache.StaticDataTTL)
+		_ = r.cache.Set(key, match, cache.StaticDataTTL)
 	}
 
 	return nil
@@ -117,16 +117,16 @@ func (r *CachedMatchRepository) Update(ctx context.Context, id string, match *mo
 
 	// Invalidate caches
 	key := r.cache.GetMatchKey(id)
-	r.cache.Invalidate(key)
-	r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate(key)
+	_ = r.cache.Invalidate("match:list")
 
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
-		r.cache.Invalidate(seriesKey)
+		_ = r.cache.Invalidate(seriesKey)
 	}
 
 	// Update cache with new data
-	r.cache.Set(key, match, cache.StaticDataTTL)
+	_ = r.cache.Set(key, match, cache.StaticDataTTL)
 
 	return nil
 }
@@ -146,12 +146,12 @@ func (r *CachedMatchRepository) Delete(ctx context.Context, id string) error {
 
 	// Invalidate caches
 	key := r.cache.GetMatchKey(id)
-	r.cache.Invalidate(key)
-	r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate(key)
+	_ = r.cache.Invalidate("match:list")
 
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
-		r.cache.Invalidate(seriesKey)
+		_ = r.cache.Invalidate(seriesKey)
 	}
 
 	return nil

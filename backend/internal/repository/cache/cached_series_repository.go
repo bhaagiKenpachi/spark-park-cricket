@@ -30,12 +30,12 @@ func (r *CachedSeriesRepository) Create(ctx context.Context, series *models.Seri
 	}
 
 	// Invalidate series list cache
-	r.cache.Invalidate("series:list")
+	_ = r.cache.Invalidate("series:list")
 
 	// Cache the new series
 	if series.ID != "" {
 		key := r.cache.GetSeriesKey(series.ID)
-		r.cache.Set(key, series, cache.StaticDataTTL)
+		_ = r.cache.Set(key, series, cache.StaticDataTTL)
 	}
 
 	return nil
@@ -92,11 +92,11 @@ func (r *CachedSeriesRepository) Update(ctx context.Context, id string, series *
 
 	// Invalidate caches
 	key := r.cache.GetSeriesKey(id)
-	r.cache.Invalidate(key)
-	r.cache.Invalidate("series:list")
+	_ = r.cache.Invalidate(key)
+	_ = r.cache.Invalidate("series:list")
 
 	// Update cache with new data
-	r.cache.Set(key, series, cache.StaticDataTTL)
+	_ = r.cache.Set(key, series, cache.StaticDataTTL)
 
 	return nil
 }
@@ -110,8 +110,8 @@ func (r *CachedSeriesRepository) Delete(ctx context.Context, id string) error {
 
 	// Invalidate caches
 	key := r.cache.GetSeriesKey(id)
-	r.cache.Invalidate(key)
-	r.cache.Invalidate("series:list")
+	_ = r.cache.Invalidate(key)
+	_ = r.cache.Invalidate("series:list")
 
 	return nil
 }

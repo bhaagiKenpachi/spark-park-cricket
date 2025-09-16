@@ -502,7 +502,9 @@ func createTestSeries(b *testing.B, router http.Handler) string {
 	var response struct {
 		Data models.Series `json:"data"`
 	}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		b.Fatalf("Failed to unmarshal response: %v", err)
+	}
 	return response.Data.ID
 }
 
@@ -532,7 +534,9 @@ func createTestMatch(b *testing.B, router http.Handler, seriesID string) string 
 	var response struct {
 		Data models.Match `json:"data"`
 	}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		b.Fatalf("Failed to unmarshal response: %v", err)
+	}
 	return response.Data.ID
 }
 
