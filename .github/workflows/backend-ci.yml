@@ -203,6 +203,17 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -230,18 +241,10 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Install and start Redis
+      - name: Verify Redis is ready
         run: |
-          echo "🔧 Installing and starting Redis..."
-          # Install Redis
-          sudo apt-get update
-          sudo apt-get install -y redis-server
-          
-          # Start Redis service
-          sudo systemctl start redis-server
-          
-          # Wait for Redis to be ready
-          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
           echo "✅ Redis is ready!"
 
       - name: Run unit tests
@@ -283,6 +286,17 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -310,18 +324,10 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Install and start Redis
+      - name: Verify Redis is ready
         run: |
-          echo "🔧 Installing and starting Redis..."
-          # Install Redis
-          sudo apt-get update
-          sudo apt-get install -y redis-server
-          
-          # Start Redis service
-          sudo systemctl start redis-server
-          
-          # Wait for Redis to be ready
-          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
           echo "✅ Redis is ready!"
 
       - name: Set up test environment
@@ -409,6 +415,17 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -436,18 +453,10 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Install and start Redis
+      - name: Verify Redis is ready
         run: |
-          echo "🔧 Installing and starting Redis..."
-          # Install Redis
-          sudo apt-get update
-          sudo apt-get install -y redis-server
-          
-          # Start Redis service
-          sudo systemctl start redis-server
-          
-          # Wait for Redis to be ready
-          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
           echo "✅ Redis is ready!"
 
       - name: Set up test environment
@@ -526,6 +535,17 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -553,18 +573,10 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Install and start Redis
+      - name: Verify Redis is ready
         run: |
-          echo "🔧 Installing and starting Redis..."
-          # Install Redis
-          sudo apt-get update
-          sudo apt-get install -y redis-server
-          
-          # Start Redis service
-          sudo systemctl start redis-server
-          
-          # Wait for Redis to be ready
-          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
           echo "✅ Redis is ready!"
 
       - name: Run cache performance tests
