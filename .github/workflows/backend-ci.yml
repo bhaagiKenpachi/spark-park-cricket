@@ -286,17 +286,6 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -323,6 +312,20 @@ jobs:
         run: |
           go mod download
           go mod verify
+
+      - name: Install and start Redis
+        run: |
+          echo "🔧 Installing and starting Redis..."
+          # Install Redis
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+          
+          # Start Redis service
+          sudo systemctl start redis-server
+          
+          # Wait for Redis to be ready
+          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
 
       - name: Set up test environment
         run: |
@@ -374,12 +377,6 @@ jobs:
           # For now, we'll skip this step as it requires direct database access
           echo "⚠️ Test database schema setup skipped - requires direct database access"
 
-      - name: Wait for Redis
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
-
       - name: Run integration tests
         run: |
           # Set up Go environment explicitly
@@ -415,17 +412,6 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -452,6 +438,20 @@ jobs:
         run: |
           go mod download
           go mod verify
+
+      - name: Install and start Redis
+        run: |
+          echo "🔧 Installing and starting Redis..."
+          # Install Redis
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+          
+          # Start Redis service
+          sudo systemctl start redis-server
+          
+          # Wait for Redis to be ready
+          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
 
       - name: Set up test environment
         run: |
@@ -496,12 +496,6 @@ jobs:
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
-      - name: Wait for Redis
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
-
       - name: Run E2E tests
         run: |
           # Set up Go environment explicitly
@@ -535,17 +529,6 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -573,10 +556,18 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Wait for Redis
+      - name: Install and start Redis
         run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+          echo "🔧 Installing and starting Redis..."
+          # Install Redis
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+          
+          # Start Redis service
+          sudo systemctl start redis-server
+          
+          # Wait for Redis to be ready
+          timeout 30s bash -c 'until redis-cli ping; do sleep 1; done'
           echo "✅ Redis is ready!"
 
       - name: Run cache performance tests
