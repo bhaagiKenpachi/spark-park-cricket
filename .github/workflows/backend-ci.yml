@@ -241,12 +241,6 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Verify Redis is ready
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6380 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
-
       - name: Run unit tests
         run: |
           # Set up Go environment explicitly
@@ -323,12 +317,6 @@ jobs:
         run: |
           go mod download
           go mod verify
-
-      - name: Verify Redis is ready
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6380 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
 
       - name: Set up test environment
         run: |
@@ -453,12 +441,6 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Verify Redis is ready
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6380 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
-
       - name: Set up test environment
         run: |
           echo "🔧 Setting up E2E test environment..."
@@ -572,12 +554,6 @@ jobs:
         run: |
           go mod download
           go mod verify
-
-      - name: Verify Redis is ready
-        run: |
-          echo "⏳ Waiting for Redis to be ready..."
-          timeout 30s bash -c 'until redis-cli -h localhost -p 6380 ping; do sleep 1; done'
-          echo "✅ Redis is ready!"
 
       - name: Run cache performance tests
         run: |
