@@ -42,7 +42,9 @@ func BenchmarkCacheOperations(b *testing.B) {
 		for i := 0; i < 1000; i++ {
 			key := fmt.Sprintf("benchmark:get:%d", i)
 			value := fmt.Sprintf("value:%d", i)
-			cacheManager.Set(key, value, cache.StaticDataTTL)
+			if err := cacheManager.Set(key, value, cache.StaticDataTTL); err != nil {
+				b.Fatalf("Failed to set cache: %v", err)
+			}
 		}
 
 		b.ResetTimer()
@@ -106,7 +108,9 @@ func BenchmarkCacheVsDatabase(b *testing.B) {
 
 	b.Run("CacheWithDatabaseFallback", func(b *testing.B) {
 		// Pre-populate cache
-		cacheManager.Set("benchmark:cache:test", "cached_result", cache.StaticDataTTL)
+		if err := cacheManager.Set("benchmark:cache:test", "cached_result", cache.StaticDataTTL); err != nil {
+			b.Fatalf("Failed to set cache: %v", err)
+		}
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -177,7 +181,9 @@ func BenchmarkScorecardCache(b *testing.B) {
 		// Pre-populate cache
 		for i := 0; i < 100; i++ {
 			key := cacheManager.GetScorecardKey(fmt.Sprintf("match-%d", i))
-			cacheManager.Set(key, scorecardData, cache.ScorecardTTL)
+			if err := cacheManager.Set(key, scorecardData, cache.ScorecardTTL); err != nil {
+				b.Fatalf("Failed to set cache: %v", err)
+			}
 		}
 
 		b.ResetTimer()
