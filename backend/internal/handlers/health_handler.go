@@ -66,12 +66,15 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	// Check WebSocket hub health
 	wsHealth := h.checkWebSocketHealth()
 
+	// Check Redis health
+	redisHealth := h.checkRedisHealth(ctx)
+
 	// Get system information
 	systemInfo := h.getSystemInfo()
 
 	// Determine overall status
 	overallStatus := "healthy"
-	if dbHealth.Status != "healthy" || wsHealth.Status != "healthy" {
+	if dbHealth.Status != "healthy" || wsHealth.Status != "healthy" || redisHealth.Status != "healthy" {
 		overallStatus = "unhealthy"
 	}
 
@@ -83,6 +86,7 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 		Services: map[string]ServiceHealth{
 			"database":  dbHealth,
 			"websocket": wsHealth,
+			"redis":     redisHealth,
 		},
 		System: systemInfo,
 	}
@@ -132,14 +136,16 @@ func (h *HealthHandler) Readiness(w http.ResponseWriter, r *http.Request) {
 
 	// Check if all critical services are ready
 	dbHealth := h.checkDatabaseHealth(ctx)
+	redisHealth := h.checkRedisHealth(ctx)
 
-	ready := dbHealth.Status == "healthy"
+	ready := dbHealth.Status == "healthy" && redisHealth.Status == "healthy"
 
 	response := map[string]interface{}{
 		"ready":     ready,
 		"timestamp": time.Now(),
 		"services": map[string]string{
 			"database": dbHealth.Status,
+			"redis":    redisHealth.Status,
 		},
 	}
 
@@ -243,6 +249,9 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	// Get WebSocket metrics (if available)
 	wsHealth := h.checkWebSocketHealth()
 
+	// Get Redis metrics
+	redisHealth := h.checkRedisHealth(ctx)
+
 	metrics := map[string]interface{}{
 		"timestamp": time.Now(),
 		"database": map[string]interface{}{
@@ -252,6 +261,10 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 		"websocket": map[string]interface{}{
 			"status":        wsHealth.Status,
 			"response_time": wsHealth.ResponseTime.Milliseconds(),
+		},
+		"redis": map[string]interface{}{
+			"status":        redisHealth.Status,
+			"response_time": redisHealth.ResponseTime.Milliseconds(),
 		},
 		"system": map[string]interface{}{
 			"go_version":   systemInfo.GoVersion,
@@ -264,4 +277,37 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSONResponse(w, http.StatusOK, metrics)
+}
+
+// checkRedisHealth checks the health of the Redis connection
+func (h *HealthHandler) checkRedisHealth(ctx context.Context) ServiceHealth {
+	start := time.Now()
+
+	if h.dbClient == nil || h.dbClient.CacheManager == nil {
+		return ServiceHealth{
+			Status:       "unhealthy",
+			ResponseTime: time.Since(start),
+			Error:        "Redis cache manager not initialized",
+		}
+	}
+
+	// Try to health check Redis
+	err := h.dbClient.CacheManager.HealthCheck()
+	responseTime := time.Since(start)
+
+	if err != nil {
+		return ServiceHealth{
+			Status:       "unhealthy",
+			ResponseTime: responseTime,
+			Error:        err.Error(),
+		}
+	}
+
+	return ServiceHealth{
+		Status:       "healthy",
+		ResponseTime: responseTime,
+		Details: map[string]interface{}{
+			"connection": "active",
+		},
+	}
 }
