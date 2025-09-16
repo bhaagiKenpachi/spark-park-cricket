@@ -107,6 +107,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -203,20 +220,26 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6380:6379
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -241,6 +264,14 @@ jobs:
           go mod download
           go mod verify
 
+      - name: Test Redis connection
+        run: |
+          echo "🧪 Testing Redis connection for unit tests..."
+          redis-cli -h localhost -p 6379 set test_key "test_value"
+          redis-cli -h localhost -p 6379 get test_key
+          redis-cli -h localhost -p 6379 del test_key
+          echo "✅ Redis connection test successful"
+
       - name: Run unit tests
         run: |
           # Set up Go environment explicitly
@@ -251,7 +282,7 @@ jobs:
           echo "🧪 Running Unit Tests..."
           go test ./tests/unit/... -v -race -coverprofile=coverage.out
         env:
-          REDIS_URL: localhost:6380
+          REDIS_URL: localhost:6379
           REDIS_PASSWORD: ""
           REDIS_DB: 0
           CACHE_ENABLED: true
@@ -280,20 +311,26 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6380:6379
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -322,6 +359,14 @@ jobs:
         run: |
           echo "🔧 Setting up test environment..."
           echo "Environment variables will be provided via GitHub Actions env"
+
+      - name: Test Redis connection
+        run: |
+          echo "🧪 Testing Redis connection for integration tests..."
+          redis-cli -h localhost -p 6379 set test_key "test_value"
+          redis-cli -h localhost -p 6379 get test_key
+          redis-cli -h localhost -p 6379 del test_key
+          echo "✅ Redis connection test successful"
 
       - name: Run database migrations
         run: |
@@ -386,7 +431,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           TEST_SCHEMA: testing_db
-          REDIS_URL: localhost:6380
+          REDIS_URL: localhost:6379
           REDIS_PASSWORD: ""
           REDIS_DB: 0
           CACHE_ENABLED: true
@@ -403,20 +448,26 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6380:6379
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -502,7 +553,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           TEST_SCHEMA: testing_db
-          REDIS_URL: localhost:6380
+          REDIS_URL: localhost:6379
           REDIS_PASSWORD: ""
           REDIS_DB: 0
           CACHE_ENABLED: true
@@ -517,20 +568,26 @@ jobs:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
     
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6380:6379
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -555,6 +612,14 @@ jobs:
           go mod download
           go mod verify
 
+      - name: Test Redis connection
+        run: |
+          echo "🧪 Testing Redis connection for performance tests..."
+          redis-cli -h localhost -p 6379 set test_key "test_value"
+          redis-cli -h localhost -p 6379 get test_key
+          redis-cli -h localhost -p 6379 del test_key
+          echo "✅ Redis connection test successful"
+
       - name: Run cache performance tests
         run: |
           # Set up Go environment explicitly
@@ -567,7 +632,7 @@ jobs:
           echo "CACHE_ENABLED: $CACHE_ENABLED"
           go test -bench=BenchmarkCacheOperations -benchmem -v ./tests/performance/
         env:
-          REDIS_URL: localhost:6380
+          REDIS_URL: localhost:6379
           REDIS_PASSWORD: ""
           REDIS_DB: 0
           CACHE_ENABLED: true
@@ -582,7 +647,7 @@ jobs:
           echo "📊 Running Cache vs Database Comparison..."
           go test -bench=BenchmarkCacheVsDatabase -benchmem -v ./tests/performance/
         env:
-          REDIS_URL: localhost:6380
+          REDIS_URL: localhost:6379
           REDIS_PASSWORD: ""
           REDIS_DB: 0
           CACHE_ENABLED: true
@@ -600,6 +665,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -660,6 +742,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -695,6 +794,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Check Redis availability
+        run: |
+          echo "🔍 Checking Redis availability on self-hosted runner..."
+          if redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
+            echo "✅ Redis is running and accessible on localhost:6379"
+            echo "Redis version: $(redis-cli --version)"
+            echo "Redis info:"
+            redis-cli info server | head -5
+          else
+            echo "❌ Redis is not accessible on localhost:6379"
+            echo "Checking if Redis process is running..."
+            ps aux | grep redis || echo "No Redis process found"
+            echo "Checking port 6379..."
+            netstat -an | grep 6379 || echo "Port 6379 not listening"
+            exit 1
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v5
