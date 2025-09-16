@@ -76,16 +76,16 @@ jobs:
           echo ""
           case "${{ inputs.run_type }}" in
             "full")
-              echo "📋 Running: Code Quality + Unit Tests + Integration Tests + Build + Deploy"
+              echo "📋 Running: Code Quality + Unit Tests + Integration Tests + Performance Tests + E2E Tests + Build + Deploy"
               ;;
             "tests-only")
-              echo "🧪 Running: Code Quality + Unit Tests + Integration Tests"
+              echo "🧪 Running: Code Quality + Unit Tests + Integration Tests + Performance Tests + E2E Tests"
               ;;
             "build-only")
-              echo "🔨 Running: Code Quality + Unit Tests + Build"
+              echo "🔨 Running: Code Quality + Unit Tests + Performance Tests + Build"
               ;;
             "deploy-only")
-              echo "🚀 Running: Code Quality + Unit Tests + Build + Deploy"
+              echo "🚀 Running: Code Quality + Unit Tests + Performance Tests + Build + Deploy"
               ;;
             "code-quality-only")
               echo "🔍 Running: Code Quality + Security Scan"
@@ -194,7 +194,7 @@ jobs:
           working-directory: ${{ env.WORKING_DIRECTORY }}
           args: --timeout=5m
 
-  # Unit Tests (no database required)
+  # Unit Tests (no database required, but Redis needed for cache tests)
   unit-tests:
     name: Unit Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
@@ -202,6 +202,17 @@ jobs:
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     
     steps:
       - name: Checkout code
@@ -230,6 +241,12 @@ jobs:
           go mod download
           go mod verify
 
+      - name: Wait for Redis
+        run: |
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
+
       - name: Run unit tests
         run: |
           # Set up Go environment explicitly
@@ -239,6 +256,11 @@ jobs:
           
           echo "🧪 Running Unit Tests..."
           go test ./tests/unit/... -v -race -coverprofile=coverage.out
+        env:
+          REDIS_URL: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: true
 
       - name: Generate coverage report
         run: |
@@ -252,7 +274,7 @@ jobs:
           name: unit-tests-coverage
           fail_ci_if_error: false
 
-  # Integration Tests (requires Supabase database)
+  # Integration Tests (requires Supabase database and Redis)
   integration-tests:
     name: Integration Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
@@ -263,6 +285,17 @@ jobs:
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     
     steps:
       - name: Checkout code
@@ -341,6 +374,12 @@ jobs:
           # For now, we'll skip this step as it requires direct database access
           echo "⚠️ Test database schema setup skipped - requires direct database access"
 
+      - name: Wait for Redis
+        run: |
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
+
       - name: Run integration tests
         run: |
           # Set up Go environment explicitly
@@ -352,13 +391,19 @@ jobs:
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           echo "TEST_SCHEMA: $TEST_SCHEMA"
+          echo "REDIS_URL: $REDIS_URL"
+          echo "CACHE_ENABLED: $CACHE_ENABLED"
           go test ./tests/integration/... -v -timeout=15m
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           TEST_SCHEMA: testing_db
+          REDIS_URL: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: true
 
-  # End-to-End Tests (requires Supabase database)
+  # End-to-End Tests (requires Supabase database and Redis)
   e2e-tests:
     name: E2E Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
@@ -369,6 +414,17 @@ jobs:
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     
     steps:
       - name: Checkout code
@@ -440,6 +496,12 @@ jobs:
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
+      - name: Wait for Redis
+        run: |
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
+
       - name: Run E2E tests
         run: |
           # Set up Go environment explicitly
@@ -451,17 +513,109 @@ jobs:
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           echo "TEST_SCHEMA: $TEST_SCHEMA"
+          echo "REDIS_URL: $REDIS_URL"
+          echo "CACHE_ENABLED: $CACHE_ENABLED"
           go test ./tests/e2e/... -v -timeout=15m
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
           TEST_SCHEMA: testing_db
+          REDIS_URL: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: true
+
+  # Performance Tests (requires Redis for cache benchmarks)
+  performance-tests:
+    name: Performance Tests
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    needs: [code-quality, unit-tests]
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' }}
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Set up Go environment
+        run: |
+          # Set up Go environment with explicit configuration
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
+          # Add to environment for subsequent steps
+          echo "PATH=/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH" >> $GITHUB_ENV
+          echo "GOSUMDB=sum.golang.org" >> $GITHUB_ENV
+          echo "GOPROXY=https://proxy.golang.org,direct" >> $GITHUB_ENV
+
+      - name: Download dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Wait for Redis
+        run: |
+          echo "⏳ Waiting for Redis to be ready..."
+          timeout 30s bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+          echo "✅ Redis is ready!"
+
+      - name: Run cache performance tests
+        run: |
+          # Set up Go environment explicitly
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
+          echo "⚡ Running Cache Performance Tests..."
+          echo "REDIS_URL: $REDIS_URL"
+          echo "CACHE_ENABLED: $CACHE_ENABLED"
+          go test -bench=BenchmarkCacheOperations -benchmem -v ./tests/performance/
+        env:
+          REDIS_URL: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: true
+
+      - name: Run cache vs database comparison
+        run: |
+          # Set up Go environment explicitly
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
+          echo "📊 Running Cache vs Database Comparison..."
+          go test -bench=BenchmarkCacheVsDatabase -benchmem -v ./tests/performance/
+        env:
+          REDIS_URL: localhost:6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: true
 
   # Build Verification
   build:
     name: Build Verification
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    needs: [code-quality, unit-tests, integration-tests, e2e-tests]
+    needs: [code-quality, unit-tests, integration-tests, e2e-tests, performance-tests]
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'build-only' || inputs.run_type == 'deploy-only' }}
     defaults:
       run:
@@ -556,7 +710,7 @@ jobs:
   deploy:
     name: Deploy to ${{ inputs.environment }}
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    needs: [code-quality, unit-tests, integration-tests, e2e-tests, build]
+    needs: [code-quality, unit-tests, integration-tests, e2e-tests, performance-tests, build]
     if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'deploy-only') && inputs.environment != 'none' }}
     defaults:
       run:
@@ -628,8 +782,8 @@ jobs:
   notify-failure:
     name: Notify on Failure
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    needs: [code-quality, unit-tests, integration-tests, e2e-tests, build]
-    if: always() && (needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.integration-tests.result == 'failure' || needs.e2e-tests.result == 'failure' || needs.build.result == 'failure')
+    needs: [code-quality, unit-tests, integration-tests, e2e-tests, performance-tests, build]
+    if: always() && (needs.code-quality.result == 'failure' || needs.unit-tests.result == 'failure' || needs.integration-tests.result == 'failure' || needs.e2e-tests.result == 'failure' || needs.performance-tests.result == 'failure' || needs.build.result == 'failure')
     
     steps:
       - name: Notify failure
