@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"spark-park-cricket-backend/internal/config"
@@ -22,11 +23,19 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 		return nil, fmt.Errorf("caching is disabled")
 	}
 
-	rdb := redis.NewClient(&redis.Options{
+	// Configure Redis client options
+	options := &redis.Options{
 		Addr:     cfg.RedisURL,
 		Password: cfg.RedisPassword,
 		DB:       cfg.RedisDB,
-	})
+	}
+
+	// Enable TLS only if configured
+	if cfg.RedisUseTLS {
+		options.TLSConfig = &tls.Config{}
+	}
+
+	rdb := redis.NewClient(options)
 
 	ctx := context.Background()
 

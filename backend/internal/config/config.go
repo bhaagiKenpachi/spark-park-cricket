@@ -18,6 +18,7 @@ type Config struct {
 	RedisURL               string
 	RedisPassword          string
 	RedisDB                int
+	RedisUseTLS            bool
 	CacheEnabled           bool
 }
 
@@ -37,6 +38,7 @@ func Load() *Config {
 		RedisURL:               getEnv("REDIS_URL", "localhost:6379"),
 		RedisPassword:          getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                getEnvInt("REDIS_DB", 0),
+		RedisUseTLS:            getEnvBool("REDIS_USE_TLS", false),
 		CacheEnabled:           getEnvBool("CACHE_ENABLED", true),
 	}
 }
