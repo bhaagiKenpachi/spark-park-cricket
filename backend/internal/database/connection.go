@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"spark-park-cricket-backend/internal/cache"
 	"spark-park-cricket-backend/internal/config"
+	cacherepo "spark-park-cricket-backend/internal/repository/cache"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/repository/supabase"
 
@@ -25,6 +27,7 @@ type Client struct {
 	Supabase     *supabaseclient.Client
 	Repositories *Repositories
 	Schema       string
+	CacheManager *cache.CacheManager
 }
 
 // NewClient creates a new database client with all repositories
@@ -42,8 +45,20 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to create supabase client: %w", err)
 	}
 
-	// Initialize repositories
-	repositories := &Repositories{
+	// Initialize cache manager
+	var cacheManager *cache.CacheManager
+	if cfg.CacheEnabled {
+		redisClient, err := cache.NewRedisClient(cfg)
+		if err != nil {
+			// Log warning but continue without cache
+			fmt.Printf("Warning: Failed to initialize Redis cache: %v\n", err)
+		} else {
+			cacheManager = cache.NewCacheManager(redisClient, true)
+		}
+	}
+
+	// Initialize base repositories
+	baseRepositories := &Repositories{
 		Series:     supabase.NewSeriesRepository(client),
 		Match:      supabase.NewMatchRepository(client),
 		Scoreboard: supabase.NewScoreboardRepository(client),
@@ -52,10 +67,26 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		Ball:       supabase.NewBallRepository(client),
 	}
 
+	// Wrap repositories with caching if cache is available
+	var repositories *Repositories
+	if cacheManager != nil {
+		repositories = &Repositories{
+			Series:     cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
+			Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
+			Scoreboard: baseRepositories.Scoreboard, // Not cached yet
+			Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
+			Over:       baseRepositories.Over, // Not cached yet
+			Ball:       baseRepositories.Ball, // Not cached yet
+		}
+	} else {
+		repositories = baseRepositories
+	}
+
 	return &Client{
 		Supabase:     client,
 		Repositories: repositories,
 		Schema:       cfg.DatabaseSchema,
+		CacheManager: cacheManager,
 	}, nil
 }
 
@@ -70,8 +101,12 @@ func (c *Client) HealthCheck() error {
 	return nil
 }
 
-// Close closes the database connection (if needed)
+// Close closes the database connection and cache (if needed)
 func (c *Client) Close() error {
+	// Close cache connection if available
+	if c.CacheManager != nil {
+		return c.CacheManager.Close()
+	}
 	// Supabase client doesn't need explicit closing
 	return nil
 }
