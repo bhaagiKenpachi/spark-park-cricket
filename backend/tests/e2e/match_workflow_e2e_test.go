@@ -27,7 +27,7 @@ func TestMatchWorkflow_E2E(t *testing.T) {
 	testConfig := config.LoadTestConfig()
 
 	// Initialize database client
-	dbClient, err := database.NewClient(testConfig.Config)
+	dbClient, err := database.NewTestClient(testConfig)
 	require.NoError(t, err)
 	defer dbClient.Close()
 
