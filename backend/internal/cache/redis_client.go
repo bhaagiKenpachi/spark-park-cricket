@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log"
 	"spark-park-cricket-backend/internal/config"
 	"time"
 
@@ -23,6 +24,16 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 		return nil, fmt.Errorf("caching is disabled")
 	}
 
+	log.Printf("Configuring Redis client...")
+	log.Printf("Redis URL: %s", cfg.RedisURL)
+	log.Printf("Redis DB: %d", cfg.RedisDB)
+	log.Printf("Redis TLS: %t", cfg.RedisUseTLS)
+	if cfg.RedisPassword != "" {
+		log.Printf("Redis Password: ***")
+	} else {
+		log.Printf("Redis Password: NOT SET")
+	}
+
 	// Configure Redis client options
 	options := &redis.Options{
 		Addr:     cfg.RedisURL,
@@ -32,18 +43,24 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 
 	// Enable TLS only if configured
 	if cfg.RedisUseTLS {
+		log.Printf("Enabling TLS for Redis connection")
 		options.TLSConfig = &tls.Config{}
 	}
 
+	log.Printf("Creating Redis client...")
 	rdb := redis.NewClient(options)
 
 	ctx := context.Background()
 
 	// Test connection
+	log.Printf("Testing Redis connection...")
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
+		log.Printf("❌ Failed to connect to Redis: %v", err)
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
+
+	log.Printf("✅ Redis connection successful")
 
 	return &RedisClient{
 		client: rdb,
