@@ -28,7 +28,7 @@ func Load() *Config {
 		log.Printf("Warning: .env file not found: %v", err)
 	}
 
-	return &Config{
+	cfg := &Config{
 		SupabaseURL:            getEnv("SUPABASE_URL", ""),
 		SupabaseAPIKey:         getEnv("SUPABASE_API_KEY", ""),
 		SupabasePublishableKey: getEnv("SUPABASE_PUBLISHABLE_KEY", ""),
@@ -41,6 +41,82 @@ func Load() *Config {
 		RedisUseTLS:            getEnvBool("REDIS_USE_TLS", false),
 		CacheEnabled:           getEnvBool("CACHE_ENABLED", true),
 	}
+
+	// Log database configuration
+	logDatabaseConfig(cfg)
+
+	return cfg
+}
+
+// logDatabaseConfig logs the database configuration being used
+func logDatabaseConfig(cfg *Config) {
+	log.Println("=== DATABASE CONFIGURATION ===")
+
+	// Log database type and URL
+	if cfg.SupabaseURL != "" {
+		// Extract host from URL for logging (hide sensitive info)
+		log.Printf("Database Type: Supabase (PostgreSQL)")
+		log.Printf("Database URL: %s", maskURL(cfg.SupabaseURL))
+		log.Printf("Database Schema: %s", cfg.DatabaseSchema)
+
+		if cfg.SupabaseAPIKey != "" {
+			log.Printf("Database API Key: %s", maskAPIKey(cfg.SupabaseAPIKey))
+		} else {
+			log.Printf("Database API Key: NOT SET")
+		}
+	} else {
+		log.Printf("Database Type: NOT CONFIGURED")
+		log.Printf("Database URL: NOT SET")
+	}
+
+	// Log cache configuration
+	if cfg.CacheEnabled {
+		log.Printf("Cache: Enabled (Redis)")
+		log.Printf("Cache URL: %s", cfg.RedisURL)
+		log.Printf("Cache DB: %d", cfg.RedisDB)
+		if cfg.RedisPassword != "" {
+			log.Printf("Cache Password: %s", maskPassword(cfg.RedisPassword))
+		} else {
+			log.Printf("Cache Password: NOT SET")
+		}
+		log.Printf("Cache TLS: %t", cfg.RedisUseTLS)
+	} else {
+		log.Printf("Cache: Disabled")
+	}
+
+	log.Println("===============================")
+}
+
+// maskURL masks sensitive parts of the URL for logging
+func maskURL(url string) string {
+	if url == "" {
+		return "NOT SET"
+	}
+	// For Supabase URLs, show the host but mask any sensitive parts
+	// Example: https://xyz.supabase.co -> https://***.supabase.co
+	if len(url) > 20 {
+		return url[:10] + "***" + url[len(url)-15:]
+	}
+	return url
+}
+
+// maskAPIKey masks the API key for logging
+func maskAPIKey(apiKey string) string {
+	if apiKey == "" {
+		return "NOT SET"
+	}
+	if len(apiKey) > 8 {
+		return apiKey[:4] + "***" + apiKey[len(apiKey)-4:]
+	}
+	return "***"
+}
+
+// maskPassword masks the password for logging
+func maskPassword(password string) string {
+	if password == "" {
+		return "NOT SET"
+	}
+	return "***"
 }
 
 func getEnv(key, defaultValue string) string {
