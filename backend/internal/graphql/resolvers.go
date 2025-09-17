@@ -23,7 +23,7 @@ func resolveLiveScorecard(p graphql.ResolveParams) (interface{}, error) {
 	}
 
 	// Get resolver context from the context
-	resolverCtx, ok := p.Context.Value("resolver_context").(*ResolverContext)
+	resolverCtx, ok := p.Context.Value(resolverContextKey).(*ResolverContext)
 	if !ok {
 		return nil, fmt.Errorf("resolver context not found")
 	}
@@ -83,7 +83,7 @@ func resolveScorecardSubscription(p graphql.ResolveParams) (interface{}, error) 
 	}
 
 	// Get resolver context from the context
-	resolverCtx, ok := p.Context.Value("resolver_context").(*ResolverContext)
+	resolverCtx, ok := p.Context.Value(resolverContextKey).(*ResolverContext)
 	if !ok {
 		return nil, fmt.Errorf("resolver context not found")
 	}

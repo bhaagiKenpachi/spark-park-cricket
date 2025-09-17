@@ -53,7 +53,7 @@ func (m *MockScorecardService) ValidateInningsOrder(ctx context.Context, matchID
 	return args.Error(0)
 }
 
-// Additional methods that might be needed by different test files
+// GetNonTossWinner returns the non-toss winner team type
 func (m *MockScorecardService) GetNonTossWinner(tossWinner models.TeamType) models.TeamType {
 	args := m.Called(tossWinner)
 	return args.Get(0).(models.TeamType)
