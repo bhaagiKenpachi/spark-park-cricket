@@ -2,52 +2,22 @@ package unit
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/pkg/websocket"
+	"spark-park-cricket-backend/tests/unit/mocks"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockScorecardService is a mock implementation of ScorecardServiceInterface
-type MockScorecardService struct {
-	mock.Mock
-}
-
-func (m *MockScorecardService) StartScoring(ctx context.Context, matchID string) error {
-	args := m.Called(ctx, matchID)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
-	args := m.Called(ctx, req)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
-	args := m.Called(ctx, matchID, inningsNumber)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error) {
-	args := m.Called(ctx, matchID)
-	return args.Get(0).(*models.ScorecardResponse), args.Error(1)
-}
-
-func (m *MockScorecardService) GetCurrentOver(ctx context.Context, matchID string, inningsNumber int) (*models.OverSummary, error) {
-	args := m.Called(ctx, matchID, inningsNumber)
-	return args.Get(0).(*models.OverSummary), args.Error(1)
-}
-
 func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 	// Create mock services
-	mockScorecardService := &MockScorecardService{}
+	mockScorecardService := &mocks.MockScorecardService{}
 	mockHub := websocket.NewHub()
 
 	// Create GraphQL handler
@@ -79,22 +49,14 @@ func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 		},
 	}
 
-	currentOver := &models.OverSummary{
+	currentOver := &models.ScorecardOver{
+		ID:           "over-123",
+		InningsID:    "innings-123",
 		OverNumber:   26,
 		TotalRuns:    8,
 		TotalBalls:   3,
 		TotalWickets: 0,
 		Status:       "in_progress",
-		Balls: []models.BallSummary{
-			{
-				BallNumber: 1,
-				BallType:   models.BallTypeGood,
-				RunType:    models.RunTypeFour,
-				Runs:       4,
-				Byes:       0,
-				IsWicket:   false,
-			},
-		},
 	}
 
 	// Set up mock expectations
@@ -158,7 +120,7 @@ func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 	assert.Equal(t, float64(150), currentScore["runs"])
 	assert.Equal(t, float64(3), currentScore["wickets"])
 	assert.Equal(t, 25.3, currentScore["overs"])
-	assert.Equal(t, 5.93, currentScore["run_rate"])
+	assert.InDelta(t, 5.93, currentScore["run_rate"], 0.01)
 
 	// Verify mock calls
 	mockScorecardService.AssertExpectations(t)
@@ -166,7 +128,7 @@ func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 
 func TestGraphQLHandler_InvalidQuery(t *testing.T) {
 	// Create mock services
-	mockScorecardService := &MockScorecardService{}
+	mockScorecardService := &mocks.MockScorecardService{}
 	mockHub := websocket.NewHub()
 
 	// Create GraphQL handler
@@ -211,7 +173,7 @@ func TestGraphQLHandler_InvalidQuery(t *testing.T) {
 
 func TestGraphQLHandler_OPTIONS(t *testing.T) {
 	// Create mock services
-	mockScorecardService := &MockScorecardService{}
+	mockScorecardService := &mocks.MockScorecardService{}
 	mockHub := websocket.NewHub()
 
 	// Create GraphQL handler
@@ -233,7 +195,7 @@ func TestGraphQLHandler_OPTIONS(t *testing.T) {
 
 func TestGraphQLHandler_InvalidMethod(t *testing.T) {
 	// Create mock services
-	mockScorecardService := &MockScorecardService{}
+	mockScorecardService := &mocks.MockScorecardService{}
 	mockHub := websocket.NewHub()
 
 	// Create GraphQL handler

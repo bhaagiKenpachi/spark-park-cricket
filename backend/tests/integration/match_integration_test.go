@@ -47,14 +47,20 @@ func TestMatchIntegration(t *testing.T) {
 	})
 
 	t.Run("Match Pagination", func(t *testing.T) {
+		// Clean up before pagination test to ensure isolation
+		cleanupMatchTestData(t, dbClient)
 		testMatchPagination(t, router, dbClient)
 	})
 
 	t.Run("Match Validation", func(t *testing.T) {
+		// Clean up before validation test to ensure isolation
+		cleanupMatchTestData(t, dbClient)
 		testMatchValidation(t, router)
 	})
 
 	t.Run("Match Error Handling", func(t *testing.T) {
+		// Clean up before error handling test to ensure isolation
+		cleanupMatchTestData(t, dbClient)
 		testMatchErrorHandling(t, router)
 	})
 }
@@ -173,6 +179,9 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	// First, create a series to associate with matches
 	seriesID := createTestSeries(t, router)
 
+	// Store created match IDs to verify they exist
+	var createdMatchIDs []string
+
 	// Create multiple matches for pagination testing
 	for i := 1; i <= 5; i++ {
 		createReq := models.CreateMatchRequest{
@@ -195,6 +204,14 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusCreated, w.Code)
+
+		// Parse response to get match ID
+		var createResponse struct {
+			Data models.Match `json:"data"`
+		}
+		err = json.Unmarshal(w.Body.Bytes(), &createResponse)
+		require.NoError(t, err)
+		createdMatchIDs = append(createdMatchIDs, createResponse.Data.ID)
 	}
 
 	// Test pagination with limit
@@ -234,7 +251,19 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 	require.NoError(t, err)
 	matchesList = listResponse.Data
-	assert.GreaterOrEqual(t, len(matchesList), 5, "Should have at least 5 matches with default pagination")
+
+	// Verify that all 5 matches we created are present
+	assert.Equal(t, 5, len(matchesList), "Should have exactly 5 matches with default pagination")
+
+	// Verify that all created match IDs are present in the response
+	responseMatchIDs := make(map[string]bool)
+	for _, match := range matchesList {
+		responseMatchIDs[match.ID] = true
+	}
+
+	for _, createdID := range createdMatchIDs {
+		assert.True(t, responseMatchIDs[createdID], "Created match ID %s should be present in response", createdID)
+	}
 }
 
 func testMatchValidation(t *testing.T, router http.Handler) {
@@ -356,23 +385,15 @@ func createTestSeries(t *testing.T, router http.Handler) string {
 // Helper function to clean up test data
 func cleanupMatchTestData(t *testing.T, dbClient *database.Client) {
 	// Clean up matches table - delete all records
-	_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
 	if err != nil {
-		// Try alternative cleanup method
-		_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup match test data: %v", err)
-		}
+		t.Logf("Warning: Failed to cleanup match test data: %v", err)
 	}
 
 	// Clean up series table as well
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("id", "").ExecuteTo(nil)
+	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
 	if err != nil {
-		// Try alternative cleanup method
-		_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup series test data: %v", err)
-		}
+		t.Logf("Warning: Failed to cleanup series test data: %v", err)
 	}
 }
 
