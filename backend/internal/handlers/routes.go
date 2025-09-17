@@ -92,6 +92,14 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 			r.Get("/stats/{match_id}", wsHandler.GetRoomStats)
 			r.Post("/test/{match_id}", wsHandler.TestBroadcast)
 		})
+
+		// GraphQL routes
+		r.Route("/graphql", func(r chi.Router) {
+			// Use GraphQL handler from the service
+			graphqlHandler := serviceContainer.GraphQLWebSocket.GetGraphQLHandler()
+			r.Post("/", graphqlHandler.ServeHTTP)
+			r.Get("/playground", graphqlHandler.GetPlaygroundHandler().ServeHTTP)
+		})
 	})
 
 	return r
