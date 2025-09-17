@@ -12,6 +12,13 @@ import (
 	"github.com/graphql-go/handler"
 )
 
+// contextKey is a custom type for context keys to avoid collisions
+type contextKey string
+
+const (
+	resolverContextKey contextKey = "resolver_context"
+)
+
 // GraphQLHandler handles GraphQL requests
 type GraphQLHandler struct {
 	schema *graphql.Schema
@@ -81,7 +88,7 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					// Add resolver context to the context
-					ctx := context.WithValue(p.Context, "resolver_context", resolverCtx)
+					ctx := context.WithValue(p.Context, resolverContextKey, resolverCtx)
 					p.Context = ctx
 					return resolveLiveScorecard(p)
 				},
@@ -102,7 +109,7 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					// Add resolver context to the context
-					ctx := context.WithValue(p.Context, "resolver_context", resolverCtx)
+					ctx := context.WithValue(p.Context, resolverContextKey, resolverCtx)
 					p.Context = ctx
 					return resolveScorecardSubscription(p)
 				},
@@ -182,19 +189,6 @@ func (h *GraphQLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-}
-
-// convertGraphQLErrors converts graphql-go errors to our error format
-func convertGraphQLErrors(errors []error) []GraphQLError {
-	var graphqlErrors []GraphQLError
-
-	for _, err := range errors {
-		graphqlErrors = append(graphqlErrors, GraphQLError{
-			Message: err.Error(),
-		})
-	}
-
-	return graphqlErrors
 }
 
 // GetPlaygroundHandler returns a GraphQL playground handler for development

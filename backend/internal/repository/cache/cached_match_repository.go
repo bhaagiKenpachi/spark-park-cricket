@@ -31,6 +31,19 @@ func (r *CachedMatchRepository) Create(ctx context.Context, match *models.Match)
 
 	// Invalidate caches
 	_ = r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate("match:count")
+
+	// Invalidate common pagination cache keys
+	_ = r.cache.Invalidate("match:list:limit:20")
+	_ = r.cache.Invalidate("match:list:limit:10")
+	_ = r.cache.Invalidate("match:list:limit:5")
+	_ = r.cache.Invalidate("match:list:limit:3")
+	_ = r.cache.Invalidate("match:list:limit:2")
+
+	// Invalidate all possible match list cache keys with different pagination parameters
+	// This is necessary because the cache keys include limit and offset parameters
+	_ = r.cache.InvalidatePattern("match:list:*")
+
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
 		_ = r.cache.Invalidate(seriesKey)
@@ -119,6 +132,16 @@ func (r *CachedMatchRepository) Update(ctx context.Context, id string, match *mo
 	key := r.cache.GetMatchKey(id)
 	_ = r.cache.Invalidate(key)
 	_ = r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate("match:count")
+
+	// Invalidate common pagination cache keys
+	_ = r.cache.Invalidate("match:list:limit:20")
+	_ = r.cache.Invalidate("match:list:limit:10")
+	_ = r.cache.Invalidate("match:list:limit:5")
+	_ = r.cache.Invalidate("match:list:limit:3")
+	_ = r.cache.Invalidate("match:list:limit:2")
+
+	_ = r.cache.InvalidatePattern("match:list:*")
 
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
@@ -148,6 +171,16 @@ func (r *CachedMatchRepository) Delete(ctx context.Context, id string) error {
 	key := r.cache.GetMatchKey(id)
 	_ = r.cache.Invalidate(key)
 	_ = r.cache.Invalidate("match:list")
+	_ = r.cache.Invalidate("match:count")
+
+	// Invalidate common pagination cache keys
+	_ = r.cache.Invalidate("match:list:limit:20")
+	_ = r.cache.Invalidate("match:list:limit:10")
+	_ = r.cache.Invalidate("match:list:limit:5")
+	_ = r.cache.Invalidate("match:list:limit:3")
+	_ = r.cache.Invalidate("match:list:limit:2")
+
+	_ = r.cache.InvalidatePattern("match:list:*")
 
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
