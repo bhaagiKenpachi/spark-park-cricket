@@ -200,6 +200,15 @@ func (r *CachedScorecardRepository) CompleteOver(ctx context.Context, overID str
 
 // CreateBall creates ball and invalidates scorecard cache (CRITICAL for performance)
 func (r *CachedScorecardRepository) CreateBall(ctx context.Context, ball *models.ScorecardBall) error {
+	// Invalidate balls cache BEFORE creating the ball to prevent race conditions
+	// This ensures that any subsequent GetBallsByOver calls will fetch fresh data
+	ballsCacheKey := fmt.Sprintf("balls:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(ballsCacheKey)
+
+	// Also invalidate the last ball cache for this over
+	lastBallCacheKey := fmt.Sprintf("ball:last:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(lastBallCacheKey)
+
 	err := r.repo.CreateBall(ctx, ball)
 	if err != nil {
 		return err
@@ -246,6 +255,10 @@ func (r *CachedScorecardRepository) GetLastBall(ctx context.Context, overID stri
 
 // DeleteBall deletes ball and invalidates caches
 func (r *CachedScorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
+	// Note: We would need to get the ball first to find the overID for cache invalidation
+	// But the current interface doesn't provide a way to get a ball by ID
+	// For now, we'll delete the ball and let the service handle cache invalidation
+	// The service should call InvalidateBallsCacheForOver after deletion
 	err := r.repo.DeleteBall(ctx, ballID)
 	if err != nil {
 		return err
@@ -254,6 +267,18 @@ func (r *CachedScorecardRepository) DeleteBall(ctx context.Context, ballID strin
 	// Note: We would need matchID to invalidate scorecard cache properly
 	// For now, we'll handle this at the service level
 	return nil
+}
+
+// InvalidateBallsCacheForOver invalidates all ball-related caches for a specific over
+// This method can be called from the service layer when needed
+func (r *CachedScorecardRepository) InvalidateBallsCacheForOver(overID string) {
+	// Invalidate balls cache for this over
+	ballsCacheKey := fmt.Sprintf("balls:over:%s", overID)
+	_ = r.cache.Invalidate(ballsCacheKey)
+
+	// Invalidate last ball cache for this over
+	lastBallCacheKey := fmt.Sprintf("ball:last:over:%s", overID)
+	_ = r.cache.Invalidate(lastBallCacheKey)
 }
 
 // GetScorecard retrieves complete scorecard with intelligent caching (CRITICAL)

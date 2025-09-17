@@ -2,70 +2,19 @@ package unit
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/tests/unit/mocks"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-// MockScorecardService is a mock implementation of ScorecardServiceInterface
-type MockScorecardService struct {
-	mock.Mock
-}
-
-func (m *MockScorecardService) StartScoring(ctx context.Context, matchID string) error {
-	args := m.Called(ctx, matchID)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
-	args := m.Called(ctx, req)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error) {
-	args := m.Called(ctx, matchID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.ScorecardResponse), args.Error(1)
-}
-
-func (m *MockScorecardService) GetCurrentOver(ctx context.Context, matchID string, inningsNumber int) (*models.ScorecardOver, error) {
-	args := m.Called(ctx, matchID, inningsNumber)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.ScorecardOver), args.Error(1)
-}
-
-func (m *MockScorecardService) ShouldCompleteMatch(ctx context.Context, matchID string, secondInnings *models.Innings, match *models.Match) (bool, string) {
-	args := m.Called(ctx, matchID, secondInnings, match)
-	return args.Bool(0), args.String(1)
-}
-
-func (m *MockScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
-	args := m.Called(ctx, matchID, match, inningsNumber)
-	return args.Error(0)
-}
-
-func (m *MockScorecardService) GetNonTossWinner(tossWinner models.TeamType) models.TeamType {
-	args := m.Called(tossWinner)
-	return args.Get(0).(models.TeamType)
-}
-
-func (m *MockScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
-	args := m.Called(ctx, matchID, inningsNumber)
-	return args.Error(0)
-}
 
 func TestScorecardHandler_StartScoring(t *testing.T) {
 	tests := []struct {
@@ -113,7 +62,7 @@ func TestScorecardHandler_StartScoring(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.serviceError != nil {
@@ -218,7 +167,7 @@ func TestScorecardHandler_AddBall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.serviceError != nil {
@@ -290,7 +239,7 @@ func TestScorecardHandler_GetScorecard(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.matchID != "" {
@@ -383,7 +332,7 @@ func TestScorecardHandler_GetCurrentOver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.matchID != "" {
@@ -502,7 +451,7 @@ func TestScorecardHandler_GetInnings(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.matchID != "" && tt.inningsNumber != "" && tt.inningsNumber != "3" {
@@ -641,7 +590,7 @@ func TestScorecardHandler_GetOver(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockService := new(MockScorecardService)
+			mockService := new(mocks.MockScorecardService)
 
 			// Setup expectations
 			if tt.matchID != "" && tt.inningsNumber != "" && tt.overNumber != "" && tt.inningsNumber != "3" && tt.overNumber != "0" {
