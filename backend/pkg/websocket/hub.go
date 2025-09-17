@@ -224,8 +224,8 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	defer c.conn.Close()
 
-	//nolint:staticcheck // websocket write pump requires for{select{}} pattern
-	for { //nolint:staticcheck
+	//nolint:staticcheck,gosimple // websocket write pump requires for{select{}} pattern
+	for {
 		select {
 		case message, ok := <-c.send:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
