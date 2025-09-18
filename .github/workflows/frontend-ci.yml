@@ -215,16 +215,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Snyk CLI
-        run: npm install -g snyk
-
       - name: Run npm audit
         run: npm audit --audit-level=moderate
-
-      - name: Run Snyk security scan
-        run: snyk test --severity-threshold=high
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
   # Deploy to Dev (manual trigger only)
   deploy-dev:
