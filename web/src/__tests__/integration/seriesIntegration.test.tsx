@@ -354,7 +354,9 @@ describe('Series Integration Tests', () => {
       // Wait for validation errors
       await waitFor(() => {
         expect(screen.getByText('Name is required')).toBeInTheDocument();
-        expect(screen.getByText('End date must be after start date')).toBeInTheDocument();
+        expect(
+          screen.getByText('End date must be after start date')
+        ).toBeInTheDocument();
       });
     });
   });
