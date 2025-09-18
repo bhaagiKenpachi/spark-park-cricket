@@ -263,6 +263,161 @@ var (
 		},
 	})
 
+	// MatchDetails type for comprehensive match information
+	matchDetailsType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "MatchDetails",
+		Fields: graphql.Fields{
+			"match_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"match_number": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"series_name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"team_a": &graphql.Field{
+				Type: graphql.String,
+			},
+			"team_b": &graphql.Field{
+				Type: graphql.String,
+			},
+			"total_overs": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"toss_winner": &graphql.Field{
+				Type: teamTypeEnum,
+			},
+			"toss_type": &graphql.Field{
+				Type: graphql.String,
+			},
+			"current_innings": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"match_status": &graphql.Field{
+				Type: graphql.String,
+			},
+			"batting_team": &graphql.Field{
+				Type: teamTypeEnum,
+			},
+			"team_a_player_count": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"team_b_player_count": &graphql.Field{
+				Type: graphql.Int,
+			},
+		},
+	})
+
+	// MatchStatistics type for match-level statistics
+	matchStatisticsType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "MatchStatistics",
+		Fields: graphql.Fields{
+			"total_runs": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"total_wickets": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"total_overs": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"total_balls": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"run_rate": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"extras": &graphql.Field{
+				Type: extrasSummaryType,
+			},
+			"innings_count": &graphql.Field{
+				Type: graphql.Int,
+			},
+		},
+	})
+
+	// Team type for team information
+	teamType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Team",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"players_count": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"created_at": &graphql.Field{
+				Type: graphql.String,
+			},
+			"updated_at": &graphql.Field{
+				Type: graphql.String,
+			},
+		},
+	})
+
+	// Player type for player information
+	playerType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Player",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"team_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"created_at": &graphql.Field{
+				Type: graphql.String,
+			},
+			"updated_at": &graphql.Field{
+				Type: graphql.String,
+			},
+		},
+	})
+
+	// PlayerStatistics type for player performance statistics
+	playerStatisticsType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "PlayerStatistics",
+		Fields: graphql.Fields{
+			"player_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"player_name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"team_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"runs_scored": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"balls_faced": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"wickets_taken": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"overs_bowled": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"runs_conceded": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"strike_rate": &graphql.Field{
+				Type: graphql.Float,
+			},
+			"economy_rate": &graphql.Field{
+				Type: graphql.Float,
+			},
+		},
+	})
+
 	// Query type
 	queryType = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
@@ -275,6 +430,157 @@ var (
 					},
 				},
 				Resolve: resolveLiveScorecard,
+			},
+			"matchDetails": &graphql.Field{
+				Type: matchDetailsType,
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: resolveMatchDetails,
+			},
+			"matchStatistics": &graphql.Field{
+				Type: matchStatisticsType,
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: resolveMatchStatistics,
+			},
+			"inningsScore": &graphql.Field{
+				Type: graphql.NewObject(graphql.ObjectConfig{
+					Name: "InningsScore",
+					Fields: graphql.Fields{
+						"innings_number": &graphql.Field{
+							Type: graphql.Int,
+						},
+						"batting_team": &graphql.Field{
+							Type: teamTypeEnum,
+						},
+						"total_runs": &graphql.Field{
+							Type: graphql.Int,
+						},
+						"total_wickets": &graphql.Field{
+							Type: graphql.Int,
+						},
+						"total_overs": &graphql.Field{
+							Type: graphql.Float,
+						},
+						"total_balls": &graphql.Field{
+							Type: graphql.Int,
+						},
+						"status": &graphql.Field{
+							Type: graphql.String,
+						},
+						"extras": &graphql.Field{
+							Type: extrasSummaryType,
+						},
+					},
+				}),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveInningsScore,
+			},
+			"inningsDetails": &graphql.Field{
+				Type: inningsSummaryType,
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveInningsDetails,
+			},
+			"overDetails": &graphql.Field{
+				Type: overSummaryType,
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+					"over_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveOverDetails,
+			},
+			"latestOver": &graphql.Field{
+				Type: overSummaryType,
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveLatestOver,
+			},
+			"allOvers": &graphql.Field{
+				Type: graphql.NewList(overSummaryType),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveAllOvers,
+			},
+			"ballDetails": &graphql.Field{
+				Type: graphql.NewList(ballSummaryType),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+					"innings_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+					"over_number": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+				},
+				Resolve: resolveBallDetails,
+			},
+			"matchTeams": &graphql.Field{
+				Type: graphql.NewList(teamType),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: resolveMatchTeams,
+			},
+			"matchPlayers": &graphql.Field{
+				Type: graphql.NewList(playerType),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: resolveMatchPlayers,
+			},
+			"playerStatistics": &graphql.Field{
+				Type: graphql.NewList(playerStatisticsType),
+				Args: graphql.FieldConfigArgument{
+					"match_id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: resolvePlayerStatistics,
 			},
 		},
 	})
@@ -296,8 +602,5 @@ var (
 	})
 )
 
-// Schema represents the GraphQL schema
-var Schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-	Query:        queryType,
-	Subscription: subscriptionType,
-})
+// Note: Schema is now created dynamically in the handler with resolver context
+// The static schema above is kept for reference but not exported
