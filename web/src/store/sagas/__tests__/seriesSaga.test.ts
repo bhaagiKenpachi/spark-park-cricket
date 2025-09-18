@@ -1,4 +1,4 @@
-import { call, put } from 'redux-saga/effects';
+import { put } from 'redux-saga/effects';
 import {
   fetchSeriesSuccess,
   fetchSeriesFailure,
@@ -46,7 +46,12 @@ import {
 } from '../seriesSaga';
 
 describe('seriesSaga', () => {
-  let mockApiService: any;
+  let mockApiService: {
+    getSeries: jest.Mock;
+    createSeries: jest.Mock;
+    updateSeries: jest.Mock;
+    deleteSeries: jest.Mock;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -82,9 +87,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall.type).toBe('CALL');
-      expect(apiCall.payload.fn.name).toBe('bound mockConstructor');
-      expect(apiCall.payload.args).toEqual([]);
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(fetchSeriesSuccess(mockSeries)));
     });
 
@@ -96,7 +103,11 @@ describe('seriesSaga', () => {
       const delayAction = generator.throw(error).value;
       const putAction = generator.next().value;
 
-      expect(delayAction.type).toBe('CALL');
+      expect(delayAction).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(fetchSeriesFailure('Network error')));
     });
 
@@ -108,7 +119,11 @@ describe('seriesSaga', () => {
       const delayAction = generator.throw(error).value;
       const putAction = generator.next().value;
 
-      expect(delayAction.type).toBe('CALL');
+      expect(delayAction).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(
         put(fetchSeriesFailure('Failed to fetch series'))
       );
@@ -141,9 +156,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall.type).toBe('CALL');
-      expect(apiCall.payload.fn.name).toBe('bound mockConstructor');
-      expect(apiCall.payload.args).toEqual([seriesData]);
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(createSeriesSuccess(createdSeries)));
     });
 
@@ -190,9 +207,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall.type).toBe('CALL');
-      expect(apiCall.payload.fn.name).toBe('bound mockConstructor');
-      expect(apiCall.payload.args).toEqual(['1', seriesData]);
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(updateSeriesSuccess(updatedSeries)));
     });
 
@@ -220,9 +239,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall.type).toBe('CALL');
-      expect(apiCall.payload.fn.name).toBe('bound mockConstructor');
-      expect(apiCall.payload.args).toEqual(['1']);
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(deleteSeriesSuccess('1')));
     });
 

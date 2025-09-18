@@ -7,7 +7,7 @@ import {
   deleteMatchSaga,
 } from '@/store/sagas/matchSaga';
 import {
-  fetchMatchesRequest,
+  // fetchMatchesRequest,
   fetchMatchesSuccess,
   fetchMatchesFailure,
   createMatchRequest,

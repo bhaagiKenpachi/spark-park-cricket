@@ -37,7 +37,6 @@ export function SeriesWithMatches({
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
 
-
   // Format date to human readable format
   const formatDate = (dateString: string) => {
     try {
@@ -53,7 +52,9 @@ export function SeriesWithMatches({
   };
 
   // Filter matches for this series
-  const seriesMatches = (matches || []).filter(match => match.series_id === series.id);
+  const seriesMatches = (matches || []).filter(
+    match => match.series_id === series.id
+  );
 
   useEffect(() => {
     if (expanded) {

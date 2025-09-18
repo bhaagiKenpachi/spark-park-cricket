@@ -144,9 +144,6 @@ export function MatchForm({
       batting_team: formData.toss_winner, // Default batting team is toss winner
     };
 
-    console.log('Form data being submitted:', formData);
-    console.log('API data being sent:', apiData);
-
     if (match) {
       dispatch(
         updateMatchRequest({

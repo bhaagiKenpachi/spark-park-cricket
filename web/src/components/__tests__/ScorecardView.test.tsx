@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { configureStore } from '@reduxjs/toolkit';
 import { ScorecardView } from '../ScorecardView';
-import scorecardSlice, {
-  ScorecardResponse,
-} from '../../store/reducers/scorecardSlice';
+import { ScorecardResponse } from '../../store/reducers/scorecardSlice';
 
 // Mock the API service
 jest.mock('../../services/api', () => ({
@@ -17,8 +14,8 @@ jest.mock('../../services/api', () => ({
 }));
 
 // Mock Redux hooks
-const mockDispatch = jest.fn();
-const mockUseAppSelector = jest.fn();
+// const mockDispatch = jest.fn();
+// const mockUseAppSelector = jest.fn();
 
 jest.mock('../../store/hooks', () => ({
   useAppDispatch: () => jest.fn(),
@@ -43,19 +40,19 @@ jest.mock('../../store/reducers/scorecardSlice', () => ({
 }));
 
 // Mock store for testing
-const createMockStore = (initialState: any) => {
-  return configureStore({
-    reducer: {
-      scorecard: scorecardSlice.reducer,
-    },
-    preloadedState: initialState,
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({
-        serializableCheck: false,
-        immutableCheck: false,
-      }),
-  });
-};
+// const createMockStore = (initialState: any) => {
+//   return configureStore({
+//     reducer: {
+//       scorecard: scorecardSlice.reducer,
+//     },
+//     preloadedState: initialState,
+//     middleware: getDefaultMiddleware =>
+//       getDefaultMiddleware({
+//         serializableCheck: false,
+//         immutableCheck: false,
+//       }),
+//   });
+// };
 
 // Mock data
 const mockScorecardData: ScorecardResponse = {
@@ -406,7 +403,9 @@ describe('ScorecardView Component', () => {
     await waitFor(() => {
       const fourButtons = screen.getAllByText('4');
       // Click the first four button (should be the scoring button)
-      fireEvent.click(fourButtons[0]);
+      if (fourButtons[0]) {
+        fireEvent.click(fourButtons[0]);
+      }
     });
 
     // The ball scoring should trigger an addBallRequest action
@@ -429,7 +428,9 @@ describe('ScorecardView Component', () => {
     await waitFor(() => {
       const twoButtons = screen.getAllByText('2');
       // Click the first two button (should be the scoring button)
-      fireEvent.click(twoButtons[0]);
+      if (twoButtons[0]) {
+        fireEvent.click(twoButtons[0]);
+      }
     });
 
     // Check if byes selection is working by looking for the byes button

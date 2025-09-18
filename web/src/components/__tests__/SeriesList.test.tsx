@@ -238,7 +238,6 @@ describe('SeriesList', () => {
     const showMatchesButton = screen.getByText('Show Matches');
     fireEvent.click(showMatchesButton);
 
-
     // Wait for the edit button to appear
     const editButton = screen.getByTestId('edit-series-button');
     fireEvent.click(editButton);

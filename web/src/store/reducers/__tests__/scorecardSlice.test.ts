@@ -3,6 +3,8 @@ import {
   initialState,
   InningsSummary,
   OverSummary,
+  TeamType,
+  TossType,
 } from '../scorecardSlice';
 
 describe('scorecardSlice', () => {
@@ -17,24 +19,23 @@ describe('scorecardSlice', () => {
         total_balls: 12,
         status: 'in_progress',
         extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 2 },
+        overs: [],
       };
 
       const state = {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
-          series_name: 'Test Series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
           total_overs: 20,
-          toss_winner: 'Team A',
-          toss_type: 'bat',
-          venue: 'Test Venue',
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
           innings: [],
+          match_status: 'live',
         },
       };
 
@@ -46,7 +47,7 @@ describe('scorecardSlice', () => {
       const newState = scorecardSlice.reducer(state, action);
 
       expect(newState.scorecard?.innings).toHaveLength(1);
-      expect(newState.scorecard?.innings[0]).toEqual({
+      expect(newState.scorecard?.innings?.[0]).toEqual({
         ...mockInningsData,
         overs: [],
       });
@@ -73,22 +74,26 @@ describe('scorecardSlice', () => {
         total_balls: 18,
         status: 'in_progress',
         extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 3 },
+        overs: [],
       };
 
       const state = {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [
             {
               innings_number: 1,
-              batting_team: 'A',
+              batting_team: 'A' as TeamType,
               total_runs: 10,
               total_wickets: 1,
               total_overs: 2,
@@ -109,9 +114,9 @@ describe('scorecardSlice', () => {
       const newState = scorecardSlice.reducer(state, action);
 
       expect(newState.scorecard?.innings).toHaveLength(1);
-      expect(newState.scorecard?.innings[0].total_runs).toBe(15);
-      expect(newState.scorecard?.innings[0].total_wickets).toBe(2);
-      expect(newState.scorecard?.innings[0].overs).toEqual(existingOvers);
+      expect(newState.scorecard?.innings?.[0]?.total_runs).toBe(15);
+      expect(newState.scorecard?.innings?.[0]?.total_wickets).toBe(2);
+      expect(newState.scorecard?.innings?.[0]?.overs).toEqual(existingOvers);
     });
 
     it('should initialize overs array if it does not exist in existing innings', () => {
@@ -124,29 +129,33 @@ describe('scorecardSlice', () => {
         total_balls: 18,
         status: 'in_progress',
         extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 3 },
+        overs: [],
       };
 
       const state = {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [
             {
               innings_number: 1,
-              batting_team: 'A',
+              batting_team: 'A' as TeamType,
               total_runs: 10,
               total_wickets: 1,
               total_overs: 2,
               total_balls: 12,
               status: 'in_progress',
               extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 2 },
-              // Note: no overs property
+              overs: [],
             },
           ],
         },
@@ -159,7 +168,7 @@ describe('scorecardSlice', () => {
 
       const newState = scorecardSlice.reducer(state, action);
 
-      expect(newState.scorecard?.innings[0].overs).toEqual([]);
+      expect(newState.scorecard?.innings?.[0]?.overs).toEqual([]);
     });
   });
 
@@ -175,11 +184,10 @@ describe('scorecardSlice', () => {
           {
             ball_number: 1,
             ball_type: 'good',
-            run_type: 'boundary',
+            run_type: '4',
             runs: 1,
             byes: 0,
             is_wicket: false,
-            wicket_type: undefined,
           },
         ],
       };
@@ -188,16 +196,19 @@ describe('scorecardSlice', () => {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [
             {
               innings_number: 1,
-              batting_team: 'A',
+              batting_team: 'A' as TeamType,
               total_runs: 0,
               total_wickets: 0,
               total_overs: 0,
@@ -220,8 +231,10 @@ describe('scorecardSlice', () => {
 
       const newState = scorecardSlice.reducer(state, action);
 
-      expect(newState.scorecard?.innings[0].overs).toHaveLength(1);
-      expect(newState.scorecard?.innings[0].overs[0]).toEqual(mockOverData);
+      expect(newState.scorecard?.innings?.[0]?.overs).toHaveLength(1);
+      expect(newState.scorecard?.innings?.[0]?.overs?.[0]).toEqual(
+        mockOverData
+      );
     });
 
     it('should update existing over in innings', () => {
@@ -244,11 +257,10 @@ describe('scorecardSlice', () => {
           {
             ball_number: 1,
             ball_type: 'good',
-            run_type: 'boundary',
+            run_type: '4',
             runs: 1,
             byes: 0,
             is_wicket: false,
-            wicket_type: undefined,
           },
         ],
       };
@@ -257,16 +269,19 @@ describe('scorecardSlice', () => {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [
             {
               innings_number: 1,
-              batting_team: 'A',
+              batting_team: 'A' as TeamType,
               total_runs: 0,
               total_wickets: 0,
               total_overs: 0,
@@ -289,8 +304,8 @@ describe('scorecardSlice', () => {
 
       const newState = scorecardSlice.reducer(state, action);
 
-      expect(newState.scorecard?.innings[0].overs).toHaveLength(1);
-      expect(newState.scorecard?.innings[0].overs[0]).toEqual(updatedOver);
+      expect(newState.scorecard?.innings?.[0]?.overs).toHaveLength(1);
+      expect(newState.scorecard?.innings?.[0]?.overs?.[0]).toEqual(updatedOver);
     });
 
     it('should create overs array if it does not exist', () => {
@@ -307,23 +322,26 @@ describe('scorecardSlice', () => {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [
             {
               innings_number: 1,
-              batting_team: 'A',
+              batting_team: 'A' as TeamType,
               total_runs: 0,
               total_wickets: 0,
               total_overs: 0,
               total_balls: 0,
               status: 'in_progress',
               extras: { byes: 0, leg_byes: 0, wides: 0, no_balls: 0, total: 0 },
-              // Note: no overs property
+              overs: [],
             },
           ],
         },
@@ -339,9 +357,11 @@ describe('scorecardSlice', () => {
 
       const newState = scorecardSlice.reducer(state, action);
 
-      expect(newState.scorecard?.innings[0].overs).toBeDefined();
-      expect(newState.scorecard?.innings[0].overs).toHaveLength(1);
-      expect(newState.scorecard?.innings[0].overs[0]).toEqual(mockOverData);
+      expect(newState.scorecard?.innings?.[0]?.overs).toBeDefined();
+      expect(newState.scorecard?.innings?.[0]?.overs).toHaveLength(1);
+      expect(newState.scorecard?.innings?.[0]?.overs?.[0]).toEqual(
+        mockOverData
+      );
     });
 
     it('should not update if innings does not exist', () => {
@@ -358,17 +378,15 @@ describe('scorecardSlice', () => {
         ...initialState,
         scorecard: {
           match_id: 'test-match',
-          series_id: 'test-series',
-          series_name: 'Test Series',
           match_number: 1,
-          date: '2025-01-01',
-          status: 'live',
+          series_name: 'Test Series',
           team_a: 'Team A',
           team_b: 'Team B',
           total_overs: 20,
-          toss_winner: 'Team A',
-          toss_type: 'bat',
-          venue: 'Test Venue',
+          toss_winner: 'A' as TeamType,
+          toss_type: 'H' as TossType,
+          current_innings: 1,
+          match_status: 'live',
           innings: [],
         },
       };
