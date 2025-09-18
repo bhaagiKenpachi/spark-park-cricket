@@ -42,10 +42,10 @@ on:
       environment:
         description: 'Environment to deploy to (if applicable)'
         required: false
-        default: 'test'
+        default: 'dev'
         type: choice
         options:
-          - test
+          - dev
           - staging
           - production
 
