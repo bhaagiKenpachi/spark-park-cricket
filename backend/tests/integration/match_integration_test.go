@@ -409,7 +409,6 @@ func createTestSeries(t *testing.T, router http.Handler) string {
 	return response.Data.ID
 }
 
-
 // Helper function to create int pointer
 func intPtr(i int) *int {
 	return &i
