@@ -1,0 +1,13 @@
+﻿2025-09-18T06:35:13.7472503Z Current runner version: '2.328.0'
+2025-09-18T06:35:13.7485607Z Runner name: 'runner-2-bhaagi-spark-park-cricket'
+2025-09-18T06:35:13.7487152Z Runner group name: 'Default'
+2025-09-18T06:35:13.7490327Z Machine name: 'github-runner-1'
+2025-09-18T06:35:13.7495480Z ##[group]GITHUB_TOKEN Permissions
+2025-09-18T06:35:13.7499431Z Contents: read
+2025-09-18T06:35:13.7500578Z Metadata: read
+2025-09-18T06:35:13.7501954Z Packages: read
+2025-09-18T06:35:13.7503314Z ##[endgroup]
+2025-09-18T06:35:13.7507661Z Secret source: Actions
+2025-09-18T06:35:13.7508930Z Prepare workflow directory
+2025-09-18T06:35:13.8497016Z Prepare all required actions
+2025-09-18T06:35:13.8599222Z Complete job name: Notify on Failure

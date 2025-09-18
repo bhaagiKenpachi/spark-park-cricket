@@ -1,0 +1,17 @@
+﻿2025-09-18T06:34:23.5608725Z Current runner version: '2.328.0'
+2025-09-18T06:34:23.5621099Z Runner name: 'runner-1-bhaagi-spark-park-cricket'
+2025-09-18T06:34:23.5622362Z Runner group name: 'Default'
+2025-09-18T06:34:23.5624142Z Machine name: 'github-action-runner-2'
+2025-09-18T06:34:23.5628921Z ##[group]GITHUB_TOKEN Permissions
+2025-09-18T06:34:23.5632840Z Contents: read
+2025-09-18T06:34:23.5633655Z Metadata: read
+2025-09-18T06:34:23.5634687Z Packages: read
+2025-09-18T06:34:23.5635413Z ##[endgroup]
+2025-09-18T06:34:23.5638954Z Secret source: Actions
+2025-09-18T06:34:23.5640193Z Prepare workflow directory
+2025-09-18T06:34:23.6616717Z Prepare all required actions
+2025-09-18T06:34:23.6673162Z Getting action download info
+2025-09-18T06:34:24.7717502Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-09-18T06:34:25.4386507Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-09-18T06:34:26.4498766Z Download action repository 'codecov/codecov-action@v4' (SHA:b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238)
+2025-09-18T06:34:28.1009924Z Complete job name: Unit Tests

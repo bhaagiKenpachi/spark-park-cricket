@@ -39,7 +39,7 @@ web/
 
 ### Prerequisites
 
-- Node.js 20.17+ 
+- Node.js 20.17+
 - npm or yarn
 
 ### Installation
@@ -109,20 +109,20 @@ npm run type-check
 
 ## 📋 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `dev` | Start development server with Turbopack |
-| `build` | Build production bundle |
-| `start` | Start production server |
-| `lint` | Run ESLint |
-| `lint:fix` | Fix ESLint errors |
-| `format` | Format code with Prettier |
-| `test` | Run Jest tests |
-| `test:watch` | Run tests in watch mode |
-| `test:coverage` | Run tests with coverage report |
-| `e2e` | Run Cypress E2E tests |
-| `e2e:open` | Open Cypress test runner |
-| `type-check` | Run TypeScript compiler check |
+| Script          | Description                             |
+| --------------- | --------------------------------------- |
+| `dev`           | Start development server with Turbopack |
+| `build`         | Build production bundle                 |
+| `start`         | Start production server                 |
+| `lint`          | Run ESLint                              |
+| `lint:fix`      | Fix ESLint errors                       |
+| `format`        | Format code with Prettier               |
+| `test`          | Run Jest tests                          |
+| `test:watch`    | Run tests in watch mode                 |
+| `test:coverage` | Run tests with coverage report          |
+| `e2e`           | Run Cypress E2E tests                   |
+| `e2e:open`      | Open Cypress test runner                |
+| `type-check`    | Run TypeScript compiler check           |
 
 ## 🏗️ Architecture
 

@@ -1,0 +1,74 @@
+﻿2025-09-18T06:34:28.1895703Z ##[group]Run actions/checkout@v4
+2025-09-18T06:34:28.1896890Z with:
+2025-09-18T06:34:28.1897296Z   repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.1898072Z   token: ***
+2025-09-18T06:34:28.1898391Z   ssh-strict: true
+2025-09-18T06:34:28.1898734Z   ssh-user: git
+2025-09-18T06:34:28.1899059Z   persist-credentials: true
+2025-09-18T06:34:28.1899435Z   clean: true
+2025-09-18T06:34:28.1900117Z   sparse-checkout-cone-mode: true
+2025-09-18T06:34:28.1900623Z   fetch-depth: 1
+2025-09-18T06:34:28.1900993Z   fetch-tags: false
+2025-09-18T06:34:28.1901379Z   show-progress: true
+2025-09-18T06:34:28.1901755Z   lfs: false
+2025-09-18T06:34:28.1902087Z   submodules: false
+2025-09-18T06:34:28.1902623Z   set-safe-directory: true
+2025-09-18T06:34:28.1903554Z env:
+2025-09-18T06:34:28.1903894Z   NODE_VERSION: 20
+2025-09-18T06:34:28.1904236Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:28.1904652Z ##[endgroup]
+2025-09-18T06:34:28.4138965Z Syncing repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.4141694Z ##[group]Getting Git version info
+2025-09-18T06:34:28.4143158Z Working directory is '/opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket'
+2025-09-18T06:34:28.4144345Z [command]/usr/bin/git version
+2025-09-18T06:34:28.4144747Z git version 2.34.1
+2025-09-18T06:34:28.4146655Z ##[endgroup]
+2025-09-18T06:34:28.4152502Z Copying '/home/runner/.gitconfig' to '/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/1e702eca-60ec-4e6f-8cd3-15ab32555058/.gitconfig'
+2025-09-18T06:34:28.4159340Z Temporarily overriding HOME='/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/1e702eca-60ec-4e6f-8cd3-15ab32555058' before making global git config changes
+2025-09-18T06:34:28.4161230Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-18T06:34:28.4166787Z [command]/usr/bin/git config --global --add safe.directory /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket
+2025-09-18T06:34:28.4252675Z [command]/usr/bin/git config --local --get remote.origin.url
+2025-09-18T06:34:28.4280751Z https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.4307532Z ##[group]Removing previously created refs, to avoid conflicts
+2025-09-18T06:34:28.4313925Z [command]/usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+2025-09-18T06:34:28.4341041Z refs/heads/integrate/graphql-web
+2025-09-18T06:34:28.4358162Z [command]/usr/bin/git checkout --detach
+2025-09-18T06:34:28.4485546Z HEAD is now at 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:28.4553210Z [command]/usr/bin/git branch --delete --force integrate/graphql-web
+2025-09-18T06:34:28.4591048Z Deleted branch integrate/graphql-web (was 6cf9791).
+2025-09-18T06:34:28.4650786Z ##[endgroup]
+2025-09-18T06:34:28.4660042Z [command]/usr/bin/git submodule status
+2025-09-18T06:34:28.4947075Z ##[group]Cleaning the repository
+2025-09-18T06:34:28.4949012Z [command]/usr/bin/git clean -ffdx
+2025-09-18T06:34:28.5000958Z Removing backend/coverage.html
+2025-09-18T06:34:28.5001815Z Removing backend/coverage.out
+2025-09-18T06:34:28.5037043Z [command]/usr/bin/git reset --hard HEAD
+2025-09-18T06:34:28.5091977Z HEAD is now at 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:28.5115853Z ##[endgroup]
+2025-09-18T06:34:28.5116631Z ##[group]Disabling automatic garbage collection
+2025-09-18T06:34:28.5117662Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-18T06:34:28.5226838Z ##[endgroup]
+2025-09-18T06:34:28.5227823Z ##[group]Setting up auth
+2025-09-18T06:34:28.5228688Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-18T06:34:28.5231119Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-18T06:34:28.5522361Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-18T06:34:28.5556018Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-18T06:34:28.5830026Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-18T06:34:28.5902680Z ##[endgroup]
+2025-09-18T06:34:28.5905427Z ##[group]Fetching the repository
+2025-09-18T06:34:28.5920702Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +415c4d4feae13448fd13ef4bf8beb9aa358f7c63:refs/remotes/origin/main
+2025-09-18T06:34:29.3496646Z From https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:29.3498276Z  + 7dcd9fd...415c4d4 415c4d4feae13448fd13ef4bf8beb9aa358f7c63 -> origin/main  (forced update)
+2025-09-18T06:34:29.3500970Z ##[endgroup]
+2025-09-18T06:34:29.3501641Z ##[group]Determining the checkout info
+2025-09-18T06:34:29.3502392Z ##[endgroup]
+2025-09-18T06:34:29.3503151Z [command]/usr/bin/git sparse-checkout disable
+2025-09-18T06:34:29.3522248Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-18T06:34:29.3524469Z ##[group]Checking out the ref
+2025-09-18T06:34:29.3525204Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-09-18T06:34:29.3526239Z Previous HEAD position was 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:29.3527016Z Switched to a new branch 'main'
+2025-09-18T06:34:29.3527795Z Branch 'main' set up to track remote branch 'main' from 'origin'.
+2025-09-18T06:34:29.3529884Z ##[endgroup]
+2025-09-18T06:34:29.3531797Z [command]/usr/bin/git log -1 --format=%H
+2025-09-18T06:34:29.3532369Z 415c4d4feae13448fd13ef4bf8beb9aa358f7c63

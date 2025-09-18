@@ -1,0 +1,16 @@
+﻿2025-09-18T06:34:23.5101609Z Current runner version: '2.328.0'
+2025-09-18T06:34:23.5112653Z Runner name: 'runner-2-bhaagi-spark-park-cricket'
+2025-09-18T06:34:23.5114249Z Runner group name: 'Default'
+2025-09-18T06:34:23.5115715Z Machine name: 'github-runner-1'
+2025-09-18T06:34:23.5120246Z ##[group]GITHUB_TOKEN Permissions
+2025-09-18T06:34:23.5124429Z Contents: read
+2025-09-18T06:34:23.5125268Z Metadata: read
+2025-09-18T06:34:23.5126686Z Packages: read
+2025-09-18T06:34:23.5127442Z ##[endgroup]
+2025-09-18T06:34:23.5131493Z Secret source: Actions
+2025-09-18T06:34:23.5132787Z Prepare workflow directory
+2025-09-18T06:34:23.6238956Z Prepare all required actions
+2025-09-18T06:34:23.6294946Z Getting action download info
+2025-09-18T06:34:24.6616348Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-09-18T06:34:25.4675789Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-09-18T06:34:26.4013733Z Complete job name: Code Quality

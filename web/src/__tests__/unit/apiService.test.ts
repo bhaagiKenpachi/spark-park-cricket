@@ -52,7 +52,7 @@ describe('ApiService - Match Endpoints', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
           }),
           mode: 'cors',
           credentials: 'omit',
@@ -138,7 +138,7 @@ describe('ApiService - Match Endpoints', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
           }),
           mode: 'cors',
           credentials: 'omit',
@@ -285,7 +285,9 @@ describe('ApiService - Match Endpoints', () => {
 
       mockFetch.mockResolvedValue(mockResponse as any);
 
-      await expect(apiService.createMatch(invalidMatchData as any)).rejects.toThrow(ApiError);
+      await expect(
+        apiService.createMatch(invalidMatchData as any)
+      ).rejects.toThrow(ApiError);
     });
   });
 
@@ -356,7 +358,9 @@ describe('ApiService - Match Endpoints', () => {
 
       mockFetch.mockResolvedValue(mockResponse as any);
 
-      await expect(apiService.updateMatch(matchId, updateData)).rejects.toThrow(ApiError);
+      await expect(apiService.updateMatch(matchId, updateData)).rejects.toThrow(
+        ApiError
+      );
     });
   });
 
@@ -438,7 +442,7 @@ describe('ApiService - Match Endpoints', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
           }),
           mode: 'cors',
           credentials: 'omit',
@@ -521,10 +525,10 @@ describe('ApiService - Match Endpoints', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
+            Pragma: 'no-cache',
+            Expires: '0',
           }),
           mode: 'cors',
           credentials: 'omit',

@@ -1,0 +1,69 @@
+﻿2025-09-18T06:34:53.1063942Z ##[group]Run npm run format:check
+2025-09-18T06:34:53.1064721Z [36;1mnpm run format:check[0m
+2025-09-18T06:34:53.1082741Z shell: /usr/bin/bash -e {0}
+2025-09-18T06:34:53.1083280Z env:
+2025-09-18T06:34:53.1083700Z   NODE_VERSION: 20
+2025-09-18T06:34:53.1084098Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:53.1084687Z ##[endgroup]
+2025-09-18T06:34:53.2910669Z 
+2025-09-18T06:34:53.2912534Z > web@0.1.0 format:check
+2025-09-18T06:34:53.2913681Z > prettier --check .
+2025-09-18T06:34:53.2914782Z 
+2025-09-18T06:34:53.4309358Z Checking formatting...
+2025-09-18T06:34:53.5916181Z [[33mwarn[39m] .eslintrc.json
+2025-09-18T06:34:53.6124400Z [[33mwarn[39m] .prettierrc
+2025-09-18T06:34:53.7002586Z [[33mwarn[39m] cypress.config.ts
+2025-09-18T06:34:53.8284617Z [[33mwarn[39m] cypress/e2e/series-management.cy.ts
+2025-09-18T06:34:53.8590560Z [[33mwarn[39m] cypress/support/commands.ts
+2025-09-18T06:34:53.8756022Z [[33mwarn[39m] cypress/support/e2e.ts
+2025-09-18T06:34:53.8814983Z [[33mwarn[39m] cypress/tsconfig.json
+2025-09-18T06:34:53.8964634Z [[33mwarn[39m] eslint.config.mjs
+2025-09-18T06:34:53.9106342Z [[33mwarn[39m] jest.config.js
+2025-09-18T06:34:53.9831851Z [[33mwarn[39m] jest.setup.js
+2025-09-18T06:34:53.9967756Z [[33mwarn[39m] next.config.ts
+2025-09-18T06:34:54.3567299Z [[33mwarn[39m] postcss.config.mjs
+2025-09-18T06:34:54.5026463Z [[33mwarn[39m] README.md
+2025-09-18T06:34:54.7649623Z [[33mwarn[39m] src/__tests__/integration/seriesIntegration.test.tsx
+2025-09-18T06:34:54.8787213Z [[33mwarn[39m] src/app/globals.css
+2025-09-18T06:34:54.9161025Z [[33mwarn[39m] src/app/layout.tsx
+2025-09-18T06:34:54.9306139Z [[33mwarn[39m] src/app/page.tsx
+2025-09-18T06:34:55.0416711Z [[33mwarn[39m] src/components/__tests__/SeriesForm.test.tsx
+2025-09-18T06:34:55.1207227Z [[33mwarn[39m] src/components/__tests__/SeriesList.test.tsx
+2025-09-18T06:34:55.2285282Z [[33mwarn[39m] src/components/MatchForm.tsx
+2025-09-18T06:34:55.5304601Z [[33mwarn[39m] src/components/ScorecardView.tsx
+2025-09-18T06:34:55.5610506Z [[33mwarn[39m] src/components/SeriesForm.tsx
+2025-09-18T06:34:55.6044880Z [[33mwarn[39m] src/components/SeriesList.tsx
+2025-09-18T06:34:55.6855417Z [[33mwarn[39m] src/components/SeriesWithMatches.tsx
+2025-09-18T06:34:55.7284853Z [[33mwarn[39m] src/components/ui/badge.tsx
+2025-09-18T06:34:55.7598714Z [[33mwarn[39m] src/components/ui/button.tsx
+2025-09-18T06:34:55.7787024Z [[33mwarn[39m] src/components/ui/card.tsx
+2025-09-18T06:34:55.8170712Z [[33mwarn[39m] src/components/ui/dropdown-menu.tsx
+2025-09-18T06:34:55.8538394Z [[33mwarn[39m] src/components/ui/form.tsx
+2025-09-18T06:34:55.8614303Z [[33mwarn[39m] src/components/ui/input.tsx
+2025-09-18T06:34:55.8943714Z [[33mwarn[39m] src/components/ui/label.tsx
+2025-09-18T06:34:55.9194135Z [[33mwarn[39m] src/components/ui/select.tsx
+2025-09-18T06:34:55.9348375Z [[33mwarn[39m] src/components/ui/textarea.tsx
+2025-09-18T06:34:55.9349745Z [[33mwarn[39m] src/lib/utils.ts
+2025-09-18T06:34:55.9425248Z [[33mwarn[39m] src/providers/ReduxProvider.tsx
+2025-09-18T06:34:56.0351829Z [[33mwarn[39m] src/services/api.ts
+2025-09-18T06:34:56.0427580Z [[33mwarn[39m] src/store/hooks.ts
+2025-09-18T06:34:56.0662990Z [[33mwarn[39m] src/store/index.ts
+2025-09-18T06:34:56.1074228Z [[33mwarn[39m] src/store/reducers/__tests__/seriesSlice.test.ts
+2025-09-18T06:34:56.1142708Z [[33mwarn[39m] src/store/reducers/index.ts
+2025-09-18T06:34:56.1431226Z [[33mwarn[39m] src/store/reducers/matchSlice.ts
+2025-09-18T06:34:56.1626450Z [[33mwarn[39m] src/store/reducers/playerSlice.ts
+2025-09-18T06:34:56.1711409Z [[33mwarn[39m] src/store/reducers/scoreboardSlice.ts
+2025-09-18T06:34:56.1926091Z [[33mwarn[39m] src/store/reducers/scorecardSlice.ts
+2025-09-18T06:34:56.2081400Z [[33mwarn[39m] src/store/reducers/seriesSlice.ts
+2025-09-18T06:34:56.2615569Z [[33mwarn[39m] src/store/reducers/teamSlice.ts
+2025-09-18T06:34:56.2985135Z [[33mwarn[39m] src/store/sagas/__tests__/seriesSaga.test.ts
+2025-09-18T06:34:56.3271230Z [[33mwarn[39m] src/store/sagas/index.ts
+2025-09-18T06:34:56.3272983Z [[33mwarn[39m] src/store/sagas/matchSaga.ts
+2025-09-18T06:34:56.3273622Z [[33mwarn[39m] src/store/sagas/playerSaga.ts
+2025-09-18T06:34:56.3375880Z [[33mwarn[39m] src/store/sagas/scoreboardSaga.ts
+2025-09-18T06:34:56.3896434Z [[33mwarn[39m] src/store/sagas/scorecardSaga.ts
+2025-09-18T06:34:56.4031596Z [[33mwarn[39m] src/store/sagas/seriesSaga.ts
+2025-09-18T06:34:56.4181469Z [[33mwarn[39m] src/store/sagas/teamSaga.ts
+2025-09-18T06:34:56.4226859Z [[33mwarn[39m] tsconfig.json
+2025-09-18T06:34:56.4229273Z [[33mwarn[39m] Code style issues found in 55 files. Run Prettier with --write to fix.
+2025-09-18T06:34:56.4673781Z ##[error]Process completed with exit code 1.
