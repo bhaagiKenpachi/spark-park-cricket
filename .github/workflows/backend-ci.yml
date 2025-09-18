@@ -55,6 +55,11 @@ on:
 env:
   GO_VERSION: '1.23'
   WORKING_DIRECTORY: './backend'
+  # Test environment variables
+  TEST_SCHEMA: 'testing_db'
+  PORT: '8080'
+  TEST_TIMEOUT: '30s'
+  TEST_CLEANUP: 'true'
 
 jobs:
   lint:
@@ -122,7 +127,11 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: go mod download
 
-      - name: Run unit tests
+      - name: Run unit tests using Makefile
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: make test-unit
+
+      - name: Generate coverage report
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           go test -v -race -coverprofile=coverage.out ./tests/unit/...
@@ -139,31 +148,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'integration') || github.event_name != 'workflow_dispatch' }}
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: spark_park_cricket_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -187,63 +171,27 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: go mod download
 
-      - name: Wait for services
+      - name: Setup test environment
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          sleep 10
-          # Wait for PostgreSQL
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
-          # Wait for Redis
-          until redis-cli -h localhost -p 6379 ping; do
-            echo "Waiting for Redis..."
-            sleep 2
-          done
+          # Copy test environment file
+          cp env.test .env
+          echo "✅ Test environment configured"
 
-      - name: Run integration tests
+      - name: Run integration tests using Makefile
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: spark_park_cricket_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          REDIS_PASSWORD: ""
-        run: go test -v -race ./tests/integration/...
+          TEST_SCHEMA: ${{ env.TEST_SCHEMA }}
+          PORT: ${{ env.PORT }}
+          TEST_TIMEOUT: ${{ env.TEST_TIMEOUT }}
+          TEST_CLEANUP: ${{ env.TEST_CLEANUP }}
+        run: make test-integration
 
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'e2e') || github.event_name != 'workflow_dispatch' }}
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: spark_park_cricket_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -267,92 +215,27 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: go mod download
 
-      - name: Wait for services
+      - name: Setup test environment
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          sleep 10
-          # Wait for PostgreSQL
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
-          # Wait for Redis
-          until redis-cli -h localhost -p 6379 ping; do
-            echo "Waiting for Redis..."
-            sleep 2
-          done
+          # Copy test environment file
+          cp env.test .env
+          echo "✅ Test environment configured"
 
-      - name: Build application
+      - name: Run E2E tests using Makefile
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: spark_park_cricket_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          REDIS_PASSWORD: ""
-        run: go build -o server ./cmd/server
-
-      - name: Start server in background
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: spark_park_cricket_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          REDIS_PASSWORD: ""
-        run: |
-          ./server > server.log 2>&1 &
-          echo $! > server.pid
-          sleep 5
-
-      - name: Run E2E tests
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: go test -v -race ./tests/e2e/...
-
-      - name: Stop server
-        if: always()
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) || true
-            rm server.pid
-          fi
+          TEST_SCHEMA: ${{ env.TEST_SCHEMA }}
+          PORT: ${{ env.PORT }}
+          TEST_TIMEOUT: ${{ env.TEST_TIMEOUT }}
+          TEST_CLEANUP: ${{ env.TEST_CLEANUP }}
+        run: make test-e2e
 
   performance-tests:
     name: Performance Tests
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'performance') || github.event_name != 'workflow_dispatch' }}
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: spark_park_cricket_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -376,31 +259,20 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: go mod download
 
-      - name: Wait for services
+      - name: Setup test environment
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          sleep 10
-          # Wait for PostgreSQL
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
-          # Wait for Redis
-          until redis-cli -h localhost -p 6379 ping; do
-            echo "Waiting for Redis..."
-            sleep 2
-          done
+          # Copy test environment file
+          cp env.test .env
+          echo "✅ Test environment configured"
 
       - name: Run performance tests
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: postgres
-          DB_PASSWORD: postgres
-          DB_NAME: spark_park_cricket_test
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          REDIS_PASSWORD: ""
+          TEST_SCHEMA: ${{ env.TEST_SCHEMA }}
+          PORT: ${{ env.PORT }}
+          TEST_TIMEOUT: ${{ env.TEST_TIMEOUT }}
+          TEST_CLEANUP: ${{ env.TEST_CLEANUP }}
         run: go test -v -bench=. -benchmem ./tests/performance/...
 
   build:
@@ -432,19 +304,18 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: go mod download
 
-      - name: Build for Linux
+      - name: Build using Makefile
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: make build
+
+      - name: Build for multiple platforms
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
+          # Build for Linux
           GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o server-linux ./cmd/server
-
-      - name: Build for macOS
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
+          # Build for macOS
           GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o server-darwin ./cmd/server
-
-      - name: Build for Windows
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
+          # Build for Windows
           GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o server-windows.exe ./cmd/server
 
       - name: Upload build artifacts
