@@ -19,6 +19,7 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 func setupTestServer(t *testing.T) (*httptest.Server, *database.Client) {
@@ -86,6 +87,7 @@ func TestMatchCompletion_TargetReached_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
+	defer testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID := createTestMatch(t, db)
 
@@ -192,6 +194,7 @@ func TestMatchCompletion_AllWicketsLost_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
+	defer testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID := createTestMatch(t, db)
 
@@ -298,6 +301,7 @@ func TestMatchCompletion_AllOversCompleted_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
+	defer testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID := createTestMatch(t, db)
 
@@ -420,6 +424,7 @@ func TestMatchCompletion_MatchContinues_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
+	defer testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID := createTestMatch(t, db)
 
