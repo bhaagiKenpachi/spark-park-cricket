@@ -222,9 +222,7 @@ jobs:
         run: npm audit --audit-level=moderate
 
       - name: Run Snyk security scan
-        run: |
-          cd ${{ env.WORKING_DIRECTORY }}
-          snyk test --severity-threshold=high
+        run: snyk test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
