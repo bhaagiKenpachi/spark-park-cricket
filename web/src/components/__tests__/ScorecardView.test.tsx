@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { ScorecardView } from '../ScorecardView';
-import scorecardSlice, { ScorecardResponse, InningsSummary, OverSummary, BallSummary } from '../../store/reducers/scorecardSlice';
+import scorecardSlice, { ScorecardResponse } from '../../store/reducers/scorecardSlice';
 
 // Mock the API service
 jest.mock('../../services/api', () => ({

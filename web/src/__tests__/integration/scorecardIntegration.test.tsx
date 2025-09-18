@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { ScorecardView } from '../../components/ScorecardView';
-import scorecardReducer, { ScorecardResponse, InningsSummary, OverSummary, BallSummary, BallEventRequest, fetchScorecardRequest } from '../../store/reducers/scorecardSlice';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import scorecardReducer, { ScorecardResponse, BallEventRequest, fetchScorecardRequest } from '../../store/reducers/scorecardSlice';
 import { apiService } from '../../services/api';
 
 // Mock the API service

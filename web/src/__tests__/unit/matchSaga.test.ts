@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { runSaga } from 'redux-saga';
 import {
     fetchMatchesSaga,

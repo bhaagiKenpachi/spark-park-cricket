@@ -85,7 +85,7 @@ interface ScorecardState {
     scoring: boolean;
 }
 
-const initialState: ScorecardState = {
+export const initialState: ScorecardState = {
     scorecard: null,
     loading: false,
     error: null,

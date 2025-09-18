@@ -12,7 +12,7 @@ Cypress.Commands.add('login', (email: string, password: string) => {
 })
 
 // Custom command for creating series
-Cypress.Commands.add('createSeries', (seriesData: any) => {
+Cypress.Commands.add('createSeries', (seriesData: { name: string; description: string; start_date: string; end_date: string }) => {
     cy.visit('/series/new')
     cy.get('[data-cy=series-name]').type(seriesData.name)
     cy.get('[data-cy=series-description]').type(seriesData.description)
@@ -22,7 +22,7 @@ Cypress.Commands.add('createSeries', (seriesData: any) => {
 })
 
 // Custom command for creating team
-Cypress.Commands.add('createTeam', (teamData: any) => {
+Cypress.Commands.add('createTeam', (teamData: { name: string; description: string }) => {
     cy.visit('/teams/new')
     cy.get('[data-cy=team-name]').type(teamData.name)
     cy.get('[data-cy=team-description]').type(teamData.description)
@@ -30,7 +30,7 @@ Cypress.Commands.add('createTeam', (teamData: any) => {
 })
 
 // Custom command for creating match
-Cypress.Commands.add('createMatch', (matchData: any) => {
+Cypress.Commands.add('createMatch', (matchData: { series_id: string; team1_id: string; team2_id: string; venue: string; match_date: string }) => {
     cy.visit('/matches/new')
     cy.get('[data-cy=series-select]').select(matchData.series_id)
     cy.get('[data-cy=team1-select]').select(matchData.team1_id)
@@ -41,6 +41,6 @@ Cypress.Commands.add('createMatch', (matchData: any) => {
 })
 
 // Custom command for mocking API responses
-Cypress.Commands.add('mockApiResponse', (endpoint: string, response: any) => {
+Cypress.Commands.add('mockApiResponse', (endpoint: string, response: unknown) => {
     cy.intercept('GET', endpoint, response).as('apiCall')
 })

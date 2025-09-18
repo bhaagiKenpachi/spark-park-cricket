@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { runSaga } from 'redux-saga';
-import { call, put } from 'redux-saga/effects';
 import {
     fetchScorecardSaga,
     startScoringSaga,
@@ -44,7 +44,7 @@ jest.mock('../../services/api', () => ({
 }));
 
 describe('Scorecard Sagas', () => {
-    let dispatched: any[];
+    let dispatched: unknown[];
 
     beforeEach(() => {
         dispatched = [];
@@ -52,7 +52,7 @@ describe('Scorecard Sagas', () => {
     });
 
     const mockStore = {
-        dispatch: (action: any) => dispatched.push(action),
+        dispatch: (action: unknown) => dispatched.push(action),
         getState: () => ({}),
     };
 
