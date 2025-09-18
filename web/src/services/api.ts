@@ -18,6 +18,14 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
+export interface ScorecardApiResponse<T> {
+  data: {
+    data: T;
+  };
+  message?: string;
+  success: boolean;
+}
+
 export interface ApiErrorInterface {
   message: string;
   status: number;
@@ -109,6 +117,66 @@ class ApiService {
     }
   }
 
+  private async scorecardRequest<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    retryCount: number = 0
+  ): Promise<ScorecardApiResponse<T>> {
+    // Add cache-busting parameter
+    const separator = endpoint.includes('?') ? '&' : '?';
+    const url = `${this.baseURL}${endpoint}${separator}_t=${Date.now()}`;
+
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+    };
+
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiError(
+          errorData.message || `HTTP error! status: ${response.status}`,
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+      return {
+        data,
+        success: true,
+        message: data.message,
+      };
+    } catch (error) {
+      // Retry logic for network errors
+      if (retryCount < 3 && error instanceof TypeError) {
+        await new Promise(resolve =>
+          setTimeout(resolve, 1000 * (retryCount + 1))
+        );
+        return this.scorecardRequest<T>(endpoint, options, retryCount + 1);
+      }
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        500,
+        error
+      );
+    }
+  }
+
   // Series API methods
   async getSeries(): Promise<ApiResponse<Series[]>> {
     return this.request<Series[]>('/series');
@@ -188,8 +256,10 @@ class ApiService {
   }
 
   // Scorecard API methods
-  async getScorecard(matchId: string): Promise<ApiResponse<ScorecardResponse>> {
-    return this.request<ScorecardResponse>(`/scorecard/${matchId}`);
+  async getScorecard(
+    matchId: string
+  ): Promise<ScorecardApiResponse<ScorecardResponse>> {
+    return this.scorecardRequest<ScorecardResponse>(`/scorecard/${matchId}`);
   }
 
   async startScoring(
@@ -275,8 +345,8 @@ class ApiService {
   async getCurrentOver(
     matchId: string,
     inningsNumber: number = 1
-  ): Promise<ApiResponse<OverSummary>> {
-    return this.request<OverSummary>(
+  ): Promise<ScorecardApiResponse<OverSummary>> {
+    return this.scorecardRequest<OverSummary>(
       `/scorecard/${matchId}/current-over?innings=${inningsNumber}`
     );
   }
@@ -284,8 +354,8 @@ class ApiService {
   async getInnings(
     matchId: string,
     inningsNumber: number
-  ): Promise<ApiResponse<InningsSummary>> {
-    return this.request<InningsSummary>(
+  ): Promise<ScorecardApiResponse<InningsSummary>> {
+    return this.scorecardRequest<InningsSummary>(
       `/scorecard/${matchId}/innings/${inningsNumber}`
     );
   }
@@ -294,8 +364,8 @@ class ApiService {
     matchId: string,
     inningsNumber: number,
     overNumber: number
-  ): Promise<ApiResponse<OverSummary>> {
-    return this.request<OverSummary>(
+  ): Promise<ScorecardApiResponse<OverSummary>> {
+    return this.scorecardRequest<OverSummary>(
       `/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`
     );
   }
