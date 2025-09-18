@@ -215,7 +215,11 @@ export function SeriesForm({
                 }
               >
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : series ? 'Update Series' : 'Create Series'}
+                {loading
+                  ? 'Saving...'
+                  : series
+                    ? 'Update Series'
+                    : 'Create Series'}
               </Button>
 
               {onCancel && (
