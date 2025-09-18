@@ -12,7 +12,6 @@ import {
   deleteSeriesSuccess,
   deleteSeriesFailure,
 } from '../../reducers/seriesSlice';
-import { apiService, ApiError } from '@/services/api';
 import { Series } from '../../reducers/seriesSlice';
 
 // Mock the API service
@@ -36,7 +35,7 @@ jest.mock('@/services/api', () => ({
 }));
 
 // Import the mocked API service
-import { apiService } from '@/services/api';
+import { apiService, ApiError } from '@/services/api';
 
 // Import saga functions (we need to export them from the saga file)
 import {
@@ -66,7 +65,7 @@ describe('seriesSaga', () => {
         },
       ];
 
-      const mockResponse = { data: mockSeries, success: true };
+      const mockResponse = { data: { data: mockSeries }, success: true };
 
       const generator = fetchSeriesSaga();
       const apiCall = generator.next().value;
@@ -116,7 +115,7 @@ describe('seriesSaga', () => {
         updated_at: '2024-02-01T00:00:00Z',
       };
 
-      const mockResponse = { data: createdSeries, success: true };
+      const mockResponse = { data: { data: createdSeries }, success: true };
 
       const action = createSeriesRequest(seriesData);
       const generator = createSeriesSaga(action);
@@ -162,7 +161,7 @@ describe('seriesSaga', () => {
         updated_at: '2024-01-01T00:00:00Z',
       };
 
-      const mockResponse = { data: updatedSeries, success: true };
+      const mockResponse = { data: { data: updatedSeries }, success: true };
 
       const action = updateSeriesRequest({ id: '1', seriesData });
       const generator = updateSeriesSaga(action);
@@ -189,7 +188,7 @@ describe('seriesSaga', () => {
 
   describe('deleteSeriesSaga', () => {
     it('should delete series successfully', () => {
-      const mockResponse = { data: undefined, success: true };
+      const mockResponse = { data: { data: undefined }, success: true };
 
       const action = deleteSeriesRequest('1');
       const generator = deleteSeriesSaga(action);

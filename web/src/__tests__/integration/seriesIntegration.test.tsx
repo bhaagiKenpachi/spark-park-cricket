@@ -60,12 +60,6 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
-        match: {
-          matches: [],
-          currentMatch: null,
-          loading: false,
-          error: null,
-        },
       });
 
       const mockCreatedSeries: Series = {
