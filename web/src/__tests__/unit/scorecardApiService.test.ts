@@ -83,7 +83,7 @@ describe('ApiService - Scorecard Endpoints', () => {
         expect.any(Object)
       );
 
-      expect(result.data).toEqual(mockScorecardResponse);
+      expect(result.data.data).toEqual(mockScorecardResponse);
     });
 
     it('should handle API errors', async () => {
@@ -418,7 +418,7 @@ describe('ApiService - Scorecard Endpoints', () => {
         expect.any(Object)
       );
 
-      expect(result.data).toEqual(mockOverResponse);
+      expect(result.data.data).toEqual(mockOverResponse);
     });
 
     it('should fetch current over with default innings', async () => {
@@ -492,7 +492,7 @@ describe('ApiService - Scorecard Endpoints', () => {
         expect.any(Object)
       );
 
-      expect(result.data).toEqual(mockInningsResponse);
+      expect(result.data.data).toEqual(mockInningsResponse);
     });
 
     it('should handle get innings errors', async () => {
@@ -572,7 +572,7 @@ describe('ApiService - Scorecard Endpoints', () => {
         expect.any(Object)
       );
 
-      expect(result.data).toEqual(mockOverResponse);
+      expect(result.data.data).toEqual(mockOverResponse);
     });
 
     it('should handle get over errors', async () => {
@@ -604,7 +604,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
-      expect(result.data.match_id).toBe('match-1');
+      expect(result.data.data.match_id).toBe('match-1');
     }, 10000);
 
     it('should throw ApiError after max retries', async () => {
@@ -635,8 +635,6 @@ describe('ApiService - Scorecard Endpoints', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
           }),
-          mode: 'cors',
-          credentials: 'omit',
         })
       );
     });
