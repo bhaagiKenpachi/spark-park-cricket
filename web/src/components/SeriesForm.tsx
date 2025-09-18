@@ -21,8 +21,10 @@ interface SeriesFormProps {
 
 interface FormData {
   name: string;
+  description: string;
   start_date: string;
   end_date: string;
+  status: 'upcoming' | 'ongoing' | 'completed';
 }
 
 export function SeriesForm({
@@ -35,6 +37,7 @@ export function SeriesForm({
 
   const [formData, setFormData] = useState<FormData>({
     name: series?.name || '',
+    description: series?.description || '',
     start_date:
       (series?.start_date
         ? series.start_date.split('T')[0]
@@ -43,6 +46,7 @@ export function SeriesForm({
       (series?.end_date
         ? series.end_date.split('T')[0]
         : new Date().toISOString().split('T')[0]) || '',
+    status: series?.status || 'upcoming',
   });
 
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
@@ -56,8 +60,10 @@ export function SeriesForm({
 
       setFormData({
         name: series.name,
+        description: series.description || '',
         start_date: formatDateForInput(series.start_date),
         end_date: formatDateForInput(series.end_date),
+        status: series.status || 'upcoming',
       });
     }
   }, [series]);
@@ -101,7 +107,6 @@ export function SeriesForm({
       ...formData,
       start_date: `${formData.start_date}T00:00:00Z`,
       end_date: `${formData.end_date}T00:00:00Z`,
-      status: 'upcoming' as const,
     };
 
     if (series) {
@@ -163,6 +168,22 @@ export function SeriesForm({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Input
+                type="text"
+                id="description"
+                value={formData.description}
+                onChange={e => handleInputChange('description', e.target.value)}
+                placeholder="Enter series description"
+                data-cy="series-description"
+                className={formErrors.description ? 'border-red-500' : ''}
+              />
+              {formErrors.description && (
+                <p className="text-sm text-red-600">{formErrors.description}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="start_date" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
                 Start Date *
@@ -195,6 +216,24 @@ export function SeriesForm({
               />
               {formErrors.end_date && (
                 <p className="text-sm text-red-600">{formErrors.end_date}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                value={formData.status}
+                onChange={e => handleInputChange('status', e.target.value as 'upcoming' | 'ongoing' | 'completed')}
+                data-cy="series-status"
+                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${formErrors.status ? 'border-red-500' : ''}`}
+              >
+                <option value="upcoming">Upcoming</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+              </select>
+              {formErrors.status && (
+                <p className="text-sm text-red-600">{formErrors.status}</p>
               )}
             </div>
 
