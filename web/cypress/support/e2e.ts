@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ***********************************************************
 // This example support/e2e.ts is processed and
 // loaded automatically before your test files.
@@ -32,7 +33,7 @@ Cypress.on('window:before:load', win => {
 });
 
 // Global error handling
-Cypress.on('uncaught:exception', (err, runnable) => {
+Cypress.on('uncaught:exception', (err, _runnable) => {
   // Prevent Cypress from failing the test on uncaught exceptions
   // that are not related to the application under test
   if (err.message.includes('ResizeObserver loop limit exceeded')) {

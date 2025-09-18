@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { runSaga } from 'redux-saga';
 import {
   fetchScorecardSaga,
@@ -23,7 +22,7 @@ import {
   InningsSummary,
   BallEventRequest,
 } from '../../store/reducers/scorecardSlice';
-import { ApiService, ApiError } from '../../services/api';
+import { ApiError } from '../../services/api';
 
 // Mock the API service
 const mockApiService = {
@@ -97,7 +96,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchScorecardSaga,
         fetchScorecardRequest('match-1')
       ).toPromise();
@@ -109,11 +111,14 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle API errors', async () => {
-      const error = new ApiError('Scorecard not found');
+      const error = new ApiError('Scorecard not found', 404);
       mockApiService.getScorecard.mockRejectedValueOnce(error);
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchScorecardSaga,
         fetchScorecardRequest('match-1')
       ).toPromise();
@@ -129,7 +134,10 @@ describe('Scorecard Sagas', () => {
       );
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchScorecardSaga,
         fetchScorecardRequest('match-1')
       ).toPromise();
@@ -147,7 +155,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchScorecardSaga,
         fetchScorecardRequest('match-1')
       ).toPromise();
@@ -167,7 +178,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         startScoringSaga,
         startScoringRequest('match-1')
       ).toPromise();
@@ -178,11 +192,14 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle start scoring API errors', async () => {
-      const error = new ApiError('Match is not ready for scoring');
+      const error = new ApiError('Match is not ready for scoring', 400);
       mockApiService.startScoring.mockRejectedValueOnce(error);
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         startScoringSaga,
         startScoringRequest('match-1')
       ).toPromise();
@@ -198,7 +215,10 @@ describe('Scorecard Sagas', () => {
       );
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         startScoringSaga,
         startScoringRequest('match-1')
       ).toPromise();
@@ -237,7 +257,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(mockBallEvent)
       ).toPromise();
@@ -276,7 +299,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(wicketBallEvent)
       ).toPromise();
@@ -313,7 +339,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(wideBallEvent)
       ).toPromise();
@@ -349,7 +378,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(noBallEvent)
       ).toPromise();
@@ -385,7 +417,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(ballWithByes)
       ).toPromise();
@@ -395,11 +430,14 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle add ball API errors', async () => {
-      const error = new ApiError('Invalid ball data');
+      const error = new ApiError('Invalid ball data', 400);
       mockApiService.addBall.mockRejectedValueOnce(error);
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(mockBallEvent)
       ).toPromise();
@@ -411,7 +449,10 @@ describe('Scorecard Sagas', () => {
       mockApiService.addBall.mockRejectedValueOnce(new Error('Network error'));
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(mockBallEvent)
       ).toPromise();
@@ -420,11 +461,14 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle innings completion error', async () => {
-      const error = new ApiError('Innings already completed');
+      const error = new ApiError('Innings already completed', 409);
       mockApiService.addBall.mockRejectedValueOnce(error);
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         addBallSaga,
         addBallRequest(mockBallEvent)
       ).toPromise();
@@ -462,7 +506,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchInningsSaga,
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
@@ -472,11 +519,14 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle fetch innings API errors', async () => {
-      const error = new ApiError('Innings not found');
+      const error = new ApiError('Innings not found', 404);
       mockApiService.getInnings.mockRejectedValueOnce(error);
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchInningsSaga,
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
@@ -492,7 +542,10 @@ describe('Scorecard Sagas', () => {
       );
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchInningsSaga,
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
@@ -510,7 +563,10 @@ describe('Scorecard Sagas', () => {
       });
 
       await runSaga(
-        mockStore,
+        {
+          dispatch: mockStore.dispatch,
+          getState: mockStore.getState,
+        },
         fetchInningsSaga,
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
