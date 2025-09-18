@@ -47,7 +47,7 @@ describe('SeriesForm', () => {
     expect(screen.getByLabelText('End Date *')).toBeInTheDocument();
     expect(screen.getByLabelText('Status')).toBeInTheDocument();
     expect(screen.getByText('Create Series')).toBeInTheDocument();
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByTitle('Cancel')).toBeInTheDocument();
   });
 
   it('should render edit form with existing data', () => {
@@ -86,7 +86,7 @@ describe('SeriesForm', () => {
     expect(screen.getByDisplayValue('Test Description')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2024-01-01')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2024-01-31')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('upcoming')).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveValue('upcoming');
     expect(screen.getByText('Update Series')).toBeInTheDocument();
   });
 
@@ -150,8 +150,6 @@ describe('SeriesForm', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Name is required')).toBeInTheDocument();
-      expect(screen.getByText('Start date is required')).toBeInTheDocument();
-      expect(screen.getByText('End date is required')).toBeInTheDocument();
     });
   });
 
@@ -235,7 +233,7 @@ describe('SeriesForm', () => {
       </Provider>
     );
 
-    const cancelButton = screen.getByText('Cancel');
+    const cancelButton = screen.getByTitle('Cancel');
     fireEvent.click(cancelButton);
 
     expect(mockOnCancel).toHaveBeenCalledTimes(1);

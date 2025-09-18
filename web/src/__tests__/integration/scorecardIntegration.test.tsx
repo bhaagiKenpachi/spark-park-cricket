@@ -8,10 +8,12 @@ import scorecardReducer, {
   ScorecardResponse,
   BallEventRequest,
   fetchScorecardRequest,
+  startScoringRequest,
+  addBallRequest,
 } from '../../store/reducers/scorecardSlice';
 import { apiService } from '../../services/api';
 
-// Mock the API service
+// Mock the API service (not used in these tests since we're testing Redux actions)
 jest.mock('../../services/api', () => ({
   apiService: {
     getScorecard: jest.fn(),
@@ -163,11 +165,6 @@ describe('Scorecard Integration Tests', () => {
         },
       });
 
-      (apiService.startScoring as jest.Mock).mockResolvedValueOnce({
-        data: { message: 'Scoring started', match_id: 'match-1' },
-        status: 200,
-        message: 'Success',
-      });
 
       render(
         <Provider store={store}>
@@ -179,7 +176,7 @@ describe('Scorecard Integration Tests', () => {
       fireEvent.click(liveScoringButton);
 
       await waitFor(() => {
-        expect(apiService.startScoring).toHaveBeenCalledWith('match-1');
+        expect(startScoringRequest).toHaveBeenCalledWith('match-1');
       });
     });
 
@@ -193,20 +190,6 @@ describe('Scorecard Integration Tests', () => {
         },
       });
 
-      (apiService.addBall as jest.Mock).mockResolvedValueOnce({
-        data: {
-          message: 'Ball added successfully',
-          match_id: 'match-1',
-          innings_number: 1,
-          ball_type: 'good',
-          run_type: '4',
-          runs: 4,
-          byes: 0,
-          is_wicket: false,
-        },
-        status: 200,
-        message: 'Success',
-      });
 
       render(
         <Provider store={store}>
@@ -233,7 +216,7 @@ describe('Scorecard Integration Tests', () => {
       };
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalledWith(expectedBallEvent);
+        expect(addBallRequest).toHaveBeenCalledWith(expectedBallEvent);
       });
     });
 
@@ -247,21 +230,6 @@ describe('Scorecard Integration Tests', () => {
         },
       });
 
-      (apiService.addBall as jest.Mock).mockResolvedValueOnce({
-        data: {
-          message: 'Wicket ball added successfully',
-          match_id: 'match-1',
-          innings_number: 1,
-          ball_type: 'good',
-          run_type: 'WC',
-          runs: 0,
-          byes: 0,
-          is_wicket: true,
-          wicket_type: 'bowled',
-        },
-        status: 200,
-        message: 'Success',
-      });
 
       render(
         <Provider store={store}>
@@ -289,7 +257,7 @@ describe('Scorecard Integration Tests', () => {
       };
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalledWith(expectedWicketEvent);
+        expect(addBallRequest).toHaveBeenCalledWith(expectedWicketEvent);
       });
     });
 
@@ -303,20 +271,6 @@ describe('Scorecard Integration Tests', () => {
         },
       });
 
-      (apiService.addBall as jest.Mock).mockResolvedValueOnce({
-        data: {
-          message: 'Wide ball added successfully',
-          match_id: 'match-1',
-          innings_number: 1,
-          ball_type: 'wide',
-          run_type: 'WD',
-          runs: 1,
-          byes: 0,
-          is_wicket: false,
-        },
-        status: 200,
-        message: 'Success',
-      });
 
       render(
         <Provider store={store}>
@@ -343,7 +297,7 @@ describe('Scorecard Integration Tests', () => {
       };
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalledWith(expectedWideEvent);
+        expect(addBallRequest).toHaveBeenCalledWith(expectedWideEvent);
       });
     });
 
@@ -357,20 +311,6 @@ describe('Scorecard Integration Tests', () => {
         },
       });
 
-      (apiService.addBall as jest.Mock).mockResolvedValueOnce({
-        data: {
-          message: 'Ball with byes added successfully',
-          match_id: 'match-1',
-          innings_number: 1,
-          ball_type: 'good',
-          run_type: '1',
-          runs: 1,
-          byes: 2,
-          is_wicket: false,
-        },
-        status: 200,
-        message: 'Success',
-      });
 
       render(
         <Provider store={store}>
@@ -404,7 +344,7 @@ describe('Scorecard Integration Tests', () => {
       };
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalledWith(
+        expect(addBallRequest).toHaveBeenCalledWith(
           expectedBallWithByesEvent
         );
       });
@@ -461,7 +401,7 @@ describe('Scorecard Integration Tests', () => {
       fireEvent.click(liveScoringButton);
 
       await waitFor(() => {
-        expect(apiService.startScoring).toHaveBeenCalledWith('match-1');
+        expect(startScoringRequest).toHaveBeenCalledWith('match-1');
       });
     });
 
@@ -494,7 +434,7 @@ describe('Scorecard Integration Tests', () => {
       });
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalled();
+        expect(addBallRequest).toHaveBeenCalled();
       });
     });
 
@@ -527,7 +467,7 @@ describe('Scorecard Integration Tests', () => {
       });
 
       await waitFor(() => {
-        expect(apiService.addBall).toHaveBeenCalled();
+        expect(addBallRequest).toHaveBeenCalled();
       });
     });
   });
