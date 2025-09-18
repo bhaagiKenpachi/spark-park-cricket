@@ -37,6 +37,7 @@ export function SeriesWithMatches({
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
 
+
   // Format date to human readable format
   const formatDate = (dateString: string) => {
     try {
@@ -52,7 +53,7 @@ export function SeriesWithMatches({
   };
 
   // Filter matches for this series
-  const seriesMatches = matches.filter(match => match.series_id === series.id);
+  const seriesMatches = (matches || []).filter(match => match.series_id === series.id);
 
   useEffect(() => {
     if (expanded) {
@@ -261,7 +262,7 @@ export function SeriesWithMatches({
             variant="outline"
             size="sm"
             onClick={() => onEditSeries(series)}
-            data-cy="edit-series-button"
+            data-testid="edit-series-button"
             title="Edit Series"
           >
             <Edit className="h-4 w-4 mr-2" />
@@ -271,7 +272,7 @@ export function SeriesWithMatches({
             variant="destructive"
             size="sm"
             onClick={() => onDeleteSeries(series.id)}
-            data-cy="delete-series-button"
+            data-testid="delete-series-button"
             title="Delete Series"
           >
             <Trash2 className="h-4 w-4 mr-2" />
