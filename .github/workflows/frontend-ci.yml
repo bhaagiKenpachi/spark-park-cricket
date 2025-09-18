@@ -312,42 +312,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build for staging
-        run: |
-          echo "🔨 Building for staging..."
-          npm run build
-
-      - name: Deploy to staging
-        run: |
-          echo "🚀 Deploying to staging..."
-          # Add your staging deployment logic here
-          # This could be Vercel, Netlify, or custom server deployment
-          echo "✅ Staging deployment completed"
-
-  # Deploy to Production (only on main branch or manual trigger)
-  deploy-production:
-    name: Deploy to Production
-    runs-on: [self-hosted, ovh, ubuntu-22.04]
-    needs: [code-quality, unit-tests, e2e-tests, build, security-scan]
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build for production
         run: |
           echo "🔨 Building for production..."
