@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,7 +32,7 @@ func main() {
 	}
 
 	// Read all SQL files in the migration directory
-	files, err := ioutil.ReadDir(migrationDir)
+	files, err := os.ReadDir(migrationDir)
 	if err != nil {
 		log.Fatalf("❌ Failed to read migration directory: %v", err)
 	}
@@ -58,7 +57,7 @@ func main() {
 
 		// Read the SQL file
 		sqlPath := filepath.Join(migrationDir, sqlFile)
-		sqlContent, err := ioutil.ReadFile(sqlPath)
+		sqlContent, err := os.ReadFile(sqlPath)
 		if err != nil {
 			log.Printf("❌ Failed to read SQL file %s: %v", sqlFile, err)
 			continue
