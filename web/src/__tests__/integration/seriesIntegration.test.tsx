@@ -4,6 +4,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { SeriesList } from '@/components/SeriesList';
 import { SeriesForm } from '@/components/SeriesForm';
 import { seriesSlice } from '@/store/reducers/seriesSlice';
+import { matchSlice } from '@/store/reducers/matchSlice';
 import { Series } from '@/store/reducers/seriesSlice';
 
 // Mock the API service
@@ -33,6 +34,7 @@ const createMockStore = (initialState: unknown) => {
   return configureStore({
     reducer: {
       series: seriesSlice.reducer,
+      match: matchSlice.reducer,
     },
     preloadedState: initialState,
   });
@@ -49,6 +51,18 @@ describe('Series Integration Tests', () => {
         series: {
           series: [],
           currentSeries: null,
+          loading: false,
+          error: null,
+        },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
+        match: {
+          matches: [],
+          currentMatch: null,
           loading: false,
           error: null,
         },
@@ -133,6 +147,12 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
       });
 
       (apiService.updateSeries as jest.Mock).mockResolvedValue({
@@ -194,6 +214,12 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
       });
 
       (apiService.deleteSeries as jest.Mock).mockResolvedValue({
@@ -244,6 +270,12 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
       });
 
       (apiService.createSeries as jest.Mock).mockRejectedValue(
@@ -283,6 +315,12 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
       });
 
       render(
@@ -313,6 +351,12 @@ describe('Series Integration Tests', () => {
           loading: true,
           error: null,
         },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
+          error: null,
+        },
       });
 
       render(
@@ -330,6 +374,12 @@ describe('Series Integration Tests', () => {
           series: [],
           currentSeries: null,
           loading: true,
+          error: null,
+        },
+        match: {
+          matches: [],
+          currentMatch: null,
+          loading: false,
           error: null,
         },
       });
