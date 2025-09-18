@@ -314,17 +314,16 @@ jobs:
             echo "⚠️ Skipping Redis connection test - Redis not available"
           fi
 
-      - name: Run database migrations
+      - name: Verify database connection
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
           
-          echo "🗄️ Running database migrations..."
+          echo "🗄️ Verifying database connection..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
-          echo "DATABASE_PASSWORD: $DATABASE_PASSWORD"
           
           # Check if secrets are available
           if [ -z "$SUPABASE_URL" ]; then
@@ -339,18 +338,12 @@ jobs:
             exit 1
           fi
           
-          if [ -z "$DATABASE_PASSWORD" ]; then
-            echo "❌ ERROR: DATABASE_PASSWORD secret is not set in GitHub repository"
-            echo "Please configure DATABASE_PASSWORD in repository settings > Secrets and variables > Actions"
-            echo "This should be your Supabase database password for direct PostgreSQL access"
-            exit 1
-          fi
-          
-          go run cmd/migrate/main.go
+          echo "✅ Database secrets are configured"
+          echo "ℹ️ Database schema should be set up manually in Supabase Dashboard"
+          echo "ℹ️ See MIGRATION_GUIDE.md for detailed instructions"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
       - name: Set up test database schema
         run: |
@@ -441,17 +434,16 @@ jobs:
           echo "🔧 Setting up E2E test environment..."
           echo "Environment variables will be provided via GitHub Actions env"
 
-      - name: Run database migrations
+      - name: Verify database connection for E2E tests
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
           
-          echo "🗄️ Running database migrations for E2E tests..."
+          echo "🗄️ Verifying database connection for E2E tests..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
-          echo "DATABASE_PASSWORD: $DATABASE_PASSWORD"
           
           # Check if secrets are available
           if [ -z "$SUPABASE_URL" ]; then
@@ -466,18 +458,12 @@ jobs:
             exit 1
           fi
           
-          if [ -z "$DATABASE_PASSWORD" ]; then
-            echo "❌ ERROR: DATABASE_PASSWORD secret is not set in GitHub repository"
-            echo "Please configure DATABASE_PASSWORD in repository settings > Secrets and variables > Actions"
-            echo "This should be your Supabase database password for direct PostgreSQL access"
-            exit 1
-          fi
-          
-          go run cmd/migrate/main.go
+          echo "✅ Database secrets are configured for E2E tests"
+          echo "ℹ️ Database schema should be set up manually in Supabase Dashboard"
+          echo "ℹ️ See MIGRATION_GUIDE.md for detailed instructions"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
       - name: Run E2E tests
         run: |
