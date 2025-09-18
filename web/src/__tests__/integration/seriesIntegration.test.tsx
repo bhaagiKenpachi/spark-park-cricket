@@ -177,7 +177,7 @@ describe('Series Integration Tests', () => {
       // Click show matches button to expand the series
       const showMatchesButton = screen.getByText('Show Matches');
       fireEvent.click(showMatchesButton);
-      
+
       // Wait for the expanded view and look for edit button
       await waitFor(() => {
         // The edit functionality might be in a different location
@@ -258,7 +258,7 @@ describe('Series Integration Tests', () => {
       // Click show matches button to expand the series
       const showMatchesButton = screen.getByText('Show Matches');
       fireEvent.click(showMatchesButton);
-      
+
       // Wait for the expanded view
       await waitFor(() => {
         // The delete functionality might be in a different location
