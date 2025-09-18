@@ -314,14 +314,14 @@ jobs:
             echo "⚠️ Skipping Redis connection test - Redis not available"
           fi
 
-      - name: Verify database connection
+      - name: Run database migrations
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
           
-          echo "🗄️ Verifying database connection..."
+          echo "🗄️ Running database migrations..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           
@@ -338,9 +338,8 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Database secrets are configured"
-          echo "ℹ️ Database schema should be set up manually in Supabase Dashboard"
-          echo "ℹ️ See MIGRATION_GUIDE.md for detailed instructions"
+          # Run the migration script
+          go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -434,14 +433,14 @@ jobs:
           echo "🔧 Setting up E2E test environment..."
           echo "Environment variables will be provided via GitHub Actions env"
 
-      - name: Verify database connection for E2E tests
+      - name: Run database migrations for E2E tests
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
           export GOSUMDB="sum.golang.org"
           export GOPROXY="https://proxy.golang.org,direct"
           
-          echo "🗄️ Verifying database connection for E2E tests..."
+          echo "🗄️ Running database migrations for E2E tests..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           
@@ -458,9 +457,8 @@ jobs:
             exit 1
           fi
           
-          echo "✅ Database secrets are configured for E2E tests"
-          echo "ℹ️ Database schema should be set up manually in Supabase Dashboard"
-          echo "ℹ️ See MIGRATION_GUIDE.md for detailed instructions"
+          # Run the migration script
+          go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
