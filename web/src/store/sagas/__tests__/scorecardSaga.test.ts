@@ -1,12 +1,11 @@
 /* eslint-disable */
 import { put } from 'redux-saga/effects';
-import {
-  addBallSaga,
-} from '../scorecardSaga';
+import { addBallSaga } from '../scorecardSaga';
 import {
   addBallRequest,
   addBallSuccess,
   addBallFailure,
+  fetchScorecardRequest,
 } from '../../reducers/scorecardSlice';
 import { ApiService, ApiError } from '../../../services/api';
 import { graphqlService } from '../../../services/graphqlService';
@@ -120,12 +119,9 @@ describe('scorecardSaga', () => {
       // Ball success
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Test sequential GraphQL calls
-      const inningsCallResult = generator.next().value;
-
-      // Check the GraphQL call structure
-      expect(inningsCallResult.type).toBe('CALL');
-      expect(inningsCallResult.payload.args).toEqual(['test-match-id', 1]);
+      // Refresh scorecard after adding ball
+      const refreshCallResult = generator.next().value;
+      expect(refreshCallResult).toEqual(put(fetchScorecardRequest('test-match-id')));
 
       // Skip the GraphQL calls for now since the exports are missing
       // expect(generator.next(mockInningsResponse).value).toEqual(
@@ -199,32 +195,10 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Test sequential GraphQL calls
-      const inningsCallResult = generator.next().value;
-      expect(inningsCallResult.type).toBe('CALL');
-      expect(inningsCallResult.payload.args).toEqual(['test-match-id', 1]);
+      // Refresh scorecard after adding ball
+      const refreshCallResult = generator.next().value;
+      expect(refreshCallResult).toEqual(put(fetchScorecardRequest('test-match-id')));
 
-      expect(generator.next(mockInningsResponse).value).toEqual(
-        put(fetchInningsScoreSummarySuccess(mockInningsResponse.data))
-      );
-
-      const overCallResult = generator.next().value;
-      expect(overCallResult.type).toBe('CALL');
-      expect(overCallResult.payload.args).toEqual(['test-match-id', 1]);
-
-      expect(generator.next(mockOverResponse).value).toEqual(
-        put(
-          fetchLatestOverSuccess({
-            inningsNumber: 1,
-            over: mockOverResponse.data,
-          })
-        )
-      );
-
-      // Should fetch updated scorecard since innings is completed
-      expect(generator.next().value).toEqual(
-        put(fetchUpdatedScorecardRequest('test-match-id'))
-      );
 
       expect(generator.next().done).toBe(true);
     });
@@ -271,12 +245,10 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Should handle GraphQL error gracefully
-      const inningsCallResult = generator.next().value;
-      expect(inningsCallResult.type).toBe('CALL');
-      expect(inningsCallResult.payload.args).toEqual(['test-match-id', 1]);
+      // Refresh scorecard after adding ball
+      const refreshCallResult = generator.next().value;
+      expect(refreshCallResult).toEqual(put(fetchScorecardRequest('test-match-id')));
 
-      // Should catch the error and continue
       expect(generator.next().done).toBe(true);
     });
 
@@ -318,20 +290,10 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Test sequential GraphQL calls
-      const inningsCallResult = generator.next().value;
-      expect(inningsCallResult.type).toBe('CALL');
-      expect(inningsCallResult.payload.args).toEqual(['test-match-id', 1]);
+      // Refresh scorecard after adding ball
+      const refreshCallResult = generator.next().value;
+      expect(refreshCallResult).toEqual(put(fetchScorecardRequest('test-match-id')));
 
-      expect(generator.next(mockInningsResponse).value).toEqual(
-        put(fetchInningsScoreSummarySuccess(mockInningsResponse.data))
-      );
-
-      const overCallResult = generator.next().value;
-      expect(overCallResult.type).toBe('CALL');
-      expect(overCallResult.payload.args).toEqual(['test-match-id', 1]);
-
-      // Should handle over fetch error gracefully
       expect(generator.next().done).toBe(true);
     });
   });

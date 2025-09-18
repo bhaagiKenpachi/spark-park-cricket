@@ -1,4 +1,0 @@
-2025-09-18T07:29:46.2170000Z Requested labels: self-hosted, ovh, ubuntu-22.04
-2025-09-18T07:29:46.2170000Z Job defined at: bhaagiKenpachi/spark-park-cricket/.github/workflows/frontend-ci.yml@refs/heads/integrate/graphql-web
-2025-09-18T07:29:46.2170000Z Waiting for a runner to pick up this job...
-2025-09-18T07:29:46.7150000Z Job is about to start running on the runner: runner-2-bhaagi-spark-park-cricket

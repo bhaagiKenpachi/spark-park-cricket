@@ -13,12 +13,14 @@ jest.mock('@/store/hooks', () => ({
 }));
 
 import { useAppSelector } from '@/store/hooks';
+import matchReducer from '@/store/reducers/matchSlice';
 
 // Mock store for testing
 const createMockStore = (initialState: unknown) => {
   return configureStore({
     reducer: {
       series: seriesSlice.reducer,
+      match: matchReducer,
     },
     preloadedState: initialState,
   });
@@ -114,7 +116,7 @@ describe('SeriesList', () => {
     );
 
     expect(screen.getByText('No series found.')).toBeInTheDocument();
-    expect(screen.getByText('Create Your First Series')).toBeInTheDocument();
+    expect(screen.getByText('Your First Series')).toBeInTheDocument();
   });
 
   it('should render series list when series exist', () => {
@@ -142,6 +144,11 @@ describe('SeriesList', () => {
       series: {
         series: mockSeries,
         currentSeries: null,
+        loading: false,
+        error: null,
+      },
+      match: {
+        matches: [],
         loading: false,
         error: null,
       },
@@ -180,13 +187,13 @@ describe('SeriesList', () => {
       </Provider>
     );
 
-    const createButton = screen.getByText('Create Your First Series');
+    const createButton = screen.getByText('Your First Series');
     fireEvent.click(createButton);
 
     expect(screen.getByText('Create New Series')).toBeInTheDocument();
   });
 
-  it('should show edit series form when edit button is clicked', () => {
+  it('should show edit series form when edit button is clicked', async () => {
     const mockSeries: Series[] = [
       {
         id: '1',
@@ -214,6 +221,11 @@ describe('SeriesList', () => {
         loading: false,
         error: null,
       },
+      match: {
+        matches: [],
+        loading: false,
+        error: null,
+      },
     });
 
     render(
@@ -222,13 +234,19 @@ describe('SeriesList', () => {
       </Provider>
     );
 
-    const editButton = screen.getByText('Edit');
+    // First expand the series to show the edit button
+    const showMatchesButton = screen.getByText('Show Matches');
+    fireEvent.click(showMatchesButton);
+
+
+    // Wait for the edit button to appear
+    const editButton = screen.getByTestId('edit-series-button');
     fireEvent.click(editButton);
 
     expect(screen.getByText('Edit Series')).toBeInTheDocument();
   });
 
-  it('should call delete action when delete button is clicked and confirmed', () => {
+  it('should call delete action when delete button is clicked and confirmed', async () => {
     const mockSeries: Series[] = [
       {
         id: '1',
@@ -253,6 +271,11 @@ describe('SeriesList', () => {
       series: {
         series: mockSeries,
         currentSeries: null,
+        loading: false,
+        error: null,
+      },
+      match: {
+        matches: [],
         loading: false,
         error: null,
       },
@@ -266,7 +289,12 @@ describe('SeriesList', () => {
       </Provider>
     );
 
-    const deleteButton = screen.getByText('Delete');
+    // First expand the series to show the delete button
+    const showMatchesButton = screen.getByText('Show Matches');
+    fireEvent.click(showMatchesButton);
+
+    // Wait for the delete button to appear
+    const deleteButton = screen.getByTestId('delete-series-button');
     fireEvent.click(deleteButton);
 
     expect(mockConfirm).toHaveBeenCalledWith(
@@ -322,6 +350,11 @@ describe('SeriesList', () => {
         loading: false,
         error: null,
       },
+      match: {
+        matches: [],
+        loading: false,
+        error: null,
+      },
     });
 
     render(
@@ -330,8 +363,8 @@ describe('SeriesList', () => {
       </Provider>
     );
 
-    expect(screen.getByText('upcoming')).toBeInTheDocument();
-    expect(screen.getByText('ongoing')).toBeInTheDocument();
-    expect(screen.getByText('completed')).toBeInTheDocument();
+    expect(screen.getByText('Upcoming Series')).toBeInTheDocument();
+    expect(screen.getByText('Ongoing Series')).toBeInTheDocument();
+    expect(screen.getByText('Completed Series')).toBeInTheDocument();
   });
 });
