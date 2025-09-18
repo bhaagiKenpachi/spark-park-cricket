@@ -1,0 +1,53 @@
+﻿2025-09-18T07:29:10.0004831Z ##[group]Run npm run lint
+2025-09-18T07:29:10.0005383Z [36;1mnpm run lint[0m
+2025-09-18T07:29:10.0035586Z shell: /usr/bin/bash -e {0}
+2025-09-18T07:29:10.0036194Z env:
+2025-09-18T07:29:10.0036699Z   NODE_VERSION: 20
+2025-09-18T07:29:10.0037560Z   WORKING_DIRECTORY: ./web
+2025-09-18T07:29:10.0038334Z ##[endgroup]
+2025-09-18T07:29:10.1928935Z 
+2025-09-18T07:29:10.1929899Z > web@0.1.0 lint
+2025-09-18T07:29:10.1930632Z > eslint . --ext .ts,.tsx
+2025-09-18T07:29:10.1930949Z 
+2025-09-18T07:29:15.5194414Z 
+2025-09-18T07:29:15.5211355Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/cypress.config.ts
+2025-09-18T07:29:15.5248678Z ##[warning]  15:21  warning  'on' is defined but never used      @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5276017Z ##[warning]  15:25  warning  'config' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5277257Z 
+2025-09-18T07:29:15.5277973Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/cypress/support/e2e.ts
+2025-09-18T07:29:15.5279546Z ##[warning]  35:40  warning  'runnable' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5280705Z 
+2025-09-18T07:29:15.5281511Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/__tests__/unit/matchSaga.test.ts
+2025-09-18T07:29:15.5283715Z ##[warning]  10:3  warning  'fetchMatchesRequest' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5284992Z 
+2025-09-18T07:29:15.5285833Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/__tests__/unit/scorecardSaga.test.ts
+2025-09-18T07:29:15.5287359Z    1:1   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+2025-09-18T07:29:15.5290405Z ##[warning]  26:10  warning  'ApiService' is defined but never used                                                                 @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5291874Z 
+2025-09-18T07:29:15.5292844Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/components/__tests__/MatchForm.test.tsx
+2025-09-18T07:29:15.5295047Z ##[warning]  1:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5296116Z 
+2025-09-18T07:29:15.5297016Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/components/__tests__/ScorecardView.test.tsx
+2025-09-18T07:29:15.5298927Z ##[warning]  20:7  warning  'mockDispatch' is assigned a value but never used        @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5301373Z ##[warning]  21:7  warning  'mockUseAppSelector' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5303346Z ##[warning]  46:7  warning  'createMockStore' is assigned a value but never used     @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5304757Z 
+2025-09-18T07:29:15.5305487Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/store/reducers/matchSlice.ts
+2025-09-18T07:29:15.5353312Z ##[warning]  54:7   warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5355424Z ##[warning]  69:7   warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5357308Z ##[warning]  90:33  warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5358587Z 
+2025-09-18T07:29:15.5359400Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/store/reducers/scorecardSlice.ts
+2025-09-18T07:29:15.5360768Z ##[warning]  119:36  warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5362501Z ##[warning]  134:34  warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5364505Z ##[warning]  145:29  warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5367132Z ##[warning]  158:7   warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5368600Z 
+2025-09-18T07:29:15.5369332Z /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket/web/src/store/reducers/seriesSlice.ts
+2025-09-18T07:29:15.5370872Z ##[warning]  49:7   warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5372654Z ##[warning]  64:7   warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5374802Z ##[warning]  82:34  warning  '_action' is defined but never used  @typescript-eslint/no-unused-vars
+2025-09-18T07:29:15.5375869Z 
+2025-09-18T07:29:15.5377457Z ✖ 20 problems (0 errors, 20 warnings)
+2025-09-18T07:29:15.5378243Z   0 errors and 1 warning potentially fixable with the `--fix` option.
+2025-09-18T07:29:15.5378697Z 

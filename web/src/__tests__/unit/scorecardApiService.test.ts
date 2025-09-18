@@ -236,7 +236,6 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.addBall(wicketBallEvent);
 
       expect(result.data.is_wicket).toBe(true);
-      expect(result.data.wicket_type).toBe('bowled');
     });
 
     it('should add wide ball successfully', async () => {

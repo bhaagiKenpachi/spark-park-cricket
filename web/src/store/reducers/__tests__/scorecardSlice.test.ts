@@ -16,7 +16,7 @@ describe('scorecardSlice', () => {
         total_overs: 2,
         total_balls: 12,
         status: 'in_progress',
-        extras: { total: 2 },
+        extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 2 },
       };
 
       const state = {
@@ -24,11 +24,16 @@ describe('scorecardSlice', () => {
         scorecard: {
           match_id: 'test-match',
           series_id: 'test-series',
+          series_name: 'Test Series',
           match_number: 1,
           date: '2025-01-01',
           status: 'live',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'Team A',
+          toss_type: 'bat',
+          venue: 'Test Venue',
           innings: [],
         },
       };
@@ -67,7 +72,7 @@ describe('scorecardSlice', () => {
         total_overs: 3,
         total_balls: 18,
         status: 'in_progress',
-        extras: { total: 3 },
+        extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 3 },
       };
 
       const state = {
@@ -89,7 +94,7 @@ describe('scorecardSlice', () => {
               total_overs: 2,
               total_balls: 12,
               status: 'in_progress',
-              extras: { total: 2 },
+              extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 2 },
               overs: existingOvers,
             },
           ],
@@ -118,7 +123,7 @@ describe('scorecardSlice', () => {
         total_overs: 3,
         total_balls: 18,
         status: 'in_progress',
-        extras: { total: 3 },
+        extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 3 },
       };
 
       const state = {
@@ -140,7 +145,7 @@ describe('scorecardSlice', () => {
               total_overs: 2,
               total_balls: 12,
               status: 'in_progress',
-              extras: { total: 2 },
+              extras: { byes: 0, leg_byes: 0, wides: 1, no_balls: 0, total: 2 },
               // Note: no overs property
             },
           ],
@@ -170,11 +175,11 @@ describe('scorecardSlice', () => {
           {
             ball_number: 1,
             ball_type: 'good',
-            run_type: 'runs',
+            run_type: 'boundary',
             runs: 1,
             byes: 0,
             is_wicket: false,
-            wicket_type: null,
+            wicket_type: undefined,
           },
         ],
       };
@@ -198,7 +203,7 @@ describe('scorecardSlice', () => {
               total_overs: 0,
               total_balls: 0,
               status: 'in_progress',
-              extras: { total: 0 },
+              extras: { byes: 0, leg_byes: 0, wides: 0, no_balls: 0, total: 0 },
               overs: [],
             },
           ],
@@ -239,11 +244,11 @@ describe('scorecardSlice', () => {
           {
             ball_number: 1,
             ball_type: 'good',
-            run_type: 'runs',
+            run_type: 'boundary',
             runs: 1,
             byes: 0,
             is_wicket: false,
-            wicket_type: null,
+            wicket_type: undefined,
           },
         ],
       };
@@ -267,7 +272,7 @@ describe('scorecardSlice', () => {
               total_overs: 0,
               total_balls: 0,
               status: 'in_progress',
-              extras: { total: 0 },
+              extras: { byes: 0, leg_byes: 0, wides: 0, no_balls: 0, total: 0 },
               overs: [existingOver],
             },
           ],
@@ -317,7 +322,7 @@ describe('scorecardSlice', () => {
               total_overs: 0,
               total_balls: 0,
               status: 'in_progress',
-              extras: { total: 0 },
+              extras: { byes: 0, leg_byes: 0, wides: 0, no_balls: 0, total: 0 },
               // Note: no overs property
             },
           ],
@@ -354,11 +359,16 @@ describe('scorecardSlice', () => {
         scorecard: {
           match_id: 'test-match',
           series_id: 'test-series',
+          series_name: 'Test Series',
           match_number: 1,
           date: '2025-01-01',
           status: 'live',
           team_a: 'Team A',
           team_b: 'Team B',
+          total_overs: 20,
+          toss_winner: 'Team A',
+          toss_type: 'bat',
+          venue: 'Test Venue',
           innings: [],
         },
       };

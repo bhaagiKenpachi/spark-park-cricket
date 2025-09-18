@@ -1,0 +1,21 @@
+﻿2025-09-18T07:28:40.9370593Z ##[group]Run actions/setup-node@v4
+2025-09-18T07:28:40.9371117Z with:
+2025-09-18T07:28:40.9371413Z   node-version: 20
+2025-09-18T07:28:40.9371698Z   cache: npm
+2025-09-18T07:28:40.9372013Z   cache-dependency-path: ./web/package-lock.json
+2025-09-18T07:28:40.9372392Z   always-auth: false
+2025-09-18T07:28:40.9372673Z   check-latest: false
+2025-09-18T07:28:40.9373256Z   token: ***
+2025-09-18T07:28:40.9373477Z env:
+2025-09-18T07:28:40.9373737Z   NODE_VERSION: 20
+2025-09-18T07:28:40.9373988Z   WORKING_DIRECTORY: ./web
+2025-09-18T07:28:40.9374347Z ##[endgroup]
+2025-09-18T07:28:41.2412617Z Found in cache @ /opt/github-runner-bhaagi-spark-park-cricket/_work/_tool/node/20.19.5/x64
+2025-09-18T07:28:41.2427813Z ##[group]Environment details
+2025-09-18T07:28:41.5647696Z node: v20.19.5
+2025-09-18T07:28:41.5648295Z npm: 10.8.2
+2025-09-18T07:28:41.5648552Z yarn: 
+2025-09-18T07:28:41.5649454Z ##[endgroup]
+2025-09-18T07:28:41.5650905Z [command]/opt/github-runner-bhaagi-spark-park-cricket/_work/_tool/node/20.19.5/x64/bin/npm config get cache
+2025-09-18T07:28:41.6682548Z /home/runner/.npm
+2025-09-18T07:28:42.4829301Z npm cache is not found

@@ -1,0 +1,22 @@
+﻿2025-09-18T07:28:42.4997391Z ##[group]Run npm ci
+2025-09-18T07:28:42.4998115Z [36;1mnpm ci[0m
+2025-09-18T07:28:42.5024906Z shell: /usr/bin/bash -e {0}
+2025-09-18T07:28:42.5025359Z env:
+2025-09-18T07:28:42.5025665Z   NODE_VERSION: 20
+2025-09-18T07:28:42.5026076Z   WORKING_DIRECTORY: ./web
+2025-09-18T07:28:42.5026418Z ##[endgroup]
+2025-09-18T07:28:51.7126825Z npm warn deprecated @types/redux-saga@0.10.5: This is a stub types definition for redux-saga (https://github.com/redux-saga/redux-saga). redux-saga provides its own type definitions, so you don't need @types/redux-saga installed!
+2025-09-18T07:28:51.9038672Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2025-09-18T07:28:52.3967201Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-09-18T07:29:05.4245436Z 
+2025-09-18T07:29:05.4246629Z > web@0.1.0 prepare
+2025-09-18T07:29:05.4247623Z > husky install
+2025-09-18T07:29:05.4247912Z 
+2025-09-18T07:29:05.5344882Z husky - install command is DEPRECATED
+2025-09-18T07:29:05.5760116Z .git can't be found
+2025-09-18T07:29:05.5761106Z added 903 packages, and audited 904 packages in 23s
+2025-09-18T07:29:05.5764307Z 
+2025-09-18T07:29:05.5772796Z 231 packages are looking for funding
+2025-09-18T07:29:05.5776171Z   run `npm fund` for details
+2025-09-18T07:29:05.5805116Z 
+2025-09-18T07:29:05.5805685Z found 0 vulnerabilities
