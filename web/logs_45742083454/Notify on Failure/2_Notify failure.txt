@@ -1,0 +1,11 @@
+﻿2025-09-18T07:29:50.7124164Z ##[group]Run echo "❌ Frontend CI/CD pipeline failed!"
+2025-09-18T07:29:50.7125279Z [36;1mecho "❌ Frontend CI/CD pipeline failed!"[0m
+2025-09-18T07:29:50.7126046Z [36;1mecho "Check the logs for details."[0m
+2025-09-18T07:29:50.7126818Z [36;1m# Add notification logic here (Slack, email, etc.)[0m
+2025-09-18T07:29:50.7157804Z shell: /usr/bin/bash -e {0}
+2025-09-18T07:29:50.7159075Z env:
+2025-09-18T07:29:50.7159554Z   NODE_VERSION: 20
+2025-09-18T07:29:50.7160329Z   WORKING_DIRECTORY: ./web
+2025-09-18T07:29:50.7160870Z ##[endgroup]
+2025-09-18T07:29:50.7593490Z ❌ Frontend CI/CD pipeline failed!
+2025-09-18T07:29:50.7594368Z Check the logs for details.

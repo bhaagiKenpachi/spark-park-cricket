@@ -1,0 +1,81 @@
+﻿2025-09-18T07:28:39.8397371Z ##[group]Run actions/checkout@v4
+2025-09-18T07:28:39.8398474Z with:
+2025-09-18T07:28:39.8398871Z   repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T07:28:39.8399520Z   token: ***
+2025-09-18T07:28:39.8399905Z   ssh-strict: true
+2025-09-18T07:28:39.8400252Z   ssh-user: git
+2025-09-18T07:28:39.8400604Z   persist-credentials: true
+2025-09-18T07:28:39.8400948Z   clean: true
+2025-09-18T07:28:39.8401306Z   sparse-checkout-cone-mode: true
+2025-09-18T07:28:39.8401705Z   fetch-depth: 1
+2025-09-18T07:28:39.8402040Z   fetch-tags: false
+2025-09-18T07:28:39.8402366Z   show-progress: true
+2025-09-18T07:28:39.8402702Z   lfs: false
+2025-09-18T07:28:39.8403176Z   submodules: false
+2025-09-18T07:28:39.8403522Z   set-safe-directory: true
+2025-09-18T07:28:39.8404302Z env:
+2025-09-18T07:28:39.8404633Z   NODE_VERSION: 20
+2025-09-18T07:28:39.8405158Z   WORKING_DIRECTORY: ./web
+2025-09-18T07:28:39.8405854Z ##[endgroup]
+2025-09-18T07:28:40.0197151Z Syncing repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T07:28:40.0199566Z ##[group]Getting Git version info
+2025-09-18T07:28:40.0200430Z Working directory is '/opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket'
+2025-09-18T07:28:40.0201769Z [command]/usr/bin/git version
+2025-09-18T07:28:40.0202171Z git version 2.34.1
+2025-09-18T07:28:40.0236661Z ##[endgroup]
+2025-09-18T07:28:40.0257349Z Copying '/home/runner/.gitconfig' to '/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/af9a891d-612b-4b5a-9a6a-9ef757e492ac/.gitconfig'
+2025-09-18T07:28:40.0274294Z Temporarily overriding HOME='/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/af9a891d-612b-4b5a-9a6a-9ef757e492ac' before making global git config changes
+2025-09-18T07:28:40.0276044Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-18T07:28:40.0283705Z [command]/usr/bin/git config --global --add safe.directory /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket
+2025-09-18T07:28:40.0340700Z [command]/usr/bin/git config --local --get remote.origin.url
+2025-09-18T07:28:40.0392045Z https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T07:28:40.0418568Z ##[group]Removing previously created refs, to avoid conflicts
+2025-09-18T07:28:40.0424059Z [command]/usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+2025-09-18T07:28:40.0451902Z refs/heads/integrate/graphql-web
+2025-09-18T07:28:40.0465590Z [command]/usr/bin/git checkout --detach
+2025-09-18T07:28:40.0530092Z HEAD is now at 86183a6 refactor: replace ioutil with os package for file operations in migration tool
+2025-09-18T07:28:40.0593494Z [command]/usr/bin/git branch --delete --force integrate/graphql-web
+2025-09-18T07:28:40.0630222Z Deleted branch integrate/graphql-web (was 86183a6).
+2025-09-18T07:28:40.0686507Z ##[endgroup]
+2025-09-18T07:28:40.0692579Z [command]/usr/bin/git submodule status
+2025-09-18T07:28:40.0952277Z ##[group]Cleaning the repository
+2025-09-18T07:28:40.0958627Z [command]/usr/bin/git clean -ffdx
+2025-09-18T07:28:40.1008656Z [command]/usr/bin/git reset --hard HEAD
+2025-09-18T07:28:40.1064072Z HEAD is now at 86183a6 refactor: replace ioutil with os package for file operations in migration tool
+2025-09-18T07:28:40.1073246Z ##[endgroup]
+2025-09-18T07:28:40.1078734Z ##[group]Disabling automatic garbage collection
+2025-09-18T07:28:40.1086121Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-18T07:28:40.1119342Z ##[endgroup]
+2025-09-18T07:28:40.1120149Z ##[group]Setting up auth
+2025-09-18T07:28:40.1133297Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-18T07:28:40.1173556Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-18T07:28:40.1446866Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-18T07:28:40.1486679Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-18T07:28:40.1754360Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-18T07:28:40.1824730Z ##[endgroup]
+2025-09-18T07:28:40.1825813Z ##[group]Fetching the repository
+2025-09-18T07:28:40.1839706Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +51de38750d5d835fe81e256a8599d153d4204306:refs/remotes/origin/integrate/graphql-web
+2025-09-18T07:28:40.8661337Z From https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T07:28:40.8832953Z  + 86183a6...51de387 51de38750d5d835fe81e256a8599d153d4204306 -> origin/integrate/graphql-web  (forced update)
+2025-09-18T07:28:40.8837042Z ##[endgroup]
+2025-09-18T07:28:40.8837971Z ##[group]Determining the checkout info
+2025-09-18T07:28:40.8838954Z ##[endgroup]
+2025-09-18T07:28:40.8839772Z [command]/usr/bin/git sparse-checkout disable
+2025-09-18T07:28:40.8841879Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-18T07:28:40.8843444Z ##[group]Checking out the ref
+2025-09-18T07:28:40.8844267Z [command]/usr/bin/git checkout --progress --force -B integrate/graphql-web refs/remotes/origin/integrate/graphql-web
+2025-09-18T07:28:40.8872980Z Warning: you are leaving 1 commit behind, not connected to
+2025-09-18T07:28:40.8874859Z any of your branches:
+2025-09-18T07:28:40.8875412Z 
+2025-09-18T07:28:40.8876633Z   86183a6 refactor: replace ioutil with os package for file operations in migration tool
+2025-09-18T07:28:40.8877691Z 
+2025-09-18T07:28:40.8878752Z If you want to keep it by creating a new branch, this may be a good time
+2025-09-18T07:28:40.8880135Z to do so with:
+2025-09-18T07:28:40.8880729Z 
+2025-09-18T07:28:40.8881262Z  git branch <new-branch-name> 86183a6
+2025-09-18T07:28:40.8881715Z 
+2025-09-18T07:28:40.8895361Z Switched to a new branch 'integrate/graphql-web'
+2025-09-18T07:28:40.8898110Z Branch 'integrate/graphql-web' set up to track remote branch 'integrate/graphql-web' from 'origin'.
+2025-09-18T07:28:40.8907490Z ##[endgroup]
+2025-09-18T07:28:40.8968108Z [command]/usr/bin/git log -1 --format=%H
+2025-09-18T07:28:40.8999505Z 51de38750d5d835fe81e256a8599d153d4204306
