@@ -1,0 +1,1920 @@
+﻿2025-09-18T06:34:23.5610213Z Current runner version: '2.328.0'
+2025-09-18T06:34:23.5621128Z Runner name: 'runner-1-bhaagi-spark-park-cricket'
+2025-09-18T06:34:23.5622373Z Runner group name: 'Default'
+2025-09-18T06:34:23.5624156Z Machine name: 'github-action-runner-2'
+2025-09-18T06:34:23.5628934Z ##[group]GITHUB_TOKEN Permissions
+2025-09-18T06:34:23.5632867Z Contents: read
+2025-09-18T06:34:23.5633663Z Metadata: read
+2025-09-18T06:34:23.5634695Z Packages: read
+2025-09-18T06:34:23.5635419Z ##[endgroup]
+2025-09-18T06:34:23.5638981Z Secret source: Actions
+2025-09-18T06:34:23.5640567Z Prepare workflow directory
+2025-09-18T06:34:23.6616759Z Prepare all required actions
+2025-09-18T06:34:23.6673209Z Getting action download info
+2025-09-18T06:34:24.7717560Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-09-18T06:34:25.4386556Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2025-09-18T06:34:26.4499218Z Download action repository 'codecov/codecov-action@v4' (SHA:b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238)
+2025-09-18T06:34:28.1009978Z Complete job name: Unit Tests
+2025-09-18T06:34:28.1895766Z ##[group]Run actions/checkout@v4
+2025-09-18T06:34:28.1896907Z with:
+2025-09-18T06:34:28.1897302Z   repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.1898079Z   token: ***
+2025-09-18T06:34:28.1898395Z   ssh-strict: true
+2025-09-18T06:34:28.1898738Z   ssh-user: git
+2025-09-18T06:34:28.1899064Z   persist-credentials: true
+2025-09-18T06:34:28.1899439Z   clean: true
+2025-09-18T06:34:28.1900164Z   sparse-checkout-cone-mode: true
+2025-09-18T06:34:28.1900628Z   fetch-depth: 1
+2025-09-18T06:34:28.1901006Z   fetch-tags: false
+2025-09-18T06:34:28.1901384Z   show-progress: true
+2025-09-18T06:34:28.1901759Z   lfs: false
+2025-09-18T06:34:28.1902091Z   submodules: false
+2025-09-18T06:34:28.1902628Z   set-safe-directory: true
+2025-09-18T06:34:28.1903570Z env:
+2025-09-18T06:34:28.1903899Z   NODE_VERSION: 20
+2025-09-18T06:34:28.1904240Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:28.1904657Z ##[endgroup]
+2025-09-18T06:34:28.4139128Z Syncing repository: bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.4141723Z ##[group]Getting Git version info
+2025-09-18T06:34:28.4143166Z Working directory is '/opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket'
+2025-09-18T06:34:28.4144353Z [command]/usr/bin/git version
+2025-09-18T06:34:28.4144752Z git version 2.34.1
+2025-09-18T06:34:28.4146825Z ##[endgroup]
+2025-09-18T06:34:28.4152529Z Copying '/home/runner/.gitconfig' to '/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/1e702eca-60ec-4e6f-8cd3-15ab32555058/.gitconfig'
+2025-09-18T06:34:28.4159370Z Temporarily overriding HOME='/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/1e702eca-60ec-4e6f-8cd3-15ab32555058' before making global git config changes
+2025-09-18T06:34:28.4161237Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-18T06:34:28.4166819Z [command]/usr/bin/git config --global --add safe.directory /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket
+2025-09-18T06:34:28.4252768Z [command]/usr/bin/git config --local --get remote.origin.url
+2025-09-18T06:34:28.4280790Z https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:28.4307560Z ##[group]Removing previously created refs, to avoid conflicts
+2025-09-18T06:34:28.4313955Z [command]/usr/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+2025-09-18T06:34:28.4341093Z refs/heads/integrate/graphql-web
+2025-09-18T06:34:28.4358210Z [command]/usr/bin/git checkout --detach
+2025-09-18T06:34:28.4485607Z HEAD is now at 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:28.4553255Z [command]/usr/bin/git branch --delete --force integrate/graphql-web
+2025-09-18T06:34:28.4591087Z Deleted branch integrate/graphql-web (was 6cf9791).
+2025-09-18T06:34:28.4650826Z ##[endgroup]
+2025-09-18T06:34:28.4660080Z [command]/usr/bin/git submodule status
+2025-09-18T06:34:28.4947135Z ##[group]Cleaning the repository
+2025-09-18T06:34:28.4949222Z [command]/usr/bin/git clean -ffdx
+2025-09-18T06:34:28.5000994Z Removing backend/coverage.html
+2025-09-18T06:34:28.5001829Z Removing backend/coverage.out
+2025-09-18T06:34:28.5037075Z [command]/usr/bin/git reset --hard HEAD
+2025-09-18T06:34:28.5092017Z HEAD is now at 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:28.5115887Z ##[endgroup]
+2025-09-18T06:34:28.5116640Z ##[group]Disabling automatic garbage collection
+2025-09-18T06:34:28.5117675Z [command]/usr/bin/git config --local gc.auto 0
+2025-09-18T06:34:28.5226882Z ##[endgroup]
+2025-09-18T06:34:28.5227836Z ##[group]Setting up auth
+2025-09-18T06:34:28.5228701Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-18T06:34:28.5231139Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-18T06:34:28.5523089Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-18T06:34:28.5556060Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-18T06:34:28.5830119Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-09-18T06:34:28.5902749Z ##[endgroup]
+2025-09-18T06:34:28.5905451Z ##[group]Fetching the repository
+2025-09-18T06:34:28.5920736Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +415c4d4feae13448fd13ef4bf8beb9aa358f7c63:refs/remotes/origin/main
+2025-09-18T06:34:29.3496822Z From https://github.com/bhaagiKenpachi/spark-park-cricket
+2025-09-18T06:34:29.3498290Z  + 7dcd9fd...415c4d4 415c4d4feae13448fd13ef4bf8beb9aa358f7c63 -> origin/main  (forced update)
+2025-09-18T06:34:29.3500985Z ##[endgroup]
+2025-09-18T06:34:29.3501688Z ##[group]Determining the checkout info
+2025-09-18T06:34:29.3502402Z ##[endgroup]
+2025-09-18T06:34:29.3503158Z [command]/usr/bin/git sparse-checkout disable
+2025-09-18T06:34:29.3522285Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-09-18T06:34:29.3524484Z ##[group]Checking out the ref
+2025-09-18T06:34:29.3525214Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-09-18T06:34:29.3526249Z Previous HEAD position was 6cf9791 refactor: clean up frontend CI workflow by removing staging deployment steps
+2025-09-18T06:34:29.3527024Z Switched to a new branch 'main'
+2025-09-18T06:34:29.3527808Z Branch 'main' set up to track remote branch 'main' from 'origin'.
+2025-09-18T06:34:29.3529898Z ##[endgroup]
+2025-09-18T06:34:29.3531810Z [command]/usr/bin/git log -1 --format=%H
+2025-09-18T06:34:29.3532533Z 415c4d4feae13448fd13ef4bf8beb9aa358f7c63
+2025-09-18T06:34:29.3796631Z ##[group]Run actions/setup-node@v4
+2025-09-18T06:34:29.3797090Z with:
+2025-09-18T06:34:29.3797349Z   node-version: 20
+2025-09-18T06:34:29.3797641Z   cache: npm
+2025-09-18T06:34:29.3797991Z   cache-dependency-path: ./web/package-lock.json
+2025-09-18T06:34:29.3798430Z   always-auth: false
+2025-09-18T06:34:29.3798765Z   check-latest: false
+2025-09-18T06:34:29.3799255Z   token: ***
+2025-09-18T06:34:29.3799528Z env:
+2025-09-18T06:34:29.3799766Z   NODE_VERSION: 20
+2025-09-18T06:34:29.3800064Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:29.3800375Z ##[endgroup]
+2025-09-18T06:34:29.6912127Z Found in cache @ /opt/github-runner-bhaagi-spark-park-cricket/_work/_tool/node/20.19.5/x64
+2025-09-18T06:34:29.6925728Z ##[group]Environment details
+2025-09-18T06:34:29.9183389Z node: v20.19.5
+2025-09-18T06:34:29.9183789Z npm: 10.8.2
+2025-09-18T06:34:29.9186883Z yarn: 
+2025-09-18T06:34:29.9188282Z ##[endgroup]
+2025-09-18T06:34:29.9220436Z [command]/opt/github-runner-bhaagi-spark-park-cricket/_work/_tool/node/20.19.5/x64/bin/npm config get cache
+2025-09-18T06:34:30.0884097Z /home/runner/.npm
+2025-09-18T06:34:30.8795695Z npm cache is not found
+2025-09-18T06:34:30.8949702Z ##[group]Run npm ci
+2025-09-18T06:34:30.8950198Z [36;1mnpm ci[0m
+2025-09-18T06:34:30.8974348Z shell: /usr/bin/bash -e {0}
+2025-09-18T06:34:30.8974732Z env:
+2025-09-18T06:34:30.8975151Z   NODE_VERSION: 20
+2025-09-18T06:34:30.8975457Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:30.8975920Z ##[endgroup]
+2025-09-18T06:34:40.0041582Z npm warn deprecated @types/redux-saga@0.10.5: This is a stub types definition for redux-saga (https://github.com/redux-saga/redux-saga). redux-saga provides its own type definitions, so you don't need @types/redux-saga installed!
+2025-09-18T06:34:40.2180449Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2025-09-18T06:34:40.6390267Z npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+2025-09-18T06:34:53.7980640Z 
+2025-09-18T06:34:53.7983051Z > web@0.1.0 prepare
+2025-09-18T06:34:53.7984091Z > husky install
+2025-09-18T06:34:53.7984364Z 
+2025-09-18T06:34:53.8756922Z husky - install command is DEPRECATED
+2025-09-18T06:34:53.9108696Z .git can't be found
+2025-09-18T06:34:53.9109687Z added 898 packages, and audited 899 packages in 23s
+2025-09-18T06:34:53.9145493Z 
+2025-09-18T06:34:53.9145999Z 231 packages are looking for funding
+2025-09-18T06:34:53.9147388Z   run `npm fund` for details
+2025-09-18T06:34:53.9160827Z 
+2025-09-18T06:34:53.9161292Z found 0 vulnerabilities
+2025-09-18T06:34:54.0064911Z ##[group]Run npm run test:ci
+2025-09-18T06:34:54.0065629Z [36;1mnpm run test:ci[0m
+2025-09-18T06:34:54.0085812Z shell: /usr/bin/bash -e {0}
+2025-09-18T06:34:54.0086461Z env:
+2025-09-18T06:34:54.0086853Z   NODE_VERSION: 20
+2025-09-18T06:34:54.0087219Z   WORKING_DIRECTORY: ./web
+2025-09-18T06:34:54.0087658Z ##[endgroup]
+2025-09-18T06:34:54.1809479Z 
+2025-09-18T06:34:54.1811003Z > web@0.1.0 test:ci
+2025-09-18T06:34:54.1811622Z > jest --ci --coverage --watchAll=false
+2025-09-18T06:34:54.1853156Z 
+2025-09-18T06:34:55.4905510Z ● Validation Warning:
+2025-09-18T06:34:55.4905807Z 
+2025-09-18T06:34:55.4907334Z   Unknown option "moduleNameMapping" with value {"^@/(.*)$": "<rootDir>/src/$1"} was found.
+2025-09-18T06:34:55.4908208Z   This is probably a typing mistake. Fixing it will remove this message.
+2025-09-18T06:34:55.4908749Z 
+2025-09-18T06:34:55.4909158Z   Configuration Documentation:
+2025-09-18T06:34:55.4954060Z   https://jestjs.io/docs/configuration
+2025-09-18T06:34:55.4954354Z 
+2025-09-18T06:34:55.5608207Z ● Validation Warning:
+2025-09-18T06:34:55.5608849Z 
+2025-09-18T06:34:55.5610888Z   Unknown option "moduleNameMapping" with value {"^@/(.*)$": "<rootDir>/src/$1"} was found.
+2025-09-18T06:34:55.5611952Z   This is probably a typing mistake. Fixing it will remove this message.
+2025-09-18T06:34:55.5690891Z 
+2025-09-18T06:34:55.5692592Z   Configuration Documentation:
+2025-09-18T06:34:55.5693312Z   https://jestjs.io/docs/configuration
+2025-09-18T06:34:55.5693616Z 
+2025-09-18T06:34:56.9824628Z FAIL src/__tests__/integration/seriesIntegration.test.tsx
+2025-09-18T06:34:56.9828848Z   ● Test suite failed to run
+2025-09-18T06:34:56.9829389Z 
+2025-09-18T06:34:56.9830645Z     Cannot find module '@/services/api' from 'src/__tests__/integration/seriesIntegration.test.tsx'
+2025-09-18T06:34:56.9831243Z 
+2025-09-18T06:34:56.9831724Z     [0m [90m  8 |[39m
+2025-09-18T06:34:56.9832363Z      [90m  9 |[39m [90m// Mock the API service[39m
+2025-09-18T06:34:56.9833440Z     [31m[1m>[22m[39m[90m 10 |[39m jest[33m.[39mmock([32m'@/services/api'[39m[33m,[39m () [33m=>[39m ({
+2025-09-18T06:34:56.9834255Z      [90m    |[39m      [31m[1m^[22m[39m
+2025-09-18T06:34:56.9834981Z      [90m 11 |[39m     apiService[33m:[39m {
+2025-09-18T06:34:56.9835713Z      [90m 12 |[39m         getSeries[33m:[39m jest[33m.[39mfn()[33m,[39m
+2025-09-18T06:34:56.9837556Z      [90m 13 |[39m         createSeries[33m:[39m jest[33m.[39mfn()[33m,[39m[0m
+2025-09-18T06:34:56.9837990Z 
+2025-09-18T06:34:56.9838453Z       at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:863:11)
+2025-09-18T06:34:56.9839550Z       at Object.mock (src/__tests__/integration/seriesIntegration.test.tsx:10:6)
+2025-09-18T06:34:56.9839986Z 
+2025-09-18T06:34:57.2304893Z FAIL src/components/__tests__/SeriesList.test.tsx
+2025-09-18T06:34:57.2306098Z   ● Test suite failed to run
+2025-09-18T06:34:57.2306430Z 
+2025-09-18T06:34:57.2307205Z     Cannot find module '@/store/hooks' from 'src/components/__tests__/SeriesList.test.tsx'
+2025-09-18T06:34:57.2307711Z 
+2025-09-18T06:34:57.2308387Z     [0m [90m  8 |[39m [90m// Mock the hooks[39m
+2025-09-18T06:34:57.2309310Z      [90m  9 |[39m [36mconst[39m mockDispatch [33m=[39m jest[33m.[39mfn()[33m;[39m
+2025-09-18T06:34:57.2310607Z     [31m[1m>[22m[39m[90m 10 |[39m jest[33m.[39mmock([32m'@/store/hooks'[39m[33m,[39m () [33m=>[39m ({
+2025-09-18T06:34:57.2311461Z      [90m    |[39m      [31m[1m^[22m[39m
+2025-09-18T06:34:57.2312351Z      [90m 11 |[39m     useAppDispatch[33m:[39m () [33m=>[39m mockDispatch[33m,[39m
+2025-09-18T06:34:57.2313262Z      [90m 12 |[39m     useAppSelector[33m:[39m jest[33m.[39mfn()[33m,[39m
+2025-09-18T06:34:57.2314051Z      [90m 13 |[39m }))[33m;[39m[0m
+2025-09-18T06:34:57.2314393Z 
+2025-09-18T06:34:57.2315236Z       at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:863:11)
+2025-09-18T06:34:57.2316113Z       at Object.mock (src/components/__tests__/SeriesList.test.tsx:10:6)
+2025-09-18T06:34:57.2317159Z 
+2025-09-18T06:34:58.9697298Z FAIL src/components/__tests__/SeriesForm.test.tsx
+2025-09-18T06:34:58.9707194Z   ● SeriesForm › should render create form
+2025-09-18T06:34:58.9707592Z 
+2025-09-18T06:34:58.9708010Z     TestingLibraryElementError: Unable to find a label with the text of: Description
+2025-09-18T06:34:58.9708509Z 
+2025-09-18T06:34:58.9708785Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:58.9709325Z     [36m<body>[39m
+2025-09-18T06:34:58.9709775Z       [36m<div>[39m
+2025-09-18T06:34:58.9710245Z         [36m<div[39m
+2025-09-18T06:34:58.9710810Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:58.9711397Z         [36m>[39m
+2025-09-18T06:34:58.9711818Z           [36m<div[39m
+2025-09-18T06:34:58.9712631Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:58.9713492Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:58.9713955Z           [36m>[39m
+2025-09-18T06:34:58.9714317Z             [36m<div[39m
+2025-09-18T06:34:58.9715547Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:58.9716649Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:58.9717139Z             [36m>[39m
+2025-09-18T06:34:58.9717801Z               [36m<div[39m
+2025-09-18T06:34:58.9718626Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:58.9719364Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:58.9719893Z               [36m>[39m
+2025-09-18T06:34:58.9720381Z                 [0mCreate New Series[0m
+2025-09-18T06:34:58.9720904Z               [36m</div>[39m
+2025-09-18T06:34:58.9721533Z             [36m</div>[39m
+2025-09-18T06:34:58.9721907Z             [36m<div[39m
+2025-09-18T06:34:58.9722411Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:58.9722993Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:58.9723453Z             [36m>[39m
+2025-09-18T06:34:58.9723891Z               [36m<form[39m
+2025-09-18T06:34:58.9724376Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:58.9759261Z               [36m>[39m
+2025-09-18T06:34:58.9759757Z                 [36m<div[39m
+2025-09-18T06:34:58.9760868Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:58.9761279Z                 [36m>[39m
+2025-09-18T06:34:58.9761768Z                   [36m<label[39m
+2025-09-18T06:34:58.9763558Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:58.9766973Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:58.9767651Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:58.9768073Z                   [36m>[39m
+2025-09-18T06:34:58.9768742Z                     [0mSeries Name *[0m
+2025-09-18T06:34:58.9769907Z                   [36m</label>[39m
+2025-09-18T06:34:58.9770758Z                   [36m<input[39m
+2025-09-18T06:34:58.9778548Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:58.9783459Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:58.9784047Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:58.9784665Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:58.9785404Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:58.9786079Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:58.9786640Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:58.9787207Z                   [36m/>[39m
+2025-09-18T06:34:58.9787680Z                 [36m</div>[39m
+2025-09-18T06:34:58.9788195Z                 [36m<div[39m
+2025-09-18T06:34:58.9788699Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:58.9789183Z                 [36m>[39m
+2025-09-18T06:34:58.9789661Z                   [36m<label[39m
+2025-09-18T06:34:58.9791439Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:58.9793138Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:58.9793744Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:58.9794253Z                   [36m>[39m
+2025-09-18T06:34:58.9794867Z                     [36m<svg[39m
+2025-09-18T06:34:58.9795455Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:58.9796171Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:58.9796896Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:58.9797470Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:58.9798454Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:58.9799467Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:58.9800293Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:58.9800933Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:58.9801864Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:58.9802493Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:58.9803483Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:58.9804442Z                     [36m>[39m
+2025-09-18T06:34:58.9804937Z                       [36m<path[39m
+2025-09-18T06:34:58.9805472Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:58.9806040Z                       [36m/>[39m
+2025-09-18T06:34:58.9806483Z                       [36m<path[39m
+2025-09-18T06:34:58.9807088Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:58.9807668Z                       [36m/>[39m
+2025-09-18T06:34:58.9808254Z                       [36m<rect[39m
+2025-09-18T06:34:58.9809023Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:58.9809815Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:58.9810394Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:58.9810975Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:58.9811578Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:58.9812119Z                       [36m/>[39m
+2025-09-18T06:34:58.9812647Z                       [36m<path[39m
+2025-09-18T06:34:58.9813171Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:58.9813701Z                       [36m/>[39m
+2025-09-18T06:34:58.9814185Z                     [36m</svg>[39m
+2025-09-18T06:34:58.9814681Z                     [0mStart Date *[0m
+2025-09-18T06:34:58.9815224Z                   [36m</label>[39m
+2025-09-18T06:34:58.9815737Z                   [36m<input[39m
+2025-09-18T06:34:58.9820611Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:58.9824678Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:58.9825291Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:58.9825902Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:58.9826416Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:58.9827015Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:58.9827551Z                   [36m/>[39m
+2025-09-18T06:34:58.9827941Z                 [36m</div>[39m
+2025-09-18T06:34:58.9828552Z                 [36m<div[39m
+2025-09-18T06:34:58.9829001Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:58.9829459Z                 [36m>[39m
+2025-09-18T06:34:58.9829958Z                   [36m<label[39m
+2025-09-18T06:34:58.9831605Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:58.9833155Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:58.9833834Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:58.9834328Z                   [36m>[39m
+2025-09-18T06:34:58.9834764Z                     [36m<svg[39m
+2025-09-18T06:34:58.9835274Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:58.9835962Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:58.9836570Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:58.9837654Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:58.9838430Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:58.9839289Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:58.9839908Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:58.9840577Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:58.9841521Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:58.9842121Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:58.9842706Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:58.9843326Z                     [36m>[39m
+2025-09-18T06:34:58.9843784Z                       [36m<path[39m
+2025-09-18T06:34:58.9844257Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:58.9844678Z                       [36m/>[39m
+2025-09-18T06:34:58.9845236Z                       [36m<path[39m
+2025-09-18T06:34:58.9845700Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:58.9846278Z                       [36m/>[39m
+2025-09-18T06:34:58.9846793Z                       [36m<rect[39m
+2025-09-18T06:34:58.9847560Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:58.9848308Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:58.9848840Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:58.9849566Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:58.9850696Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:58.9851430Z                       [36m/>[39m
+2025-09-18T06:34:58.9852007Z                       [36m<path[39m
+2025-09-18T06:34:58.9852647Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:58.9853352Z                       [36m/>[39m
+2025-09-18T06:34:58.9853834Z                     [36m</svg>[39m
+2025-09-18T06:34:58.9854381Z                     [0mEnd Date *[0m
+2025-09-18T06:34:58.9854942Z                   [36m</label>[39m
+2025-09-18T06:34:58.9855446Z                   [36m<input[39m
+2025-09-18T06:34:58.9860374Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:58.9864533Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:58.9865112Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:58.9865774Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:58.9866277Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:58.9867011Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:58.9867594Z                   [36m/>[39m
+2025-09-18T06:34:58.9868017Z                 [36m</div>[39m
+2025-09-18T06:34:58.9868479Z                 [36m<div[39m
+2025-09-18T06:34:58.9869424Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:58.9870132Z                 [36m>[39m
+2025-09-18T06:34:58.9870758Z                   [36m<button[39m
+2025-09-18T06:34:58.9874364Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:58.9877304Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:58.9878019Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:58.9878886Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:58.9879508Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:58.9879951Z                   [36m>[39m
+2025-09-18T06:34:58.9880513Z                     [36m<svg[39m
+2025-09-18T06:34:58.9881082Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:58.9881894Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:58.9882630Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:58.9883197Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:58.9883724Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:58.9884414Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:58.9885129Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:58.9885670Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:58.9886340Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:58.9887044Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:58.9887655Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:58.9888312Z                     [36m>[39m
+2025-09-18T06:34:58.9888798Z                       [36m<path[39m
+2025-09-18T06:34:58.9889981Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:58.9890833Z                       [36m/>[39m
+2025-09-18T06:34:58.9891378Z                       [36m<path[39m
+2025-09-18T06:34:58.9891995Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:58.9892785Z                       [36m/>[39m
+2025-09-18T06:34:58.9893292Z                       [36m<path[39m
+2025-09-18T06:34:58.9893838Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:58.9894450Z                       [36m/>[39m
+2025-09-18T06:34:58.9894907Z                     [36m</svg>[39m
+2025-09-18T06:34:58.9895413Z                     [0mSeries[0m
+2025-09-18T06:34:58.9895976Z                   [36m</button>[39m
+2025-09-18T06:34:58.9896437Z                   [36m<button[39m
+2025-09-18T06:34:58.9901172Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:58.9905203Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:58.9905974Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:58.9906564Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:58.9907040Z                   [36m>[39m
+2025-09-18T06:34:58.9907524Z                     [36m<svg[39m
+2025-09-18T06:34:58.9908083Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:58.9908938Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:58.9909605Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:58.9910370Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:58.9911024Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:58.9911621Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:58.9912303Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:58.9912969Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:58.9913535Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:58.9914141Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:58.9914857Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:58.9915397Z                     [36m>[39m
+2025-09-18T06:34:58.9915930Z                       [36m<path[39m
+2025-09-18T06:34:58.9916539Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:58.9917026Z                       [36m/>[39m
+2025-09-18T06:34:58.9917553Z                       [36m<path[39m
+2025-09-18T06:34:58.9918273Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:58.9918840Z                       [36m/>[39m
+2025-09-18T06:34:58.9919411Z                     [36m</svg>[39m
+2025-09-18T06:34:58.9919921Z                   [36m</button>[39m
+2025-09-18T06:34:58.9920440Z                 [36m</div>[39m
+2025-09-18T06:34:58.9921265Z               [36m</form>[39m
+2025-09-18T06:34:58.9921736Z             [36m</div>[39m
+2025-09-18T06:34:58.9922258Z           [36m</div>[39m
+2025-09-18T06:34:58.9922725Z         [36m</div>[39m
+2025-09-18T06:34:58.9923136Z       [36m</div>[39m
+2025-09-18T06:34:58.9923571Z     [36m</body>[39m
+2025-09-18T06:34:58.9923774Z 
+2025-09-18T06:34:58.9924420Z     [0m [90m 43 |[39m         expect(screen[33m.[39mgetByText([32m'Create New Series'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:58.9925852Z      [90m 44 |[39m         expect(screen[33m.[39mgetByLabelText([32m'Series Name *'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:58.9927197Z     [31m[1m>[22m[39m[90m 45 |[39m         expect(screen[33m.[39mgetByLabelText([32m'Description'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:58.9928114Z      [90m    |[39m                       [31m[1m^[22m[39m
+2025-09-18T06:34:58.9929072Z      [90m 46 |[39m         expect(screen[33m.[39mgetByLabelText([32m'Start Date *'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:58.9930623Z      [90m 47 |[39m         expect(screen[33m.[39mgetByLabelText([32m'End Date *'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:58.9931829Z      [90m 48 |[39m         expect(screen[33m.[39mgetByLabelText([32m'Status'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m[0m
+2025-09-18T06:34:58.9932382Z 
+2025-09-18T06:34:58.9932875Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:58.9933899Z       at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+2025-09-18T06:34:58.9934717Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:58.9935444Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:58.9936152Z       at Object.getByLabelText (src/components/__tests__/SeriesForm.test.tsx:45:23)
+2025-09-18T06:34:58.9936635Z 
+2025-09-18T06:34:58.9937068Z   ● SeriesForm › should render edit form with existing data
+2025-09-18T06:34:58.9937416Z 
+2025-09-18T06:34:58.9937932Z     TestingLibraryElementError: Unable to find an element with the display value: Test Description.
+2025-09-18T06:34:58.9938450Z 
+2025-09-18T06:34:58.9938651Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:58.9939844Z     [36m<body>[39m
+2025-09-18T06:34:58.9940580Z       [36m<div>[39m
+2025-09-18T06:34:58.9940980Z         [36m<div[39m
+2025-09-18T06:34:58.9941621Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:58.9942667Z         [36m>[39m
+2025-09-18T06:34:58.9943032Z           [36m<div[39m
+2025-09-18T06:34:58.9943917Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:58.9944775Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:58.9945219Z           [36m>[39m
+2025-09-18T06:34:58.9945728Z             [36m<div[39m
+2025-09-18T06:34:58.9947194Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:58.9948253Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:58.9948778Z             [36m>[39m
+2025-09-18T06:34:58.9949269Z               [36m<div[39m
+2025-09-18T06:34:58.9949868Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:58.9950608Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:58.9951308Z               [36m>[39m
+2025-09-18T06:34:58.9951769Z                 [0mEdit Series[0m
+2025-09-18T06:34:58.9952314Z               [36m</div>[39m
+2025-09-18T06:34:58.9952783Z             [36m</div>[39m
+2025-09-18T06:34:58.9953252Z             [36m<div[39m
+2025-09-18T06:34:58.9953828Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:58.9954704Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:58.9955283Z             [36m>[39m
+2025-09-18T06:34:58.9955774Z               [36m<form[39m
+2025-09-18T06:34:58.9956361Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:58.9956881Z               [36m>[39m
+2025-09-18T06:34:58.9957360Z                 [36m<div[39m
+2025-09-18T06:34:58.9957895Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:58.9958416Z                 [36m>[39m
+2025-09-18T06:34:58.9958826Z                   [36m<label[39m
+2025-09-18T06:34:58.9960544Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:58.9962142Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:58.9963004Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:58.9963575Z                   [36m>[39m
+2025-09-18T06:34:58.9964115Z                     [0mSeries Name *[0m
+2025-09-18T06:34:58.9964690Z                   [36m</label>[39m
+2025-09-18T06:34:58.9965380Z                   [36m<input[39m
+2025-09-18T06:34:58.9969871Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:58.9973260Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:58.9973905Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:58.9974472Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:58.9975323Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:58.9976376Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:58.9977294Z                     [33mvalue[39m=[32m"Test Series"[39m
+2025-09-18T06:34:58.9977935Z                   [36m/>[39m
+2025-09-18T06:34:58.9978481Z                 [36m</div>[39m
+2025-09-18T06:34:58.9979101Z                 [36m<div[39m
+2025-09-18T06:34:58.9980343Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:58.9981017Z                 [36m>[39m
+2025-09-18T06:34:58.9981482Z                   [36m<label[39m
+2025-09-18T06:34:58.9983675Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:58.9985709Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:58.9986351Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:58.9986971Z                   [36m>[39m
+2025-09-18T06:34:58.9987864Z                     [36m<svg[39m
+2025-09-18T06:34:58.9988576Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:58.9989355Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:58.9990129Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:58.9990696Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:58.9991577Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:58.9992708Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:58.9993691Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:58.9994562Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:58.9995382Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:58.9996016Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:58.9996729Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0018381Z                     [36m>[39m
+2025-09-18T06:34:59.0018970Z                       [36m<path[39m
+2025-09-18T06:34:59.0020562Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0021197Z                       [36m/>[39m
+2025-09-18T06:34:59.0021635Z                       [36m<path[39m
+2025-09-18T06:34:59.0022152Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0023175Z                       [36m/>[39m
+2025-09-18T06:34:59.0023816Z                       [36m<rect[39m
+2025-09-18T06:34:59.0024273Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0024721Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0025150Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0025593Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0026008Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0026397Z                       [36m/>[39m
+2025-09-18T06:34:59.0026786Z                       [36m<path[39m
+2025-09-18T06:34:59.0027204Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0027609Z                       [36m/>[39m
+2025-09-18T06:34:59.0027985Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0028365Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0028929Z                   [36m</label>[39m
+2025-09-18T06:34:59.0029306Z                   [36m<input[39m
+2025-09-18T06:34:59.0033123Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0037298Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0037838Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0038353Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0038833Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0039340Z                     [33mvalue[39m=[32m"2024-01-01"[39m
+2025-09-18T06:34:59.0039794Z                   [36m/>[39m
+2025-09-18T06:34:59.0040177Z                 [36m</div>[39m
+2025-09-18T06:34:59.0041084Z                 [36m<div[39m
+2025-09-18T06:34:59.0041512Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0041921Z                 [36m>[39m
+2025-09-18T06:34:59.0042469Z                   [36m<label[39m
+2025-09-18T06:34:59.0044116Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0046462Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0047128Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0047520Z                   [36m>[39m
+2025-09-18T06:34:59.0047946Z                     [36m<svg[39m
+2025-09-18T06:34:59.0048618Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0049342Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0049920Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0050576Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0051087Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0051657Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0052580Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0053108Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0053797Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0054272Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0054988Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0055451Z                     [36m>[39m
+2025-09-18T06:34:59.0055826Z                       [36m<path[39m
+2025-09-18T06:34:59.0056260Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0056667Z                       [36m/>[39m
+2025-09-18T06:34:59.0057202Z                       [36m<path[39m
+2025-09-18T06:34:59.0057631Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0058031Z                       [36m/>[39m
+2025-09-18T06:34:59.0058381Z                       [36m<rect[39m
+2025-09-18T06:34:59.0058801Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0059569Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0060266Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0060775Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0061253Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0061697Z                       [36m/>[39m
+2025-09-18T06:34:59.0062524Z                       [36m<path[39m
+2025-09-18T06:34:59.0062960Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0063380Z                       [36m/>[39m
+2025-09-18T06:34:59.0063911Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0064311Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0064707Z                   [36m</label>[39m
+2025-09-18T06:34:59.0065476Z                   [36m<input[39m
+2025-09-18T06:34:59.0069345Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0072499Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0073030Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0073908Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0074535Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0074996Z                     [33mvalue[39m=[32m"2024-01-31"[39m
+2025-09-18T06:34:59.0075398Z                   [36m/>[39m
+2025-09-18T06:34:59.0075757Z                 [36m</div>[39m
+2025-09-18T06:34:59.0076118Z                 [36m<div[39m
+2025-09-18T06:34:59.0076912Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0077587Z                 [36m>[39m
+2025-09-18T06:34:59.0078486Z                   [36m<button[39m
+2025-09-18T06:34:59.0083097Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0086110Z                     [33mdata-cy[39m=[32m"update-series-button"[39m
+2025-09-18T06:34:59.0086686Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0087319Z                     [33mtitle[39m=[32m"Update Series"[39m
+2025-09-18T06:34:59.0087841Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0088277Z                   [36m>[39m
+2025-09-18T06:34:59.0088694Z                     [36m<svg[39m
+2025-09-18T06:34:59.0089177Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0090178Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0090798Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0091322Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0091898Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0092488Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0093068Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0093777Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0094295Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0094814Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0095872Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0096787Z                     [36m>[39m
+2025-09-18T06:34:59.0097371Z                       [36m<path[39m
+2025-09-18T06:34:59.0099033Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0100577Z                       [36m/>[39m
+2025-09-18T06:34:59.0101037Z                       [36m<path[39m
+2025-09-18T06:34:59.0101676Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0102368Z                       [36m/>[39m
+2025-09-18T06:34:59.0102892Z                       [36m<path[39m
+2025-09-18T06:34:59.0103415Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0103892Z                       [36m/>[39m
+2025-09-18T06:34:59.0104319Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0104885Z                     [0mSeries[0m
+2025-09-18T06:34:59.0105304Z                   [36m</button>[39m
+2025-09-18T06:34:59.0105722Z                   [36m<button[39m
+2025-09-18T06:34:59.0109726Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0112855Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0113359Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0114066Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0114567Z                   [36m>[39m
+2025-09-18T06:34:59.0115143Z                     [36m<svg[39m
+2025-09-18T06:34:59.0115642Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0116415Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0117017Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0117549Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0118096Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0118688Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0119292Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0120004Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0120550Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0121232Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0121799Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0122304Z                     [36m>[39m
+2025-09-18T06:34:59.0122693Z                       [36m<path[39m
+2025-09-18T06:34:59.0123174Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0123629Z                       [36m/>[39m
+2025-09-18T06:34:59.0124029Z                       [36m<path[39m
+2025-09-18T06:34:59.0124507Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0124954Z                       [36m/>[39m
+2025-09-18T06:34:59.0125344Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0125763Z                   [36m</button>[39m
+2025-09-18T06:34:59.0126162Z                 [36m</div>[39m
+2025-09-18T06:34:59.0126559Z               [36m</form>[39m
+2025-09-18T06:34:59.0126926Z             [36m</div>[39m
+2025-09-18T06:34:59.0127273Z           [36m</div>[39m
+2025-09-18T06:34:59.0127618Z         [36m</div>[39m
+2025-09-18T06:34:59.0127949Z       [36m</div>[39m
+2025-09-18T06:34:59.0128250Z     [36m</body>[39m
+2025-09-18T06:34:59.0128435Z 
+2025-09-18T06:34:59.0129059Z     [0m [90m 80 |[39m         expect(screen[33m.[39mgetByText([32m'Edit Series'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:59.0130570Z      [90m 81 |[39m         expect(screen[33m.[39mgetByDisplayValue([32m'Test Series'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:59.0132006Z     [31m[1m>[22m[39m[90m 82 |[39m         expect(screen[33m.[39mgetByDisplayValue([32m'Test Description'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:59.0132900Z      [90m    |[39m                       [31m[1m^[22m[39m
+2025-09-18T06:34:59.0133821Z      [90m 83 |[39m         expect(screen[33m.[39mgetByDisplayValue([32m'2024-01-01'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:59.0134996Z      [90m 84 |[39m         expect(screen[33m.[39mgetByDisplayValue([32m'2024-01-31'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+2025-09-18T06:34:59.0136177Z      [90m 85 |[39m         expect(screen[33m.[39mgetByDisplayValue([32m'upcoming'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m[0m
+2025-09-18T06:34:59.0136736Z 
+2025-09-18T06:34:59.0137122Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0137853Z       at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+2025-09-18T06:34:59.0138473Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0139101Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0140168Z       at Object.getByDisplayValue (src/components/__tests__/SeriesForm.test.tsx:82:23)
+2025-09-18T06:34:59.0140638Z 
+2025-09-18T06:34:59.0140947Z   ● SeriesForm › should validate required fields
+2025-09-18T06:34:59.0141254Z 
+2025-09-18T06:34:59.0142942Z     TestingLibraryElementError: Unable to find an element with the text: Create Series. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+2025-09-18T06:34:59.0144021Z 
+2025-09-18T06:34:59.0144196Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:59.0144613Z     [36m<body>[39m
+2025-09-18T06:34:59.0144912Z       [36m<div>[39m
+2025-09-18T06:34:59.0145396Z         [36m<div[39m
+2025-09-18T06:34:59.0145870Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:59.0146325Z         [36m>[39m
+2025-09-18T06:34:59.0146644Z           [36m<div[39m
+2025-09-18T06:34:59.0147607Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:59.0148401Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:59.0148822Z           [36m>[39m
+2025-09-18T06:34:59.0149155Z             [36m<div[39m
+2025-09-18T06:34:59.0150557Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:59.0151761Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:59.0152167Z             [36m>[39m
+2025-09-18T06:34:59.0152503Z               [36m<div[39m
+2025-09-18T06:34:59.0153079Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:59.0153672Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:59.0154090Z               [36m>[39m
+2025-09-18T06:34:59.0154470Z                 [0mCreate New Series[0m
+2025-09-18T06:34:59.0154890Z               [36m</div>[39m
+2025-09-18T06:34:59.0155242Z             [36m</div>[39m
+2025-09-18T06:34:59.0155570Z             [36m<div[39m
+2025-09-18T06:34:59.0155986Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:59.0156491Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:59.0156888Z             [36m>[39m
+2025-09-18T06:34:59.0157222Z               [36m<form[39m
+2025-09-18T06:34:59.0157665Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:59.0158233Z               [36m>[39m
+2025-09-18T06:34:59.0158885Z                 [36m<div[39m
+2025-09-18T06:34:59.0159350Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0159764Z                 [36m>[39m
+2025-09-18T06:34:59.0160168Z                   [36m<label[39m
+2025-09-18T06:34:59.0162266Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:59.0163525Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0164158Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:59.0164535Z                   [36m>[39m
+2025-09-18T06:34:59.0165244Z                     [0mSeries Name *[0m
+2025-09-18T06:34:59.0165717Z                   [36m</label>[39m
+2025-09-18T06:34:59.0166104Z                   [36m<input[39m
+2025-09-18T06:34:59.0170153Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0173829Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:59.0174388Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0174881Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:59.0175408Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:59.0176222Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:59.0176659Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:59.0177065Z                   [36m/>[39m
+2025-09-18T06:34:59.0177433Z                 [36m</div>[39m
+2025-09-18T06:34:59.0177945Z                 [36m<div[39m
+2025-09-18T06:34:59.0178355Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0178728Z                 [36m>[39m
+2025-09-18T06:34:59.0179064Z                   [36m<label[39m
+2025-09-18T06:34:59.0181448Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0183148Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0183616Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0184018Z                   [36m>[39m
+2025-09-18T06:34:59.0184393Z                     [36m<svg[39m
+2025-09-18T06:34:59.0184825Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0185605Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0186173Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0186633Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0187138Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0187655Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0188199Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0188725Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0189213Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0189696Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0190475Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0190942Z                     [36m>[39m
+2025-09-18T06:34:59.0191336Z                       [36m<path[39m
+2025-09-18T06:34:59.0191789Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0192200Z                       [36m/>[39m
+2025-09-18T06:34:59.0192597Z                       [36m<path[39m
+2025-09-18T06:34:59.0193050Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0193614Z                       [36m/>[39m
+2025-09-18T06:34:59.0193996Z                       [36m<rect[39m
+2025-09-18T06:34:59.0194428Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0194885Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0195344Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0195776Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0196217Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0196628Z                       [36m/>[39m
+2025-09-18T06:34:59.0197001Z                       [36m<path[39m
+2025-09-18T06:34:59.0197451Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0198015Z                       [36m/>[39m
+2025-09-18T06:34:59.0198595Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0199024Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0199436Z                   [36m</label>[39m
+2025-09-18T06:34:59.0199843Z                   [36m<input[39m
+2025-09-18T06:34:59.0204365Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0207745Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0208223Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0208699Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0209158Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0209796Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0210225Z                   [36m/>[39m
+2025-09-18T06:34:59.0210601Z                 [36m</div>[39m
+2025-09-18T06:34:59.0210962Z                 [36m<div[39m
+2025-09-18T06:34:59.0211501Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0211931Z                 [36m>[39m
+2025-09-18T06:34:59.0212296Z                   [36m<label[39m
+2025-09-18T06:34:59.0213985Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0215272Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0215732Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0216122Z                   [36m>[39m
+2025-09-18T06:34:59.0216486Z                     [36m<svg[39m
+2025-09-18T06:34:59.0217090Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0217709Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0218262Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0218741Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0219943Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0220636Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0221233Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0221806Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0222791Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0223290Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0224159Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0224606Z                     [36m>[39m
+2025-09-18T06:34:59.0224974Z                       [36m<path[39m
+2025-09-18T06:34:59.0225516Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0225905Z                       [36m/>[39m
+2025-09-18T06:34:59.0226278Z                       [36m<path[39m
+2025-09-18T06:34:59.0226704Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0227110Z                       [36m/>[39m
+2025-09-18T06:34:59.0227485Z                       [36m<rect[39m
+2025-09-18T06:34:59.0228092Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0228594Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0229230Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0229677Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0230136Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0230539Z                       [36m/>[39m
+2025-09-18T06:34:59.0231206Z                       [36m<path[39m
+2025-09-18T06:34:59.0231711Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0232123Z                       [36m/>[39m
+2025-09-18T06:34:59.0232515Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0232926Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0233328Z                   [36m</label>[39m
+2025-09-18T06:34:59.0233879Z                   [36m<input[39m
+2025-09-18T06:34:59.0237673Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0241305Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0241961Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0242451Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0243042Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0243514Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0244701Z                   [36m/>[39m
+2025-09-18T06:34:59.0245113Z                 [36m</div>[39m
+2025-09-18T06:34:59.0245496Z                 [36m<div[39m
+2025-09-18T06:34:59.0246309Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0246973Z                 [36m>[39m
+2025-09-18T06:34:59.0247357Z                   [36m<button[39m
+2025-09-18T06:34:59.0261529Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0265328Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:59.0265871Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0266345Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:59.0266816Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0267210Z                   [36m>[39m
+2025-09-18T06:34:59.0267555Z                     [36m<svg[39m
+2025-09-18T06:34:59.0267995Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0268544Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0269070Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0269528Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0269991Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0270506Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0271019Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0271495Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0271971Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0272428Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0273189Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0273687Z                     [36m>[39m
+2025-09-18T06:34:59.0274237Z                       [36m<path[39m
+2025-09-18T06:34:59.0274976Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0275577Z                       [36m/>[39m
+2025-09-18T06:34:59.0275967Z                       [36m<path[39m
+2025-09-18T06:34:59.0276505Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0276991Z                       [36m/>[39m
+2025-09-18T06:34:59.0277524Z                       [36m<path[39m
+2025-09-18T06:34:59.0278456Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0279105Z                       [36m/>[39m
+2025-09-18T06:34:59.0279496Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0279912Z                     [0mSeries[0m
+2025-09-18T06:34:59.0280324Z                   [36m</button>[39m
+2025-09-18T06:34:59.0280724Z                   [36m<button[39m
+2025-09-18T06:34:59.0285011Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0287844Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0288316Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0288757Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0289138Z                   [36m>[39m
+2025-09-18T06:34:59.0289496Z                     [36m<svg[39m
+2025-09-18T06:34:59.0289917Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0290850Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0291345Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0291780Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0292261Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0292745Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0293252Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0293734Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0294201Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0294659Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0295187Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0295779Z                     [36m>[39m
+2025-09-18T06:34:59.0296139Z                       [36m<path[39m
+2025-09-18T06:34:59.0296577Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0296959Z                       [36m/>[39m
+2025-09-18T06:34:59.0297352Z                       [36m<path[39m
+2025-09-18T06:34:59.0297828Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0298317Z                       [36m/>[39m
+2025-09-18T06:34:59.0298723Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0299142Z                   [36m</button>[39m
+2025-09-18T06:34:59.0299919Z                 [36m</div>[39m
+2025-09-18T06:34:59.0300474Z               [36m</form>[39m
+2025-09-18T06:34:59.0301120Z             [36m</div>[39m
+2025-09-18T06:34:59.0301656Z           [36m</div>[39m
+2025-09-18T06:34:59.0302088Z         [36m</div>[39m
+2025-09-18T06:34:59.0302867Z       [36m</div>[39m
+2025-09-18T06:34:59.0303246Z     [36m</body>[39m
+2025-09-18T06:34:59.0303449Z 
+2025-09-18T06:34:59.0303710Z     [0m [90m 142 |[39m         )[33m;[39m
+2025-09-18T06:34:59.0304219Z      [90m 143 |[39m
+2025-09-18T06:34:59.0305152Z     [31m[1m>[22m[39m[90m 144 |[39m         [36mconst[39m submitButton [33m=[39m screen[33m.[39mgetByText([32m'Create Series'[39m)[33m;[39m
+2025-09-18T06:34:59.0306203Z      [90m     |[39m                                     [31m[1m^[22m[39m
+2025-09-18T06:34:59.0307075Z      [90m 145 |[39m         fireEvent[33m.[39mclick(submitButton)[33m;[39m
+2025-09-18T06:34:59.0307800Z      [90m 146 |[39m
+2025-09-18T06:34:59.0308331Z      [90m 147 |[39m         [36mawait[39m waitFor(() [33m=>[39m {[0m
+2025-09-18T06:34:59.0308705Z 
+2025-09-18T06:34:59.0395856Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0396876Z       at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+2025-09-18T06:34:59.0397464Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0398046Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0399131Z       at Object.getByText (src/components/__tests__/SeriesForm.test.tsx:144:37)
+2025-09-18T06:34:59.0399526Z 
+2025-09-18T06:34:59.0400296Z   ● SeriesForm › should validate end date is after start date
+2025-09-18T06:34:59.0400703Z 
+2025-09-18T06:34:59.0401889Z     TestingLibraryElementError: Unable to find an element with the text: Create Series. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+2025-09-18T06:34:59.0403408Z 
+2025-09-18T06:34:59.0403750Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:59.0404153Z     [36m<body>[39m
+2025-09-18T06:34:59.0404456Z       [36m<div>[39m
+2025-09-18T06:34:59.0404755Z         [36m<div[39m
+2025-09-18T06:34:59.0405207Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:59.0405629Z         [36m>[39m
+2025-09-18T06:34:59.0405916Z           [36m<div[39m
+2025-09-18T06:34:59.0407271Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:59.0408142Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:59.0408739Z           [36m>[39m
+2025-09-18T06:34:59.0409040Z             [36m<div[39m
+2025-09-18T06:34:59.0410547Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:59.0411839Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:59.0412265Z             [36m>[39m
+2025-09-18T06:34:59.0412597Z               [36m<div[39m
+2025-09-18T06:34:59.0413159Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:59.0413776Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:59.0414188Z               [36m>[39m
+2025-09-18T06:34:59.0414579Z                 [0mCreate New Series[0m
+2025-09-18T06:34:59.0414996Z               [36m</div>[39m
+2025-09-18T06:34:59.0415340Z             [36m</div>[39m
+2025-09-18T06:34:59.0415667Z             [36m<div[39m
+2025-09-18T06:34:59.0416071Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:59.0416722Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:59.0417117Z             [36m>[39m
+2025-09-18T06:34:59.0417576Z               [36m<form[39m
+2025-09-18T06:34:59.0417990Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:59.0418569Z               [36m>[39m
+2025-09-18T06:34:59.0419157Z                 [36m<div[39m
+2025-09-18T06:34:59.0419952Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0420390Z                 [36m>[39m
+2025-09-18T06:34:59.0420783Z                   [36m<label[39m
+2025-09-18T06:34:59.0422935Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:59.0424450Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0424940Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:59.0425333Z                   [36m>[39m
+2025-09-18T06:34:59.0425809Z                     [0mSeries Name *[0m
+2025-09-18T06:34:59.0426226Z                   [36m</label>[39m
+2025-09-18T06:34:59.0426638Z                   [36m<input[39m
+2025-09-18T06:34:59.0430798Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0434031Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:59.0434546Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0435122Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:59.0435761Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:59.0436282Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:59.0436732Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:59.0437148Z                   [36m/>[39m
+2025-09-18T06:34:59.0437514Z                 [36m</div>[39m
+2025-09-18T06:34:59.0437891Z                 [36m<div[39m
+2025-09-18T06:34:59.0438332Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0438956Z                 [36m>[39m
+2025-09-18T06:34:59.0439326Z                   [36m<label[39m
+2025-09-18T06:34:59.0441043Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0442851Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0443483Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0443900Z                   [36m>[39m
+2025-09-18T06:34:59.0444280Z                     [36m<svg[39m
+2025-09-18T06:34:59.0444909Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0445529Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0446412Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0449372Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0450177Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0450928Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0451505Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0452072Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0452613Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0453127Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0454108Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0454653Z                     [36m>[39m
+2025-09-18T06:34:59.0455207Z                       [36m<path[39m
+2025-09-18T06:34:59.0455646Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0456100Z                       [36m/>[39m
+2025-09-18T06:34:59.0456507Z                       [36m<path[39m
+2025-09-18T06:34:59.0456947Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0457371Z                       [36m/>[39m
+2025-09-18T06:34:59.0457921Z                       [36m<rect[39m
+2025-09-18T06:34:59.0458389Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0458972Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0460153Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0460889Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0461390Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0461846Z                       [36m/>[39m
+2025-09-18T06:34:59.0462761Z                       [36m<path[39m
+2025-09-18T06:34:59.0463507Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0463910Z                       [36m/>[39m
+2025-09-18T06:34:59.0464281Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0464668Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0465056Z                   [36m</label>[39m
+2025-09-18T06:34:59.0465436Z                   [36m<input[39m
+2025-09-18T06:34:59.0469336Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0472465Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0472947Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0473624Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0474058Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0474522Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0474931Z                   [36m/>[39m
+2025-09-18T06:34:59.0475276Z                 [36m</div>[39m
+2025-09-18T06:34:59.0475638Z                 [36m<div[39m
+2025-09-18T06:34:59.0476221Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0476603Z                 [36m>[39m
+2025-09-18T06:34:59.0476972Z                   [36m<label[39m
+2025-09-18T06:34:59.0478718Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0480032Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0480536Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0481091Z                   [36m>[39m
+2025-09-18T06:34:59.0481443Z                     [36m<svg[39m
+2025-09-18T06:34:59.0482070Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0482862Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0483445Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0483940Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0484633Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0485213Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0485906Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0486406Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0487014Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0487655Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0488339Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0488796Z                     [36m>[39m
+2025-09-18T06:34:59.0489162Z                       [36m<path[39m
+2025-09-18T06:34:59.0489779Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0490191Z                       [36m/>[39m
+2025-09-18T06:34:59.0490732Z                       [36m<path[39m
+2025-09-18T06:34:59.0491383Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0491781Z                       [36m/>[39m
+2025-09-18T06:34:59.0492143Z                       [36m<rect[39m
+2025-09-18T06:34:59.0492575Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0493013Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0493445Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0494346Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0494767Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0495133Z                       [36m/>[39m
+2025-09-18T06:34:59.0495499Z                       [36m<path[39m
+2025-09-18T06:34:59.0495899Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0496288Z                       [36m/>[39m
+2025-09-18T06:34:59.0496816Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0497354Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0497751Z                   [36m</label>[39m
+2025-09-18T06:34:59.0498143Z                   [36m<input[39m
+2025-09-18T06:34:59.0503234Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0506276Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0506742Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0507196Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0507781Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0508248Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0508663Z                   [36m/>[39m
+2025-09-18T06:34:59.0509009Z                 [36m</div>[39m
+2025-09-18T06:34:59.0509384Z                 [36m<div[39m
+2025-09-18T06:34:59.0510146Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0510747Z                 [36m>[39m
+2025-09-18T06:34:59.0511106Z                   [36m<button[39m
+2025-09-18T06:34:59.0514713Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0517492Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:59.0518025Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0518520Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:59.0519003Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0519381Z                   [36m>[39m
+2025-09-18T06:34:59.0519753Z                     [36m<svg[39m
+2025-09-18T06:34:59.0520187Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0520766Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0521336Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0521791Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0522277Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0522793Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0524181Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0524714Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0525217Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0525689Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0526260Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0526898Z                     [36m>[39m
+2025-09-18T06:34:59.0527264Z                       [36m<path[39m
+2025-09-18T06:34:59.0528039Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0528632Z                       [36m/>[39m
+2025-09-18T06:34:59.0529006Z                       [36m<path[39m
+2025-09-18T06:34:59.0529730Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0530778Z                       [36m/>[39m
+2025-09-18T06:34:59.0531200Z                       [36m<path[39m
+2025-09-18T06:34:59.0532125Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0532589Z                       [36m/>[39m
+2025-09-18T06:34:59.0533009Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0533433Z                     [0mSeries[0m
+2025-09-18T06:34:59.0534025Z                   [36m</button>[39m
+2025-09-18T06:34:59.0534801Z                   [36m<button[39m
+2025-09-18T06:34:59.0538565Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0543084Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0543555Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0544024Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0544413Z                   [36m>[39m
+2025-09-18T06:34:59.0544767Z                     [36m<svg[39m
+2025-09-18T06:34:59.0545218Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0545943Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0546470Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0546946Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0547427Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0547951Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0548484Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0548975Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0549476Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0550134Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0550885Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0551389Z                     [36m>[39m
+2025-09-18T06:34:59.0551791Z                       [36m<path[39m
+2025-09-18T06:34:59.0552260Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0552859Z                       [36m/>[39m
+2025-09-18T06:34:59.0553406Z                       [36m<path[39m
+2025-09-18T06:34:59.0553832Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0554257Z                       [36m/>[39m
+2025-09-18T06:34:59.0555123Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0555678Z                   [36m</button>[39m
+2025-09-18T06:34:59.0556062Z                 [36m</div>[39m
+2025-09-18T06:34:59.0556575Z               [36m</form>[39m
+2025-09-18T06:34:59.0557100Z             [36m</div>[39m
+2025-09-18T06:34:59.0557452Z           [36m</div>[39m
+2025-09-18T06:34:59.0557775Z         [36m</div>[39m
+2025-09-18T06:34:59.0558101Z       [36m</div>[39m
+2025-09-18T06:34:59.0558406Z     [36m</body>[39m
+2025-09-18T06:34:59.0558592Z 
+2025-09-18T06:34:59.0559286Z     [0m [90m 171 |[39m         [36mconst[39m startDateInput [33m=[39m screen[33m.[39mgetByLabelText([32m'Start Date *'[39m)[33m;[39m
+2025-09-18T06:34:59.0560770Z      [90m 172 |[39m         [36mconst[39m endDateInput [33m=[39m screen[33m.[39mgetByLabelText([32m'End Date *'[39m)[33m;[39m
+2025-09-18T06:34:59.0562361Z     [31m[1m>[22m[39m[90m 173 |[39m         [36mconst[39m submitButton [33m=[39m screen[33m.[39mgetByText([32m'Create Series'[39m)[33m;[39m
+2025-09-18T06:34:59.0563625Z      [90m     |[39m                                     [31m[1m^[22m[39m
+2025-09-18T06:34:59.0564039Z      [90m 174 |[39m
+2025-09-18T06:34:59.0565010Z      [90m 175 |[39m         fireEvent[33m.[39mchange(nameInput[33m,[39m { target[33m:[39m { value[33m:[39m [32m'Test Series'[39m } })[33m;[39m
+2025-09-18T06:34:59.0566386Z      [90m 176 |[39m         fireEvent[33m.[39mchange(startDateInput[33m,[39m { target[33m:[39m { value[33m:[39m [32m'2024-01-31'[39m } })[33m;[39m[0m
+2025-09-18T06:34:59.0566946Z 
+2025-09-18T06:34:59.0567294Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0567952Z       at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+2025-09-18T06:34:59.0568516Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0569088Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0569720Z       at Object.getByText (src/components/__tests__/SeriesForm.test.tsx:173:37)
+2025-09-18T06:34:59.0570079Z 
+2025-09-18T06:34:59.0570602Z   ● SeriesForm › should clear validation errors when user types
+2025-09-18T06:34:59.0570914Z 
+2025-09-18T06:34:59.0572167Z     TestingLibraryElementError: Unable to find an element with the text: Create Series. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+2025-09-18T06:34:59.0573556Z 
+2025-09-18T06:34:59.0573725Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:59.0574285Z     [36m<body>[39m
+2025-09-18T06:34:59.0574765Z       [36m<div>[39m
+2025-09-18T06:34:59.0575062Z         [36m<div[39m
+2025-09-18T06:34:59.0575500Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:59.0575892Z         [36m>[39m
+2025-09-18T06:34:59.0576182Z           [36m<div[39m
+2025-09-18T06:34:59.0576919Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:59.0577598Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:59.0577964Z           [36m>[39m
+2025-09-18T06:34:59.0578248Z             [36m<div[39m
+2025-09-18T06:34:59.0579879Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:59.0581012Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:59.0581475Z             [36m>[39m
+2025-09-18T06:34:59.0581825Z               [36m<div[39m
+2025-09-18T06:34:59.0582578Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:59.0583299Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:59.0583693Z               [36m>[39m
+2025-09-18T06:34:59.0584072Z                 [0mCreate New Series[0m
+2025-09-18T06:34:59.0584464Z               [36m</div>[39m
+2025-09-18T06:34:59.0584803Z             [36m</div>[39m
+2025-09-18T06:34:59.0585112Z             [36m<div[39m
+2025-09-18T06:34:59.0585499Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:59.0586134Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:59.0586505Z             [36m>[39m
+2025-09-18T06:34:59.0586801Z               [36m<form[39m
+2025-09-18T06:34:59.0587202Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:59.0587557Z               [36m>[39m
+2025-09-18T06:34:59.0587896Z                 [36m<div[39m
+2025-09-18T06:34:59.0588805Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0589216Z                 [36m>[39m
+2025-09-18T06:34:59.0589677Z                   [36m<label[39m
+2025-09-18T06:34:59.0591560Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:59.0593452Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0594138Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:59.0594639Z                   [36m>[39m
+2025-09-18T06:34:59.0595063Z                     [0mSeries Name *[0m
+2025-09-18T06:34:59.0595511Z                   [36m</label>[39m
+2025-09-18T06:34:59.0595925Z                   [36m<input[39m
+2025-09-18T06:34:59.0600224Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0603575Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:59.0604104Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0604791Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:59.0605337Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:59.0606179Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:59.0606692Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:59.0607150Z                   [36m/>[39m
+2025-09-18T06:34:59.0607592Z                 [36m</div>[39m
+2025-09-18T06:34:59.0607981Z                 [36m<div[39m
+2025-09-18T06:34:59.0608448Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0608884Z                 [36m>[39m
+2025-09-18T06:34:59.0609424Z                   [36m<label[39m
+2025-09-18T06:34:59.0611046Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0612551Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0613057Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0613478Z                   [36m>[39m
+2025-09-18T06:34:59.0613878Z                     [36m<svg[39m
+2025-09-18T06:34:59.0614342Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0614981Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0615572Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0616057Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0616626Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0617177Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0617733Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0618267Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0618771Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0619548Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0620197Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0620718Z                     [36m>[39m
+2025-09-18T06:34:59.0621155Z                       [36m<path[39m
+2025-09-18T06:34:59.0621658Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0622419Z                       [36m/>[39m
+2025-09-18T06:34:59.0623190Z                       [36m<path[39m
+2025-09-18T06:34:59.0623622Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0624049Z                       [36m/>[39m
+2025-09-18T06:34:59.0624439Z                       [36m<rect[39m
+2025-09-18T06:34:59.0624876Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0625341Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0625891Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0626347Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0626799Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0627220Z                       [36m/>[39m
+2025-09-18T06:34:59.0627605Z                       [36m<path[39m
+2025-09-18T06:34:59.0628237Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0628709Z                       [36m/>[39m
+2025-09-18T06:34:59.0629121Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0629558Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0629972Z                   [36m</label>[39m
+2025-09-18T06:34:59.0630564Z                   [36m<input[39m
+2025-09-18T06:34:59.0635562Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0639122Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0639817Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0640348Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0640851Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0641361Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0641956Z                   [36m/>[39m
+2025-09-18T06:34:59.0642350Z                 [36m</div>[39m
+2025-09-18T06:34:59.0642728Z                 [36m<div[39m
+2025-09-18T06:34:59.0643354Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0643782Z                 [36m>[39m
+2025-09-18T06:34:59.0644173Z                   [36m<label[39m
+2025-09-18T06:34:59.0646010Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0647686Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0648190Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0648628Z                   [36m>[39m
+2025-09-18T06:34:59.0649027Z                     [36m<svg[39m
+2025-09-18T06:34:59.0649291Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0649836Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0650105Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0650354Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0650645Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0650948Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0651238Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0651526Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0651793Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0652194Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0652698Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0652903Z                     [36m>[39m
+2025-09-18T06:34:59.0653112Z                       [36m<path[39m
+2025-09-18T06:34:59.0653525Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0653867Z                       [36m/>[39m
+2025-09-18T06:34:59.0654078Z                       [36m<path[39m
+2025-09-18T06:34:59.0654315Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0654504Z                       [36m/>[39m
+2025-09-18T06:34:59.0654713Z                       [36m<rect[39m
+2025-09-18T06:34:59.0654951Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0655172Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0655417Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0655646Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0655877Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0656061Z                       [36m/>[39m
+2025-09-18T06:34:59.0656254Z                       [36m<path[39m
+2025-09-18T06:34:59.0656509Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0656694Z                       [36m/>[39m
+2025-09-18T06:34:59.0656883Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0657096Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0657633Z                   [36m</label>[39m
+2025-09-18T06:34:59.0657982Z                   [36m<input[39m
+2025-09-18T06:34:59.0662582Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0662892Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0663149Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0663539Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0663957Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0664214Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0664415Z                   [36m/>[39m
+2025-09-18T06:34:59.0664604Z                 [36m</div>[39m
+2025-09-18T06:34:59.0664790Z                 [36m<div[39m
+2025-09-18T06:34:59.0665432Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0665591Z                 [36m>[39m
+2025-09-18T06:34:59.0665936Z                   [36m<button[39m
+2025-09-18T06:34:59.0670296Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0670636Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:59.0671240Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0671516Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:59.0671781Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0671946Z                   [36m>[39m
+2025-09-18T06:34:59.0672144Z                     [36m<svg[39m
+2025-09-18T06:34:59.0672434Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0672951Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0673214Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0673462Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0673917Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0674220Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0674509Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0674784Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0675066Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0675313Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0675670Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0675863Z                     [36m>[39m
+2025-09-18T06:34:59.0676071Z                       [36m<path[39m
+2025-09-18T06:34:59.0676838Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0677147Z                       [36m/>[39m
+2025-09-18T06:34:59.0677390Z                       [36m<path[39m
+2025-09-18T06:34:59.0677752Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0677943Z                       [36m/>[39m
+2025-09-18T06:34:59.0678156Z                       [36m<path[39m
+2025-09-18T06:34:59.0678451Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0678640Z                       [36m/>[39m
+2025-09-18T06:34:59.0678850Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0679043Z                     [0mSeries[0m
+2025-09-18T06:34:59.0679259Z                   [36m</button>[39m
+2025-09-18T06:34:59.0679456Z                   [36m<button[39m
+2025-09-18T06:34:59.0683598Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0683904Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0684160Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0697268Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0697627Z                   [36m>[39m
+2025-09-18T06:34:59.0697857Z                     [36m<svg[39m
+2025-09-18T06:34:59.0698140Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0698486Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0698762Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0699002Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0699744Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0700085Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0700703Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0701003Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0701284Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0701543Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0702077Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0702278Z                     [36m>[39m
+2025-09-18T06:34:59.0702830Z                       [36m<path[39m
+2025-09-18T06:34:59.0703247Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0703433Z                       [36m/>[39m
+2025-09-18T06:34:59.0703637Z                       [36m<path[39m
+2025-09-18T06:34:59.0703872Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0704052Z                       [36m/>[39m
+2025-09-18T06:34:59.0704253Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0704452Z                   [36m</button>[39m
+2025-09-18T06:34:59.0704629Z                 [36m</div>[39m
+2025-09-18T06:34:59.0704820Z               [36m</form>[39m
+2025-09-18T06:34:59.0704969Z             [36m</div>[39m
+2025-09-18T06:34:59.0705113Z           [36m</div>[39m
+2025-09-18T06:34:59.0705432Z         [36m</div>[39m
+2025-09-18T06:34:59.0705582Z       [36m</div>[39m
+2025-09-18T06:34:59.0705742Z     [36m</body>[39m
+2025-09-18T06:34:59.0705758Z 
+2025-09-18T06:34:59.0706162Z     [0m [90m 199 |[39m         )[33m;[39m
+2025-09-18T06:34:59.0706314Z      [90m 200 |[39m
+2025-09-18T06:34:59.0707230Z     [31m[1m>[22m[39m[90m 201 |[39m         [36mconst[39m submitButton [33m=[39m screen[33m.[39mgetByText([32m'Create Series'[39m)[33m;[39m
+2025-09-18T06:34:59.0707586Z      [90m     |[39m                                     [31m[1m^[22m[39m
+2025-09-18T06:34:59.0707972Z      [90m 202 |[39m         fireEvent[33m.[39mclick(submitButton)[33m;[39m
+2025-09-18T06:34:59.0708135Z      [90m 203 |[39m
+2025-09-18T06:34:59.0708840Z      [90m 204 |[39m         [36mawait[39m waitFor(() [33m=>[39m {[0m
+2025-09-18T06:34:59.0709008Z 
+2025-09-18T06:34:59.0709555Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0709836Z       at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+2025-09-18T06:34:59.0710176Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0710448Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0710779Z       at Object.getByText (src/components/__tests__/SeriesForm.test.tsx:201:37)
+2025-09-18T06:34:59.0710792Z 
+2025-09-18T06:34:59.0711177Z   ● SeriesForm › should call onCancel when cancel button is clicked
+2025-09-18T06:34:59.0711190Z 
+2025-09-18T06:34:59.0712648Z     TestingLibraryElementError: Unable to find an element with the text: Cancel. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+2025-09-18T06:34:59.0712690Z 
+2025-09-18T06:34:59.0712874Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:59.0713032Z     [36m<body>[39m
+2025-09-18T06:34:59.0713198Z       [36m<div>[39m
+2025-09-18T06:34:59.0713354Z         [36m<div[39m
+2025-09-18T06:34:59.0713680Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:59.0713843Z         [36m>[39m
+2025-09-18T06:34:59.0714003Z           [36m<div[39m
+2025-09-18T06:34:59.0714797Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:59.0715058Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:59.0715203Z           [36m>[39m
+2025-09-18T06:34:59.0715373Z             [36m<div[39m
+2025-09-18T06:34:59.0716414Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:59.0717024Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:59.0717191Z             [36m>[39m
+2025-09-18T06:34:59.0717351Z               [36m<div[39m
+2025-09-18T06:34:59.0717859Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:59.0718129Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:59.0718283Z               [36m>[39m
+2025-09-18T06:34:59.0718518Z                 [0mCreate New Series[0m
+2025-09-18T06:34:59.0718713Z               [36m</div>[39m
+2025-09-18T06:34:59.0718874Z             [36m</div>[39m
+2025-09-18T06:34:59.0719296Z             [36m<div[39m
+2025-09-18T06:34:59.0719535Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:59.0719807Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:59.0719990Z             [36m>[39m
+2025-09-18T06:34:59.0720162Z               [36m<form[39m
+2025-09-18T06:34:59.0720437Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:59.0720596Z               [36m>[39m
+2025-09-18T06:34:59.0720784Z                 [36m<div[39m
+2025-09-18T06:34:59.0721141Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0721299Z                 [36m>[39m
+2025-09-18T06:34:59.0721512Z                   [36m<label[39m
+2025-09-18T06:34:59.0723254Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:59.0723540Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0723784Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:59.0723947Z                   [36m>[39m
+2025-09-18T06:34:59.0724166Z                     [0mSeries Name *[0m
+2025-09-18T06:34:59.0724376Z                   [36m</label>[39m
+2025-09-18T06:34:59.0724568Z                   [36m<input[39m
+2025-09-18T06:34:59.0729539Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0729830Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:59.0730110Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0730356Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:59.0730680Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:59.0731122Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:59.0731366Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:59.0731673Z                   [36m/>[39m
+2025-09-18T06:34:59.0731868Z                 [36m</div>[39m
+2025-09-18T06:34:59.0732056Z                 [36m<div[39m
+2025-09-18T06:34:59.0732334Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0732501Z                 [36m>[39m
+2025-09-18T06:34:59.0732703Z                   [36m<label[39m
+2025-09-18T06:34:59.0734322Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0734958Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0735231Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0735397Z                   [36m>[39m
+2025-09-18T06:34:59.0735593Z                     [36m<svg[39m
+2025-09-18T06:34:59.0735879Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0736267Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0736532Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0736790Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0737080Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0737391Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0737829Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0738087Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0738371Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0738925Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0739472Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0739838Z                     [36m>[39m
+2025-09-18T06:34:59.0740224Z                       [36m<path[39m
+2025-09-18T06:34:59.0740701Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0741044Z                       [36m/>[39m
+2025-09-18T06:34:59.0741267Z                       [36m<path[39m
+2025-09-18T06:34:59.0741725Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0742263Z                       [36m/>[39m
+2025-09-18T06:34:59.0742475Z                       [36m<rect[39m
+2025-09-18T06:34:59.0742866Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0743083Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0743334Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0743546Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0743757Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0743951Z                       [36m/>[39m
+2025-09-18T06:34:59.0744142Z                       [36m<path[39m
+2025-09-18T06:34:59.0744389Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0744567Z                       [36m/>[39m
+2025-09-18T06:34:59.0744750Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0744969Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0745155Z                   [36m</label>[39m
+2025-09-18T06:34:59.0745334Z                   [36m<input[39m
+2025-09-18T06:34:59.0749069Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0749340Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0749581Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0749807Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0750036Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0750268Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0750436Z                   [36m/>[39m
+2025-09-18T06:34:59.0750801Z                 [36m</div>[39m
+2025-09-18T06:34:59.0750970Z                 [36m<div[39m
+2025-09-18T06:34:59.0751213Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0751353Z                 [36m>[39m
+2025-09-18T06:34:59.0751527Z                   [36m<label[39m
+2025-09-18T06:34:59.0752812Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0753047Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0753288Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0753436Z                   [36m>[39m
+2025-09-18T06:34:59.0753608Z                     [36m<svg[39m
+2025-09-18T06:34:59.0753867Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0754365Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0754602Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0754844Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0755103Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0755374Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0755635Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0755876Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0756253Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0756503Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0756817Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0757007Z                     [36m>[39m
+2025-09-18T06:34:59.0757200Z                       [36m<path[39m
+2025-09-18T06:34:59.0757449Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0757627Z                       [36m/>[39m
+2025-09-18T06:34:59.0757969Z                       [36m<path[39m
+2025-09-18T06:34:59.0758381Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0758560Z                       [36m/>[39m
+2025-09-18T06:34:59.0758745Z                       [36m<rect[39m
+2025-09-18T06:34:59.0758990Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0759205Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0759440Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0759657Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0759868Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0760061Z                       [36m/>[39m
+2025-09-18T06:34:59.0760244Z                       [36m<path[39m
+2025-09-18T06:34:59.0760476Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0760676Z                       [36m/>[39m
+2025-09-18T06:34:59.0760858Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0761049Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0761246Z                   [36m</label>[39m
+2025-09-18T06:34:59.0761580Z                   [36m<input[39m
+2025-09-18T06:34:59.0765478Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0765875Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0766141Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0766373Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0766788Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0767042Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0767229Z                   [36m/>[39m
+2025-09-18T06:34:59.0767433Z                 [36m</div>[39m
+2025-09-18T06:34:59.0767614Z                 [36m<div[39m
+2025-09-18T06:34:59.0768241Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0768416Z                 [36m>[39m
+2025-09-18T06:34:59.0768612Z                   [36m<button[39m
+2025-09-18T06:34:59.0772428Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0772754Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:59.0773160Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0773435Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:59.0773822Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0774098Z                   [36m>[39m
+2025-09-18T06:34:59.0774277Z                     [36m<svg[39m
+2025-09-18T06:34:59.0774543Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0775045Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0775282Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0775705Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0775981Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0776266Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0776562Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0777302Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0777690Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0777930Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0778420Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0778631Z                     [36m>[39m
+2025-09-18T06:34:59.0778828Z                       [36m<path[39m
+2025-09-18T06:34:59.0779714Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0779923Z                       [36m/>[39m
+2025-09-18T06:34:59.0780128Z                       [36m<path[39m
+2025-09-18T06:34:59.0780510Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0780876Z                       [36m/>[39m
+2025-09-18T06:34:59.0781082Z                       [36m<path[39m
+2025-09-18T06:34:59.0781401Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0781600Z                       [36m/>[39m
+2025-09-18T06:34:59.0781811Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0782008Z                     [0mSeries[0m
+2025-09-18T06:34:59.0782412Z                   [36m</button>[39m
+2025-09-18T06:34:59.0782847Z                   [36m<button[39m
+2025-09-18T06:34:59.0787179Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0787506Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0787737Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0788540Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0788890Z                   [36m>[39m
+2025-09-18T06:34:59.0789072Z                     [36m<svg[39m
+2025-09-18T06:34:59.0789333Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0789627Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0789850Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0790092Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0790350Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0790620Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0791048Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0791326Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0791589Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0791985Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0792316Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0792512Z                     [36m>[39m
+2025-09-18T06:34:59.0792708Z                       [36m<path[39m
+2025-09-18T06:34:59.0792965Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0793151Z                       [36m/>[39m
+2025-09-18T06:34:59.0793516Z                       [36m<path[39m
+2025-09-18T06:34:59.0793784Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0793972Z                       [36m/>[39m
+2025-09-18T06:34:59.0794164Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0794386Z                   [36m</button>[39m
+2025-09-18T06:34:59.0794577Z                 [36m</div>[39m
+2025-09-18T06:34:59.0794779Z               [36m</form>[39m
+2025-09-18T06:34:59.0794936Z             [36m</div>[39m
+2025-09-18T06:34:59.0795089Z           [36m</div>[39m
+2025-09-18T06:34:59.0795258Z         [36m</div>[39m
+2025-09-18T06:34:59.0795413Z       [36m</div>[39m
+2025-09-18T06:34:59.0795559Z     [36m</body>[39m
+2025-09-18T06:34:59.0795575Z 
+2025-09-18T06:34:59.0795814Z     [0m [90m 230 |[39m         )[33m;[39m
+2025-09-18T06:34:59.0795963Z      [90m 231 |[39m
+2025-09-18T06:34:59.0796646Z     [31m[1m>[22m[39m[90m 232 |[39m         [36mconst[39m cancelButton [33m=[39m screen[33m.[39mgetByText([32m'Cancel'[39m)[33m;[39m
+2025-09-18T06:34:59.0797102Z      [90m     |[39m                                     [31m[1m^[22m[39m
+2025-09-18T06:34:59.0797448Z      [90m 233 |[39m         fireEvent[33m.[39mclick(cancelButton)[33m;[39m
+2025-09-18T06:34:59.0797612Z      [90m 234 |[39m
+2025-09-18T06:34:59.0798163Z      [90m 235 |[39m         expect(mockOnCancel)[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m[0m
+2025-09-18T06:34:59.0798176Z 
+2025-09-18T06:34:59.0798840Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0799549Z       at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+2025-09-18T06:34:59.0799843Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0800277Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0800621Z       at Object.getByText (src/components/__tests__/SeriesForm.test.tsx:232:37)
+2025-09-18T06:34:59.0800634Z 
+2025-09-18T06:34:59.0800957Z   ● SeriesForm › should submit form with valid data
+2025-09-18T06:34:59.0800969Z 
+2025-09-18T06:34:59.0801537Z     TestingLibraryElementError: Unable to find a label with the text of: Description
+2025-09-18T06:34:59.0801549Z 
+2025-09-18T06:34:59.0801823Z     Ignored nodes: comments, script, style
+2025-09-18T06:34:59.0802000Z     [36m<body>[39m
+2025-09-18T06:34:59.0802157Z       [36m<div>[39m
+2025-09-18T06:34:59.0802332Z         [36m<div[39m
+2025-09-18T06:34:59.0802669Z           [33mclass[39m=[32m"w-full max-w-md mx-auto p-6"[39m
+2025-09-18T06:34:59.0802823Z         [36m>[39m
+2025-09-18T06:34:59.0803018Z           [36m<div[39m
+2025-09-18T06:34:59.0803838Z             [33mclass[39m=[32m"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm"[39m
+2025-09-18T06:34:59.0804408Z             [33mdata-slot[39m=[32m"card"[39m
+2025-09-18T06:34:59.0804832Z           [36m>[39m
+2025-09-18T06:34:59.0804986Z             [36m<div[39m
+2025-09-18T06:34:59.0806231Z               [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"[39m
+2025-09-18T06:34:59.0806673Z               [33mdata-slot[39m=[32m"card-header"[39m
+2025-09-18T06:34:59.0806863Z             [36m>[39m
+2025-09-18T06:34:59.0807044Z               [36m<div[39m
+2025-09-18T06:34:59.0807439Z                 [33mclass[39m=[32m"leading-none font-semibold text-center"[39m
+2025-09-18T06:34:59.0807729Z                 [33mdata-slot[39m=[32m"card-title"[39m
+2025-09-18T06:34:59.0807896Z               [36m>[39m
+2025-09-18T06:34:59.0808123Z                 [0mCreate New Series[0m
+2025-09-18T06:34:59.0808327Z               [36m</div>[39m
+2025-09-18T06:34:59.0808490Z             [36m</div>[39m
+2025-09-18T06:34:59.0808652Z             [36m<div[39m
+2025-09-18T06:34:59.0809023Z               [33mclass[39m=[32m"px-6"[39m
+2025-09-18T06:34:59.0809296Z               [33mdata-slot[39m=[32m"card-content"[39m
+2025-09-18T06:34:59.0809451Z             [36m>[39m
+2025-09-18T06:34:59.0809956Z               [36m<form[39m
+2025-09-18T06:34:59.0810358Z                 [33mclass[39m=[32m"space-y-4"[39m
+2025-09-18T06:34:59.0810518Z               [36m>[39m
+2025-09-18T06:34:59.0810690Z                 [36m<div[39m
+2025-09-18T06:34:59.0810930Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0811088Z                 [36m>[39m
+2025-09-18T06:34:59.0811268Z                   [36m<label[39m
+2025-09-18T06:34:59.0813060Z                     [33mclass[39m=[32m"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"[39m
+2025-09-18T06:34:59.0813351Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0813574Z                     [33mfor[39m=[32m"name"[39m
+2025-09-18T06:34:59.0813739Z                   [36m>[39m
+2025-09-18T06:34:59.0813940Z                     [0mSeries Name *[0m
+2025-09-18T06:34:59.0814129Z                   [36m</label>[39m
+2025-09-18T06:34:59.0814350Z                   [36m<input[39m
+2025-09-18T06:34:59.0819072Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0819876Z                     [33mdata-cy[39m=[32m"series-name"[39m
+2025-09-18T06:34:59.0820155Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0820417Z                     [33mid[39m=[32m"name"[39m
+2025-09-18T06:34:59.0820760Z                     [33mplaceholder[39m=[32m"Enter series name"[39m
+2025-09-18T06:34:59.0821062Z                     [33mtype[39m=[32m"text"[39m
+2025-09-18T06:34:59.0821319Z                     [33mvalue[39m=[32m""[39m
+2025-09-18T06:34:59.0821519Z                   [36m/>[39m
+2025-09-18T06:34:59.0821740Z                 [36m</div>[39m
+2025-09-18T06:34:59.0821936Z                 [36m<div[39m
+2025-09-18T06:34:59.0822220Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0822585Z                 [36m>[39m
+2025-09-18T06:34:59.0822787Z                   [36m<label[39m
+2025-09-18T06:34:59.0824343Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0824632Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0825086Z                     [33mfor[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0825309Z                   [36m>[39m
+2025-09-18T06:34:59.0825508Z                     [36m<svg[39m
+2025-09-18T06:34:59.0826007Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0826405Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0826653Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0826913Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0827186Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0827461Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0827756Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0828161Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0828412Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0828667Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0828992Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0829189Z                     [36m>[39m
+2025-09-18T06:34:59.0829387Z                       [36m<path[39m
+2025-09-18T06:34:59.0829623Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0829869Z                       [36m/>[39m
+2025-09-18T06:34:59.0830063Z                       [36m<path[39m
+2025-09-18T06:34:59.0830475Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0830681Z                       [36m/>[39m
+2025-09-18T06:34:59.0830879Z                       [36m<rect[39m
+2025-09-18T06:34:59.0831319Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0831560Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0831812Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0832077Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0832485Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0832690Z                       [36m/>[39m
+2025-09-18T06:34:59.0832918Z                       [36m<path[39m
+2025-09-18T06:34:59.0833183Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0833388Z                       [36m/>[39m
+2025-09-18T06:34:59.0833778Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0834006Z                     [0mStart Date *[0m
+2025-09-18T06:34:59.0834233Z                   [36m</label>[39m
+2025-09-18T06:34:59.0834435Z                   [36m<input[39m
+2025-09-18T06:34:59.0838656Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0838955Z                     [33mdata-cy[39m=[32m"start-date"[39m
+2025-09-18T06:34:59.0839255Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0839670Z                     [33mid[39m=[32m"start_date"[39m
+2025-09-18T06:34:59.0839912Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0840196Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0840390Z                   [36m/>[39m
+2025-09-18T06:34:59.0840588Z                 [36m</div>[39m
+2025-09-18T06:34:59.0841105Z                 [36m<div[39m
+2025-09-18T06:34:59.0841350Z                   [33mclass[39m=[32m"space-y-2"[39m
+2025-09-18T06:34:59.0841639Z                 [36m>[39m
+2025-09-18T06:34:59.0841871Z                   [36m<label[39m
+2025-09-18T06:34:59.0843411Z                     [33mclass[39m=[32m"gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 flex items-center"[39m
+2025-09-18T06:34:59.0843695Z                     [33mdata-slot[39m=[32m"label"[39m
+2025-09-18T06:34:59.0843943Z                     [33mfor[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0844158Z                   [36m>[39m
+2025-09-18T06:34:59.0844345Z                     [36m<svg[39m
+2025-09-18T06:34:59.0844608Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0844996Z                       [33mclass[39m=[32m"lucide lucide-calendar h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0845414Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0845670Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0846152Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0846448Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0846763Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0847048Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0847339Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0847612Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0847973Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0848174Z                     [36m>[39m
+2025-09-18T06:34:59.0848404Z                       [36m<path[39m
+2025-09-18T06:34:59.0848693Z                         [33md[39m=[32m"M8 2v4"[39m
+2025-09-18T06:34:59.0848900Z                       [36m/>[39m
+2025-09-18T06:34:59.0849277Z                       [36m<path[39m
+2025-09-18T06:34:59.0849552Z                         [33md[39m=[32m"M16 2v4"[39m
+2025-09-18T06:34:59.0849752Z                       [36m/>[39m
+2025-09-18T06:34:59.0849958Z                       [36m<rect[39m
+2025-09-18T06:34:59.0850228Z                         [33mheight[39m=[32m"18"[39m
+2025-09-18T06:34:59.0850643Z                         [33mrx[39m=[32m"2"[39m
+2025-09-18T06:34:59.0851103Z                         [33mwidth[39m=[32m"18"[39m
+2025-09-18T06:34:59.0851347Z                         [33mx[39m=[32m"3"[39m
+2025-09-18T06:34:59.0851702Z                         [33my[39m=[32m"4"[39m
+2025-09-18T06:34:59.0851947Z                       [36m/>[39m
+2025-09-18T06:34:59.0852162Z                       [36m<path[39m
+2025-09-18T06:34:59.0852427Z                         [33md[39m=[32m"M3 10h18"[39m
+2025-09-18T06:34:59.0852645Z                       [36m/>[39m
+2025-09-18T06:34:59.0852853Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0853095Z                     [0mEnd Date *[0m
+2025-09-18T06:34:59.0853303Z                   [36m</label>[39m
+2025-09-18T06:34:59.0853508Z                   [36m<input[39m
+2025-09-18T06:34:59.0857740Z                     [33mclass[39m=[32m"file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"[39m
+2025-09-18T06:34:59.0858022Z                     [33mdata-cy[39m=[32m"end-date"[39m
+2025-09-18T06:34:59.0858524Z                     [33mdata-slot[39m=[32m"input"[39m
+2025-09-18T06:34:59.0858810Z                     [33mid[39m=[32m"end_date"[39m
+2025-09-18T06:34:59.0859065Z                     [33mtype[39m=[32m"date"[39m
+2025-09-18T06:34:59.0859689Z                     [33mvalue[39m=[32m"2025-09-18"[39m
+2025-09-18T06:34:59.0860057Z                   [36m/>[39m
+2025-09-18T06:34:59.0860436Z                 [36m</div>[39m
+2025-09-18T06:34:59.0860735Z                 [36m<div[39m
+2025-09-18T06:34:59.0861415Z                   [33mclass[39m=[32m"flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center"[39m
+2025-09-18T06:34:59.0861600Z                 [36m>[39m
+2025-09-18T06:34:59.0861869Z                   [36m<button[39m
+2025-09-18T06:34:59.0866342Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0866846Z                     [33mdata-cy[39m=[32m"create-series-button"[39m
+2025-09-18T06:34:59.0867133Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0867407Z                     [33mtitle[39m=[32m"Create Series"[39m
+2025-09-18T06:34:59.0867675Z                     [33mtype[39m=[32m"submit"[39m
+2025-09-18T06:34:59.0867843Z                   [36m>[39m
+2025-09-18T06:34:59.0868035Z                     [36m<svg[39m
+2025-09-18T06:34:59.0868475Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0868830Z                       [33mclass[39m=[32m"lucide lucide-save h-4 w-4 mr-2"[39m
+2025-09-18T06:34:59.0869075Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0869335Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0869616Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0869906Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0870718Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0870981Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0871251Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0871546Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0871879Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0872081Z                     [36m>[39m
+2025-09-18T06:34:59.0872287Z                       [36m<path[39m
+2025-09-18T06:34:59.0873261Z                         [33md[39m=[32m"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"[39m
+2025-09-18T06:34:59.0873470Z                       [36m/>[39m
+2025-09-18T06:34:59.0873685Z                       [36m<path[39m
+2025-09-18T06:34:59.0874088Z                         [33md[39m=[32m"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"[39m
+2025-09-18T06:34:59.0874307Z                       [36m/>[39m
+2025-09-18T06:34:59.0874523Z                       [36m<path[39m
+2025-09-18T06:34:59.0874844Z                         [33md[39m=[32m"M7 3v4a1 1 0 0 0 1 1h7"[39m
+2025-09-18T06:34:59.0875044Z                       [36m/>[39m
+2025-09-18T06:34:59.0875266Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0875624Z                     [0mSeries[0m
+2025-09-18T06:34:59.0876010Z                   [36m</button>[39m
+2025-09-18T06:34:59.0876231Z                   [36m<button[39m
+2025-09-18T06:34:59.0880716Z                     [33mclass[39m=[32m"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full sm:w-auto"[39m
+2025-09-18T06:34:59.0881039Z                     [33mdata-slot[39m=[32m"button"[39m
+2025-09-18T06:34:59.0881290Z                     [33mtitle[39m=[32m"Cancel"[39m
+2025-09-18T06:34:59.0881550Z                     [33mtype[39m=[32m"button"[39m
+2025-09-18T06:34:59.0881710Z                   [36m>[39m
+2025-09-18T06:34:59.0881899Z                     [36m<svg[39m
+2025-09-18T06:34:59.0882337Z                       [33maria-hidden[39m=[32m"true"[39m
+2025-09-18T06:34:59.0882646Z                       [33mclass[39m=[32m"lucide lucide-x h-4 w-4"[39m
+2025-09-18T06:34:59.0882898Z                       [33mfill[39m=[32m"none"[39m
+2025-09-18T06:34:59.0883132Z                       [33mheight[39m=[32m"24"[39m
+2025-09-18T06:34:59.0883396Z                       [33mstroke[39m=[32m"currentColor"[39m
+2025-09-18T06:34:59.0883689Z                       [33mstroke-linecap[39m=[32m"round"[39m
+2025-09-18T06:34:59.0883961Z                       [33mstroke-linejoin[39m=[32m"round"[39m
+2025-09-18T06:34:59.0884209Z                       [33mstroke-width[39m=[32m"2"[39m
+2025-09-18T06:34:59.0884476Z                       [33mviewBox[39m=[32m"0 0 24 24"[39m
+2025-09-18T06:34:59.0884709Z                       [33mwidth[39m=[32m"24"[39m
+2025-09-18T06:34:59.0885045Z                       [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+2025-09-18T06:34:59.0885226Z                     [36m>[39m
+2025-09-18T06:34:59.0885430Z                       [36m<path[39m
+2025-09-18T06:34:59.0885689Z                         [33md[39m=[32m"M18 6 6 18"[39m
+2025-09-18T06:34:59.0885873Z                       [36m/>[39m
+2025-09-18T06:34:59.0886067Z                       [36m<path[39m
+2025-09-18T06:34:59.0886321Z                         [33md[39m=[32m"m6 6 12 12"[39m
+2025-09-18T06:34:59.0886654Z                       [36m/>[39m
+2025-09-18T06:34:59.0886861Z                     [36m</svg>[39m
+2025-09-18T06:34:59.0887056Z                   [36m</button>[39m
+2025-09-18T06:34:59.0887239Z                 [36m</div>[39m
+2025-09-18T06:34:59.0887430Z               [36m</form>[39m
+2025-09-18T06:34:59.0887750Z             [36m</div>[39m
+2025-09-18T06:34:59.0887906Z           [36m</div>[39m
+2025-09-18T06:34:59.0888226Z         [36m</div>[39m
+2025-09-18T06:34:59.0888371Z       [36m</div>[39m
+2025-09-18T06:34:59.0888512Z     [36m</body>[39m
+2025-09-18T06:34:59.0888525Z 
+2025-09-18T06:34:59.0888689Z     [0m [90m 253 |[39m
+2025-09-18T06:34:59.0889799Z      [90m 254 |[39m         [36mconst[39m nameInput [33m=[39m screen[33m.[39mgetByLabelText([32m'Series Name *'[39m)[33m;[39m
+2025-09-18T06:34:59.0890642Z     [31m[1m>[22m[39m[90m 255 |[39m         [36mconst[39m descriptionInput [33m=[39m screen[33m.[39mgetByLabelText([32m'Description'[39m)[33m;[39m
+2025-09-18T06:34:59.0890962Z      [90m     |[39m                                         [31m[1m^[22m[39m
+2025-09-18T06:34:59.0891616Z      [90m 256 |[39m         [36mconst[39m startDateInput [33m=[39m screen[33m.[39mgetByLabelText([32m'Start Date *'[39m)[33m;[39m
+2025-09-18T06:34:59.0892224Z      [90m 257 |[39m         [36mconst[39m endDateInput [33m=[39m screen[33m.[39mgetByLabelText([32m'End Date *'[39m)[33m;[39m
+2025-09-18T06:34:59.0892827Z      [90m 258 |[39m         [36mconst[39m statusSelect [33m=[39m screen[33m.[39mgetByLabelText([32m'Status'[39m)[33m;[39m[0m
+2025-09-18T06:34:59.0892856Z 
+2025-09-18T06:34:59.0893457Z       at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+2025-09-18T06:34:59.0893889Z       at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+2025-09-18T06:34:59.0894182Z       at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+2025-09-18T06:34:59.0894462Z       at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+2025-09-18T06:34:59.0894995Z       at Object.getByLabelText (src/components/__tests__/SeriesForm.test.tsx:255:41)
+2025-09-18T06:34:59.0895022Z 
+2025-09-18T06:34:59.2208632Z FAIL src/store/sagas/__tests__/seriesSaga.test.ts
+2025-09-18T06:34:59.2209445Z   ● Test suite failed to run
+2025-09-18T06:34:59.2209653Z 
+2025-09-18T06:34:59.2210048Z     Cannot find module '@/services/api' from 'src/store/sagas/__tests__/seriesSaga.test.ts'
+2025-09-18T06:34:59.2210646Z 
+2025-09-18T06:34:59.2210814Z     [0m [90m 17 |[39m
+2025-09-18T06:34:59.2211276Z      [90m 18 |[39m [90m// Mock the API service[39m
+2025-09-18T06:34:59.2212344Z     [31m[1m>[22m[39m[90m 19 |[39m jest[33m.[39mmock([32m'@/services/api'[39m[33m,[39m () [33m=>[39m ({
+2025-09-18T06:34:59.2213009Z      [90m    |[39m      [31m[1m^[22m[39m
+2025-09-18T06:34:59.2213496Z      [90m 20 |[39m     apiService[33m:[39m {
+2025-09-18T06:34:59.2214109Z      [90m 21 |[39m         getSeries[33m:[39m jest[33m.[39mfn()[33m,[39m
+2025-09-18T06:34:59.2214821Z      [90m 22 |[39m         createSeries[33m:[39m jest[33m.[39mfn()[33m,[39m[0m
+2025-09-18T06:34:59.2215182Z 
+2025-09-18T06:34:59.2215572Z       at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/index.js:863:11)
+2025-09-18T06:34:59.2216309Z       at Object.mock (src/store/sagas/__tests__/seriesSaga.test.ts:19:6)
+2025-09-18T06:34:59.2216663Z 
+2025-09-18T06:34:59.5084023Z PASS src/store/reducers/__tests__/seriesSlice.test.ts
+2025-09-18T06:35:01.7792839Z ------------------------|---------|----------|---------|---------|----------------------
+2025-09-18T06:35:01.7794338Z File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s    
+2025-09-18T06:35:01.7795361Z ------------------------|---------|----------|---------|---------|----------------------
+2025-09-18T06:35:01.7819870Z All files               |    8.83 |     5.78 |    9.88 |    8.58 |                      
+2025-09-18T06:35:01.7822532Z  app                    |       0 |      100 |       0 |       0 |                      
+2025-09-18T06:35:01.7825490Z   layout.tsx            |       0 |      100 |       0 |       0 | 2-21                 
+2025-09-18T06:35:01.7827157Z   page.tsx              |       0 |      100 |       0 |       0 | 1-3                  
+2025-09-18T06:35:01.7830518Z  components             |    6.02 |      6.8 |    3.53 |    6.03 |                      
+2025-09-18T06:35:01.7832838Z   MatchForm.tsx         |       0 |        0 |       0 |       0 | 3-272                
+2025-09-18T06:35:01.7835770Z   ScorecardView.tsx     |       0 |        0 |       0 |       0 | 3-826                
+2025-09-18T06:35:01.7838810Z   SeriesForm.tsx        |      44 |     53.7 |   33.33 |   44.68 | 56-75,79-103,108-174 
+2025-09-18T06:35:01.7841009Z   SeriesList.tsx        |       0 |        0 |       0 |       0 | 3-164                
+2025-09-18T06:35:01.7844362Z   SeriesWithMatches.tsx |       0 |        0 |       0 |       0 | 3-255                
+2025-09-18T06:35:01.7845877Z  components/ui          |    16.8 |     6.66 |   23.33 |   17.09 |                      
+2025-09-18T06:35:01.7846806Z   badge.tsx             |       0 |        0 |       0 |       0 | 1-46                 
+2025-09-18T06:35:01.7850917Z   button.tsx            |    87.5 |    66.66 |     100 |     100 | 48                   
+2025-09-18T06:35:01.7852154Z   card.tsx              |   66.66 |      100 |   57.14 |   66.66 | 87,89-90             
+2025-09-18T06:35:01.7854604Z   dropdown-menu.tsx     |       0 |        0 |       0 |       0 | 3-199                
+2025-09-18T06:35:01.7856276Z   form.tsx              |       0 |        0 |       0 |       0 | 3-166                
+2025-09-18T06:35:01.7858557Z   input.tsx             |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7859659Z   label.tsx             |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7862023Z   select.tsx            |       0 |        0 |       0 |       0 | 3-184                
+2025-09-18T06:35:01.7863099Z   textarea.tsx          |       0 |      100 |       0 |       0 | 1-18                 
+2025-09-18T06:35:01.7864611Z  lib                    |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7867566Z   utils.ts              |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7871508Z  providers              |       0 |      100 |       0 |       0 |                      
+2025-09-18T06:35:01.7876501Z   ReduxProvider.tsx     |       0 |      100 |       0 |       0 | 3-10                 
+2025-09-18T06:35:01.7877252Z  services               |       0 |        0 |       0 |       0 |                      
+2025-09-18T06:35:01.7881979Z   api.ts                |       0 |        0 |       0 |       0 | 5-268                
+2025-09-18T06:35:01.7882690Z  store                  |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7886345Z   hooks.ts              |     100 |      100 |     100 |     100 |                      
+2025-09-18T06:35:01.7890189Z  store/reducers         |   13.43 |       10 |   19.64 |   12.97 |                      
+2025-09-18T06:35:01.7895535Z   matchSlice.ts         |       0 |        0 |       0 |       0 | 1-110                
+2025-09-18T06:35:01.7896433Z   playerSlice.ts        |       0 |      100 |       0 |       0 | 1-55                 
+2025-09-18T06:35:01.7900799Z   scoreboardSlice.ts    |       0 |        0 |       0 |       0 | 1-62                 
+2025-09-18T06:35:01.7905885Z   scorecardSlice.ts     |       0 |        0 |       0 |       0 | 1-176                
+2025-09-18T06:35:01.7910079Z   seriesSlice.ts        |    55.1 |       50 |   73.33 |   53.33 | 60-61,71-76,83-102   
+2025-09-18T06:35:01.7914495Z   teamSlice.ts          |       0 |      100 |       0 |       0 | 1-54                 
+2025-09-18T06:35:01.7915254Z  store/sagas            |       0 |        0 |       0 |       0 |                      
+2025-09-18T06:35:01.7920418Z   matchSaga.ts          |       0 |        0 |       0 |       0 | 1-79                 
+2025-09-18T06:35:01.7924592Z   playerSaga.ts         |       0 |        0 |       0 |       0 | 1-30                 
+2025-09-18T06:35:01.7929119Z   scoreboardSaga.ts     |       0 |        0 |       0 |       0 | 1-30                 
+2025-09-18T06:35:01.7933610Z   scorecardSaga.ts      |       0 |        0 |       0 |       0 | 1-84                 
+2025-09-18T06:35:01.7937345Z   seriesSaga.ts         |       0 |        0 |       0 |       0 | 1-83                 
+2025-09-18T06:35:01.7941582Z   teamSaga.ts           |       0 |        0 |       0 |       0 | 1-30                 
+2025-09-18T06:35:01.7946413Z ------------------------|---------|----------|---------|---------|----------------------
+2025-09-18T06:35:01.9289302Z Jest: "global" coverage threshold for statements (80%) not met: 8.83%
+2025-09-18T06:35:01.9290494Z Jest: "global" coverage threshold for branches (80%) not met: 5.78%
+2025-09-18T06:35:01.9291559Z Jest: "global" coverage threshold for lines (80%) not met: 8.58%
+2025-09-18T06:35:01.9292648Z Jest: "global" coverage threshold for functions (80%) not met: 9.88%
+2025-09-18T06:35:01.9293274Z 
+2025-09-18T06:35:01.9308874Z Test Suites: 4 failed, 1 passed, 5 total
+2025-09-18T06:35:01.9310256Z Tests:       7 failed, 12 passed, 19 total
+2025-09-18T06:35:01.9311388Z Snapshots:   0 total
+2025-09-18T06:35:01.9312538Z Time:        5.977 s
+2025-09-18T06:35:01.9313594Z Ran all test suites.
+2025-09-18T06:35:01.9934256Z ##[error]Process completed with exit code 1.
+2025-09-18T06:35:02.0137105Z Post job cleanup.
+2025-09-18T06:35:02.2047454Z [command]/usr/bin/git version
+2025-09-18T06:35:02.2131108Z git version 2.34.1
+2025-09-18T06:35:02.2202911Z Copying '/home/runner/.gitconfig' to '/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/3bc38393-ed33-4ed8-80a8-665027a9a631/.gitconfig'
+2025-09-18T06:35:02.2218954Z Temporarily overriding HOME='/opt/github-runner-bhaagi-spark-park-cricket/_work/_temp/3bc38393-ed33-4ed8-80a8-665027a9a631' before making global git config changes
+2025-09-18T06:35:02.2221413Z Adding repository directory to the temporary git global config as a safe directory
+2025-09-18T06:35:02.2231916Z [command]/usr/bin/git config --global --add safe.directory /opt/github-runner-bhaagi-spark-park-cricket/_work/spark-park-cricket/spark-park-cricket
+2025-09-18T06:35:02.2319804Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-09-18T06:35:02.2372200Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-09-18T06:35:02.2741657Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-09-18T06:35:02.2768800Z http.https://github.com/.extraheader
+2025-09-18T06:35:02.2787637Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-09-18T06:35:02.2827646Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-09-18T06:35:02.3265782Z Cleaning up orphan processes
