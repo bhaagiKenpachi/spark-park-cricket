@@ -409,26 +409,6 @@ func createTestSeries(t *testing.T, router http.Handler) string {
 	return response.Data.ID
 }
 
-// Helper function to clean up test data
-func cleanupMatchTestData(t *testing.T, dbClient *database.Client) {
-	t.Logf("DEBUG: Starting cleanup of match test data")
-
-	// Clean up matches table - delete ALL records using a condition that matches all
-	_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup match test data: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up matches table")
-	}
-
-	// Clean up series table as well - delete ALL records using a condition that matches all
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series test data: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up series table")
-	}
-}
 
 // Helper function to create int pointer
 func intPtr(i int) *int {
