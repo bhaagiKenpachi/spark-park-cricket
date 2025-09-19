@@ -13,11 +13,11 @@ import (
 )
 
 type ScorecardHandler struct {
-	scorecardService *services.ScorecardService
+	scorecardService services.ScorecardServiceInterface
 }
 
 // NewScorecardHandler creates a new scorecard handler
-func NewScorecardHandler(scorecardService *services.ScorecardService) *ScorecardHandler {
+func NewScorecardHandler(scorecardService services.ScorecardServiceInterface) *ScorecardHandler {
 	return &ScorecardHandler{
 		scorecardService: scorecardService,
 	}
