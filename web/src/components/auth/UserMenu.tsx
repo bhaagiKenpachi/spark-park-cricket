@@ -58,7 +58,7 @@ export function UserMenu() {
           />
 
           {/* Menu */}
-          <Card className="absolute right-0 top-full mt-2 w-64 z-20 p-2 shadow-lg">
+          <Card className="absolute right-0 sm:right-0 left-1/2 sm:left-auto transform -translate-x-1/2 sm:transform-none top-full mt-2 w-64 z-20 p-2 shadow-lg">
             <div className="space-y-2">
               {/* User Info */}
               <div className="px-3 py-2 border-b">
