@@ -66,7 +66,8 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			result, err := service.CreateSeries(ctx, tt.request)
 
@@ -263,6 +264,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 					Name:      "Original Series",
 					StartDate: time.Now(),
 					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
 				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
@@ -282,6 +284,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 					Name:      "Original Series",
 					StartDate: time.Now(),
 					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
 				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
@@ -301,6 +304,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 					Name:      "Original Series",
 					StartDate: time.Now(),
 					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
 			},
@@ -333,7 +337,8 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
 
@@ -363,7 +368,7 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			name:     "successful series deletion",
 			seriesID: "test-series-id",
 			mockSetup: func(mockRepo *MockSeriesRepository) {
-				series := &models.Series{ID: "test-series-id", Name: "Test Series"}
+				series := &models.Series{ID: "test-series-id", Name: "Test Series", CreatedBy: "test-user-123"}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(series, nil)
 				mockRepo.On("Delete", mock.Anything, "test-series-id").Return(nil)
 			},
@@ -393,7 +398,8 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
 

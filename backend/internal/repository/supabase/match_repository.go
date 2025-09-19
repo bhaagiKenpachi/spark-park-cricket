@@ -33,6 +33,7 @@ func (r *matchRepository) Create(ctx context.Context, match *models.Match) error
 		"toss_winner":         match.TossWinner,
 		"toss_type":           match.TossType,
 		"batting_team":        match.BattingTeam,
+		"created_by":          match.CreatedBy,
 		"created_at":          match.CreatedAt,
 		"updated_at":          match.UpdatedAt,
 	}
@@ -119,6 +120,7 @@ func (r *matchRepository) Update(ctx context.Context, id string, match *models.M
 		"toss_winner":         match.TossWinner,
 		"toss_type":           match.TossType,
 		"batting_team":        match.BattingTeam,
+		"created_by":          match.CreatedBy,
 		"updated_at":          match.UpdatedAt,
 	}
 

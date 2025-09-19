@@ -1,6 +1,16 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
   async headers() {
     return [
       {
@@ -8,12 +18,13 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "connect-src 'self' http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:* https://cricket.dojima.foundation https://cricket-dev.dojima.foundation https://ochhmsslirapqqzcgvek.supabase.co https://api.whatsapp.com wss://.supabase.co https://api.iconify.design; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;"
-          }
-        ]
-      }
+            value:
+              "connect-src 'self' http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:* https://cricket.dojima.foundation https://cricket-dev.dojima.foundation https://ochhmsslirapqqzcgvek.supabase.co https://api.whatsapp.com wss://.supabase.co https://api.iconify.design; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;",
+          },
+        ],
+      },
     ];
-  }
+  },
 };
 
 export default nextConfig;

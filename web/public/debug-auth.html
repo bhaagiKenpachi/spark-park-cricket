@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Auth Debug</title>
+  </head>
+  <body>
+    <h1>Auth Debug Test</h1>
+    <div id="status">Loading...</div>
+    <button onclick="testAuth()">Test Auth Status</button>
+    <button onclick="testOAuth()">Test OAuth Login</button>
+
+    <script>
+      async function testAuth() {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = 'Testing auth status...';
+
+        try {
+          const response = await fetch(
+            'http://localhost:8080/api/v1/auth/status',
+            {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          const data = await response.json();
+          statusDiv.innerHTML = `Auth Status: ${JSON.stringify(data, null, 2)}`;
+        } catch (error) {
+          statusDiv.innerHTML = `Error: ${error.message}`;
+        }
+      }
+
+      function testOAuth() {
+        window.location.href = 'http://localhost:8080/api/v1/auth/google';
+      }
+    </script>
+  </body>
+</html>

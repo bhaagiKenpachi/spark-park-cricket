@@ -162,7 +162,7 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 	cleanupScorecardWorkflowTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories)
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	// Setup router

@@ -153,8 +153,11 @@ func TestMatchService_CreateMatch(t *testing.T) {
 			mockSeriesRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockMatchRepo, mockSeriesRepo)
 
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
-			result, err := service.CreateMatch(context.Background(), tt.request)
+			result, err := service.CreateMatch(ctx, tt.request)
 
 			if tt.expectedError != "" {
 				assert.Error(t, err)
@@ -423,6 +426,7 @@ func TestMatchService_UpdateMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				mockRepo.On("Update", mock.Anything, "match-1", mock.AnythingOfType("*models.Match")).Return(nil).Run(func(args mock.Arguments) {
@@ -449,6 +453,7 @@ func TestMatchService_UpdateMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				mockRepo.On("Update", mock.Anything, "match-1", mock.AnythingOfType("*models.Match")).Return(nil).Run(func(args mock.Arguments) {
@@ -497,6 +502,7 @@ func TestMatchService_UpdateMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				mockRepo.On("Update", mock.Anything, "match-1", mock.AnythingOfType("*models.Match")).Return(errors.New("database error"))
@@ -511,8 +517,11 @@ func TestMatchService_UpdateMatch(t *testing.T) {
 			mockSeriesRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockMatchRepo)
 
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
-			result, err := service.UpdateMatch(context.Background(), tt.matchID, tt.request)
+			result, err := service.UpdateMatch(ctx, tt.matchID, tt.request)
 
 			if tt.expectedError != "" {
 				assert.Error(t, err)
@@ -550,6 +559,7 @@ func TestMatchService_DeleteMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				mockRepo.On("Delete", mock.Anything, "match-1").Return(nil)
@@ -586,6 +596,7 @@ func TestMatchService_DeleteMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				// No Delete mock setup since the method should return early
@@ -607,6 +618,7 @@ func TestMatchService_DeleteMatch(t *testing.T) {
 					TossWinner:       models.TeamTypeA,
 					TossType:         models.TossTypeHeads,
 					BattingTeam:      models.TeamTypeA,
+					CreatedBy:        "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "match-1").Return(existingMatch, nil)
 				mockRepo.On("Delete", mock.Anything, "match-1").Return(errors.New("database error"))
@@ -621,8 +633,11 @@ func TestMatchService_DeleteMatch(t *testing.T) {
 			mockSeriesRepo := new(MockSeriesRepository)
 			tt.mockSetup(mockMatchRepo)
 
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
-			err := service.DeleteMatch(context.Background(), tt.matchID)
+			err := service.DeleteMatch(ctx, tt.matchID)
 
 			if tt.expectedError != "" {
 				assert.Error(t, err)

@@ -27,11 +27,20 @@ func (s *SeriesService) CreateSeries(ctx context.Context, req *models.CreateSeri
 		return nil, fmt.Errorf("end date must be after start date")
 	}
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return nil, fmt.Errorf("user authentication required")
+	}
+
 	// Create series model
 	series := &models.Series{
 		Name:      req.Name,
 		StartDate: req.StartDate,
 		EndDate:   req.EndDate,
+		CreatedBy: userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	// Save to repository
@@ -81,10 +90,21 @@ func (s *SeriesService) UpdateSeries(ctx context.Context, id string, req *models
 		return nil, fmt.Errorf("series ID is required")
 	}
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return nil, fmt.Errorf("user authentication required")
+	}
+
 	// Get existing series
 	series, err := s.seriesRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get series: %w", err)
+	}
+
+	// Check ownership
+	if series.CreatedBy != userID {
+		return nil, fmt.Errorf("access denied: you can only update series you created")
 	}
 
 	// Update fields if provided
@@ -120,10 +140,21 @@ func (s *SeriesService) DeleteSeries(ctx context.Context, id string) error {
 		return fmt.Errorf("series ID is required")
 	}
 
-	// Check if series exists
-	_, err := s.seriesRepo.GetByID(ctx, id)
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
+	// Check if series exists and get it
+	series, err := s.seriesRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("series not found: %w", err)
+	}
+
+	// Check ownership
+	if series.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only delete series you created")
 	}
 
 	// Delete series

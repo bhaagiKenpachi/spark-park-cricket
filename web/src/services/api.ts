@@ -1,9 +1,16 @@
 import { Series } from '@/store/reducers/seriesSlice';
 import { Match } from '@/store/reducers/matchSlice';
-import { ScorecardResponse, BallEventRequest, OverSummary, InningsSummary, BallType, RunType } from '@/store/reducers/scorecardSlice';
+import {
+    ScorecardResponse,
+    BallEventRequest,
+    OverSummary,
+    InningsSummary,
+    BallType,
+    RunType,
+} from '@/store/reducers/scorecardSlice';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
 export interface ApiResponse<T> {
     data: T;
@@ -33,12 +40,18 @@ class ApiService {
         const separator = endpoint.includes('?') ? '&' : '?';
         const url = `${this.baseURL}${endpoint}${separator}_t=${Date.now()}`;
 
+        console.log('=== API SERVICE REQUEST ===');
+        console.log('URL:', url);
+        console.log('Method:', options.method || 'GET');
+        console.log('Document cookies:', document.cookie);
+        console.log('Request options:', options);
+
         const defaultHeaders = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
+            Pragma: 'no-cache',
+            Expires: '0',
         };
 
         const config: RequestInit = {
@@ -48,21 +61,39 @@ class ApiService {
                 ...options.headers,
             },
             mode: 'cors',
-            credentials: 'omit',
+            credentials: 'include', // Include cookies for authentication
         };
+
+        console.log('Final request config:', config);
 
         try {
             const response = await fetch(url, config);
 
+            console.log('=== API SERVICE RESPONSE ===');
+            console.log('Response status:', response.status);
+            console.log(
+                'Response headers:',
+                Object.fromEntries(response.headers.entries())
+            );
+            console.log('Response cookies:', response.headers.get('set-cookie'));
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.log('Error response data:', errorData);
 
                 // Retry logic for 503 errors
                 if (response.status === 503 && retryCount < 3) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+                    console.log(`Retrying request (${retryCount + 1}/3) after 503 error`);
+                    await new Promise(resolve =>
+                        setTimeout(resolve, 1000 * (retryCount + 1))
+                    ); // Exponential backoff
                     return this.request<T>(endpoint, options, retryCount + 1);
                 }
 
+                console.log(
+                    'Throwing API error:',
+                    errorData.message || `HTTP error! status: ${response.status}`
+                );
                 throw new ApiError(
                     errorData.message || `HTTP error! status: ${response.status}`,
                     response.status,
@@ -71,16 +102,22 @@ class ApiService {
             }
 
             const data = await response.json();
+            console.log('Success response data:', data);
             return {
                 data,
                 success: true,
                 message: data.message,
             };
         } catch (error) {
-
             // Retry logic for network errors
-            if (retryCount < 3 && (error instanceof TypeError || (error instanceof Error && error.message.includes('Failed to fetch')))) {
-                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+            if (
+                retryCount < 3 &&
+                (error instanceof TypeError ||
+                    (error instanceof Error && error.message.includes('Failed to fetch')))
+            ) {
+                await new Promise(resolve =>
+                    setTimeout(resolve, 1000 * (retryCount + 1))
+                ); // Exponential backoff
                 return this.request<T>(endpoint, options, retryCount + 1);
             }
 
@@ -104,14 +141,19 @@ class ApiService {
         return this.request<Series>(`/series/${id}`);
     }
 
-    async createSeries(seriesData: Omit<Series, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Series>> {
+    async createSeries(
+        seriesData: Omit<Series, 'id' | 'created_at' | 'updated_at'>
+    ): Promise<ApiResponse<Series>> {
         return this.request<Series>('/series', {
             method: 'POST',
             body: JSON.stringify(seriesData),
         });
     }
 
-    async updateSeries(id: string, seriesData: Partial<Series>): Promise<ApiResponse<Series>> {
+    async updateSeries(
+        id: string,
+        seriesData: Partial<Series>
+    ): Promise<ApiResponse<Series>> {
         return this.request<Series>(`/series/${id}`, {
             method: 'PUT',
             body: JSON.stringify(seriesData),
@@ -133,7 +175,9 @@ class ApiService {
         return this.request<Match>(`/matches/${id}`);
     }
 
-    async createMatch(matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'>): Promise<ApiResponse<Match>> {
+    async createMatch(
+        matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'>
+    ): Promise<ApiResponse<Match>> {
         // Remove match_number if it's 1 (default value) to let backend auto-generate
         const dataToSend = { ...matchData };
         if (dataToSend.match_number === 1) {
@@ -146,7 +190,10 @@ class ApiService {
         });
     }
 
-    async updateMatch(id: string, matchData: Partial<Match>): Promise<ApiResponse<Match>> {
+    async updateMatch(
+        id: string,
+        matchData: Partial<Match>
+    ): Promise<ApiResponse<Match>> {
         return this.request<Match>(`/matches/${id}`, {
             method: 'PUT',
             body: JSON.stringify(matchData),
@@ -168,42 +215,81 @@ class ApiService {
         return this.request<ScorecardResponse>(`/scorecard/${matchId}`);
     }
 
-    async startScoring(matchId: string): Promise<ApiResponse<{ message: string; match_id: string }>> {
+    async startScoring(
+        matchId: string
+    ): Promise<ApiResponse<{ message: string; match_id: string }>> {
+        console.log('=== START SCORING API CALL ===');
+        console.log('Match ID:', matchId);
+        console.log('Current cookies:', document.cookie);
+
         try {
-            return await this.request<{ message: string; match_id: string }>('/scorecard/start', {
-                method: 'POST',
-                body: JSON.stringify({ match_id: matchId }),
-            });
+            const result = await this.request<{ message: string; match_id: string }>(
+                '/scorecard/start',
+                {
+                    method: 'POST',
+                    body: JSON.stringify({ match_id: matchId }),
+                }
+            );
+            console.log('Start scoring success:', result);
+            return result;
         } catch (error) {
+            console.log('Start scoring error:', error);
+
             // If scoring is already started, return success response instead of error
-            if (error instanceof ApiError && (
-                error.message.includes('scoring already started') ||
-                error.message.includes('already started for this match')
-            )) {
+            if (
+                error instanceof ApiError &&
+                (error.message.includes('scoring already started') ||
+                    error.message.includes('already started for this match'))
+            ) {
+                console.log('Scoring already started, returning success response');
                 return {
                     data: { message: 'Scoring already active', match_id: matchId },
                     success: true,
-                    message: 'Scoring already active'
+                    message: 'Scoring already active',
                 };
             }
             throw error;
         }
     }
 
-    async addBall(ballEvent: BallEventRequest): Promise<ApiResponse<{
-        message: string;
-        match_id: string;
-        innings_number: number;
-        ball_type: string;
-        run_type: string;
-        runs: number;
-        byes: number;
-        is_wicket: boolean;
-    }>> {
-        return this.request('/scorecard/ball', {
-            method: 'POST',
-            body: JSON.stringify(ballEvent),
-        });
+    async addBall(ballEvent: BallEventRequest): Promise<
+        ApiResponse<{
+            message: string;
+            match_id: string;
+            innings_number: number;
+            ball_type: string;
+            run_type: string;
+            runs: number;
+            byes: number;
+            is_wicket: boolean;
+            wicket_type?: string;
+        }>
+    > {
+        console.log('=== ADD BALL API CALL ===');
+        console.log('Ball event:', ballEvent);
+        console.log('Current cookies:', document.cookie);
+
+        try {
+            const result = await this.request<{
+                message: string;
+                match_id: string;
+                innings_number: number;
+                ball_type: string;
+                run_type: string;
+                runs: number;
+                byes: number;
+                is_wicket: boolean;
+                wicket_type?: string;
+            }>('/scorecard/ball', {
+                method: 'POST',
+                body: JSON.stringify(ballEvent),
+            });
+            console.log('Add ball success:', result);
+            return result;
+        } catch (error) {
+            console.log('Add ball error:', error);
+            throw error;
+        }
     }
 
     // Common ball scoring function
@@ -215,16 +301,18 @@ class ApiService {
         runs: number,
         byes: number = 0,
         isWicket: boolean = false
-    ): Promise<ApiResponse<{
-        message: string;
-        match_id: string;
-        innings_number: number;
-        ball_type: string;
-        run_type: string;
-        runs: number;
-        byes: number;
-        is_wicket: boolean;
-    }>> {
+    ): Promise<
+        ApiResponse<{
+            message: string;
+            match_id: string;
+            innings_number: number;
+            ball_type: string;
+            run_type: string;
+            runs: number;
+            byes: number;
+            is_wicket: boolean;
+        }>
+    > {
         const ballEvent: BallEventRequest = {
             match_id: matchId,
             innings_number: inningsNumber,
@@ -238,16 +326,32 @@ class ApiService {
         return this.addBall(ballEvent);
     }
 
-    async getCurrentOver(matchId: string, inningsNumber: number = 1): Promise<ApiResponse<OverSummary>> {
-        return this.request<OverSummary>(`/scorecard/${matchId}/current-over?innings=${inningsNumber}`);
+    async getCurrentOver(
+        matchId: string,
+        inningsNumber: number = 1
+    ): Promise<ApiResponse<OverSummary>> {
+        return this.request<OverSummary>(
+            `/scorecard/${matchId}/current-over?innings=${inningsNumber}`
+        );
     }
 
-    async getInnings(matchId: string, inningsNumber: number): Promise<ApiResponse<InningsSummary>> {
-        return this.request<InningsSummary>(`/scorecard/${matchId}/innings/${inningsNumber}`);
+    async getInnings(
+        matchId: string,
+        inningsNumber: number
+    ): Promise<ApiResponse<InningsSummary>> {
+        return this.request<InningsSummary>(
+            `/scorecard/${matchId}/innings/${inningsNumber}`
+        );
     }
 
-    async getOver(matchId: string, inningsNumber: number, overNumber: number): Promise<ApiResponse<OverSummary>> {
-        return this.request<OverSummary>(`/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`);
+    async getOver(
+        matchId: string,
+        inningsNumber: number,
+        overNumber: number
+    ): Promise<ApiResponse<OverSummary>> {
+        return this.request<OverSummary>(
+            `/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`
+        );
     }
 }
 

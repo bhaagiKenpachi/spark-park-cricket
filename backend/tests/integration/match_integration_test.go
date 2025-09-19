@@ -36,7 +36,7 @@ func TestMatchIntegration(t *testing.T) {
 	cleanupMatchTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories)
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
 	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
 
 	// Setup router
@@ -66,8 +66,15 @@ func TestMatchIntegration(t *testing.T) {
 }
 
 func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *database.Client) {
+	// Initialize services to get session service
+	serviceContainer := services.NewContainer(dbClient.Repositories, config.LoadTestConfig().Config)
+
+	// Create authenticated test user with proper session cookie
+	user, sessionCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
+	_ = user // Use user if needed for assertions
+
 	// First, create a series to associate with the match
-	seriesID := createTestSeries(t, router)
+	seriesID := createTestSeriesWithAuth(t, router, sessionCookie)
 
 	// Create a match
 	createReq := models.CreateMatchRequest{
@@ -84,8 +91,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	createBody, err := json.Marshal(createReq)
 	require.NoError(t, err)
 
-	req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(createBody))
-	req.Header.Set("Content-Type", "application/json")
+	req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/matches", createBody, sessionCookie)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -106,7 +112,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, createReq.TossWinner, createdMatch.BattingTeam) // Winner bats first
 
 	// Get the created match
-	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil)
+	req = testutils.CreateAuthenticatedRequestWithCookie("GET", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -130,8 +136,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	updateBody, err := json.Marshal(updateReq)
 	require.NoError(t, err)
 
-	req = httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), bytes.NewBuffer(updateBody))
-	req.Header.Set("Content-Type", "application/json")
+	req = testutils.CreateAuthenticatedRequestWithCookie("PUT", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), updateBody, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -146,7 +151,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, *updateReq.Status, updatedMatch.Status)
 
 	// Verify the updated match directly by getting it
-	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/matches/%s", updatedMatch.ID), nil)
+	req = testutils.CreateAuthenticatedRequestWithCookie("GET", fmt.Sprintf("/api/v1/matches/%s", updatedMatch.ID), nil, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -161,7 +166,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, *updateReq.Status, verifiedMatch.Status)
 
 	// Delete the match
-	req = httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil)
+	req = testutils.CreateAuthenticatedRequestWithCookie("DELETE", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -176,8 +181,15 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 }
 
 func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.Client) {
+	// Initialize services to get session service
+	serviceContainer := services.NewContainer(dbClient.Repositories, config.LoadTestConfig().Config)
+
+	// Create authenticated test user with proper session cookie
+	user, sessionCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
+	_ = user // Use user if needed for assertions
+
 	// First, create a series to associate with matches
-	seriesID := createTestSeries(t, router)
+	seriesID := createTestSeriesWithAuth(t, router, sessionCookie)
 
 	// Store created match IDs to verify they exist
 	var createdMatchIDs []string
@@ -198,8 +210,7 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 		createBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
-		req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(createBody))
-		req.Header.Set("Content-Type", "application/json")
+		req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/matches", createBody, sessionCookie)
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -215,7 +226,7 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	}
 
 	// Test pagination with limit
-	req := httptest.NewRequest("GET", "/api/v1/matches?limit=3", nil)
+	req := testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=3", nil, sessionCookie)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -230,7 +241,7 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	assert.GreaterOrEqual(t, len(matchesList), 3, "Should have at least 3 matches")
 
 	// Test pagination with offset
-	req = httptest.NewRequest("GET", "/api/v1/matches?limit=2&offset=2", nil)
+	req = testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=2&offset=2", nil, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -242,7 +253,7 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	assert.GreaterOrEqual(t, len(matchesList), 2, "Should have at least 2 matches")
 
 	// Test invalid pagination parameters
-	req = httptest.NewRequest("GET", "/api/v1/matches?limit=invalid&offset=-1", nil)
+	req = testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=invalid&offset=-1", nil, sessionCookie)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -382,6 +393,32 @@ func createTestSeries(t *testing.T, router http.Handler) string {
 	return response.Data.ID
 }
 
+// Helper function to create a test series with authentication
+func createTestSeriesWithAuth(t *testing.T, router http.Handler, sessionCookie string) string {
+	createReq := models.CreateSeriesRequest{
+		Name:      "Test Series for Match",
+		StartDate: time.Date(2025, 9, 14, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2025, 9, 21, 0, 0, 0, 0, time.UTC),
+	}
+
+	createBody, err := json.Marshal(createReq)
+	require.NoError(t, err)
+
+	req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/series", createBody, sessionCookie)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var response struct {
+		Data models.Series `json:"data"`
+	}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	return response.Data.ID
+}
+
 // Helper function to clean up test data
 func cleanupMatchTestData(t *testing.T, dbClient *database.Client) {
 	// Clean up matches table - delete all records
@@ -422,6 +459,7 @@ func setupMatchTestRouter(matchHandler *handlers.MatchHandler, serviceContainer 
 	router.Use(middleware.MetricsMiddleware)
 	router.Use(middleware.RateLimitMiddleware(100))
 	router.Use(testutils.CORSMiddleware())
+	router.Use(middleware.AuthMiddleware(serviceContainer.SessionService))
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {

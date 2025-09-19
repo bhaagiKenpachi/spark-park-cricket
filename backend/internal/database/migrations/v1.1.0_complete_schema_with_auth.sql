@@ -1,0 +1,306 @@
+-- Spark Park Cricket - Complete Schema Migration v1.1.0
+-- Comprehensive Cricket Tournament Management System with Authentication
+-- Version: 1.1.0
+-- Date: 2025-01-27
+-- Description: Combined migration including complete schema, user authentication, and ownership tracking
+
+-- ============================================
+-- EXTENSIONS
+-- ============================================
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
+-- USER AUTHENTICATION TABLES
+-- ============================================
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    google_id VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    picture TEXT,
+    email_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_login_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Create user_sessions table
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    session_id VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create oauth_states table for storing OAuth state parameters
+CREATE TABLE IF NOT EXISTS oauth_states (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    state VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    used_at TIMESTAMP WITH TIME ZONE NULL
+);
+
+-- ============================================
+-- CRICKET SCHEMA TABLES
+-- ============================================
+
+-- Create series table
+CREATE TABLE IF NOT EXISTS series (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create matches table
+CREATE TABLE IF NOT EXISTS matches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    series_id UUID REFERENCES series(id) ON DELETE CASCADE,
+    match_number INTEGER NOT NULL,
+    date TIMESTAMP WITH TIME ZONE NOT NULL,
+    status VARCHAR(20) DEFAULT 'live' CHECK (status IN ('live', 'completed', 'cancelled')),
+    team_a_player_count INTEGER NOT NULL DEFAULT 11 CHECK (team_a_player_count >= 1 AND team_a_player_count <= 20),
+    team_b_player_count INTEGER NOT NULL DEFAULT 11 CHECK (team_b_player_count >= 1 AND team_b_player_count <= 20),
+    total_overs INTEGER NOT NULL DEFAULT 20 CHECK (total_overs >= 1 AND total_overs <= 20),
+    toss_winner VARCHAR(1) NOT NULL CHECK (toss_winner IN ('A', 'B')),
+    toss_type VARCHAR(1) NOT NULL CHECK (toss_type IN ('H', 'T')),
+    batting_team VARCHAR(1) NOT NULL DEFAULT 'A' CHECK (batting_team IN ('A', 'B')),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create live_scoreboard table
+CREATE TABLE IF NOT EXISTS live_scoreboard (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
+    batting_team VARCHAR(1) NOT NULL CHECK (batting_team IN ('A', 'B')),
+    score INTEGER DEFAULT 0,
+    wickets INTEGER DEFAULT 0,
+    overs DECIMAL(4,1) DEFAULT 0.0,
+    balls INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create innings table
+CREATE TABLE IF NOT EXISTS innings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
+    innings_number INTEGER NOT NULL CHECK (innings_number IN (1, 2)),
+    batting_team VARCHAR(1) NOT NULL CHECK (batting_team IN ('A', 'B')),
+    total_runs INTEGER DEFAULT 0 CHECK (total_runs >= 0),
+    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0 AND total_wickets <= 10),
+    total_overs DECIMAL(4,1) DEFAULT 0.0 CHECK (total_overs >= 0),
+    total_balls INTEGER DEFAULT 0 CHECK (total_balls >= 0),
+    status VARCHAR(20) DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Ensure only one innings per match per innings number
+    UNIQUE(match_id, innings_number)
+);
+
+-- Create overs table
+CREATE TABLE IF NOT EXISTS overs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    innings_id UUID REFERENCES innings(id) ON DELETE CASCADE,
+    over_number INTEGER NOT NULL CHECK (over_number >= 1),
+    total_runs INTEGER DEFAULT 0 CHECK (total_runs >= 0),
+    total_balls INTEGER DEFAULT 0 CHECK (total_balls >= 0 AND total_balls <= 6),
+    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0),
+    status VARCHAR(20) DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Ensure only one over per innings per over number
+    UNIQUE(innings_id, over_number)
+);
+
+-- Create balls table
+CREATE TABLE IF NOT EXISTS balls (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    over_id UUID REFERENCES overs(id) ON DELETE CASCADE,
+    ball_number INTEGER NOT NULL CHECK (ball_number >= 1 AND ball_number <= 20),
+    ball_type VARCHAR(20) NOT NULL CHECK (ball_type IN ('good', 'wide', 'no_ball', 'dead_ball')),
+    run_type VARCHAR(2) NOT NULL CHECK (run_type IN ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'NB', 'WD', 'LB', 'WC')),
+    runs INTEGER DEFAULT 0 CHECK (runs >= 0),
+    byes INTEGER DEFAULT 0 CHECK (byes >= 0 AND byes <= 6),
+    is_wicket BOOLEAN DEFAULT FALSE,
+    wicket_type VARCHAR(20) CHECK (wicket_type IN ('bowled', 'caught', 'lbw', 'run_out', 'stumped', 'hit_wicket')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    -- Ensure only one ball per over per ball number
+    UNIQUE(over_id, ball_number),
+    
+    -- Ensure wicket_type is NULL when is_wicket is false
+    CONSTRAINT balls_wicket_type_check CHECK (
+        (is_wicket = true AND wicket_type IS NOT NULL) OR 
+        (is_wicket = false AND wicket_type IS NULL)
+    )
+);
+
+-- ============================================
+-- INDEXES FOR PERFORMANCE
+-- ============================================
+
+-- User authentication indexes
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_session_id ON user_sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_oauth_states_state ON oauth_states(state);
+CREATE INDEX IF NOT EXISTS idx_oauth_states_expires_at ON oauth_states(expires_at);
+CREATE INDEX IF NOT EXISTS idx_oauth_states_used_at ON oauth_states(used_at);
+
+-- Series indexes
+CREATE INDEX IF NOT EXISTS idx_series_start_date ON series(start_date);
+CREATE INDEX IF NOT EXISTS idx_series_end_date ON series(end_date);
+CREATE INDEX IF NOT EXISTS idx_series_created_by ON series(created_by);
+
+-- Matches indexes
+CREATE INDEX IF NOT EXISTS idx_matches_series_id ON matches(series_id);
+CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);
+CREATE INDEX IF NOT EXISTS idx_matches_date ON matches(date);
+CREATE INDEX IF NOT EXISTS idx_matches_toss_winner ON matches(toss_winner);
+CREATE INDEX IF NOT EXISTS idx_matches_batting_team ON matches(batting_team);
+CREATE INDEX IF NOT EXISTS idx_matches_created_by ON matches(created_by);
+
+-- Live scoreboard indexes
+CREATE INDEX IF NOT EXISTS idx_live_scoreboard_match_id ON live_scoreboard(match_id);
+CREATE INDEX IF NOT EXISTS idx_live_scoreboard_batting_team ON live_scoreboard(batting_team);
+
+-- Innings indexes
+CREATE INDEX IF NOT EXISTS idx_innings_match_id ON innings(match_id);
+CREATE INDEX IF NOT EXISTS idx_innings_batting_team ON innings(batting_team);
+CREATE INDEX IF NOT EXISTS idx_innings_status ON innings(status);
+
+-- Overs indexes
+CREATE INDEX IF NOT EXISTS idx_overs_innings_id ON overs(innings_id);
+CREATE INDEX IF NOT EXISTS idx_overs_status ON overs(status);
+
+-- Balls indexes
+CREATE INDEX IF NOT EXISTS idx_balls_over_id ON balls(over_id);
+CREATE INDEX IF NOT EXISTS idx_balls_run_type ON balls(run_type);
+CREATE INDEX IF NOT EXISTS idx_balls_is_wicket ON balls(is_wicket);
+
+-- ============================================
+-- FUNCTIONS AND TRIGGERS
+-- ============================================
+
+-- Create function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create triggers to automatically update updated_at
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_sessions_updated_at BEFORE UPDATE ON user_sessions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_series_updated_at BEFORE UPDATE ON series
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_matches_updated_at BEFORE UPDATE ON matches
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_live_scoreboard_updated_at BEFORE UPDATE ON live_scoreboard
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_innings_updated_at BEFORE UPDATE ON innings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_overs_updated_at BEFORE UPDATE ON overs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- DOCUMENTATION AND COMMENTS
+-- ============================================
+
+-- User authentication table comments
+COMMENT ON TABLE users IS 'Stores user information from Google OAuth';
+COMMENT ON TABLE user_sessions IS 'Stores user session information for authentication';
+COMMENT ON TABLE oauth_states IS 'Stores OAuth state parameters for security';
+
+-- Cricket schema table comments
+COMMENT ON TABLE series IS 'Cricket tournaments and competitions';
+COMMENT ON TABLE matches IS 'Individual cricket matches with Team A vs Team B and toss functionality';
+COMMENT ON TABLE live_scoreboard IS 'Real-time match scoring and statistics';
+COMMENT ON TABLE innings IS 'Cricket innings tracking with runs, wickets, and overs';
+COMMENT ON TABLE overs IS 'Over-by-over tracking within innings';
+COMMENT ON TABLE balls IS 'Ball-by-ball events with run types and wickets';
+
+-- User authentication column comments
+COMMENT ON COLUMN users.google_id IS 'Google OAuth user ID';
+COMMENT ON COLUMN users.email IS 'User email address';
+COMMENT ON COLUMN users.name IS 'User display name';
+COMMENT ON COLUMN users.picture IS 'User profile picture URL';
+COMMENT ON COLUMN users.email_verified IS 'Whether the email is verified by Google';
+COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last successful login';
+
+COMMENT ON COLUMN user_sessions.user_id IS 'Reference to users table';
+COMMENT ON COLUMN user_sessions.session_id IS 'Unique session identifier';
+COMMENT ON COLUMN user_sessions.expires_at IS 'Session expiration timestamp';
+
+COMMENT ON COLUMN oauth_states.state IS 'OAuth state parameter for security';
+COMMENT ON COLUMN oauth_states.expires_at IS 'State expiration timestamp';
+COMMENT ON COLUMN oauth_states.used_at IS 'Timestamp when state was used';
+
+-- Cricket schema column comments
+COMMENT ON COLUMN series.created_by IS 'User who created this series';
+COMMENT ON COLUMN matches.created_by IS 'User who created this match';
+COMMENT ON COLUMN matches.toss_winner IS 'Team that won the toss: A or B';
+COMMENT ON COLUMN matches.toss_type IS 'Toss result: H (Heads) or T (Tails)';
+COMMENT ON COLUMN matches.batting_team IS 'Team currently batting: A or B';
+COMMENT ON COLUMN matches.team_a_player_count IS 'Number of players in Team A (1-20)';
+COMMENT ON COLUMN matches.team_b_player_count IS 'Number of players in Team B (1-20)';
+COMMENT ON COLUMN matches.total_overs IS 'Total overs for the match (1-20)';
+
+COMMENT ON COLUMN innings.innings_number IS 'Innings number: 1 (first innings) or 2 (second innings)';
+COMMENT ON COLUMN innings.batting_team IS 'Team currently batting: A or B';
+COMMENT ON COLUMN innings.total_runs IS 'Total runs scored in this innings';
+COMMENT ON COLUMN innings.total_wickets IS 'Total wickets fallen in this innings (0-10)';
+COMMENT ON COLUMN innings.total_overs IS 'Total overs completed in this innings (decimal)';
+COMMENT ON COLUMN innings.total_balls IS 'Total balls bowled in this innings';
+COMMENT ON COLUMN innings.status IS 'Innings status: in_progress or completed';
+
+COMMENT ON COLUMN overs.over_number IS 'Over number within the innings (1, 2, 3, etc.)';
+COMMENT ON COLUMN overs.total_runs IS 'Total runs scored in this over';
+COMMENT ON COLUMN overs.total_balls IS 'Total balls bowled in this over (0-6)';
+COMMENT ON COLUMN overs.total_wickets IS 'Total wickets fallen in this over';
+COMMENT ON COLUMN overs.status IS 'Over status: in_progress or completed';
+
+COMMENT ON COLUMN balls.ball_number IS 'Ball number within the over (1-20 to allow for illegal balls)';
+COMMENT ON COLUMN balls.ball_type IS 'Type of ball: good, wide, no_ball, dead_ball';
+COMMENT ON COLUMN balls.run_type IS 'Run type: 0-9 (runs), NB (No Ball), WD (Wide), LB (Leg Byes), WC (Wicket)';
+COMMENT ON COLUMN balls.runs IS 'Actual runs scored from this ball';
+COMMENT ON COLUMN balls.byes IS 'Additional runs from byes (0-6)';
+COMMENT ON COLUMN balls.is_wicket IS 'Whether this ball resulted in a wicket';
+COMMENT ON COLUMN balls.wicket_type IS 'Type of wicket: bowled, caught, lbw, run_out, stumped, hit_wicket';
+
+-- ============================================
+-- VERIFICATION
+-- ============================================
+
+SELECT 'Complete schema v1.1.0 created successfully!' as status;
+SELECT 'Tables created:' as info;
+SELECT table_name FROM information_schema.tables 
+WHERE table_name IN ('users', 'user_sessions', 'oauth_states', 'series', 'matches', 'live_scoreboard', 'innings', 'overs', 'balls')
+ORDER BY table_name;

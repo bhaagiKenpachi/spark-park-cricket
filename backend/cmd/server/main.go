@@ -49,7 +49,7 @@ func main() {
 
 	// Setup routes
 	log.Printf("Setting up API routes...")
-	router := handlers.SetupRoutes(dbClient)
+	router := handlers.SetupRoutes(dbClient, cfg)
 	log.Printf("✅ API routes configured")
 
 	// Log startup information
