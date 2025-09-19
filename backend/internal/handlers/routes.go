@@ -44,7 +44,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	healthHandler := NewHealthHandler(dbClient)
 
 	// Initialize auth handler
-	authHandler := NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService)
+	authHandler := NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg)
 
 	// Health check routes
 	r.Get("/", homeHandler)

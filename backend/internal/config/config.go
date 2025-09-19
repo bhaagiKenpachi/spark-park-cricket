@@ -26,6 +26,8 @@ type Config struct {
 	GoogleRedirectURL  string
 	SessionSecret      string
 	SessionMaxAge      int
+	// Frontend Configuration
+	FrontendURL string
 	// CORS Configuration
 	AllowedOrigins string
 }
@@ -54,6 +56,8 @@ func Load() *Config {
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8081/api/v1/auth/google/callback"),
 		SessionSecret:      getEnv("SESSION_SECRET", "your-super-secret-session-key-change-this-in-production"),
 		SessionMaxAge:      getEnvInt("SESSION_MAX_AGE", 86400), // 24 hours
+		// Frontend Configuration
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 		// CORS Configuration
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,https://spark-park.dojima.foundation,https://cricket-dev.dojima.foundation"),
 	}

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/http"
+	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
@@ -15,13 +16,15 @@ import (
 type AuthHandler struct {
 	AuthService services.AuthServiceInterface
 	SessionSvc  services.SessionServiceInterface
+	Config      *config.Config
 }
 
 // NewAuthHandler creates a new authentication handler
-func NewAuthHandler(authService services.AuthServiceInterface, sessionSvc services.SessionServiceInterface) *AuthHandler {
+func NewAuthHandler(authService services.AuthServiceInterface, sessionSvc services.SessionServiceInterface, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		AuthService: authService,
 		SessionSvc:  sessionSvc,
+		Config:      cfg,
 	}
 }
 
@@ -156,7 +159,8 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Redirect to frontend after successful authentication
-	http.Redirect(w, r, "http://localhost:3000?auth=success", http.StatusTemporaryRedirect)
+	frontendURL := h.Config.FrontendURL + "?auth=success"
+	http.Redirect(w, r, frontendURL, http.StatusTemporaryRedirect)
 }
 
 // Logout handles user logout
