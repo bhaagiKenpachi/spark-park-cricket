@@ -11,7 +11,7 @@ import {
   SelectEffect,
   TakeEffect,
 } from 'redux-saga/effects';
-import { RootState } from '../store';
+import { RootState } from '../index';
 import {
   fetchScorecardRequest,
   fetchScorecardSuccess,
@@ -100,7 +100,7 @@ export function* startScoringSaga(
 export function* addBallSaga(
   action: ReturnType<typeof addBallRequest>
 ): Generator<
-  CallEffect | PutEffect,
+  CallEffect | PutEffect | SelectEffect,
   void,
   ApiResponse<{
     message: string;
@@ -167,7 +167,7 @@ export function* addBallSaga(
 
 export function* undoBallSaga(
   action: ReturnType<typeof undoBallThunk.fulfilled>
-): Generator<CallEffect | PutEffect, void, any> {
+): Generator<CallEffect | PutEffect | SelectEffect, void, unknown> {
   try {
     console.log('=== UNDO BALL SAGA ===');
     const { matchId, inningsNumber } = action.payload;

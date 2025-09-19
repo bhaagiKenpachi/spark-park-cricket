@@ -5,7 +5,7 @@ import { apiService } from '@/services/api';
 import { BallSummary as GraphQLBallSummary, OverSummary as GraphQLOverSummary } from '@/lib/graphql';
 
 // Enums
-export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball';
+export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball' | 'GOOD' | 'WIDE' | 'NO_BALL' | 'DEAD_BALL';
 export type RunType =
   | '0'
   | '1'
