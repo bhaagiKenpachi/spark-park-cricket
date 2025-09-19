@@ -29,8 +29,13 @@ func (r *CachedSeriesRepository) Create(ctx context.Context, series *models.Seri
 		return err
 	}
 
-	// Invalidate series list cache
+	// Invalidate series list cache - invalidate all possible cache keys
+	fmt.Printf("DEBUG: CachedSeriesRepository.Create - Invalidating cache keys\n")
 	_ = r.cache.Invalidate("series:list")
+	_ = r.cache.Invalidate("series:list:limit:20")
+	_ = r.cache.Invalidate("series:list:limit:50")
+	_ = r.cache.Invalidate("series:list:limit:100")
+	fmt.Printf("DEBUG: CachedSeriesRepository.Create - Cache invalidation completed\n")
 
 	// Cache the new series
 	if series.ID != "" {
