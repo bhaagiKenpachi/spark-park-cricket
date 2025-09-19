@@ -45,6 +45,27 @@ func resolveLiveScorecard(p graphql.ResolveParams) (interface{}, error) {
 		// If no current over, return nil
 		currentOver = nil
 	} else {
+		// Get balls for the current over
+		balls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, scorecardOver.ID)
+		if err != nil {
+			log.Printf("Error getting balls for over %s: %v", scorecardOver.ID, err)
+			balls = []*models.ScorecardBall{} // Default to empty slice on error
+		}
+
+		// Convert ScorecardBall to BallSummary
+		ballSummaries := make([]models.BallSummary, len(balls))
+		for i, ball := range balls {
+			ballSummaries[i] = models.BallSummary{
+				BallNumber: ball.BallNumber,
+				BallType:   ball.BallType,
+				RunType:    ball.RunType,
+				Runs:       ball.Runs,
+				Byes:       ball.Byes,
+				IsWicket:   ball.IsWicket,
+				WicketType: ball.WicketType,
+			}
+		}
+
 		// Convert ScorecardOver to OverSummary
 		currentOver = &models.OverSummary{
 			OverNumber:   scorecardOver.OverNumber,
@@ -52,7 +73,7 @@ func resolveLiveScorecard(p graphql.ResolveParams) (interface{}, error) {
 			TotalBalls:   scorecardOver.TotalBalls,
 			TotalWickets: scorecardOver.TotalWickets,
 			Status:       scorecardOver.Status,
-			Balls:        []models.BallSummary{}, // Will be populated separately if needed
+			Balls:        ballSummaries,
 		}
 	}
 
@@ -105,6 +126,27 @@ func resolveScorecardSubscription(p graphql.ResolveParams) (interface{}, error) 
 	if err != nil {
 		currentOver = nil
 	} else {
+		// Get balls for the current over
+		balls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, scorecardOver.ID)
+		if err != nil {
+			log.Printf("Error getting balls for over %s: %v", scorecardOver.ID, err)
+			balls = []*models.ScorecardBall{} // Default to empty slice on error
+		}
+
+		// Convert ScorecardBall to BallSummary
+		ballSummaries := make([]models.BallSummary, len(balls))
+		for i, ball := range balls {
+			ballSummaries[i] = models.BallSummary{
+				BallNumber: ball.BallNumber,
+				BallType:   ball.BallType,
+				RunType:    ball.RunType,
+				Runs:       ball.Runs,
+				Byes:       ball.Byes,
+				IsWicket:   ball.IsWicket,
+				WicketType: ball.WicketType,
+			}
+		}
+
 		// Convert ScorecardOver to OverSummary
 		currentOver = &models.OverSummary{
 			OverNumber:   scorecardOver.OverNumber,
@@ -112,7 +154,7 @@ func resolveScorecardSubscription(p graphql.ResolveParams) (interface{}, error) 
 			TotalBalls:   scorecardOver.TotalBalls,
 			TotalWickets: scorecardOver.TotalWickets,
 			Status:       scorecardOver.Status,
-			Balls:        []models.BallSummary{}, // Will be populated separately if needed
+			Balls:        ballSummaries,
 		}
 	}
 

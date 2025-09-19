@@ -6,6 +6,7 @@ import {
   fetchScorecardRequest,
   startScoringRequest,
   addBallRequest,
+  undoBallThunk,
   clearScorecard,
   fetchAllOversDetailsThunk,
   BallEventRequest,
@@ -25,6 +26,7 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Undo2,
 } from 'lucide-react';
 import { User } from '@/services/authService';
 
@@ -245,6 +247,51 @@ export function ScorecardView({
     setCurrentByes(0); // Reset byes after scoring
 
     // Ball counting is handled by the backend
+  };
+
+  const handleUndoBall = () => {
+    console.log('=== HANDLE UNDO BALL ===');
+    console.log('Match ID:', matchId);
+    console.log('Current Innings:', currentInnings);
+    console.log('Is Owner:', isOwner);
+    console.log('Is Authenticated:', isAuthenticated);
+    console.log('Current User:', currentUser);
+    console.log('Series Created By:', seriesCreatedBy);
+    console.log('Is Scoring Available:', isScoringAvailable);
+
+    // Check if scoring is available (ownership + match not completed)
+    if (!isScoringAvailable) {
+      if (!isOwner) {
+        console.log('❌ Not owner, blocking undo ball');
+        setScoringMessage('Only the series creator can undo balls.');
+      } else if (isMatchCompleted) {
+        console.log('❌ Match completed, blocking undo ball');
+        setScoringMessage('Cannot undo ball on completed match.');
+      } else if (isBothInningsCompleted) {
+        console.log('❌ Both innings completed, blocking undo ball');
+        setScoringMessage('Cannot undo ball when both innings are completed.');
+      }
+      setTimeout(() => setScoringMessage(null), 3000);
+      return;
+    }
+
+    // Check if current innings is still in progress
+    const currentInningsData = scorecardData?.innings?.find(
+      innings => innings.innings_number === currentInnings
+    );
+
+    if (!currentInningsData || currentInningsData.status !== 'in_progress') {
+      setScoringMessage(
+        'Cannot undo ball on completed innings. Please check innings status.'
+      );
+      setTimeout(() => setScoringMessage(null), 5000);
+      return;
+    }
+
+    console.log('✅ Undo ball available, proceeding with undo');
+    dispatch(undoBallThunk({ matchId, inningsNumber: currentInnings }));
+    setScoringMessage('Undoing last ball...');
+    setTimeout(() => setScoringMessage(null), 2000);
   };
 
   const handleByesChange = (byes: number) => {
@@ -1024,6 +1071,28 @@ export function ScorecardView({
                     ? `+${currentByes} byes selected`
                     : 'No byes'}
                 </div>
+              </div>
+            </div>
+
+            {/* Undo Ball Action */}
+            <div className="border-t pt-4 mt-4">
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleUndoBall}
+                  variant="outline"
+                  size="lg"
+                  className="border-red-500 text-red-700 hover:bg-red-50"
+                  disabled={scoring}
+                >
+                  {scoring ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-700"></div>
+                  ) : (
+                    <>
+                      <Undo2 className="h-4 w-4 mr-2" />
+                      Undo Last Ball
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </CardContent>

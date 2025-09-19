@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { graphqlService } from '@/services/graphqlService';
+import { apiService } from '@/services/api';
 import { BallSummary as GraphQLBallSummary, OverSummary as GraphQLOverSummary } from '@/lib/graphql';
 
 // Enums
@@ -151,6 +152,17 @@ export const fetchAllOversDetailsThunk = createAsyncThunk(
   }
 );
 
+export const undoBallThunk = createAsyncThunk(
+  'scorecard/undoBall',
+  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
+    const response = await apiService.undoBall(matchId, inningsNumber);
+    if (response.success) {
+      return { matchId, inningsNumber, message: response.message };
+    }
+    throw new Error(response.message || 'Failed to undo ball');
+  }
+);
+
 export const scorecardSlice = createSlice({
   name: 'scorecard',
   initialState,
@@ -189,6 +201,17 @@ export const scorecardSlice = createSlice({
       state.scoring = false;
     },
     addBallFailure: (state, action: PayloadAction<string>) => {
+      state.scoring = false;
+      state.error = action.payload;
+    },
+    undoBallRequest: (state, _action: PayloadAction<{ matchId: string; inningsNumber: number }>) => {
+      state.scoring = true;
+      state.error = null;
+    },
+    undoBallSuccess: state => {
+      state.scoring = false;
+    },
+    undoBallFailure: (state, action: PayloadAction<string>) => {
       state.scoring = false;
       state.error = action.payload;
     },
@@ -417,6 +440,14 @@ export const scorecardSlice = createSlice({
       .addCase(fetchAllOversDetailsThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch all overs details';
+      })
+      .addCase(undoBallThunk.fulfilled, (state, action) => {
+        state.scoring = false;
+        // The scorecard will be refetched to get updated data
+      })
+      .addCase(undoBallThunk.rejected, (state, action) => {
+        state.scoring = false;
+        state.error = action.error.message || 'Failed to undo ball';
       });
   },
 });
@@ -431,6 +462,9 @@ export const {
   addBallRequest,
   addBallSuccess,
   addBallFailure,
+  undoBallRequest,
+  undoBallSuccess,
+  undoBallFailure,
   fetchInningsRequest,
   fetchInningsSuccess,
   fetchInningsScoreSummarySuccess,

@@ -193,9 +193,17 @@ npm start
 Create a `.env.local` file with:
 
 ```env
+# Backend API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
+
+# Authentication Configuration (if needed)
+# NEXT_PUBLIC_AUTH_DOMAIN=your-auth-domain
+# NEXT_PUBLIC_AUTH_CLIENT_ID=your-client-id
 ```
+
+**Note**: Copy `.env.example` to `.env.local` and modify the values as needed for your environment.
 
 ## 📚 Documentation
 

@@ -393,6 +393,10 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 
 	// Update over statistics
 	over.TotalRuns -= totalRuns
+	// Ensure total_runs doesn't go negative (database constraint)
+	if over.TotalRuns < 0 {
+		over.TotalRuns = 0
+	}
 	// Only count legal balls (good balls) for over completion
 	if lastBall.BallType == models.BallTypeGood {
 		over.TotalBalls--
@@ -414,6 +418,10 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 
 	// Update innings statistics
 	innings.TotalRuns -= totalRuns
+	// Ensure total_runs doesn't go negative (database constraint)
+	if innings.TotalRuns < 0 {
+		innings.TotalRuns = 0
+	}
 	// Only count legal balls for innings overs calculation
 	if lastBall.BallType == models.BallTypeGood {
 		innings.TotalBalls--

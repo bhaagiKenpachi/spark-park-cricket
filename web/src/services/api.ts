@@ -9,6 +9,9 @@ import {
     RunType,
 } from '@/store/reducers/scorecardSlice';
 
+// Backend API Configuration
+// Set NEXT_PUBLIC_API_URL in .env.local file or environment variables
+// Default: http://localhost:8080/api/v1
 const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -335,6 +338,19 @@ class ApiService {
         };
 
         return this.addBall(ballEvent);
+    }
+
+    async undoBall(
+        matchId: string,
+        inningsNumber: number = 1
+    ): Promise<ApiResponse<{
+        message: string;
+        match_id: string;
+        innings_number: number;
+    }>> {
+        return this.request(`/scorecard/${matchId}/ball?innings=${inningsNumber}`, {
+            method: 'DELETE',
+        });
     }
 
     async getCurrentOver(
