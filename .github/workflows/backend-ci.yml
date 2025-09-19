@@ -13,93 +13,52 @@ on:
       - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
     inputs:
-      run_type:
-        description: 'Type of run to perform'
-        required: true
-        default: 'full'
+      test_type:
+        description: 'Type of tests to run'
+        required: false
+        default: 'all'
         type: choice
         options:
-        - full
-        - tests-only
-        - build-only
-        - deploy-only
-        - code-quality-only
+          - all
+          - unit
+          - integration
+          - e2e
+          - performance
+      run_linter:
+        description: 'Run linter checks'
+        required: false
+        default: true
+        type: boolean
+      run_tests:
+        description: 'Run tests'
+        required: false
+        default: true
+        type: boolean
+      build_binary:
+        description: 'Build binary'
+        required: false
+        default: true
+        type: boolean
       environment:
-        description: 'Environment to deploy to (only used for deploy-only runs)'
+        description: 'Environment to deploy to (if applicable)'
         required: false
         default: 'dev'
         type: choice
         options:
-        - dev
-        - staging
-        - production
-        - testing
-        - none
-      skip_integration_tests:
-        description: 'Skip integration tests (requires database)'
-        required: false
-        default: false
-        type: boolean
-      skip_security_scan:
-        description: 'Skip security scanning'
-        required: false
-        default: false
-        type: boolean
-      run_e2e_tests:
-        description: 'Run end-to-end tests (requires database)'
-        required: false
-        default: true
-        type: boolean
+          - dev
+          - staging
+          - production
 
 env:
   GO_VERSION: '1.23'
   WORKING_DIRECTORY: './backend'
 
 jobs:
-  # Workflow Summary
-  workflow-summary:
-    name: Workflow Summary
-    runs-on: [self-hosted, ovh, ubuntu-22.04]
-    if: github.event_name == 'workflow_dispatch'
-    
-    steps:
-      - name: Display workflow summary
-        run: |
-          echo "🚀 Backend CI/CD Workflow Started"
-          echo "=================================="
-          echo "Run Type: ${{ inputs.run_type }}"
-          echo "Environment: ${{ inputs.environment }}"
-          echo "Skip Integration Tests: ${{ inputs.skip_integration_tests }}"
-          echo "Skip Security Scan: ${{ inputs.skip_security_scan }}"
-          echo "Run E2E Tests: ${{ inputs.run_e2e_tests }}"
-          echo "=================================="
-          echo ""
-          case "${{ inputs.run_type }}" in
-            "full")
-              echo "📋 Running: Code Quality + Unit Tests + Integration Tests + Performance Tests + E2E Tests + Build + Deploy"
-              ;;
-            "tests-only")
-              echo "🧪 Running: Code Quality + Unit Tests + Integration Tests + Performance Tests + E2E Tests"
-              ;;
-            "build-only")
-              echo "🔨 Running: Code Quality + Unit Tests + Performance Tests + Build"
-              ;;
-            "deploy-only")
-              echo "🚀 Running: Code Quality + Unit Tests + Performance Tests + Build + Deploy"
-              ;;
-            "code-quality-only")
-              echo "🔍 Running: Code Quality + Security Scan"
-              ;;
-            *)
-              echo "❓ Unknown run type: ${{ inputs.run_type }}"
-              ;;
-          esac
-
   # Code Quality Checks
   code-quality:
     name: Code Quality
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' || inputs.run_type == 'code-quality-only' || inputs.run_type == 'build-only' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_linter == true }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -198,7 +157,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'unit')) }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -289,7 +248,7 @@ jobs:
     name: Integration Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only') && (github.event_name == 'workflow_dispatch' && inputs.skip_integration_tests) == false }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'integration')) }}
     environment: ${{ inputs.environment || 'dev' }}
     timeout-minutes: 15
     defaults:
@@ -365,7 +324,6 @@ jobs:
           echo "🗄️ Running database migrations..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
-          echo "DATABASE_PASSWORD: $DATABASE_PASSWORD"
           
           # Check if secrets are available
           if [ -z "$SUPABASE_URL" ]; then
@@ -380,18 +338,11 @@ jobs:
             exit 1
           fi
           
-          if [ -z "$DATABASE_PASSWORD" ]; then
-            echo "❌ ERROR: DATABASE_PASSWORD secret is not set in GitHub repository"
-            echo "Please configure DATABASE_PASSWORD in repository settings > Secrets and variables > Actions"
-            echo "This should be your Supabase database password for direct PostgreSQL access"
-            exit 1
-          fi
-          
+          # Run the migration script
           go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
       - name: Set up test database schema
         run: |
@@ -428,7 +379,7 @@ jobs:
     name: E2E Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, integration-tests]
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_type == 'full' || inputs.run_type == 'tests-only') }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'e2e')) }}
     environment: ${{ inputs.environment || 'dev' }}
     timeout-minutes: 15
     defaults:
@@ -482,7 +433,7 @@ jobs:
           echo "🔧 Setting up E2E test environment..."
           echo "Environment variables will be provided via GitHub Actions env"
 
-      - name: Run database migrations
+      - name: Run database migrations for E2E tests
         run: |
           # Set up Go environment explicitly
           export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
@@ -492,7 +443,6 @@ jobs:
           echo "🗄️ Running database migrations for E2E tests..."
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
-          echo "DATABASE_PASSWORD: $DATABASE_PASSWORD"
           
           # Check if secrets are available
           if [ -z "$SUPABASE_URL" ]; then
@@ -507,18 +457,11 @@ jobs:
             exit 1
           fi
           
-          if [ -z "$DATABASE_PASSWORD" ]; then
-            echo "❌ ERROR: DATABASE_PASSWORD secret is not set in GitHub repository"
-            echo "Please configure DATABASE_PASSWORD in repository settings > Secrets and variables > Actions"
-            echo "This should be your Supabase database password for direct PostgreSQL access"
-            exit 1
-          fi
-          
+          # Run the migration script
           go run cmd/migrate/main.go
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
 
       - name: Run E2E tests
         run: |
@@ -548,7 +491,7 @@ jobs:
     name: Performance Tests
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'tests-only' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'performance')) }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -644,7 +587,7 @@ jobs:
     name: Build Verification
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests, integration-tests, e2e-tests, performance-tests]
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'build-only' || inputs.run_type == 'deploy-only' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_binary == true }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -719,7 +662,7 @@ jobs:
     name: Security Scan
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality]
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.run_type == 'full' || inputs.run_type == 'code-quality-only') && (github.event_name == 'workflow_dispatch' && inputs.skip_security_scan) == false }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_linter == true }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -763,93 +706,6 @@ jobs:
           # Run go vet for basic security checks
           go vet ./...
           echo "✅ Basic security checks completed"
-
-  # Deploy to Environment (manual trigger only)
-  deploy:
-    name: Deploy to ${{ inputs.environment }}
-    runs-on: [self-hosted, ovh, ubuntu-22.04]
-    needs: [code-quality, unit-tests, integration-tests, e2e-tests, performance-tests, build]
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.run_type == 'full' || inputs.run_type == 'deploy-only') && inputs.environment != 'none' }}
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Check Redis availability (optional)
-        run: |
-          echo "🔍 Checking Redis availability on self-hosted runner..."
-          if command -v redis-cli >/dev/null 2>&1 && redis-cli -h localhost -p 6379 ping >/dev/null 2>&1; then
-            echo "✅ Redis is available and accessible on localhost:6379"
-            echo "Redis version: $(redis-cli --version)"
-            echo "Redis info:"
-            redis-cli info server | head -5
-            echo "REDIS_AVAILABLE=true" >> $GITHUB_ENV
-          else
-            echo "⚠️ Redis is not available or not accessible"
-            echo "Tests will run without Redis caching"
-            echo "REDIS_AVAILABLE=false" >> $GITHUB_ENV
-          fi
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: true
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build for ${{ inputs.environment }}
-        run: |
-          # Set up Go environment explicitly
-          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
-          export GOSUMDB="sum.golang.org"
-          export GOPROXY="https://proxy.golang.org,direct"
-          
-          echo "🔨 Building for ${{ inputs.environment }}..."
-          if [ "${{ inputs.environment }}" = "production" ]; then
-            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/server-${{ inputs.environment }} cmd/server/main.go
-          else
-            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/server-${{ inputs.environment }} cmd/server/main.go
-          fi
-
-      - name: Deploy to ${{ inputs.environment }}
-        run: |
-          echo "🚀 Deploying to ${{ inputs.environment }}..."
-          # Add your deployment logic here based on environment
-          case "${{ inputs.environment }}" in
-            "dev")
-              echo "Deploying to dev environment..."
-              # Add dev deployment logic
-              ;;
-            "staging")
-              echo "Deploying to staging environment..."
-              # Add staging deployment logic
-              ;;
-            "production")
-              echo "Deploying to production environment..."
-              # Add production deployment logic
-              ;;
-            "testing")
-              echo "Deploying to testing environment..."
-              # Add testing deployment logic
-              ;;
-            *)
-              echo "Unknown environment: ${{ inputs.environment }}"
-              exit 1
-              ;;
-          esac
-          echo "✅ Deployment to ${{ inputs.environment }} completed"
-
-      - name: Upload deployment artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-${{ inputs.environment }}-binary
-          path: backend/bin/server-${{ inputs.environment }}
-          retention-days: 30
 
   # Notification on failure
   notify-failure:

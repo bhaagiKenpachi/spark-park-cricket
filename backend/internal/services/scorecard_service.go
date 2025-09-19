@@ -637,6 +637,20 @@ func (s *ScorecardService) GetCurrentOver(ctx context.Context, matchID string, i
 	return over, nil
 }
 
+// GetBallsByOver gets all balls for a specific over
+func (s *ScorecardService) GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	log.Printf("Getting balls for over %s", overID)
+
+	balls, err := s.scorecardRepo.GetBallsByOver(ctx, overID)
+	if err != nil {
+		log.Printf("Error getting balls for over: %v", err)
+		return nil, fmt.Errorf("failed to get balls for over: %w", err)
+	}
+
+	log.Printf("Found %d balls for over %s", len(balls), overID)
+	return balls, nil
+}
+
 // ValidateInningsOrder validates that balls can only be added to the correct innings
 func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
 

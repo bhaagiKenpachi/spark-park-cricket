@@ -77,7 +77,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		Series:     supabase.NewSeriesRepository(client),
 		Match:      supabase.NewMatchRepository(client),
 		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client),
+		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 	}
