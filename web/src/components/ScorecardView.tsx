@@ -99,15 +99,29 @@ export function ScorecardView({
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
+    console.log('=== SCORECARD DATA CHANGE ===');
+    console.log('Scorecard:', scorecard);
+    console.log('Scorecard innings:', scorecard?.innings);
+
     if (scorecard?.innings && Array.isArray(scorecard.innings) && scorecard.innings.length > 0) {
       const currentInningsData = scorecard.innings.find(
         innings => innings.status === 'in_progress'
       );
+      console.log('Current innings data:', currentInningsData);
       if (currentInningsData) {
+        console.log('Setting current innings to:', currentInningsData.innings_number);
         setCurrentInnings(currentInningsData.innings_number);
+
+        // Debug: Log all balls in current innings
+        const totalBalls = currentInningsData.overs?.reduce((total, over) => {
+          console.log('Over:', over.over_number, 'Balls:', over.balls?.length || 0);
+          return total + (over.balls ? over.balls.length : 0);
+        }, 0) || 0;
+        console.log('Total balls in current innings:', totalBalls);
       }
     } else if (scorecard?.innings === null || (Array.isArray(scorecard?.innings) && scorecard.innings.length === 0)) {
       // If no innings exist yet, start with innings 1
+      console.log('No innings data, setting current innings to 1');
       setCurrentInnings(1);
     }
   }, [scorecard]);
@@ -177,12 +191,25 @@ export function ScorecardView({
     console.log('=== HANDLE BALL SCORE ===');
     console.log('Runs:', runs);
     console.log('Ball Type:', ballType);
+    console.log('Current Innings:', currentInnings);
     console.log('Is Owner:', isOwner);
     console.log('Is Authenticated:', isAuthenticated);
     console.log('Current User:', currentUser);
     console.log('Series Created By:', seriesCreatedBy);
     console.log('Is Scoring Available:', isScoringAvailable);
     console.log('Current cookies:', document.cookie);
+
+    // Debug: Check current scorecard state before scoring
+    const currentInningsDataBefore = scorecardData?.innings?.find(
+      innings => innings.innings_number === currentInnings
+    );
+    console.log('Current innings data before scoring:', currentInningsDataBefore);
+    if (currentInningsDataBefore) {
+      const totalBallsBefore = currentInningsDataBefore.overs?.reduce((total, over) => {
+        return total + (over.balls ? over.balls.length : 0);
+      }, 0) || 0;
+      console.log('Total balls before scoring:', totalBallsBefore);
+    }
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
@@ -203,14 +230,14 @@ export function ScorecardView({
     console.log('✅ Scoring available, proceeding with ball scoring');
 
     // Check if current innings is still in progress
-    const currentInningsData = scorecardData?.innings?.find(
+    const currentInningsDataForScoring = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
 
     // If no innings exist yet (null or empty array), allow scoring to create the first innings
     if (scorecardData?.innings === null || (Array.isArray(scorecardData?.innings) && scorecardData.innings.length === 0)) {
       // Allow scoring - this will create the first innings
-    } else if (currentInningsData?.status !== 'in_progress') {
+    } else if (currentInningsDataForScoring?.status !== 'in_progress') {
       setScoringMessage(
         'Cannot score on completed innings. Please check innings status.'
       );
@@ -249,6 +276,35 @@ export function ScorecardView({
     // Ball counting is handled by the backend
   };
 
+  // Helper function to check if it's the first ball of the current innings
+  const isFirstBallOfInnings = () => {
+    console.log('=== IS FIRST BALL CHECK ===');
+    console.log('Current innings:', currentInnings);
+    console.log('Scorecard data:', scorecardData);
+
+    const currentInningsData = scorecardData?.innings?.find(
+      innings => innings.innings_number === currentInnings
+    );
+    console.log('Current innings data:', currentInningsData);
+
+    if (!currentInningsData) {
+      console.log('No innings data found, returning true (first ball)');
+      return true; // If no innings data, consider it first ball
+    }
+
+    // Count total balls across all overs in this innings
+    const totalBalls = currentInningsData.overs?.reduce((total, over) => {
+      console.log('Over', over.over_number, 'has', over.balls?.length || 0, 'balls');
+      return total + (over.balls ? over.balls.length : 0);
+    }, 0) || 0;
+
+    console.log('Total balls in innings:', totalBalls);
+    console.log('Is first ball (totalBalls === 1):', totalBalls === 1);
+
+    // If there's exactly 1 ball, it's the first ball (and we can't undo it)
+    return totalBalls === 1;
+  };
+
   const handleUndoBall = () => {
     console.log('=== HANDLE UNDO BALL ===');
     console.log('Match ID:', matchId);
@@ -276,15 +332,23 @@ export function ScorecardView({
     }
 
     // Check if current innings is still in progress
-    const currentInningsData = scorecardData?.innings?.find(
+    const currentInningsDataForUndo = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
 
-    if (!currentInningsData || currentInningsData.status !== 'in_progress') {
+    if (!currentInningsDataForUndo || currentInningsDataForUndo.status !== 'in_progress') {
       setScoringMessage(
         'Cannot undo ball on completed innings. Please check innings status.'
       );
       setTimeout(() => setScoringMessage(null), 5000);
+      return;
+    }
+
+    // Check if it's the first ball of the innings
+    if (isFirstBallOfInnings()) {
+      console.log('❌ First ball of innings, blocking undo ball');
+      setScoringMessage('Cannot undo ball - this is the first ball of the innings.');
+      setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
@@ -336,12 +400,15 @@ export function ScorecardView({
     } else {
       // Check ball_type first for special deliveries
       switch (ball.ball_type) {
+        case 'WIDE':
         case 'wide':
           display = 'Wd';
           break;
+        case 'NO_BALL':
         case 'no_ball':
           display = 'Nb';
           break;
+        case 'DEAD_BALL':
         case 'dead_ball':
           display = 'Db';
           break;
@@ -362,28 +429,37 @@ export function ScorecardView({
       }
     }
 
-    const displayWithByes = ball.byes > 0 ? `${display}+${ball.byes}` : display;
+    // Handle display with byes
+    let displayWithByes: string;
+    if (ball.byes > 0) {
+      // For balls with byes, show "B" + runs + "+" + byes
+      if (ball.ball_type === 'WIDE' || ball.ball_type === 'wide' || ball.ball_type === 'NO_BALL' || ball.ball_type === 'no_ball') {
+        // For wide/no ball with byes, show ball type + "+" + byes
+        displayWithByes = `${display}+${ball.byes}`;
+      } else {
+        // For good balls with byes, show "B" + runs + "+" + byes
+        displayWithByes = `B${ball.runs}+${ball.byes}`;
+      }
+    } else {
+      displayWithByes = display;
+    }
 
     return (
       <div
         key={index}
         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
           ? 'border-red-500 bg-red-100 text-red-700'
-          : ball.ball_type === 'wide'
-            ? 'border-yellow-500 bg-yellow-100 text-yellow-700'
-            : ball.ball_type === 'no_ball'
-              ? 'border-orange-500 bg-orange-100 text-orange-700'
-              : ball.ball_type === 'dead_ball'
-                ? 'border-gray-500 bg-gray-100 text-gray-700'
-                : ball.run_type === 'LB'
-                  ? 'border-amber-500 bg-amber-100 text-amber-700'
-                  : ball.runs === 4
-                    ? 'border-blue-500 bg-blue-100 text-blue-700'
-                    : ball.runs === 6
-                      ? 'border-purple-500 bg-purple-100 text-purple-700'
-                      : ball.runs === 0
-                        ? 'border-gray-300 bg-gray-100 text-gray-600'
-                        : 'border-green-500 bg-green-100 text-green-700'
+          : ball.ball_type === 'WIDE' || ball.ball_type === 'wide' || ball.ball_type === 'NO_BALL' || ball.ball_type === 'no_ball' || ball.run_type === 'LB' || ball.byes > 0
+            ? 'border-slate-400 bg-slate-100 text-slate-700'
+            : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
+              ? 'border-gray-500 bg-gray-100 text-gray-700'
+              : ball.runs === 4
+                ? 'border-blue-500 bg-blue-100 text-blue-700'
+                : ball.runs === 6
+                  ? 'border-purple-500 bg-purple-100 text-purple-700'
+                  : ball.runs === 0
+                    ? 'border-gray-300 bg-gray-100 text-gray-600'
+                    : 'border-green-500 bg-green-100 text-green-700'
           }`}
       >
         {displayWithByes}
@@ -1074,27 +1150,51 @@ export function ScorecardView({
               </div>
             </div>
 
-            {/* Undo Ball Action */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleUndoBall}
-                  variant="outline"
-                  size="lg"
-                  className="border-red-500 text-red-700 hover:bg-red-50"
-                  disabled={scoring}
-                >
-                  {scoring ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-700"></div>
-                  ) : (
-                    <>
-                      <Undo2 className="h-4 w-4 mr-2" />
-                      Undo Last Ball
-                    </>
+            {/* Undo Ball Action - Only show if there are balls to undo */}
+            {(() => {
+              const currentInningsData = scorecardData?.innings?.find(
+                innings => innings.innings_number === currentInnings
+              );
+              const totalBalls = currentInningsData?.overs?.reduce((total, over) => {
+                return total + (over.balls ? over.balls.length : 0);
+              }, 0) || 0;
+
+              // Only show undo button if there are balls in the innings
+              if (totalBalls === 0) {
+                return null;
+              }
+
+              return (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleUndoBall}
+                      variant="outline"
+                      size="lg"
+                      className={`border-red-500 text-red-700 hover:bg-red-50 ${isFirstBallOfInnings() ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      disabled={scoring || isFirstBallOfInnings()}
+                    >
+                      {scoring ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-700"></div>
+                      ) : (
+                        <>
+                          <Undo2 className="h-4 w-4 mr-2" />
+                          Undo Last Ball
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {isFirstBallOfInnings() && (
+                    <div className="text-center mt-2">
+                      <span className="text-xs text-gray-500">
+                        Cannot undo - first ball of innings
+                      </span>
+                    </div>
                   )}
-                </Button>
-              </div>
-            </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
