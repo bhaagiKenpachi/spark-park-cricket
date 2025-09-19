@@ -96,9 +96,9 @@ export function MatchForm({
       errors.team_player_count = 'Team player count is required';
     } else if (
       formData.team_player_count < 1 ||
-      formData.team_player_count > 11
+      formData.team_player_count > 20
     ) {
-      errors.team_player_count = 'Team player count must be between 1 and 11';
+      errors.team_player_count = 'Team player count must be between 1 and 20';
     }
 
     if (formData.total_overs === 0) {
