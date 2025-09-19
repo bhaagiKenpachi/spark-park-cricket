@@ -282,18 +282,23 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 // checkRedisHealth checks the health of the Redis connection
 func (h *HealthHandler) checkRedisHealth(ctx context.Context) ServiceHealth {
 	start := time.Now()
+	responseTime := time.Since(start)
 
 	if h.dbClient == nil || h.dbClient.CacheManager == nil {
+		// Cache is disabled, which is a valid configuration
 		return ServiceHealth{
-			Status:       "unhealthy",
-			ResponseTime: time.Since(start),
-			Error:        "Redis cache manager not initialized",
+			Status:       "healthy",
+			ResponseTime: responseTime,
+			Details: map[string]interface{}{
+				"connection": "disabled",
+				"reason":     "cache disabled by configuration",
+			},
 		}
 	}
 
 	// Try to health check Redis
 	err := h.dbClient.CacheManager.HealthCheck()
-	responseTime := time.Since(start)
+	responseTime = time.Since(start)
 
 	if err != nil {
 		return ServiceHealth{
