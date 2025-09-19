@@ -7,6 +7,7 @@ import (
 	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -27,7 +28,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Use(middleware.ValidationMiddleware)
 	r.Use(middleware.MetricsMiddleware)
 	r.Use(middleware.RateLimitMiddleware(100)) // 100 requests per minute
-	r.Use(corsMiddleware())
+	r.Use(corsMiddleware(cfg))
 
 	// Initialize services
 	serviceContainer := services.NewContainer(dbClient.Repositories, cfg)
@@ -158,20 +159,16 @@ func authSuccessHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // corsMiddleware sets up CORS middleware
-func corsMiddleware() func(http.Handler) http.Handler {
+func corsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get the origin from the request
 			origin := r.Header.Get("Origin")
 
-			// Allow specific origins for credentials
-			allowedOrigins := []string{
-				"http://localhost:3000",
-				"http://localhost:3001",
-				"http://localhost:3002",
-				"http://127.0.0.1:3000",
-				"http://127.0.0.1:3001",
-				"http://127.0.0.1:3002",
+			// Parse allowed origins from config
+			allowedOrigins := strings.Split(cfg.AllowedOrigins, ",")
+			for i, allowedOrigin := range allowedOrigins {
+				allowedOrigins[i] = strings.TrimSpace(allowedOrigin)
 			}
 
 			// Check if origin is allowed
