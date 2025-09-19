@@ -88,24 +88,28 @@ backend/
 ### Layer Responsibilities
 
 #### 1. **Handlers Layer** (`internal/handlers/`)
+
 - HTTP request/response handling
 - Input validation and sanitization
 - Response formatting
 - Error handling
 
 #### 2. **Services Layer** (`internal/services/`)
+
 - Business logic implementation
 - Domain rule enforcement
 - Cross-cutting concerns (logging, metrics)
 - Event broadcasting
 
 #### 3. **Repository Layer** (`internal/repository/`)
+
 - Data access abstraction
 - Database operations
 - Query optimization
 - Data mapping
 
 #### 4. **Models Layer** (`internal/models/`)
+
 - Domain entities
 - Data transfer objects (DTOs)
 - Validation rules
@@ -146,6 +150,7 @@ r.Use(corsMiddleware())                   // CORS handling
 ### Core Entities
 
 #### Series
+
 ```sql
 CREATE TABLE series (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -158,6 +163,7 @@ CREATE TABLE series (
 ```
 
 #### Matches
+
 ```sql
 CREATE TABLE matches (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -177,6 +183,7 @@ CREATE TABLE matches (
 ```
 
 #### Innings
+
 ```sql
 CREATE TABLE innings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -195,6 +202,7 @@ CREATE TABLE innings (
 ```
 
 #### Overs
+
 ```sql
 CREATE TABLE overs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -211,6 +219,7 @@ CREATE TABLE overs (
 ```
 
 #### Balls
+
 ```sql
 CREATE TABLE balls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -230,55 +239,61 @@ CREATE TABLE balls (
 ## 🔌 API Documentation
 
 ### Base URL
+
 ```
 http://localhost:8080/api/v1
 ```
 
 ### Health Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Basic health check |
-| GET | `/health/database` | Database connectivity check |
-| GET | `/health/websocket` | WebSocket status |
-| GET | `/health/system` | System resource monitoring |
-| GET | `/health/metrics` | Performance metrics |
+
+| Method | Endpoint            | Description                 |
+| ------ | ------------------- | --------------------------- |
+| GET    | `/health`           | Basic health check          |
+| GET    | `/health/database`  | Database connectivity check |
+| GET    | `/health/websocket` | WebSocket status            |
+| GET    | `/health/system`    | System resource monitoring  |
+| GET    | `/health/metrics`   | Performance metrics         |
 
 ### Series Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/series` | List all series |
-| POST | `/series` | Create new series |
-| GET | `/series/{id}` | Get series by ID |
-| PUT | `/series/{id}` | Update series |
-| DELETE | `/series/{id}` | Delete series |
+
+| Method | Endpoint       | Description       |
+| ------ | -------------- | ----------------- |
+| GET    | `/series`      | List all series   |
+| POST   | `/series`      | Create new series |
+| GET    | `/series/{id}` | Get series by ID  |
+| PUT    | `/series/{id}` | Update series     |
+| DELETE | `/series/{id}` | Delete series     |
 
 ### Match Management
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/matches` | List all matches |
-| POST | `/matches` | Create new match |
-| GET | `/matches/{id}` | Get match by ID |
-| PUT | `/matches/{id}` | Update match |
-| DELETE | `/matches/{id}` | Delete match |
-| GET | `/matches/series/{series_id}` | Get matches by series |
+
+| Method | Endpoint                      | Description           |
+| ------ | ----------------------------- | --------------------- |
+| GET    | `/matches`                    | List all matches      |
+| POST   | `/matches`                    | Create new match      |
+| GET    | `/matches/{id}`               | Get match by ID       |
+| PUT    | `/matches/{id}`               | Update match          |
+| DELETE | `/matches/{id}`               | Delete match          |
+| GET    | `/matches/series/{series_id}` | Get matches by series |
 
 ### Scorecard System
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/scorecard/start` | Start match scoring |
-| POST | `/scorecard/ball` | Add ball event |
-| GET | `/scorecard/{match_id}` | Get complete scorecard |
-| GET | `/scorecard/{match_id}/current-over` | Get current over |
-| GET | `/scorecard/{match_id}/innings/{innings_number}` | Get innings details |
-| GET | `/scorecard/{match_id}/innings/{innings_number}/over/{over_number}` | Get over details |
+
+| Method | Endpoint                                                            | Description            |
+| ------ | ------------------------------------------------------------------- | ---------------------- |
+| POST   | `/scorecard/start`                                                  | Start match scoring    |
+| POST   | `/scorecard/ball`                                                   | Add ball event         |
+| GET    | `/scorecard/{match_id}`                                             | Get complete scorecard |
+| GET    | `/scorecard/{match_id}/current-over`                                | Get current over       |
+| GET    | `/scorecard/{match_id}/innings/{innings_number}`                    | Get innings details    |
+| GET    | `/scorecard/{match_id}/innings/{innings_number}/over/{over_number}` | Get over details       |
 
 ### WebSocket Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/ws/match/{match_id}` | WebSocket connection for match |
-| GET | `/ws/stats` | Connection statistics |
-| GET | `/ws/stats/{match_id}` | Room-specific statistics |
-| POST | `/ws/test/{match_id}` | Test broadcast |
+
+| Method | Endpoint               | Description                    |
+| ------ | ---------------------- | ------------------------------ |
+| GET    | `/ws/match/{match_id}` | WebSocket connection for match |
+| GET    | `/ws/stats`            | Connection statistics          |
+| GET    | `/ws/stats/{match_id}` | Room-specific statistics       |
+| POST   | `/ws/test/{match_id}`  | Test broadcast                 |
 
 ## 🔄 Sequence Flows
 
@@ -372,12 +387,12 @@ sequenceDiagram
     WS->>R: Add client to room
     WS-->>H: Connection established
     H-->>C: WebSocket connection
-    
+
     loop Real-time updates
         WS->>R: Broadcast message
         R-->>C: Score update
     end
-    
+
     C->>WS: Close connection
     WS->>R: Remove client
     WS->>WS: Cleanup empty rooms
@@ -405,6 +420,7 @@ sequenceDiagram
 ## 🎨 Frontend Architecture
 
 ### Technology Stack
+
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript with strict configuration
 - **State Management**: Redux Toolkit + Redux Saga
@@ -412,6 +428,7 @@ sequenceDiagram
 - **Testing**: Jest, React Testing Library, Cypress
 
 ### Project Structure
+
 ```
 web/
 ├── src/
@@ -449,6 +466,7 @@ graph TD
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Go 1.23+
 - Node.js 20.17+
 - Supabase account
@@ -457,12 +475,14 @@ graph TD
 ### Backend Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd spark-park-cricket
    ```
 
 2. **Setup backend**
+
    ```bash
    cd backend
    cp env.example .env
@@ -471,6 +491,7 @@ graph TD
    ```
 
 3. **Run database migrations**
+
    ```bash
    go run cmd/migrate/main.go
    ```
@@ -483,12 +504,14 @@ graph TD
 ### Frontend Setup
 
 1. **Setup frontend**
+
    ```bash
    cd web
    npm install
    ```
 
 2. **Create environment file**
+
    ```bash
    cp .env.example .env.local
    # Update with your API URLs
@@ -502,6 +525,7 @@ graph TD
 ### Environment Variables
 
 #### Backend (.env)
+
 ```env
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_API_KEY=your_supabase_anon_key
@@ -509,6 +533,7 @@ PORT=8080
 ```
 
 #### Frontend (.env.local)
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
@@ -553,11 +578,13 @@ npm run test:coverage
 ### Backend Deployment
 
 1. **Build the application**
+
    ```bash
    go build -o spark-park-cricket cmd/server/main.go
    ```
 
 2. **Run migrations**
+
    ```bash
    go run cmd/migrate/main.go
    ```
@@ -570,6 +597,7 @@ npm run test:coverage
 ### Frontend Deployment
 
 1. **Build for production**
+
    ```bash
    npm run build
    ```

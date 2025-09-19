@@ -7,12 +7,12 @@ import { scoreboardSaga } from './scoreboardSaga';
 import { scorecardSaga } from './scorecardSaga';
 
 export function* rootSaga() {
-    yield all([
-        fork(seriesSaga),
-        fork(matchSaga),
-        fork(teamSaga),
-        fork(playerSaga),
-        fork(scoreboardSaga),
-        fork(scorecardSaga),
-    ]);
+  yield all([
+    fork(seriesSaga),
+    fork(matchSaga),
+    fork(teamSaga),
+    fork(playerSaga),
+    fork(scoreboardSaga),
+    fork(scorecardSaga),
+  ]);
 }

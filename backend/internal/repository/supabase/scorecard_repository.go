@@ -14,13 +14,20 @@ import (
 
 type scorecardRepository struct {
 	client *supabase.Client
+	schema string
 }
 
 // NewScorecardRepository creates a new scorecard repository
-func NewScorecardRepository(client *supabase.Client) interfaces.ScorecardRepository {
+func NewScorecardRepository(client *supabase.Client, schema string) interfaces.ScorecardRepository {
 	return &scorecardRepository{
 		client: client,
+		schema: schema,
 	}
+}
+
+// getTableName returns the table name (schema is handled by Supabase client configuration)
+func (r *scorecardRepository) getTableName(table string) string {
+	return table
 }
 
 // CreateInnings creates a new innings
@@ -166,7 +173,7 @@ func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.Score
 	}
 
 	var result []models.ScorecardOver
-	_, err := r.client.From("overs").Insert(data, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From(r.getTableName("overs")).Insert(data, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		log.Printf("Error creating over: %v", err)
 		return fmt.Errorf("failed to create over: %w", err)
@@ -185,7 +192,7 @@ func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inn
 	log.Printf("Getting over %d for innings %s", overNumber, inningsID)
 
 	var overs []*models.ScorecardOver
-	_, err := r.client.From("overs").
+	_, err := r.client.From(r.getTableName("overs")).
 		Select("*", "", false).
 		Eq("innings_id", inningsID).
 		Eq("over_number", fmt.Sprintf("%d", overNumber)).
@@ -209,7 +216,7 @@ func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID stri
 	log.Printf("Getting current over for innings %s", inningsID)
 
 	var overs []*models.ScorecardOver
-	_, err := r.client.From("overs").
+	_, err := r.client.From(r.getTableName("overs")).
 		Select("*", "", false).
 		Eq("innings_id", inningsID).
 		Eq("status", string(models.OverStatusInProgress)).
@@ -234,7 +241,7 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 	log.Printf("Getting all overs for innings %s", inningsID)
 
 	var overs []*models.ScorecardOver
-	_, err := r.client.From("overs").
+	_, err := r.client.From(r.getTableName("overs")).
 		Select("*", "", false).
 		Eq("innings_id", inningsID).
 		Order("over_number", &postgrest.OrderOpts{Ascending: true}).
@@ -262,7 +269,7 @@ func (r *scorecardRepository) UpdateOver(ctx context.Context, over *models.Score
 	}
 
 	var result []models.ScorecardOver
-	_, err := r.client.From("overs").
+	_, err := r.client.From(r.getTableName("overs")).
 		Update(data, "", "").
 		Eq("id", over.ID).
 		ExecuteTo(&result)
@@ -286,7 +293,7 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 	}
 
 	var result []models.ScorecardOver
-	_, err := r.client.From("overs").
+	_, err := r.client.From(r.getTableName("overs")).
 		Update(data, "", "").
 		Eq("id", overID).
 		ExecuteTo(&result)
@@ -322,7 +329,7 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 	}
 
 	var result []models.ScorecardBall
-	_, err := r.client.From("balls").Insert(data, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From(r.getTableName("balls")).Insert(data, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		log.Printf("Error creating ball: %v", err)
 		return fmt.Errorf("failed to create ball: %w", err)
@@ -341,7 +348,7 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 	log.Printf("Getting balls for over %s", overID)
 
 	var balls []*models.ScorecardBall
-	_, err := r.client.From("balls").
+	_, err := r.client.From(r.getTableName("balls")).
 		Select("*", "", false).
 		Eq("over_id", overID).
 		ExecuteTo(&balls)
@@ -369,7 +376,7 @@ func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*
 	log.Printf("Getting last ball for over %s", overID)
 
 	var balls []*models.ScorecardBall
-	_, err := r.client.From("balls").
+	_, err := r.client.From(r.getTableName("balls")).
 		Select("*", "", false).
 		Eq("over_id", overID).
 		Limit(1, "").
@@ -392,7 +399,7 @@ func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*
 func (r *scorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
 	log.Printf("Deleting ball %s", ballID)
 
-	_, _, err := r.client.From("balls").
+	_, _, err := r.client.From(r.getTableName("balls")).
 		Delete("", "").
 		Eq("id", ballID).
 		Execute()
@@ -466,7 +473,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 	for _, inn := range innings {
 		// Get overs for this innings
 		var overs []*models.ScorecardOver
-		_, err := r.client.From("overs").
+		_, err := r.client.From(r.getTableName("overs")).
 			Select("*", "", false).
 			Eq("innings_id", inn.ID).
 			Order("over_number", &postgrest.OrderOpts{Ascending: true}).

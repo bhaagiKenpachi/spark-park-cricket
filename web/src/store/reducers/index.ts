@@ -7,12 +7,12 @@ import { scoreboardSlice } from './scoreboardSlice';
 import scorecardReducer from './scorecardSlice';
 
 export const rootReducer = combineReducers({
-    series: seriesSlice.reducer,
-    match: matchSlice.reducer,
-    team: teamSlice.reducer,
-    player: playerSlice.reducer,
-    scoreboard: scoreboardSlice.reducer,
-    scorecard: scorecardReducer,
+  series: seriesSlice.reducer,
+  match: matchSlice.reducer,
+  team: teamSlice.reducer,
+  player: playerSlice.reducer,
+  scoreboard: scoreboardSlice.reducer,
+  scorecard: scorecardReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
