@@ -5,7 +5,6 @@ import { teamSlice } from './teamSlice';
 import { playerSlice } from './playerSlice';
 import { scoreboardSlice } from './scoreboardSlice';
 import scorecardReducer from './scorecardSlice';
-import authReducer from './authSlice';
 
 export const rootReducer = combineReducers({
   series: seriesSlice.reducer,
@@ -14,7 +13,6 @@ export const rootReducer = combineReducers({
   player: playerSlice.reducer,
   scoreboard: scoreboardSlice.reducer,
   scorecard: scorecardReducer,
-  auth: authReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

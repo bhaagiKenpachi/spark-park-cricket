@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { runSaga } from 'redux-saga';
 import {
   fetchMatchesSaga,
@@ -6,7 +7,7 @@ import {
   deleteMatchSaga,
 } from '@/store/sagas/matchSaga';
 import {
-  fetchMatchesRequest,
+  // fetchMatchesRequest,
   fetchMatchesSuccess,
   fetchMatchesFailure,
   createMatchRequest,
@@ -43,8 +44,8 @@ jest.mock('../../services/api', () => ({
 }));
 
 describe('Match Saga Tests', () => {
-  let dispatched: unknown[];
-  let mockApiService: jest.Mocked<typeof import('@/services/api').apiService>;
+  let dispatched: any[];
+  let mockApiService: any;
 
   beforeEach(() => {
     dispatched = [];

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ApiService, ApiError } from '@/services/api';
 import { Match } from '@/store/reducers/matchSlice';
 
@@ -42,7 +43,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue(mockMatches),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.getMatches();
 
@@ -72,7 +73,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ message: 'Internal server error' }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await expect(apiService.getMatches()).rejects.toThrow(ApiError);
     });
@@ -91,8 +92,8 @@ describe('ApiService - Match Endpoints', () => {
           ok: false,
           status: 503,
           json: jest.fn().mockResolvedValue({ message: 'Service unavailable' }),
-        } as Response)
-        .mockResolvedValueOnce(mockResponse as Response);
+        } as any)
+        .mockResolvedValueOnce(mockResponse as any);
 
       const result = await apiService.getMatches();
 
@@ -128,7 +129,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue(mockMatch),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.getMatchById('1');
 
@@ -158,7 +159,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ message: 'Match not found' }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await expect(apiService.getMatchById('999')).rejects.toThrow(ApiError);
     });
@@ -192,7 +193,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue(mockCreatedMatch),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.createMatch(matchData);
 
@@ -246,12 +247,12 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({}),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await apiService.createMatch(matchData);
 
       const expectedData = { ...matchData };
-      delete (expectedData as { match_number?: number }).match_number;
+      delete (expectedData as any).match_number;
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/matches?_t='),
@@ -282,14 +283,10 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ message: 'Validation failed' }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await expect(
-        apiService.createMatch(
-          invalidMatchData as unknown as Parameters<
-            typeof apiService.createMatch
-          >[0]
-        )
+        apiService.createMatch(invalidMatchData as any)
       ).rejects.toThrow(ApiError);
     });
   });
@@ -325,7 +322,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue(mockUpdatedMatch),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.updateMatch(matchId, updateData);
 
@@ -359,7 +356,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ message: 'Match not found' }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await expect(apiService.updateMatch(matchId, updateData)).rejects.toThrow(
         ApiError
@@ -377,7 +374,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ success: true }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.deleteMatch(matchId);
 
@@ -404,7 +401,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue({ message: 'Match not found' }),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await expect(apiService.deleteMatch(matchId)).rejects.toThrow(ApiError);
     });
@@ -436,7 +433,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue(mockMatches),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.getMatchesBySeries(seriesId);
 
@@ -467,7 +464,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue([]),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       const result = await apiService.getMatchesBySeries(seriesId);
 
@@ -491,7 +488,7 @@ describe('ApiService - Match Endpoints', () => {
       // First call fails with network error, second call succeeds
       mockFetch
         .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-        .mockResolvedValueOnce(mockResponse as Response);
+        .mockResolvedValueOnce(mockResponse as any);
 
       const result = await apiService.getMatches();
 
@@ -519,7 +516,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue([]),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await apiService.getMatches();
 
@@ -545,7 +542,7 @@ describe('ApiService - Match Endpoints', () => {
         json: jest.fn().mockResolvedValue([]),
       };
 
-      mockFetch.mockResolvedValue(mockResponse as Response);
+      mockFetch.mockResolvedValue(mockResponse as any);
 
       await apiService.getMatches();
 

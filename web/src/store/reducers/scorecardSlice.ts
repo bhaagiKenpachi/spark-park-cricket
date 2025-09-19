@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Enums
@@ -105,7 +106,7 @@ interface ScorecardState {
   scoring: boolean;
 }
 
-const initialState: ScorecardState = {
+export const initialState: ScorecardState = {
   scorecard: null,
   loading: false,
   error: null,
@@ -172,6 +173,66 @@ export const scorecardSlice = createSlice({
         }
       }
     },
+    fetchInningsScoreSummarySuccess: (
+      state,
+      action: PayloadAction<InningsSummary>
+    ) => {
+      state.loading = false;
+      if (state.scorecard) {
+        const inningsIndex = state.scorecard.innings.findIndex(
+          innings => innings.innings_number === action.payload.innings_number
+        );
+        if (inningsIndex !== -1) {
+          // Update existing innings and preserve overs array
+          const existingOvers =
+            state.scorecard.innings?.[inningsIndex]?.overs || [];
+          state.scorecard.innings![inningsIndex] = {
+            ...action.payload,
+            overs: existingOvers,
+          };
+        } else {
+          // Create new innings with empty overs array
+          state.scorecard.innings.push({
+            ...action.payload,
+            overs: [],
+          });
+        }
+      }
+    },
+    fetchLatestOverSuccess: (
+      state,
+      action: PayloadAction<{ inningsNumber: number; over: OverSummary }>
+    ) => {
+      state.loading = false;
+      if (state.scorecard) {
+        const inningsIndex = state.scorecard.innings.findIndex(
+          innings => innings.innings_number === action.payload.inningsNumber
+        );
+        if (inningsIndex !== -1) {
+          // Initialize overs array if it doesn't exist
+          if (!state.scorecard.innings![inningsIndex]!.overs) {
+            state.scorecard.innings![inningsIndex]!.overs = [];
+          }
+
+          const overIndex = state.scorecard.innings![
+            inningsIndex
+          ]!.overs!.findIndex(
+            over => over.over_number === action.payload.over.over_number
+          );
+
+          if (overIndex !== -1) {
+            // Update existing over
+            state.scorecard.innings![inningsIndex]!.overs![overIndex] =
+              action.payload.over;
+          } else {
+            // Add new over
+            state.scorecard.innings![inningsIndex]!.overs!.push(
+              action.payload.over
+            );
+          }
+        }
+      }
+    },
     fetchInningsFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
@@ -195,6 +256,8 @@ export const {
   addBallFailure,
   fetchInningsRequest,
   fetchInningsSuccess,
+  fetchInningsScoreSummarySuccess,
+  fetchLatestOverSuccess,
   fetchInningsFailure,
   clearScorecard,
 } = scorecardSlice.actions;

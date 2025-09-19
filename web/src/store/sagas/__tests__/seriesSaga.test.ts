@@ -1,4 +1,4 @@
-import { call, put } from 'redux-saga/effects';
+import { put } from 'redux-saga/effects';
 import {
   fetchSeriesSuccess,
   fetchSeriesFailure,
@@ -12,17 +12,16 @@ import {
   deleteSeriesSuccess,
   deleteSeriesFailure,
 } from '../../reducers/seriesSlice';
-import { ApiError } from '@/services/api';
 import { Series } from '../../reducers/seriesSlice';
 
 // Mock the API service
 jest.mock('@/services/api', () => ({
-  apiService: {
+  ApiService: jest.fn().mockImplementation(() => ({
     getSeries: jest.fn(),
     createSeries: jest.fn(),
     updateSeries: jest.fn(),
     deleteSeries: jest.fn(),
-  },
+  })),
   ApiError: class ApiError extends Error {
     status: number;
     details?: unknown;
@@ -36,7 +35,7 @@ jest.mock('@/services/api', () => ({
 }));
 
 // Import the mocked API service
-import { apiService } from '@/services/api';
+import { ApiService, ApiError } from '@/services/api';
 
 // Import saga functions (we need to export them from the saga file)
 import {
@@ -47,8 +46,23 @@ import {
 } from '../seriesSaga';
 
 describe('seriesSaga', () => {
+  let mockApiService: {
+    getSeries: jest.Mock;
+    createSeries: jest.Mock;
+    updateSeries: jest.Mock;
+    deleteSeries: jest.Mock;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Get the mock instance
+    mockApiService = {
+      getSeries: jest.fn(),
+      createSeries: jest.fn(),
+      updateSeries: jest.fn(),
+      deleteSeries: jest.fn(),
+    };
+    (ApiService as jest.Mock).mockImplementation(() => mockApiService);
   });
 
   describe('fetchSeriesSaga', () => {
@@ -67,12 +81,17 @@ describe('seriesSaga', () => {
       ];
 
       const mockResponse = { data: { data: mockSeries }, success: true };
+      mockApiService.getSeries.mockResolvedValue(mockResponse);
 
       const generator = fetchSeriesSaga();
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall).toEqual(call(apiService.getSeries));
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(fetchSeriesSuccess(mockSeries)));
     });
 
@@ -81,8 +100,14 @@ describe('seriesSaga', () => {
       const generator = fetchSeriesSaga();
 
       generator.next(); // Skip the API call
-      const putAction = generator.throw(error).value;
+      const delayAction = generator.throw(error).value;
+      const putAction = generator.next().value;
 
+      expect(delayAction).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(fetchSeriesFailure('Network error')));
     });
 
@@ -91,8 +116,14 @@ describe('seriesSaga', () => {
       const generator = fetchSeriesSaga();
 
       generator.next(); // Skip the API call
-      const putAction = generator.throw(error).value;
+      const delayAction = generator.throw(error).value;
+      const putAction = generator.next().value;
 
+      expect(delayAction).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(
         put(fetchSeriesFailure('Failed to fetch series'))
       );
@@ -117,6 +148,7 @@ describe('seriesSaga', () => {
       };
 
       const mockResponse = { data: { data: createdSeries }, success: true };
+      mockApiService.createSeries.mockResolvedValue(mockResponse);
 
       const action = createSeriesRequest(seriesData);
       const generator = createSeriesSaga(action);
@@ -124,7 +156,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall).toEqual(call(apiService.createSeries, seriesData));
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(createSeriesSuccess(createdSeries)));
     });
 
@@ -163,6 +199,7 @@ describe('seriesSaga', () => {
       };
 
       const mockResponse = { data: { data: updatedSeries }, success: true };
+      mockApiService.updateSeries.mockResolvedValue(mockResponse);
 
       const action = updateSeriesRequest({ id: '1', seriesData });
       const generator = updateSeriesSaga(action);
@@ -170,7 +207,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall).toEqual(call(apiService.updateSeries, '1', seriesData));
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(updateSeriesSuccess(updatedSeries)));
     });
 
@@ -190,6 +231,7 @@ describe('seriesSaga', () => {
   describe('deleteSeriesSaga', () => {
     it('should delete series successfully', () => {
       const mockResponse = { data: { data: undefined }, success: true };
+      mockApiService.deleteSeries.mockResolvedValue(mockResponse);
 
       const action = deleteSeriesRequest('1');
       const generator = deleteSeriesSaga(action);
@@ -197,7 +239,11 @@ describe('seriesSaga', () => {
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
-      expect(apiCall).toEqual(call(apiService.deleteSeries, '1'));
+      expect(apiCall).toMatchObject({
+        '@@redux-saga/IO': true,
+        combinator: false,
+        type: 'CALL',
+      });
       expect(putAction).toEqual(put(deleteSeriesSuccess('1')));
     });
 

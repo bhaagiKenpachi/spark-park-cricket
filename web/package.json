@@ -22,6 +22,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@apollo/client": "^4.0.5",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
@@ -30,6 +31,7 @@
     "@types/redux-saga": "^0.10.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "graphql": "^16.11.0",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
     "react": "19.1.0",

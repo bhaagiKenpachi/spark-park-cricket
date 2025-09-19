@@ -9,7 +9,7 @@ export const store = configureStore({
   reducer: rootReducer,
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
-      thunk: true, // Enable Redux Thunk for async actions
+      thunk: false,
       serializableCheck: {
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
       },

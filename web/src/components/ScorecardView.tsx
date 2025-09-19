@@ -25,22 +25,15 @@ import {
   ChevronUp,
   RefreshCw,
 } from 'lucide-react';
-import { User } from '@/services/authService';
 
 interface ScorecardViewProps {
   matchId: string;
   onBack: () => void;
-  seriesCreatedBy?: string;
-  currentUser?: User | null;
-  isAuthenticated: boolean;
 }
 
 export function ScorecardView({
   matchId,
   onBack,
-  seriesCreatedBy,
-  currentUser,
-  isAuthenticated,
 }: ScorecardViewProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { scorecard, loading, error, scoring } = useAppSelector(
@@ -54,18 +47,6 @@ export function ScorecardView({
   const [expandedOvers, setExpandedOvers] = useState<{
     [key: string]: boolean;
   }>({});
-
-  // Check if current user owns the series
-  const isOwner =
-    isAuthenticated && currentUser && seriesCreatedBy === currentUser.id;
-
-  console.log('=== SCORECARD VIEW OWNERSHIP CHECK ===');
-  console.log('Is Authenticated:', isAuthenticated);
-  console.log('Current User:', currentUser);
-  console.log('Current User ID:', currentUser?.id);
-  console.log('Series Created By:', seriesCreatedBy);
-  console.log('Is Owner:', isOwner);
-  console.log('Match ID:', matchId);
 
   useEffect(() => {
     dispatch(fetchScorecardRequest(matchId));
@@ -113,33 +94,12 @@ export function ScorecardView({
   }, [scoring, showLiveScoring, scorecard]);
 
   const handleStartScoring = () => {
-    console.log('=== HANDLE START SCORING ===');
-    console.log('Match ID:', matchId);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Match Status:', scorecardData?.match_status);
-    console.log('Current cookies:', document.cookie);
-
-    // Check ownership before allowing scoring operations
-    if (!isOwner) {
-      console.log('❌ Not owner, blocking start scoring');
-      setScoringMessage('Only the series creator can start scoring.');
-      setTimeout(() => setScoringMessage(null), 3000);
-      return;
-    }
-
-    console.log('✅ Owner check passed, proceeding with start scoring');
-
     // If match is already live, just show the interface without calling the API
     if (scorecardData?.match_status === 'live') {
-      console.log('Match already live, showing interface without API call');
       setShowLiveScoring(true);
       setScoringMessage('Live scoring interface opened!');
       setTimeout(() => setScoringMessage(null), 3000);
     } else {
-      console.log('Match not live, calling startScoringRequest API');
       // Only call the API if match is not live yet
       dispatch(startScoringRequest(matchId));
       setShowLiveScoring(true);
@@ -147,25 +107,6 @@ export function ScorecardView({
   };
 
   const handleBallScore = (runs: number, ballType: string) => {
-    console.log('=== HANDLE BALL SCORE ===');
-    console.log('Runs:', runs);
-    console.log('Ball Type:', ballType);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Current cookies:', document.cookie);
-
-    // Check ownership before allowing ball scoring
-    if (!isOwner) {
-      console.log('❌ Not owner, blocking ball scoring');
-      setScoringMessage('Only the series creator can score balls.');
-      setTimeout(() => setScoringMessage(null), 3000);
-      return;
-    }
-
-    console.log('✅ Owner check passed, proceeding with ball scoring');
-
     // Check if current innings is still in progress
     const currentInningsData = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
@@ -406,29 +347,27 @@ export function ScorecardView({
           >
             {scorecardData.match_status.toUpperCase()}
           </Badge>
-          {scorecardData.match_status === 'live' &&
-            !showLiveScoring &&
-            isOwner && (
-              <Button
-                onClick={handleStartScoring}
-                className="bg-green-600 hover:bg-green-700"
-                title={
-                  scorecardData.match_status === 'live'
-                    ? 'Open Live Scoring'
-                    : 'Start Live Scoring'
-                }
-                disabled={scoring}
-              >
-                {scoring ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-2" />
-                    Live Scoring
-                  </>
-                )}
-              </Button>
-            )}
+          {scorecardData.match_status === 'live' && !showLiveScoring && (
+            <Button
+              onClick={handleStartScoring}
+              className="bg-green-600 hover:bg-green-700"
+              title={
+                scorecardData.match_status === 'live'
+                  ? 'Open Live Scoring'
+                  : 'Start Live Scoring'
+              }
+              disabled={scoring}
+            >
+              {scoring ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Live Scoring
+                </>
+              )}
+            </Button>
+          )}
         </div>
         {scoringMessage && (
           <div className="mt-3">
@@ -771,7 +710,7 @@ export function ScorecardView({
       </div>
 
       {/* Live Scoring Interface */}
-      {showLiveScoring && isOwner && (
+      {showLiveScoring && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">

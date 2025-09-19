@@ -355,38 +355,52 @@ func UpdateMatchToLiveForWorkflow(t *testing.T, router http.Handler, matchID str
 
 // CleanupScorecardTestData cleans up scorecard related test data
 func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
+	t.Logf("DEBUG: Starting comprehensive cleanup of all test data")
+
 	// Clean up scorecard related tables in reverse order of dependencies
 	// Balls -> Overs -> Innings -> Matches -> Series
 
-	// Clean up balls - use a condition that will match all records
+	// Clean up balls - delete ALL records using a condition that matches all
 	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup balls: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up balls table")
 	}
 
-	// Clean up overs - use a condition that will match all records
+	// Clean up overs - delete ALL records using a condition that matches all
 	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup overs: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up overs table")
 	}
 
-	// Clean up innings - use a condition that will match all records
+	// Clean up innings - delete ALL records using a condition that matches all
 	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup innings: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up innings table")
 	}
 
-	// Clean up matches - use a condition that will match all records
+	// Clean up matches - delete ALL records using a condition that matches all
 	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup matches: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up matches table")
 	}
 
-	// Clean up series - use a condition that will match all records
+	// Clean up series - delete ALL records using a condition that matches all
 	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup series: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up series table")
 	}
+
+	t.Logf("DEBUG: Completed comprehensive cleanup of all test data")
 }
 
 // CreateAuthenticatedTestUser creates a test user and session for integration tests

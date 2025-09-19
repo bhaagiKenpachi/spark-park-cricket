@@ -43,6 +43,14 @@ func (m *MockScorecardService) GetCurrentOver(ctx context.Context, matchID strin
 	return args.Get(0).(*models.ScorecardOver), args.Error(1)
 }
 
+func (m *MockScorecardService) GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	args := m.Called(ctx, overID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*models.ScorecardBall), args.Error(1)
+}
+
 func (m *MockScorecardService) ShouldCompleteMatch(ctx context.Context, matchID string, secondInnings *models.Innings, match *models.Match) (bool, string) {
 	args := m.Called(ctx, matchID, secondInnings, match)
 	return args.Bool(0), args.String(1)

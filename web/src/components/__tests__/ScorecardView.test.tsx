@@ -1,14 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { configureStore } from '@reduxjs/toolkit';
 import { ScorecardView } from '../ScorecardView';
-import scorecardSlice, {
-  ScorecardResponse,
-  InningsSummary,
-  OverSummary,
-  BallSummary,
-} from '../../store/reducers/scorecardSlice';
+import { ScorecardResponse } from '../../store/reducers/scorecardSlice';
 
 // Mock the API service
 jest.mock('../../services/api', () => ({
@@ -20,8 +14,8 @@ jest.mock('../../services/api', () => ({
 }));
 
 // Mock Redux hooks
-const mockDispatch = jest.fn();
-const mockUseAppSelector = jest.fn();
+// const mockDispatch = jest.fn();
+// const mockUseAppSelector = jest.fn();
 
 jest.mock('../../store/hooks', () => ({
   useAppDispatch: () => jest.fn(),
@@ -46,19 +40,19 @@ jest.mock('../../store/reducers/scorecardSlice', () => ({
 }));
 
 // Mock store for testing
-const createMockStore = (initialState: { scorecard?: unknown }) => {
-  return configureStore({
-    reducer: {
-      scorecard: scorecardSlice.reducer,
-    },
-    preloadedState: initialState,
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({
-        serializableCheck: false,
-        immutableCheck: false,
-      }),
-  });
-};
+// const createMockStore = (initialState: any) => {
+//   return configureStore({
+//     reducer: {
+//       scorecard: scorecardSlice.reducer,
+//     },
+//     preloadedState: initialState,
+//     middleware: getDefaultMiddleware =>
+//       getDefaultMiddleware({
+//         serializableCheck: false,
+//         immutableCheck: false,
+//       }),
+//   });
+// };
 
 // Mock data
 const mockScorecardData: ScorecardResponse = {
@@ -200,13 +194,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getByText('Loading scorecard...')).toBeInTheDocument();
   });
@@ -219,13 +207,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getByText('Error:')).toBeInTheDocument();
     expect(screen.getByText('Failed to fetch scorecard')).toBeInTheDocument();
@@ -240,13 +222,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(
       screen.getByText('No scorecard found for this match.')
@@ -262,13 +238,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getByText('Test Series - Match #1')).toBeInTheDocument();
     expect(screen.getByText('Team A vs Team B')).toBeInTheDocument();
@@ -285,13 +255,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getAllByText('Innings 1')[0]).toBeInTheDocument();
     expect(screen.getByText('Live')).toBeInTheDocument();
@@ -307,13 +271,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     // Check for ball displays - use getAllByText to handle multiple elements
     expect(screen.getAllByText('1')[0]).toBeInTheDocument(); // Single run
@@ -331,13 +289,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getByText('Live Scoring')).toBeInTheDocument();
   });
@@ -350,13 +302,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const backButton = screen.getByTitle('Back');
     fireEvent.click(backButton);
@@ -372,13 +318,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const refreshButton = screen.getByTitle('Refresh Scorecard');
     fireEvent.click(refreshButton);
@@ -395,13 +335,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const liveScoringButton = screen.getByText('Live Scoring');
     fireEvent.click(liveScoringButton);
@@ -420,13 +354,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const liveScoringButton = screen.getByText('Live Scoring');
     fireEvent.click(liveScoringButton);
@@ -467,13 +395,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const liveScoringButton = screen.getByText('Live Scoring');
     fireEvent.click(liveScoringButton);
@@ -481,7 +403,9 @@ describe('ScorecardView Component', () => {
     await waitFor(() => {
       const fourButtons = screen.getAllByText('4');
       // Click the first four button (should be the scoring button)
-      fireEvent.click(fourButtons[0]);
+      if (fourButtons[0]) {
+        fireEvent.click(fourButtons[0]);
+      }
     });
 
     // The ball scoring should trigger an addBallRequest action
@@ -496,13 +420,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const liveScoringButton = screen.getByText('Live Scoring');
     fireEvent.click(liveScoringButton);
@@ -510,7 +428,9 @@ describe('ScorecardView Component', () => {
     await waitFor(() => {
       const twoButtons = screen.getAllByText('2');
       // Click the first two button (should be the scoring button)
-      fireEvent.click(twoButtons[0]);
+      if (twoButtons[0]) {
+        fireEvent.click(twoButtons[0]);
+      }
     });
 
     // Check if byes selection is working by looking for the byes button
@@ -525,13 +445,7 @@ describe('ScorecardView Component', () => {
       scoring: true,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     // Should show some loading indication
     expect(screen.getByText('LIVE')).toBeInTheDocument();
@@ -550,13 +464,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getAllByText('Match ready to start')[0]).toBeInTheDocument();
     expect(
@@ -582,13 +490,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     expect(screen.getAllByText('Completed')[0]).toBeInTheDocument();
   });
@@ -601,13 +503,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     // Look for the "Show All Overs" button
     const showOversButton = screen.getByText(/Show All Overs/);
@@ -626,13 +522,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     // Check if extras are displayed (the exact format may vary)
     expect(screen.getAllByText(/Extras/)[0]).toBeInTheDocument();
@@ -646,13 +536,7 @@ describe('ScorecardView Component', () => {
       scoring: false,
     });
 
-    render(
-      <ScorecardView
-        matchId="match-1"
-        onBack={mockOnBack}
-        isAuthenticated={true}
-      />
-    );
+    render(<ScorecardView matchId="match-1" onBack={mockOnBack} />);
 
     const liveScoringButton = screen.getByText('Live Scoring');
     fireEvent.click(liveScoringButton);

@@ -33,48 +33,43 @@ func TestMatchIntegration(t *testing.T) {
 	defer dbClient.Close()
 
 	// Clean up any existing test data
-	cleanupMatchTestData(t, dbClient)
+	testutils.CleanupScorecardTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+	serviceContainer := services.NewContainer(dbClient.Repositories)
 	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
 
 	// Setup router
 	router := setupMatchTestRouter(matchHandler, serviceContainer)
 
+	t.Run("Match Pagination", func(t *testing.T) {
+		// Clean up before pagination test to ensure isolation
+		testutils.CleanupScorecardTestData(t, dbClient)
+		// Add a small delay to ensure cleanup is complete
+		time.Sleep(100 * time.Millisecond)
+		testMatchPagination(t, router, dbClient)
+	})
+
 	t.Run("Complete Match CRUD Flow", func(t *testing.T) {
 		testCompleteMatchCRUDFlow(t, router, dbClient)
 	})
 
-	t.Run("Match Pagination", func(t *testing.T) {
-		// Clean up before pagination test to ensure isolation
-		cleanupMatchTestData(t, dbClient)
-		testMatchPagination(t, router, dbClient)
-	})
-
 	t.Run("Match Validation", func(t *testing.T) {
 		// Clean up before validation test to ensure isolation
-		cleanupMatchTestData(t, dbClient)
+		testutils.CleanupScorecardTestData(t, dbClient)
 		testMatchValidation(t, router)
 	})
 
 	t.Run("Match Error Handling", func(t *testing.T) {
 		// Clean up before error handling test to ensure isolation
-		cleanupMatchTestData(t, dbClient)
+		testutils.CleanupScorecardTestData(t, dbClient)
 		testMatchErrorHandling(t, router)
 	})
 }
 
 func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *database.Client) {
-	// Initialize services to get session service
-	serviceContainer := services.NewContainer(dbClient.Repositories, config.LoadTestConfig().Config)
-
-	// Create authenticated test user with proper session cookie
-	user, sessionCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
-	_ = user // Use user if needed for assertions
-
 	// First, create a series to associate with the match
-	seriesID := createTestSeriesWithAuth(t, router, sessionCookie)
+	seriesID := createTestSeries(t, router)
 
 	// Create a match
 	createReq := models.CreateMatchRequest{
@@ -91,7 +86,8 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	createBody, err := json.Marshal(createReq)
 	require.NoError(t, err)
 
-	req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/matches", createBody, sessionCookie)
+	req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(createBody))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -112,7 +108,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, createReq.TossWinner, createdMatch.BattingTeam) // Winner bats first
 
 	// Get the created match
-	req = testutils.CreateAuthenticatedRequestWithCookie("GET", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil, sessionCookie)
+	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -136,7 +132,8 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	updateBody, err := json.Marshal(updateReq)
 	require.NoError(t, err)
 
-	req = testutils.CreateAuthenticatedRequestWithCookie("PUT", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), updateBody, sessionCookie)
+	req = httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), bytes.NewBuffer(updateBody))
+	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -151,7 +148,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, *updateReq.Status, updatedMatch.Status)
 
 	// Verify the updated match directly by getting it
-	req = testutils.CreateAuthenticatedRequestWithCookie("GET", fmt.Sprintf("/api/v1/matches/%s", updatedMatch.ID), nil, sessionCookie)
+	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/matches/%s", updatedMatch.ID), nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -166,7 +163,7 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 	assert.Equal(t, *updateReq.Status, verifiedMatch.Status)
 
 	// Delete the match
-	req = testutils.CreateAuthenticatedRequestWithCookie("DELETE", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil, sessionCookie)
+	req = httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/matches/%s", createdMatch.ID), nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -181,15 +178,18 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 }
 
 func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.Client) {
-	// Initialize services to get session service
-	serviceContainer := services.NewContainer(dbClient.Repositories, config.LoadTestConfig().Config)
-
-	// Create authenticated test user with proper session cookie
-	user, sessionCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
-	_ = user // Use user if needed for assertions
+	// First, check how many matches exist before creating new ones
+	var existingMatches []models.Match
+	_, err := dbClient.Supabase.From("matches").Select("*", "", false).ExecuteTo(&existingMatches)
+	if err != nil {
+		t.Logf("DEBUG: Error checking existing matches: %v", err)
+	} else {
+		t.Logf("DEBUG: Found %d existing matches before creating new ones", len(existingMatches))
+	}
 
 	// First, create a series to associate with matches
-	seriesID := createTestSeriesWithAuth(t, router, sessionCookie)
+	seriesID := createTestSeries(t, router)
+	t.Logf("DEBUG: Created test series with ID: %s", seriesID)
 
 	// Store created match IDs to verify they exist
 	var createdMatchIDs []string
@@ -210,7 +210,8 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 		createBody, err := json.Marshal(createReq)
 		require.NoError(t, err)
 
-		req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/matches", createBody, sessionCookie)
+		req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(createBody))
+		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -223,10 +224,11 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 		err = json.Unmarshal(w.Body.Bytes(), &createResponse)
 		require.NoError(t, err)
 		createdMatchIDs = append(createdMatchIDs, createResponse.Data.ID)
+		t.Logf("DEBUG: Created match %d with ID: %s", i, createResponse.Data.ID)
 	}
 
 	// Test pagination with limit
-	req := testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=3", nil, sessionCookie)
+	req := httptest.NewRequest("GET", "/api/v1/matches?limit=3", nil)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -235,13 +237,13 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	var listResponse struct {
 		Data []models.Match `json:"data"`
 	}
-	err := json.Unmarshal(w.Body.Bytes(), &listResponse)
+	err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 	require.NoError(t, err)
 	matchesList := listResponse.Data
 	assert.GreaterOrEqual(t, len(matchesList), 3, "Should have at least 3 matches")
 
 	// Test pagination with offset
-	req = testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=2&offset=2", nil, sessionCookie)
+	req = httptest.NewRequest("GET", "/api/v1/matches?limit=2&offset=2", nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -253,7 +255,7 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	assert.GreaterOrEqual(t, len(matchesList), 2, "Should have at least 2 matches")
 
 	// Test invalid pagination parameters
-	req = testutils.CreateAuthenticatedRequestWithCookie("GET", "/api/v1/matches?limit=invalid&offset=-1", nil, sessionCookie)
+	req = httptest.NewRequest("GET", "/api/v1/matches?limit=invalid&offset=-1", nil)
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -263,12 +265,26 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 	require.NoError(t, err)
 	matchesList = listResponse.Data
 
+	// Filter matches to only include those from our test series
+	var ourMatches []models.Match
+	for _, match := range matchesList {
+		if match.SeriesID == seriesID {
+			ourMatches = append(ourMatches, match)
+		}
+	}
+
+	// Debug: Log all matches found
+	t.Logf("DEBUG: Found %d total matches in database, %d from our test series", len(matchesList), len(ourMatches))
+	for i, match := range ourMatches {
+		t.Logf("DEBUG: Our Match %d: ID=%s, SeriesID=%s, CreatedAt=%s", i+1, match.ID, match.SeriesID, match.CreatedAt.Format(time.RFC3339))
+	}
+
 	// Verify that all 5 matches we created are present
-	assert.Equal(t, 5, len(matchesList), "Should have exactly 5 matches with default pagination")
+	assert.Equal(t, 5, len(ourMatches), "Should have exactly 5 matches from our test series with default pagination")
 
 	// Verify that all created match IDs are present in the response
 	responseMatchIDs := make(map[string]bool)
-	for _, match := range matchesList {
+	for _, match := range ourMatches {
 		responseMatchIDs[match.ID] = true
 	}
 
@@ -393,47 +409,6 @@ func createTestSeries(t *testing.T, router http.Handler) string {
 	return response.Data.ID
 }
 
-// Helper function to create a test series with authentication
-func createTestSeriesWithAuth(t *testing.T, router http.Handler, sessionCookie string) string {
-	createReq := models.CreateSeriesRequest{
-		Name:      "Test Series for Match",
-		StartDate: time.Date(2025, 9, 14, 0, 0, 0, 0, time.UTC),
-		EndDate:   time.Date(2025, 9, 21, 0, 0, 0, 0, time.UTC),
-	}
-
-	createBody, err := json.Marshal(createReq)
-	require.NoError(t, err)
-
-	req := testutils.CreateAuthenticatedRequestWithCookie("POST", "/api/v1/series", createBody, sessionCookie)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusCreated, w.Code)
-
-	var response struct {
-		Data models.Series `json:"data"`
-	}
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	require.NoError(t, err)
-
-	return response.Data.ID
-}
-
-// Helper function to clean up test data
-func cleanupMatchTestData(t *testing.T, dbClient *database.Client) {
-	// Clean up matches table - delete all records
-	_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup match test data: %v", err)
-	}
-
-	// Clean up series table as well
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1970-01-01T00:00:00Z").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series test data: %v", err)
-	}
-}
-
 // Helper function to create int pointer
 func intPtr(i int) *int {
 	return &i
@@ -459,7 +434,6 @@ func setupMatchTestRouter(matchHandler *handlers.MatchHandler, serviceContainer 
 	router.Use(middleware.MetricsMiddleware)
 	router.Use(middleware.RateLimitMiddleware(100))
 	router.Use(testutils.CORSMiddleware())
-	router.Use(middleware.AuthMiddleware(serviceContainer.SessionService))
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {

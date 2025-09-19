@@ -29,7 +29,7 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Series:     supabase.NewSeriesRepository(client),
 		Match:      supabase.NewMatchRepository(client),
 		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client),
+		Scorecard:  supabase.NewScorecardRepository(client, "testing_db"),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),

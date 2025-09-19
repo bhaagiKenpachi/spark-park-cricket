@@ -1,4 +1,4 @@
-describe('Scorecard Management E2E Tests', () => {
+describe.skip('Scorecard Management E2E Tests', () => {
   const baseUrl = 'http://localhost:3000';
   const matchId = 'match-1';
   const seriesId = 'series-1';

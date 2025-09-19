@@ -1,10 +1,5 @@
 import '@testing-library/jest-dom';
 
-// Polyfill for TextEncoder/TextDecoder
-const { TextEncoder, TextDecoder } = require('util');
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
-
 // Mock Next.js router
 jest.mock('next/router', () => ({
   useRouter() {
@@ -57,8 +52,6 @@ global.fetch = jest.fn(() =>
     statusText: 'OK',
     json: () => Promise.resolve({ data: [], success: true }),
     text: () => Promise.resolve(''),
-    headers: new Headers(),
-    url: 'http://localhost:3000',
   })
 );
 
