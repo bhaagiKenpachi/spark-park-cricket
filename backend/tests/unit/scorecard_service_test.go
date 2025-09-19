@@ -1,0 +1,804 @@
+package unit
+
+import (
+	"context"
+	"errors"
+	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+// Note: MockScorecardRepository is already defined in match_completion_unit_test.go
+
+func TestScorecardService_StartScoring(t *testing.T) {
+	tests := []struct {
+		name               string
+		matchID            string
+		match              *models.Match
+		getMatchError      error
+		existingInnings    []*models.Innings
+		getInningsError    error
+		createInningsError error
+		expectedError      string
+	}{
+		{
+			name:    "successful start scoring",
+			matchID: "match-1",
+			match: &models.Match{
+				ID:         "match-1",
+				Status:     models.MatchStatusLive,
+				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
+			},
+			existingInnings: []*models.Innings{},
+			expectedError:   "",
+		},
+		{
+			name:          "match not found",
+			matchID:       "nonexistent-match",
+			getMatchError: errors.New("match not found"),
+			expectedError: "match not found",
+		},
+		{
+			name:    "match not live",
+			matchID: "match-1",
+			match: &models.Match{
+				ID:         "match-1",
+				Status:     models.MatchStatusCancelled,
+				TossWinner: models.TeamTypeA,
+			},
+			expectedError: "match is not live, cannot start scoring",
+		},
+		{
+			name:    "scoring already started",
+			matchID: "match-1",
+			match: &models.Match{
+				ID:         "match-1",
+				Status:     models.MatchStatusLive,
+				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
+			},
+			existingInnings: []*models.Innings{
+				{ID: "innings-1", MatchID: "match-1", InningsNumber: 1},
+			},
+			expectedError: "scoring already started for this match",
+		},
+		{
+			name:    "create innings error",
+			matchID: "match-1",
+			match: &models.Match{
+				ID:         "match-1",
+				Status:     models.MatchStatusLive,
+				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
+			},
+			existingInnings:    []*models.Innings{},
+			createInningsError: errors.New("database error"),
+			expectedError:      "failed to start scoring",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			if tt.match != nil {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.matchID).Return(tt.match, tt.getMatchError)
+			} else {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.matchID).Return(nil, tt.getMatchError)
+			}
+
+			if tt.getMatchError == nil && tt.match.Status == models.MatchStatusLive {
+				mockScorecardRepo.On("GetInningsByMatchID", mock.Anything, tt.matchID).Return(tt.existingInnings, tt.getInningsError)
+
+				if len(tt.existingInnings) == 0 {
+					mockScorecardRepo.On("CreateInnings", mock.Anything, mock.AnythingOfType("*models.Innings")).Return(tt.createInningsError)
+				}
+			}
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.StartScoring(ctx, tt.matchID)
+
+			// Assertions
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestScorecardService_AddBall(t *testing.T) {
+	tests := []struct {
+		name          string
+		req           *models.BallEventRequest
+		match         *models.Match
+		getMatchError error
+		expectedError string
+	}{
+		{
+			name: "match not found",
+			req: &models.BallEventRequest{
+				MatchID:       "nonexistent-match",
+				InningsNumber: 1,
+				BallType:      models.BallTypeGood,
+				RunType:       models.RunTypeOne,
+			},
+			getMatchError: errors.New("match not found"),
+			expectedError: "match not found",
+		},
+		{
+			name: "match not live",
+			req: &models.BallEventRequest{
+				MatchID:       "match-1",
+				InningsNumber: 1,
+				BallType:      models.BallTypeGood,
+				RunType:       models.RunTypeOne,
+			},
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusCancelled,
+				CreatedBy: "test-user-123",
+			},
+			expectedError: "match is not live, cannot add ball",
+		},
+		{
+			name: "invalid innings order - second innings without first",
+			req: &models.BallEventRequest{
+				MatchID:       "match-1",
+				InningsNumber: 2,
+				BallType:      models.BallTypeGood,
+				RunType:       models.RunTypeOne,
+			},
+			match: &models.Match{
+				ID:               "match-1",
+				Status:           models.MatchStatusLive,
+				TossWinner:       models.TeamTypeA,
+				BattingTeam:      models.TeamTypeA,
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			expectedError: "cannot start second innings, first innings must be played first",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			if tt.match != nil {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.req.MatchID).Return(tt.match, tt.getMatchError)
+			} else {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.req.MatchID).Return(nil, tt.getMatchError)
+			}
+
+			// For live matches, we need to mock the innings validation
+			if tt.getMatchError == nil && tt.match.Status == models.MatchStatusLive {
+				// Mock GetInningsByMatchID for innings validation
+				mockScorecardRepo.On("GetInningsByMatchID", mock.Anything, tt.req.MatchID).Return([]*models.Innings{}, nil)
+			}
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.AddBall(ctx, tt.req)
+
+			// Assertions
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestScorecardService_GetScorecard(t *testing.T) {
+	tests := []struct {
+		name              string
+		matchID           string
+		scorecard         *models.ScorecardResponse
+		getScorecardError error
+		expectedError     string
+	}{
+		{
+			name:    "successful get scorecard",
+			matchID: "match-1",
+			scorecard: &models.ScorecardResponse{
+				MatchID: "match-1",
+			},
+			expectedError: "",
+		},
+		{
+			name:              "scorecard not found",
+			matchID:           "nonexistent-match",
+			getScorecardError: errors.New("scorecard not found"),
+			expectedError:     "failed to get scorecard",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			mockScorecardRepo.On("GetScorecard", mock.Anything, tt.matchID).Return(tt.scorecard, tt.getScorecardError)
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			result, err := service.GetScorecard(context.Background(), tt.matchID)
+
+			// Assertions
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.scorecard, result)
+			}
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestScorecardService_GetCurrentOver(t *testing.T) {
+	tests := []struct {
+		name                string
+		matchID             string
+		inningsNumber       int
+		innings             *models.Innings
+		getInningsError     error
+		over                *models.ScorecardOver
+		getCurrentOverError error
+		expectedError       string
+	}{
+		{
+			name:          "successful get current over",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			innings: &models.Innings{
+				ID: "innings-1",
+			},
+			over: &models.ScorecardOver{
+				ID:         "over-1",
+				OverNumber: 1,
+			},
+			expectedError: "",
+		},
+		{
+			name:            "innings not found",
+			matchID:         "match-1",
+			inningsNumber:   1,
+			getInningsError: errors.New("innings not found"),
+			expectedError:   "innings not found",
+		},
+		{
+			name:          "no current over found",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			innings: &models.Innings{
+				ID: "innings-1",
+			},
+			getCurrentOverError: errors.New("no current over"),
+			expectedError:       "no current over found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			mockScorecardRepo.On("GetInningsByMatchAndNumber", mock.Anything, tt.matchID, tt.inningsNumber).Return(tt.innings, tt.getInningsError)
+
+			if tt.innings != nil {
+				mockScorecardRepo.On("GetCurrentOver", mock.Anything, tt.innings.ID).Return(tt.over, tt.getCurrentOverError)
+			}
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			result, err := service.GetCurrentOver(context.Background(), tt.matchID, tt.inningsNumber)
+
+			// Assertions
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.over, result)
+			}
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
+	tests := []struct {
+		name                 string
+		matchID              string
+		secondInnings        *models.Innings
+		match                *models.Match
+		firstInnings         *models.Innings
+		getFirstInningsError error
+		expectedComplete     bool
+		expectedReason       string
+	}{
+		{
+			name:    "target reached",
+			matchID: "match-1",
+			secondInnings: &models.Innings{
+				TotalRuns: 150,
+			},
+			match: &models.Match{
+				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
+			},
+			firstInnings: &models.Innings{
+				TotalRuns: 140,
+			},
+			expectedComplete: true,
+			expectedReason:   "target reached: 150/141",
+		},
+		{
+			name:    "all wickets lost",
+			matchID: "match-1",
+			secondInnings: &models.Innings{
+				TotalRuns:    100,
+				TotalWickets: 10,
+			},
+			match: &models.Match{
+				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
+			},
+			firstInnings: &models.Innings{
+				TotalRuns: 140,
+			},
+			expectedComplete: true,
+			expectedReason:   "all wickets lost: 10/10",
+		},
+		{
+			name:    "all overs completed",
+			matchID: "match-1",
+			secondInnings: &models.Innings{
+				TotalRuns:  100,
+				TotalOvers: 20.0,
+			},
+			match: &models.Match{
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			firstInnings: &models.Innings{
+				TotalRuns: 140,
+			},
+			expectedComplete: true,
+			expectedReason:   "all overs completed: 20.0/20",
+		},
+		{
+			name:    "match continues",
+			matchID: "match-1",
+			secondInnings: &models.Innings{
+				TotalRuns:    100,
+				TotalWickets: 5,
+				TotalOvers:   15.0,
+			},
+			match: &models.Match{
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			firstInnings: &models.Innings{
+				TotalRuns: 140,
+			},
+			expectedComplete: false,
+			expectedReason:   "match continues",
+		},
+		{
+			name:    "error getting first innings",
+			matchID: "match-1",
+			secondInnings: &models.Innings{
+				TotalRuns: 100,
+			},
+			match: &models.Match{
+				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
+			},
+			getFirstInningsError: errors.New("database error"),
+			expectedComplete:     false,
+			expectedReason:       "error getting first innings",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			mockScorecardRepo.On("GetInningsByMatchAndNumber", mock.Anything, tt.matchID, 1).Return(tt.firstInnings, tt.getFirstInningsError)
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			complete, reason := service.ShouldCompleteMatch(context.Background(), tt.matchID, tt.secondInnings, tt.match)
+
+			// Assertions
+			assert.Equal(t, tt.expectedComplete, complete)
+			assert.Equal(t, tt.expectedReason, reason)
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestScorecardService_GetNonTossWinner(t *testing.T) {
+	service := services.NewScorecardService(nil, nil)
+
+	tests := []struct {
+		name       string
+		tossWinner models.TeamType
+		expected   models.TeamType
+	}{
+		{
+			name:       "TeamA wins toss",
+			tossWinner: models.TeamTypeA,
+			expected:   models.TeamTypeB,
+		},
+		{
+			name:       "TeamB wins toss",
+			tossWinner: models.TeamTypeB,
+			expected:   models.TeamTypeA,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.GetNonTossWinner(tt.tossWinner)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestScorecardService_UndoBall(t *testing.T) {
+	tests := []struct {
+		name                string
+		matchID             string
+		inningsNumber       int
+		match               *models.Match
+		getMatchError       error
+		innings             *models.Innings
+		getInningsError     error
+		over                *models.ScorecardOver
+		getCurrentOverError error
+		balls               []*models.ScorecardBall
+		getBallsError       error
+		deleteBallError     error
+		updateOverError     error
+		updateInningsError  error
+		updateMatchError    error
+		expectedError       string
+	}{
+		{
+			name:          "successful undo ball",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:               "match-1",
+				Status:           models.MatchStatusLive,
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:           "innings-1",
+				Status:       string(models.InningsStatusInProgress),
+				TotalRuns:    10,
+				TotalBalls:   3,
+				TotalWickets: 0,
+				TotalOvers:   0.3,
+			},
+			over: &models.ScorecardOver{
+				ID:           "over-1",
+				TotalRuns:    4,
+				TotalBalls:   1,
+				TotalWickets: 0,
+				Status:       string(models.OverStatusInProgress),
+			},
+			balls: []*models.ScorecardBall{
+				{ID: "ball-1", BallNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, Runs: 1, Byes: 0, IsWicket: false},
+				{ID: "ball-2", BallNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeTwo, Runs: 2, Byes: 0, IsWicket: false},
+				{ID: "ball-3", BallNumber: 3, BallType: models.BallTypeGood, RunType: models.RunTypeOne, Runs: 1, Byes: 0, IsWicket: false},
+			},
+			expectedError: "",
+		},
+		{
+			name:          "match not found",
+			matchID:       "nonexistent-match",
+			inningsNumber: 1,
+			getMatchError: errors.New("match not found"),
+			expectedError: "match not found",
+		},
+		{
+			name:          "match not live",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusCancelled,
+				CreatedBy: "test-user-123",
+			},
+			expectedError: "match is not live, cannot undo ball",
+		},
+		{
+			name:          "innings not found",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
+			},
+			getInningsError: errors.New("innings not found"),
+			expectedError:   "innings not found",
+		},
+		{
+			name:          "innings not in progress",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:     "innings-1",
+				Status: string(models.InningsStatusCompleted),
+			},
+			expectedError: "innings is not in progress, cannot undo ball",
+		},
+		{
+			name:          "no current over found",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:     "innings-1",
+				Status: string(models.InningsStatusInProgress),
+			},
+			getCurrentOverError: errors.New("no current over"),
+			expectedError:       "no current over found",
+		},
+		{
+			name:          "no balls to undo",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:     "innings-1",
+				Status: string(models.InningsStatusInProgress),
+			},
+			over: &models.ScorecardOver{
+				ID: "over-1",
+			},
+			balls:         []*models.ScorecardBall{},
+			expectedError: "no balls to undo in this over",
+		},
+		{
+			name:          "delete ball error",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:     "innings-1",
+				Status: string(models.InningsStatusInProgress),
+			},
+			over: &models.ScorecardOver{
+				ID: "over-1",
+			},
+			balls: []*models.ScorecardBall{
+				{ID: "ball-1", BallNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, Runs: 1, Byes: 0, IsWicket: false},
+			},
+			deleteBallError: errors.New("database error"),
+			expectedError:   "failed to delete ball",
+		},
+		{
+			name:          "undo ball with wicket",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:               "match-1",
+				Status:           models.MatchStatusLive,
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:           "innings-1",
+				Status:       string(models.InningsStatusInProgress),
+				TotalRuns:    5,
+				TotalBalls:   2,
+				TotalWickets: 1,
+				TotalOvers:   0.2,
+			},
+			over: &models.ScorecardOver{
+				ID:           "over-1",
+				TotalRuns:    1,
+				TotalBalls:   1,
+				TotalWickets: 1,
+				Status:       string(models.OverStatusInProgress),
+			},
+			balls: []*models.ScorecardBall{
+				{ID: "ball-1", BallNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, Runs: 1, Byes: 0, IsWicket: false},
+				{ID: "ball-2", BallNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeWC, Runs: 0, Byes: 0, IsWicket: true, WicketType: "bowled"},
+			},
+			expectedError: "",
+		},
+		{
+			name:          "undo ball with wide",
+			matchID:       "match-1",
+			inningsNumber: 1,
+			match: &models.Match{
+				ID:               "match-1",
+				Status:           models.MatchStatusLive,
+				TeamAPlayerCount: 11,
+				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
+			},
+			innings: &models.Innings{
+				ID:           "innings-1",
+				Status:       string(models.InningsStatusInProgress),
+				TotalRuns:    3,
+				TotalBalls:   1,
+				TotalWickets: 0,
+				TotalOvers:   0.1,
+			},
+			over: &models.ScorecardOver{
+				ID:           "over-1",
+				TotalRuns:    3,
+				TotalBalls:   0, // Wide doesn't count as legal ball
+				TotalWickets: 0,
+				Status:       string(models.OverStatusInProgress),
+			},
+			balls: []*models.ScorecardBall{
+				{ID: "ball-1", BallNumber: 1, BallType: models.BallTypeWide, RunType: models.RunTypeOne, Runs: 1, Byes: 0, IsWicket: false},
+				{ID: "ball-2", BallNumber: 2, BallType: models.BallTypeWide, RunType: models.RunTypeTwo, Runs: 2, Byes: 0, IsWicket: false},
+			},
+			expectedError: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mocks
+			mockScorecardRepo := new(MockScorecardRepository)
+			mockMatchRepo := new(MockMatchRepository)
+
+			// Setup expectations
+			if tt.match != nil {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.matchID).Return(tt.match, tt.getMatchError)
+			} else {
+				mockMatchRepo.On("GetByID", mock.Anything, tt.matchID).Return(nil, tt.getMatchError)
+			}
+
+			if tt.getMatchError == nil && tt.match.Status == models.MatchStatusLive {
+				mockScorecardRepo.On("GetInningsByMatchAndNumber", mock.Anything, tt.matchID, tt.inningsNumber).Return(tt.innings, tt.getInningsError)
+
+				if tt.innings != nil && tt.innings.Status == string(models.InningsStatusInProgress) {
+					mockScorecardRepo.On("GetCurrentOver", mock.Anything, tt.innings.ID).Return(tt.over, tt.getCurrentOverError)
+
+					if tt.over != nil {
+						mockScorecardRepo.On("GetBallsByOver", mock.Anything, tt.over.ID).Return(tt.balls, tt.getBallsError)
+
+						if len(tt.balls) > 0 {
+							// Find the last ball
+							var lastBall *models.ScorecardBall
+							maxBallNumber := 0
+							for _, ball := range tt.balls {
+								if ball.BallNumber > maxBallNumber {
+									maxBallNumber = ball.BallNumber
+									lastBall = ball
+								}
+							}
+
+							if lastBall != nil {
+								mockScorecardRepo.On("DeleteBall", mock.Anything, lastBall.ID).Return(tt.deleteBallError)
+
+								if tt.deleteBallError == nil {
+									mockScorecardRepo.On("UpdateOver", mock.Anything, mock.AnythingOfType("*models.ScorecardOver")).Return(tt.updateOverError)
+									mockScorecardRepo.On("GetOversByInnings", mock.Anything, tt.innings.ID).Return([]*models.ScorecardOver{tt.over}, nil)
+									mockScorecardRepo.On("UpdateInnings", mock.Anything, mock.AnythingOfType("*models.Innings")).Return(tt.updateInningsError)
+
+									// If match was completed, we need to revert it
+									if tt.match.Status == models.MatchStatusCompleted {
+										mockMatchRepo.On("Update", mock.Anything, tt.matchID, mock.AnythingOfType("*models.Match")).Return(tt.updateMatchError)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// Create service
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+
+			// Test
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.UndoBall(ctx, tt.matchID, tt.inningsNumber)
+
+			// Assertions
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// Verify all expectations were met
+			mockScorecardRepo.AssertExpectations(t)
+			mockMatchRepo.AssertExpectations(t)
+		})
+	}
+}

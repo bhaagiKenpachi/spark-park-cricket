@@ -1,270 +1,141 @@
 # Database Migration Tool
 
-This Go script runs database migrations against your Supabase PostgreSQL database.
+This Go script automates the execution of database migrations for the Spark Park Cricket backend.
 
-## Features
+## Overview
 
-- ✅ **Automatic Migration Tracking**: Tracks applied migrations in `schema_migrations` table
-- ✅ **Transaction Safety**: Each migration runs in a transaction
-- ✅ **Version Control**: Migrations are ordered by version number
-- ✅ **Idempotent**: Safe to run multiple times
-- ✅ **Error Handling**: Comprehensive error reporting
-- ✅ **Progress Tracking**: Shows migration progress and status
-
-## Prerequisites
-
-1. **Environment Variables**: Set up your `.env` file with Supabase credentials
-2. **Go Dependencies**: Install required Go packages
-3. **Migration Files**: Ensure migration files exist in `internal/database/migrations/`
-
-## Setup
-
-### 1. Environment Configuration
-
-Create a `.env` file in the backend root directory:
-
-```env
-# Supabase Configuration
-SUPABASE_URL=https://qehkpqubnnpbaejhcwvx.supabase.co
-SUPABASE_API_KEY=your_anon_public_key_here
-
-# Database Configuration (for migrations)
-DATABASE_PASSWORD=your_database_password
-
-# Server Configuration
-PORT=8080
-```
-
-### 2. Install Dependencies
-
-```bash
-# Install PostgreSQL driver
-go mod tidy
-```
-
-### 3. Migration Files
-
-Ensure your migration files are in `internal/database/migrations/` with the naming convention:
-- `001_initial_schema.sql`
-- `002_sample_data.sql`
-- `003_add_indexes.sql`
+The migration tool reads SQL files from `internal/database/migrations/` and attempts to execute them against your Supabase database. It provides detailed logging and fallback instructions for manual execution when needed.
 
 ## Usage
 
-### Run All Migrations
+### Environment Variables
+
+The script requires the following environment variables:
+
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_API_KEY`: Your Supabase API key (service role key)
+
+### Running the Migration
 
 ```bash
-# From the backend directory
+# Set environment variables
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_API_KEY="your-service-role-key"
+
+# Run the migration
 go run cmd/migrate/main.go
 ```
 
-### Expected Output
+### In GitHub Actions
+
+The migration script is automatically executed in the CI/CD pipeline for integration and E2E tests.
+
+## Features
+
+- **Automatic SQL Processing**: Reads all `.sql` files from the migrations directory
+- **Statement Parsing**: Splits SQL into individual statements for better error handling
+- **DDL Detection**: Automatically handles CREATE TABLE, CREATE INDEX, and COMMENT statements
+- **Detailed Logging**: Provides comprehensive output about what's being executed
+- **Fallback Instructions**: When automatic execution fails, provides manual execution instructions
+- **Error Handling**: Gracefully handles missing files, invalid SQL, and connection issues
+
+## Migration Files
+
+Place your SQL migration files in `internal/database/migrations/` with the following naming convention:
+
+- `001_initial_schema.sql`
+- `002_add_indexes.sql`
+- `003_update_constraints.sql`
+
+## Supported SQL Statements
+
+The script automatically handles:
+
+- `CREATE EXTENSION`
+- `CREATE TABLE`
+- `CREATE INDEX`
+- `COMMENT ON TABLE`
+- `COMMENT ON COLUMN`
+
+Other statements may require manual execution in the Supabase Dashboard.
+
+## Output Example
 
 ```
-🏏 Spark Park Cricket - Database Migration Runner
-================================================
-Connecting to database...
-✓ Database connection established
-Starting database migrations...
-Applying migration: 001 (001_initial_schema)
-✓ Migration 001 applied successfully
-Applying migration: 002 (002_sample_data)
-✓ Migration 002 applied successfully
-✓ Applied 2 new migrations
-🎉 Database migrations completed successfully!
+🗄️ Starting database migration...
+📍 Supabase URL: https://your-project.supabase.co
+🔑 API Key: ********
+📁 Found 1 migration files: [001_complete_schema.sql]
+
+🔄 Processing migration: 001_complete_schema.sql
+📝 Executing SQL from 001_complete_schema.sql...
+   Statement 1: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
+   ✅ DDL statement executed successfully
+   Statement 2: CREATE TABLE IF NOT EXISTS dev_v1.series (...)
+   ✅ DDL statement executed successfully
+   ...
+
+🎉 Database migration completed!
+📋 Summary:
+   - Processed 1 migration files
+   - Successfully executed: 1
+   - Manual execution required: 0
 ```
-
-### Subsequent Runs
-
-```
-🏏 Spark Park Cricket - Database Migration Runner
-================================================
-Connecting to database...
-✓ Database connection established
-Starting database migrations...
-⏭️  Migration 001 already applied
-⏭️  Migration 002 already applied
-✓ All migrations are up to date
-🎉 Database migrations completed successfully!
-```
-
-## Migration File Format
-
-### Naming Convention
-- Format: `{version}_{description}.sql`
-- Example: `001_initial_schema.sql`
-- Version must be numeric and sortable
-
-### File Structure
-```sql
--- Migration: 001_initial_schema.sql
--- Description: Create initial database schema
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Create tables
-CREATE TABLE IF NOT EXISTS series (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Add indexes, constraints, etc.
-```
-
-## How It Works
-
-### 1. Connection
-- Connects to Supabase PostgreSQL database using connection string
-- Extracts project reference from `SUPABASE_URL`
-- Uses `DATABASE_PASSWORD` for authentication
-
-### 2. Migration Tracking
-- Creates `schema_migrations` table if it doesn't exist
-- Tracks applied migrations by version number
-- Prevents duplicate migration execution
-
-### 3. Migration Execution
-- Scans `internal/database/migrations/` directory
-- Sorts migrations by version number
-- Applies only pending migrations
-- Each migration runs in a transaction
-
-### 4. Error Handling
-- Validates database connection
-- Checks migration file existence
-- Rolls back failed migrations
-- Provides detailed error messages
 
 ## Troubleshooting
 
-### Connection Issues
+### Missing Environment Variables
 
-**Error**: `Failed to connect to database`
-- Check `SUPABASE_URL` format
-- Verify `DATABASE_PASSWORD` is correct
-- Ensure Supabase project is active
-
-**Error**: `Failed to ping database`
-- Check network connectivity
-- Verify database is accessible
-- Check firewall settings
-
-### Migration Issues
-
-**Error**: `Migrations directory not found`
-- Ensure `internal/database/migrations/` directory exists
-- Check current working directory
-
-**Error**: `Failed to execute migration`
-- Check SQL syntax in migration file
-- Verify table/column names
-- Check for conflicting constraints
-
-### Environment Issues
-
-**Error**: `SUPABASE_URL environment variable is required`
-- Create `.env` file in backend root
-- Set `SUPABASE_URL` with your project URL
-- Restart terminal/IDE to load environment
-
-## Advanced Usage
-
-### Custom Migration Directory
-
-Modify the `migrationsDir` variable in `main.go`:
-```go
-migrationsDir := "custom/migrations/path"
+```
+❌ SUPABASE_URL environment variable is required
+❌ SUPABASE_API_KEY environment variable is required
 ```
 
-### Connection String Customization
+**Solution**: Set the required environment variables before running the script.
 
-Modify the `GetConnectionString()` function for custom connection parameters:
-```go
-connStr := fmt.Sprintf("postgresql://postgres:%s@db.%s.supabase.co:5432/postgres?sslmode=require&connect_timeout=30",
-    os.Getenv("DATABASE_PASSWORD"), projectRef)
+### Migration Directory Not Found
+
+```
+❌ Migration directory not found: internal/database/migrations
 ```
 
-### Migration Validation
+**Solution**: Ensure you're running the script from the backend directory root.
 
-Add validation before applying migrations:
-```go
-// Validate migration content
-if strings.Contains(content, "DROP TABLE") {
-    return fmt.Errorf("migration contains dangerous DROP TABLE statement")
-}
-```
+### Manual Execution Required
+
+When the script cannot automatically execute certain SQL statements, it will:
+
+1. Display the full SQL content
+2. Provide a direct link to the Supabase Dashboard
+3. Suggest manual execution steps
 
 ## Integration with CI/CD
 
-### GitHub Actions Example
+The migration script is integrated into the GitHub Actions workflow:
 
-```yaml
-- name: Run Database Migrations
-  run: |
-    cd backend
-    go run cmd/migrate/main.go
-  env:
-    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-    SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-    DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-```
+- **Integration Tests**: Runs migrations before integration tests
+- **E2E Tests**: Runs migrations before end-to-end tests
+- **Error Handling**: Fails gracefully with clear error messages
+- **Logging**: Provides detailed output for debugging
 
-### Docker Example
+## Security Notes
 
-```dockerfile
-# Add migration step to Dockerfile
-COPY . .
-RUN go mod tidy
-CMD ["go", "run", "cmd/migrate/main.go"]
-```
+- The script masks API keys in output for security
+- Uses service role keys for database operations
+- Validates environment variables before execution
+- Provides secure fallback instructions
 
-## Best Practices
+## Development
 
-1. **Version Numbers**: Use zero-padded numbers (001, 002, 003)
-2. **Descriptive Names**: Use clear, descriptive migration names
-3. **Idempotent**: Write migrations that can run multiple times safely
-4. **Backup**: Always backup database before major migrations
-5. **Test**: Test migrations on development database first
-6. **Review**: Review migration SQL before applying to production
+To modify the migration script:
 
-## Migration Examples
+1. Edit `cmd/migrate/main.go`
+2. Test locally with dummy environment variables
+3. Ensure it compiles without errors
+4. Test in the CI/CD pipeline
 
-### Creating Tables
-```sql
--- 001_create_series_table.sql
-CREATE TABLE IF NOT EXISTS series (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+## Related Files
 
-### Adding Columns
-```sql
--- 002_add_series_description.sql
-ALTER TABLE series ADD COLUMN IF NOT EXISTS description TEXT;
-```
-
-### Creating Indexes
-```sql
--- 003_add_series_indexes.sql
-CREATE INDEX IF NOT EXISTS idx_series_name ON series(name);
-CREATE INDEX IF NOT EXISTS idx_series_dates ON series(start_date, end_date);
-```
-
-### Data Migrations
-```sql
--- 004_populate_initial_data.sql
-INSERT INTO series (name, start_date, end_date) VALUES
-('IPL 2024', '2024-03-22T00:00:00Z', '2024-05-26T23:59:59Z'),
-('World Cup 2024', '2024-10-01T00:00:00Z', '2024-11-15T23:59:59Z')
-ON CONFLICT DO NOTHING;
-```
+- `internal/database/migrations/`: SQL migration files
+- `MIGRATION_GUIDE.md`: Detailed migration instructions
+- `.github/workflows/backend-ci.yml`: CI/CD integration

@@ -33,7 +33,7 @@ web/
 
 ### Prerequisites
 
-- Node.js 20.17+ 
+- Node.js 20.17+
 - npm or yarn
 
 ### Installation
@@ -103,20 +103,20 @@ npm run type-check
 
 ## 📋 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `dev` | Start development server with Turbopack |
-| `build` | Build production bundle |
-| `start` | Start production server |
-| `lint` | Run ESLint |
-| `lint:fix` | Fix ESLint errors |
-| `format` | Format code with Prettier |
-| `test` | Run Jest tests |
-| `test:watch` | Run tests in watch mode |
-| `test:coverage` | Run tests with coverage report |
-| `e2e` | Run Cypress E2E tests |
-| `e2e:open` | Open Cypress test runner |
-| `type-check` | Run TypeScript compiler check |
+| Script          | Description                             |
+| --------------- | --------------------------------------- |
+| `dev`           | Start development server with Turbopack |
+| `build`         | Build production bundle                 |
+| `start`         | Start production server                 |
+| `lint`          | Run ESLint                              |
+| `lint:fix`      | Fix ESLint errors                       |
+| `format`        | Format code with Prettier               |
+| `test`          | Run Jest tests                          |
+| `test:watch`    | Run tests in watch mode                 |
+| `test:coverage` | Run tests with coverage report          |
+| `e2e`           | Run Cypress E2E tests                   |
+| `e2e:open`      | Open Cypress test runner                |
+| `type-check`    | Run TypeScript compiler check           |
 
 ## 🏗️ Architecture
 
@@ -187,9 +187,17 @@ npm start
 Create a `.env.local` file with:
 
 ```env
+# Backend API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
+
+# Authentication Configuration (if needed)
+# NEXT_PUBLIC_AUTH_DOMAIN=your-auth-domain
+# NEXT_PUBLIC_AUTH_CLIENT_ID=your-client-id
 ```
+
+**Note**: Copy `.env.example` to `.env.local` and modify the values as needed for your environment.
 
 ## 📚 Documentation
 

@@ -1047,6 +1047,583 @@
                         "description": "Add leg byes. Leg byes are runs scored off the batsman's body/legs."
                     },
                     "response": []
+                },
+                {
+                    "name": "Undo Last Ball",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scorecard",
+                                "{{match_id}}",
+                                "ball"
+                            ],
+                            "query": [
+                                {
+                                    "key": "innings",
+                                    "value": "1",
+                                    "description": "Innings number (1 or 2)"
+                                }
+                            ]
+                        },
+                        "description": "Undo the last ball from the current over. Removes the most recently added ball and recalculates all statistics (runs, balls, wickets, overs)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Undo Last Ball - Innings 2",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=2",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "scorecard",
+                                "{{match_id}}",
+                                "ball"
+                            ],
+                            "query": [
+                                {
+                                    "key": "innings",
+                                    "value": "2",
+                                    "description": "Second innings"
+                                }
+                            ]
+                        },
+                        "description": "Undo the last ball from the second innings. Use this when the match has progressed to the second innings."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "GraphQL Queries",
+            "item": [
+                {
+                    "name": "Get Live Scorecard - Minimal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetLiveScorecard($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            current_score {\\n                runs\\n                wickets\\n                overs\\n                run_rate\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch only the essential live scorecard information with current score and run rate"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Live Scorecard - Detailed",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetDetailedScorecard($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            match_number\\n            series_name\\n            team_a\\n            team_b\\n            total_overs\\n            toss_winner\\n            toss_type\\n            current_innings\\n            match_status\\n            current_score {\\n                runs\\n                wickets\\n                overs\\n                balls\\n                run_rate\\n            }\\n            current_over {\\n                over_number\\n                total_runs\\n                total_balls\\n                total_wickets\\n                status\\n                balls {\\n                    ball_number\\n                    ball_type\\n                    run_type\\n                    runs\\n                    byes\\n                    is_wicket\\n                    wicket_type\\n                }\\n            }\\n            innings {\\n                innings_number\\n                batting_team\\n                total_runs\\n                total_wickets\\n                total_overs\\n                total_balls\\n                status\\n                extras {\\n                    byes\\n                    leg_byes\\n                    wides\\n                    no_balls\\n                    total\\n                }\\n                overs {\\n                    over_number\\n                    total_runs\\n                    total_balls\\n                    total_wickets\\n                    status\\n                    balls {\\n                        ball_number\\n                        ball_type\\n                        run_type\\n                        runs\\n                        byes\\n                        is_wicket\\n                        wicket_type\\n                    }\\n                }\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch comprehensive scorecard information including all innings, overs, and ball details"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Current Score Only",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetCurrentScore($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            current_score {\\n                runs\\n                wickets\\n                overs\\n                run_rate\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch only the current score for real-time updates - minimal payload"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Current Over Only",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetCurrentOver($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            current_over {\\n                over_number\\n                total_runs\\n                total_balls\\n                total_wickets\\n                status\\n                balls {\\n                    ball_number\\n                    ball_type\\n                    run_type\\n                    runs\\n                    is_wicket\\n                }\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch only the current over information with ball details"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match Summary",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetMatchSummary($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            match_number\\n            series_name\\n            team_a\\n            team_b\\n            total_overs\\n            toss_winner\\n            current_innings\\n            match_status\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch only match summary information without detailed scoring data"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Innings Summary",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetInningsSummary($matchId: String!) {\\n        liveScorecard(match_id: $matchId) {\\n            match_id\\n            innings {\\n                innings_number\\n                batting_team\\n                total_runs\\n                total_wickets\\n                total_overs\\n                status\\n                extras {\\n                    total\\n                }\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Fetch only innings summaries without ball details"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match Details",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetMatchDetails($matchId: String!) {\\n        matchDetails(match_id: $matchId) {\\n            match_id\\n            match_number\\n            series_name\\n            team_a\\n            team_b\\n            total_overs\\n            toss_winner\\n            toss_type\\n            current_innings\\n            match_status\\n            batting_team\\n            team_a_player_count\\n            team_b_player_count\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get comprehensive match information including teams, toss details, and match status"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match Statistics",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetMatchStatistics($matchId: String!) {\\n        matchStatistics(match_id: $matchId) {\\n            total_runs\\n            total_wickets\\n            total_overs\\n            total_balls\\n            run_rate\\n            extras {\\n                byes\\n                leg_byes\\n                wides\\n                no_balls\\n                total\\n            }\\n            innings_count\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get aggregated match-level statistics including total runs, wickets, overs, and run rate"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Innings Details",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetInningsDetails($matchId: String!, $inningsNumber: Int!) {\\n        inningsDetails(match_id: $matchId, innings_number: $inningsNumber) {\\n            innings_number\\n            batting_team\\n            total_runs\\n            total_wickets\\n            total_overs\\n            total_balls\\n            status\\n            extras {\\n                byes\\n                leg_byes\\n                wides\\n                no_balls\\n                total\\n            }\\n            overs {\\n                over_number\\n                total_runs\\n                total_balls\\n                total_wickets\\n                status\\n                balls {\\n                    ball_number\\n                    ball_type\\n                    run_type\\n                    runs\\n                    byes\\n                    is_wicket\\n                    wicket_type\\n                }\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get complete details for a specific innings including all overs and balls"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Over Details",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetOverDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!) {\\n        overDetails(match_id: $matchId, innings_number: $inningsNumber, over_number: $overNumber) {\\n            over_number\\n            total_runs\\n            total_balls\\n            total_wickets\\n            status\\n            balls {\\n                ball_number\\n                ball_type\\n                run_type\\n                runs\\n                byes\\n                is_wicket\\n                wicket_type\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1,\n        \"overNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get details for a specific over in a specific innings"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Ball Details",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetBallDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!) {\\n        ballDetails(match_id: $matchId, innings_number: $inningsNumber, over_number: $overNumber) {\\n            ball_number\\n            ball_type\\n            run_type\\n            runs\\n            byes\\n            is_wicket\\n            wicket_type\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1,\n        \"overNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get all balls for a specific over"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match Teams",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetMatchTeams($matchId: String!) {\\n        matchTeams(match_id: $matchId) {\\n            id\\n            name\\n            players_count\\n            created_at\\n            updated_at\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get team information for a match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Match Players",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetMatchPlayers($matchId: String!) {\\n        matchPlayers(match_id: $matchId) {\\n            id\\n            name\\n            team_id\\n            created_at\\n            updated_at\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get player information for a match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Player Statistics",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetPlayerStatistics($matchId: String!) {\\n        playerStatistics(match_id: $matchId) {\\n            player_id\\n            player_name\\n            team_id\\n            runs_scored\\n            balls_faced\\n            wickets_taken\\n            overs_bowled\\n            runs_conceded\\n            strike_rate\\n            economy_rate\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\"\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get player performance statistics for a match"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Latest Over",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetLatestOver($matchId: String!, $inningsNumber: Int!) {\\n        latestOver(match_id: $matchId, innings_number: $inningsNumber) {\\n            over_number\\n            total_runs\\n            total_balls\\n            total_wickets\\n            status\\n            balls {\\n                ball_number\\n                ball_type\\n                run_type\\n                runs\\n                byes\\n                is_wicket\\n                wicket_type\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get the current/latest over for a specific innings"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Overs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetAllOvers($matchId: String!, $inningsNumber: Int!) {\\n        allOvers(match_id: $matchId, innings_number: $inningsNumber) {\\n            over_number\\n            total_runs\\n            total_balls\\n            total_wickets\\n            status\\n            balls {\\n                ball_number\\n                ball_type\\n                run_type\\n                runs\\n                byes\\n                is_wicket\\n                wicket_type\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get all overs for a specific innings"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Innings Score",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"query\": \"query GetInningsScore($matchId: String!, $inningsNumber: Int!) {\\n        inningsScore(match_id: $matchId, innings_number: $inningsNumber) {\\n            innings_number\\n            batting_team\\n            total_runs\\n            total_wickets\\n            total_overs\\n            total_balls\\n            status\\n            extras {\\n                byes\\n                leg_byes\\n                wides\\n                no_balls\\n                total\\n            }\\n        }\\n    }\",\n    \"variables\": {\n        \"matchId\": \"{{match_id}}\",\n        \"inningsNumber\": 1\n    }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql"
+                            ]
+                        },
+                        "description": "Get basic score information for a specific innings"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GraphQL Playground",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/graphql/playground",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "graphql",
+                                "playground"
+                            ]
+                        },
+                        "description": "Access GraphQL Playground for interactive query testing and schema exploration"
+                    },
+                    "response": []
                 }
             ]
         }

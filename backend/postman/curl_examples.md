@@ -400,6 +400,16 @@ curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id/innings/1'
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id/innings/1/over/1'
 ```
 
+### Undo Last Ball
+```bash
+curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
+```
+
+### Undo Last Ball - Innings 2
+```bash
+curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=2'
+```
+
 ## Scorecard Workflow Example
 
 ### Complete Cricket Match Scoring Workflow
@@ -527,6 +537,17 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 ```
 
+6. **Undo Last Ball (if needed)**
+```bash
+# Undo the wicket ball from the previous step
+curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
+```
+
+7. **View Updated Scorecard**
+```bash
+curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
+```
+
 ## Run Types and Ball Types
 
 ### Run Types
@@ -550,3 +571,140 @@ curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 - `"run_out"`: Run Out
 - `"stumped"`: Stumped
 - `"hit_wicket"`: Hit Wicket
+
+## Undo Ball Functionality
+
+The undo ball feature allows you to remove the last ball from the current over and automatically recalculate all statistics.
+
+### Key Features:
+- **Removes Last Ball**: Deletes the most recently added ball from the current over
+- **Statistics Recalculation**: Automatically updates runs, balls, wickets, and overs
+- **Status Management**: Properly handles over and innings status changes
+- **Validation**: Ensures match is live and innings is in progress
+
+### Usage:
+```bash
+# Undo last ball from innings 1
+curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
+
+# Undo last ball from innings 2
+curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=2'
+```
+
+### What Gets Undone:
+- **Runs**: Removes runs from the ball (including byes)
+- **Balls**: Decrements legal ball count (good balls only)
+- **Wickets**: Removes wicket if the ball was a wicket
+- **Overs**: Recalculates over progress and completion status
+- **Innings**: Updates innings statistics and completion status
+
+### Error Cases:
+- Match not found
+- Match not live
+- Innings not found or not in progress
+- No balls to undo
+- Invalid innings number (must be 1 or 2)
+
+## GraphQL Queries
+
+GraphQL allows you to fetch only the fields you need, reducing payload size and improving performance.
+
+### Get Live Scorecard - Minimal
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetLiveScorecard($matchId: String!) { liveScorecard(match_id: $matchId) { match_id current_score { runs wickets overs run_rate } } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### Get Live Scorecard - Detailed
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetDetailedScorecard($matchId: String!) { liveScorecard(match_id: $matchId) { match_id match_number series_name team_a team_b total_overs toss_winner toss_type current_innings match_status current_score { runs wickets overs balls run_rate } current_over { over_number total_runs total_balls total_wickets status balls { ball_number ball_type run_type runs byes is_wicket wicket_type } } innings { innings_number batting_team total_runs total_wickets total_overs total_balls status extras { byes leg_byes wides no_balls total } overs { over_number total_runs total_balls total_wickets status balls { ball_number ball_type run_type runs byes is_wicket wicket_type } } } } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### Get Current Score Only
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetCurrentScore($matchId: String!) { liveScorecard(match_id: $matchId) { match_id current_score { runs wickets overs run_rate } } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### Get Current Over Only
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetCurrentOver($matchId: String!) { liveScorecard(match_id: $matchId) { match_id current_over { over_number total_runs total_balls total_wickets status balls { ball_number ball_type run_type runs is_wicket } } } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### Get Match Summary
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetMatchSummary($matchId: String!) { liveScorecard(match_id: $matchId) { match_id match_number series_name team_a team_b total_overs toss_winner current_innings match_status } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### Get Innings Summary
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query GetInningsSummary($matchId: String!) { liveScorecard(match_id: $matchId) { match_id innings { innings_number batting_team total_runs total_wickets total_overs status extras { total } } } }",
+    "variables": {
+        "matchId": "d577f3b7-c8aa-413e-8c43-021f233aaa33"
+    }
+}'
+```
+
+### GraphQL Playground
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql/playground'
+```
+
+## GraphQL Benefits
+
+### Field Selection
+GraphQL allows you to fetch only the fields you need:
+
+**Minimal payload** - Only current score:
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query { liveScorecard(match_id: \"d577f3b7-c8aa-413e-8c43-021f233aaa33\") { current_score { runs wickets } } }"
+}'
+```
+
+**Comprehensive payload** - Full scorecard:
+```bash
+curl --location 'http://localhost:8080/api/v1/graphql' \
+--header 'Content-Type: application/json' \
+--data '{
+    "query": "query { liveScorecard(match_id: \"d577f3b7-c8aa-413e-8c43-021f233aaa33\") { match_id current_score { runs wickets overs run_rate } current_over { over_number total_runs balls { ball_number ball_type runs } } innings { innings_number total_runs total_wickets } } }"
+}'
+```

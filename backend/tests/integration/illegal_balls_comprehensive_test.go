@@ -32,7 +32,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
-	serviceContainer := services.NewContainer(db.Repositories)
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	router := http.NewServeMux()
@@ -59,12 +59,25 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	// Create test match
+	// Create test user first
 	ctx := context.Background()
+	testUser := &models.User{
+		GoogleID:      fmt.Sprintf("test-google-id-illegal-%d", time.Now().UnixNano()),
+		Email:         fmt.Sprintf("test-illegal-%d@example.com", time.Now().UnixNano()),
+		Name:          "Test Illegal Balls User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+	err = db.Repositories.User.CreateUser(ctx, testUser)
+	require.NoError(t, err)
+	defer db.Repositories.User.DeleteUser(ctx, testUser.ID)
+
+	// Create test match
 	series := &models.Series{
 		Name:      fmt.Sprintf("Illegal Balls Test %d", time.Now().Unix()),
 		StartDate: time.Now(),
 		EndDate:   time.Now().Add(24 * time.Hour),
+		CreatedBy: testUser.ID,
 	}
 	err = db.Repositories.Series.Create(ctx, series)
 	require.NoError(t, err)
@@ -80,6 +93,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 		TossWinner:       models.TeamTypeA,
 		TossType:         models.TossTypeHeads,
 		BattingTeam:      models.TeamTypeA,
+		CreatedBy:        testUser.ID,
 	}
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)
@@ -294,7 +308,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
-	serviceContainer := services.NewContainer(db.Repositories)
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	router := http.NewServeMux()
@@ -342,6 +356,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 		TossWinner:       models.TeamTypeA,
 		TossType:         models.TossTypeHeads,
 		BattingTeam:      models.TeamTypeA,
+		CreatedBy:        testUser.ID,
 	}
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)

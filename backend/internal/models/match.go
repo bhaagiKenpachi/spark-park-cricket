@@ -42,6 +42,7 @@ type Match struct {
 	TossWinner       TeamType    `json:"toss_winner" db:"toss_winner"`
 	TossType         TossType    `json:"toss_type" db:"toss_type"`
 	BattingTeam      TeamType    `json:"batting_team" db:"batting_team"`
+	CreatedBy        string      `json:"created_by,omitempty" db:"created_by,omitempty"`
 	CreatedAt        time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time   `json:"updated_at" db:"updated_at"`
 }

@@ -104,7 +104,8 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			result, err := service.CreateSeries(ctx, tt.request)
 
@@ -272,7 +273,26 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 		errorMsg    string
 	}{
 		{
-			name:     "successful series update",
+			name:     "successful series update - name only",
+			seriesID: "test-series-id",
+			request: &models.UpdateSeriesRequest{
+				Name: testutils.StringPtr("Updated Series"),
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				existingSeries := &models.Series{
+					ID:        "test-series-id",
+					Name:      "Original Series",
+					StartDate: time.Now(),
+					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
+				}
+				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
+				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name:     "successful series update - dates only",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
 				Name: stringPtr("Updated Series"),
@@ -283,11 +303,32 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 					Name:      "Original Series",
 					StartDate: time.Now(),
 					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
 				}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
 				mockRepo.On("Update", mock.Anything, "test-series-id", mock.AnythingOfType("*models.Series")).Return(nil)
 			},
 			expectError: false,
+		},
+		{
+			name:     "invalid date range in update",
+			seriesID: "test-series-id",
+			request: &models.UpdateSeriesRequest{
+				StartDate: testutils.TimePtr(time.Now().AddDate(0, 0, 7)),
+				EndDate:   testutils.TimePtr(time.Now()), // End date before start date
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				existingSeries := &models.Series{
+					ID:        "test-series-id",
+					Name:      "Original Series",
+					StartDate: time.Now(),
+					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
+				}
+				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
+			},
+			expectError: true,
+			errorMsg:    "end date must be after start date",
 		},
 		{
 			name:        "empty series ID",
@@ -315,7 +356,8 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
 
@@ -345,7 +387,7 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			name:     "successful series deletion",
 			seriesID: "test-series-id",
 			mockSetup: func(mockRepo *MockSeriesRepository) {
-				series := &models.Series{ID: "test-series-id", Name: "Test Series"}
+				series := &models.Series{ID: "test-series-id", Name: "Test Series", CreatedBy: "test-user-123"}
 				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(series, nil)
 				mockRepo.On("Delete", mock.Anything, "test-series-id").Return(nil)
 			},
@@ -375,7 +417,8 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			tt.mockSetup(mockRepo)
 
 			service := services.NewSeriesService(mockRepo)
-			ctx := context.Background()
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
 

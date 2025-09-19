@@ -101,6 +101,48 @@ func (h *ScorecardHandler) AddBall(w http.ResponseWriter, r *http.Request) {
 	utils.WriteSuccessResponse(w, response)
 }
 
+// UndoBall removes the last ball from the current over
+func (h *ScorecardHandler) UndoBall(w http.ResponseWriter, r *http.Request) {
+	matchID := chi.URLParam(r, "match_id")
+	if matchID == "" {
+		log.Printf("Missing match_id parameter")
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "MISSING_PARAMETER", "match_id is required")
+		return
+	}
+
+	inningsNumberStr := r.URL.Query().Get("innings")
+	if inningsNumberStr == "" {
+		inningsNumberStr = "1" // Default to first innings
+	}
+
+	inningsNumber, err := strconv.Atoi(inningsNumberStr)
+	if err != nil || inningsNumber < 1 || inningsNumber > 2 {
+		log.Printf("Invalid innings number: %s", inningsNumberStr)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "INVALID_PARAMETER", "innings must be 1 or 2")
+		return
+	}
+
+	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
+
+	// Undo ball
+	err = h.scorecardService.UndoBall(r.Context(), matchID, inningsNumber)
+	if err != nil {
+		log.Printf("Error undoing ball: %v", err)
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	// Return success response
+	response := map[string]interface{}{
+		"message":        "Ball undone successfully",
+		"match_id":       matchID,
+		"innings_number": inningsNumber,
+	}
+
+	log.Printf("Successfully undone ball for match %s, innings %d", matchID, inningsNumber)
+	utils.WriteSuccessResponse(w, response)
+}
+
 // GetScorecard gets the complete scorecard for a match
 func (h *ScorecardHandler) GetScorecard(w http.ResponseWriter, r *http.Request) {
 	matchID := chi.URLParam(r, "match_id")

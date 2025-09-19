@@ -10,6 +10,7 @@ type Series struct {
 	Name      string    `json:"name" db:"name"`
 	StartDate time.Time `json:"start_date" db:"start_date"`
 	EndDate   time.Time `json:"end_date" db:"end_date"`
+	CreatedBy string    `json:"created_by,omitempty" db:"created_by,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at,omitempty"`
 }

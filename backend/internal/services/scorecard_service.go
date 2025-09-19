@@ -26,11 +26,22 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) error {
 	log.Printf("Starting scoring for match %s", matchID)
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
 	// Get match details
 	match, err := s.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the series
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only start scoring for matches in series you created")
 	}
 
 	// Check if match is live
@@ -68,7 +79,11 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 
 // AddBall adds a ball to the scorecard
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
-	log.Printf("DEBUG: AddBall called for match %s, innings %d", req.MatchID, req.InningsNumber)
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
 
 	// Validate ball event
 	if err := utils.ValidateBallEventRequest(req); err != nil {
@@ -81,6 +96,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the match
+	log.Printf("Ownership check - User ID: %s, Match CreatedBy: %s", userID, match.CreatedBy)
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only score balls for matches you created")
 	}
 
 	// Check if match is live
@@ -291,6 +312,187 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	return nil
 }
 
+// UndoBall removes the last ball from the current over and updates statistics
+func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
+	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
+
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
+	// Get match details
+	match, err := s.matchRepo.GetByID(ctx, matchID)
+	if err != nil {
+		log.Printf("Error getting match: %v", err)
+		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the match
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only undo balls for matches you created")
+	}
+
+	// Check if match is live
+	if match.Status != models.MatchStatusLive {
+		return fmt.Errorf("match is not live, cannot undo ball")
+	}
+
+	// Get innings
+	innings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, matchID, inningsNumber)
+	if err != nil {
+		log.Printf("Error getting innings: %v", err)
+		return fmt.Errorf("innings not found: %w", err)
+	}
+
+	// Check if innings is in progress
+	if innings.Status != string(models.InningsStatusInProgress) {
+		return fmt.Errorf("innings is not in progress, cannot undo ball")
+	}
+
+	// Get current over
+	over, err := s.scorecardRepo.GetCurrentOver(ctx, innings.ID)
+	if err != nil {
+		log.Printf("Error getting current over: %v", err)
+		return fmt.Errorf("no current over found: %w", err)
+	}
+
+	// Get all balls for this over
+	balls, err := s.scorecardRepo.GetBallsByOver(ctx, over.ID)
+	if err != nil {
+		log.Printf("Error getting balls: %v", err)
+		return fmt.Errorf("failed to get balls: %w", err)
+	}
+
+	if len(balls) == 0 {
+		return fmt.Errorf("no balls to undo in this over")
+	}
+
+	// Find the last ball (highest ball number)
+	var lastBall *models.ScorecardBall
+	maxBallNumber := 0
+	for _, ball := range balls {
+		if ball.BallNumber > maxBallNumber {
+			maxBallNumber = ball.BallNumber
+			lastBall = ball
+		}
+	}
+
+	if lastBall == nil {
+		return fmt.Errorf("no last ball found")
+	}
+
+	// Calculate runs to subtract
+	runs := lastBall.Runs
+	byes := lastBall.Byes
+	totalRuns := runs + byes
+
+	// Delete the ball
+	err = s.scorecardRepo.DeleteBall(ctx, lastBall.ID)
+	if err != nil {
+		log.Printf("Error deleting ball: %v", err)
+		return fmt.Errorf("failed to delete ball: %w", err)
+	}
+
+	// Update over statistics
+	over.TotalRuns -= totalRuns
+	// Ensure total_runs doesn't go negative (database constraint)
+	if over.TotalRuns < 0 {
+		over.TotalRuns = 0
+	}
+	// Only count legal balls (good balls) for over completion
+	if lastBall.BallType == models.BallTypeGood {
+		over.TotalBalls--
+	}
+	if lastBall.IsWicket {
+		over.TotalWickets--
+	}
+
+	// Check if over should be marked as in progress (if it was completed)
+	if over.Status == string(models.OverStatusCompleted) && over.TotalBalls < 6 && over.TotalWickets < 10 {
+		over.Status = string(models.OverStatusInProgress)
+	}
+
+	err = s.scorecardRepo.UpdateOver(ctx, over)
+	if err != nil {
+		log.Printf("Error updating over: %v", err)
+		return fmt.Errorf("failed to update over: %w", err)
+	}
+
+	// Update innings statistics
+	innings.TotalRuns -= totalRuns
+	// Ensure total_runs doesn't go negative (database constraint)
+	if innings.TotalRuns < 0 {
+		innings.TotalRuns = 0
+	}
+	// Only count legal balls for innings overs calculation
+	if lastBall.BallType == models.BallTypeGood {
+		innings.TotalBalls--
+	}
+	if lastBall.IsWicket {
+		innings.TotalWickets--
+	}
+
+	// Recalculate total overs
+	overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
+	if err != nil {
+		log.Printf("Error getting overs for innings: %v", err)
+		return fmt.Errorf("failed to get overs: %w", err)
+	}
+
+	completedOvers := 0
+	currentOverBalls := 0
+
+	for _, over := range overs {
+		if over.Status == string(models.OverStatusCompleted) {
+			completedOvers++
+		} else if over.Status == string(models.OverStatusInProgress) {
+			currentOverBalls = over.TotalBalls
+		}
+	}
+
+	// Total overs = completed overs + current over balls as decimal
+	var currentOverDecimal float64
+	if currentOverBalls > 0 {
+		// Convert balls to cricket scoring format (0.1, 0.2, 0.3, 0.4, 0.5, 1.0)
+		if currentOverBalls == 6 {
+			currentOverDecimal = 1.0
+		} else {
+			currentOverDecimal = float64(currentOverBalls) / 10.0
+		}
+	}
+	innings.TotalOvers = float64(completedOvers) + currentOverDecimal
+
+	// Check if innings should be marked as in progress (if it was completed)
+	if innings.Status == string(models.InningsStatusCompleted) {
+		maxWickets := match.TeamAPlayerCount - 1
+		if innings.TotalWickets < maxWickets && innings.TotalOvers < float64(match.TotalOvers) {
+			innings.Status = string(models.InningsStatusInProgress)
+		}
+	}
+
+	err = s.scorecardRepo.UpdateInnings(ctx, innings)
+	if err != nil {
+		log.Printf("Error updating innings: %v", err)
+		return fmt.Errorf("failed to update innings: %w", err)
+	}
+
+	// Handle match progression - if match was completed, revert it
+	if match.Status == models.MatchStatusCompleted {
+		match.Status = models.MatchStatusLive
+		err = s.matchRepo.Update(ctx, matchID, match)
+		if err != nil {
+			log.Printf("Error reverting match status: %v", err)
+			return fmt.Errorf("failed to revert match status: %w", err)
+		}
+		log.Printf("Reverted match %s status from completed to live", matchID)
+	}
+
+	log.Printf("Successfully undone ball: %s %d runs, byes: %d, total: %d, wicket: %v", lastBall.RunType, runs, byes, totalRuns, lastBall.IsWicket)
+	return nil
+}
+
 // getCurrentOver gets the current in-progress over or creates a new one
 func (s *ScorecardService) getCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
 	// Try to get current over
@@ -480,6 +682,20 @@ func (s *ScorecardService) GetCurrentOver(ctx context.Context, matchID string, i
 	return over, nil
 }
 
+// GetBallsByOver gets all balls for a specific over
+func (s *ScorecardService) GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	log.Printf("Getting balls for over %s", overID)
+
+	balls, err := s.scorecardRepo.GetBallsByOver(ctx, overID)
+	if err != nil {
+		log.Printf("Error getting balls for over: %v", err)
+		return nil, fmt.Errorf("failed to get balls for over: %w", err)
+	}
+
+	log.Printf("Found %d balls for over %s", len(balls), overID)
+	return balls, nil
+}
+
 // ValidateInningsOrder validates that balls can only be added to the correct innings
 func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
 	log.Printf("DEBUG: validateInningsOrder called - matchID: %s, inningsNumber: %d, battingTeam: %s, tossWinner: %s",
@@ -535,7 +751,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 			}
 
 			// Check if first innings is complete (all wickets down or overs completed)
-			firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
+			maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+			firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 			if !firstInningsComplete {
 				// First innings is not complete, only toss winner can bat
@@ -564,7 +781,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 		}
 
 		// First innings is complete if all wickets are down or overs are completed
-		firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
+		maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+		firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 		if !firstInningsComplete {
 			return fmt.Errorf("first innings is not complete, cannot start second innings")

@@ -96,6 +96,11 @@ func (m *MockScorecardRepository) StartScoring(ctx context.Context, matchID stri
 	return args.Error(0)
 }
 
+func (m *MockScorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
+	args := m.Called(ctx, ballID)
+	return args.Error(0)
+}
+
 // MockMatchRepository for testing
 type MockMatchRepository struct {
 	mock.Mock

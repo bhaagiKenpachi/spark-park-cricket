@@ -10,6 +10,7 @@ import (
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/supabase"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +24,7 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	defer testDB.Close()
 
 	// Clean up before test
-	cleanupTestData(t, testDB)
+	testutils.CleanupScorecardTestData(t, testDB)
 
 	// Create repositories
 	seriesRepo := supabase.NewSeriesRepository(testDB.Supabase)
@@ -306,19 +307,5 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	})
 
 	// Clean up after test
-	cleanupTestData(t, testDB)
-}
-
-func cleanupTestData(t *testing.T, testDB *database.Client) {
-	// Clean up matches
-	_, err := testDB.Supabase.From("matches").Delete("", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup matches: %v", err)
-	}
-
-	// Clean up series
-	_, err = testDB.Supabase.From("series").Delete("", "").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series: %v", err)
-	}
+	testutils.CleanupScorecardTestData(t, testDB)
 }
