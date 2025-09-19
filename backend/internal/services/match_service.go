@@ -231,7 +231,7 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 	}
 
 	// Check if match exists
-	match, err := s.matchRepo.GetByID(ctx, id)
+	_, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("match not found: %w", err)
 	}

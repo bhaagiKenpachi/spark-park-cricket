@@ -7,11 +7,21 @@ import {
   deleteMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
+import {
+  fetchScorecardRequest,
+  clearScorecard,
+} from '@/store/reducers/scorecardSlice';
 import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Edit, Trash2, Calendar, Play } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { RefreshCw, Plus, Edit, Trash2, Calendar, Play, MoreVertical } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
 
@@ -38,9 +48,11 @@ export function SeriesWithMatches({
     loading: matchesLoading,
     error: matchesError,
   } = useAppSelector(state => state.match);
+  const { scorecard } = useAppSelector(state => state.scorecard);
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
+  const [scorecardData, setScorecardData] = useState<{ [matchId: string]: any }>({});
 
   // Format date to human readable format
   const formatDate = (dateString: string) => {
@@ -53,6 +65,17 @@ export function SeriesWithMatches({
       });
     } catch {
       return dateString;
+    }
+  };
+
+  // Fetch scorecard data for completed matches
+  const fetchMatchScorecard = async (matchId: string) => {
+    if (!scorecardData[matchId]) {
+      try {
+        dispatch(fetchScorecardRequest(matchId));
+      } catch (error) {
+        console.error('Error fetching scorecard:', error);
+      }
     }
   };
 
@@ -69,6 +92,27 @@ export function SeriesWithMatches({
       dispatch(fetchMatchesRequest());
     }
   }, [dispatch, expanded]);
+
+  // Fetch scorecard data for completed matches
+  useEffect(() => {
+    if (seriesMatches.length > 0) {
+      seriesMatches.forEach(match => {
+        if (match.status === 'completed' && !scorecardData[match.id]) {
+          fetchMatchScorecard(match.id);
+        }
+      });
+    }
+  }, [seriesMatches]);
+
+  // Update scorecard data when scorecard changes
+  useEffect(() => {
+    if (scorecard && scorecard.match_id) {
+      setScorecardData(prev => ({
+        ...prev,
+        [scorecard.match_id]: scorecard
+      }));
+    }
+  }, [scorecard]);
 
   const handleDeleteMatch = (id: string) => {
     if (window.confirm('Are you sure you want to delete this match?')) {
@@ -104,39 +148,84 @@ export function SeriesWithMatches({
   }
 
   return (
-    <Card key={series.id} data-cy="series-item">
-      <CardHeader>
+    <Card key={series.id} data-cy="series-item" className="shadow-sm hover:shadow-md transition-shadow duration-200 border-0 bg-gradient-to-br from-white to-gray-50/30">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle data-cy="series-name">{series.name}</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? 'Hide Matches' : 'Show Matches'}
-          </Button>
+          <div className="flex-1">
+            <CardTitle data-cy="series-name" className="text-xl font-semibold text-gray-900 mb-1">
+              {series.name}
+            </CardTitle>
+            {series.description && (
+              <p className="text-sm text-gray-600 mt-1">{series.description}</p>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpanded(!expanded)}
+              className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
+            >
+              {expanded ? 'Hide Matches' : 'Show Matches'}
+            </Button>
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEditSeries(series)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Series
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onDeleteSeries(series.id)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Series
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="font-medium">Start:</span>
-            <span className="ml-2">{formatDate(series.start_date)}</span>
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg border border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Calendar className="h-4 w-4 text-green-600" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</span>
+              <p className="text-sm font-semibold text-gray-900">{formatDate(series.start_date)}</p>
+            </div>
           </div>
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="font-medium">End:</span>
-            <span className="ml-2">{formatDate(series.end_date)}</span>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Calendar className="h-4 w-4 text-red-600" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">End Date</span>
+              <p className="text-sm font-semibold text-gray-900">{formatDate(series.end_date)}</p>
+            </div>
           </div>
         </div>
 
         {expanded && (
           <div className="mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                Matches ({seriesMatches.length})
-              </h3>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Matches
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {seriesMatches.length} {seriesMatches.length === 1 ? 'match' : 'matches'} in this series
+                </p>
+              </div>
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
@@ -145,6 +234,7 @@ export function SeriesWithMatches({
                   disabled={matchesLoading}
                   data-cy="refresh-matches-button"
                   title="Refresh"
+                  className="hover:bg-gray-50"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`}
@@ -156,9 +246,10 @@ export function SeriesWithMatches({
                     onClick={() => setShowMatchForm(true)}
                     data-cy="create-match-button"
                     title="Add Match"
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Match
+                    Add Match
                   </Button>
                 )}
               </div>
@@ -176,30 +267,33 @@ export function SeriesWithMatches({
                 Error loading matches: {matchesError}
               </div>
             ) : seriesMatches.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                <p className="mb-2">No matches found for this series.</p>
-                {isOwner && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowMatchForm(true)}
-                  >
-                    Create First Match
-                  </Button>
-                )}
+              <div className="text-center py-12">
+                <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                  <Play className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">No matches found for this series.</p>
+                  {isOwner && (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowMatchForm(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Match
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-4">
                 {seriesMatches.map((match, index) => (
                   <Card
                     key={match.id || `match-${index}`}
-                    className="bg-gray-50"
+                    className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        {/* Match Details */}
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
                         <div
-                          className="space-y-1 cursor-pointer"
+                          className="space-y-4 cursor-pointer flex-1 group"
                           onClick={() =>
                             onViewScorecard?.(
                               match.id,
@@ -207,16 +301,21 @@ export function SeriesWithMatches({
                             )
                           }
                         >
-                          <div className="font-medium">
-                            Match #{match.match_number}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {match.date.split('T')[0]} •{' '}
-                            {match.team_a_player_count} vs{' '}
-                            {match.team_b_player_count} players •{' '}
-                            {match.total_overs} overs
-                          </div>
-                          <div className="flex items-center space-x-2">
+                          {/* Match Header */}
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">
+                                Match #{match.match_number}
+                              </h4>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {new Date(match.date).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                            </div>
                             <Badge
                               variant={
                                 match.status === 'live'
@@ -225,56 +324,144 @@ export function SeriesWithMatches({
                                     ? 'secondary'
                                     : 'outline'
                               }
+                              className={
+                                match.status === 'live'
+                                  ? 'bg-green-500 text-white border-green-500 font-semibold'
+                                  : match.status === 'completed'
+                                    ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold'
+                                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold'
+                              }
                             >
-                              {match.status}
+                              {match.status.toUpperCase()}
                             </Badge>
-                            <span className="text-xs text-gray-500">
-                              Toss: Team {match.toss_winner} (
-                              {match.toss_type === 'H' ? 'Heads' : 'Tails'})
-                            </span>
                           </div>
+
+                          {/* Match Details Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Teams Info */}
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Teams</span>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {match.team_a_player_count} vs {match.team_b_player_count} players
+                              </p>
+                            </div>
+
+                            {/* Match Format */}
+                            <div className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Format</span>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {match.total_overs} overs
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Toss Information */}
+                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Toss Result</span>
+                            </div>
+                            <p className="text-sm font-semibold text-blue-900">
+                              Team {match.toss_winner} won the toss and chose to {match.toss_type === 'H' ? 'bat first' : 'bowl first'}
+                            </p>
+                          </div>
+
+                          {/* Match Completion Summary */}
+                          {match.status === 'completed' && (() => {
+                            const matchScorecard = scorecardData[match.id];
+                            if (matchScorecard && matchScorecard.innings && Array.isArray(matchScorecard.innings)) {
+                              const teamAInnings = matchScorecard.innings.find((innings: any) => innings.batting_team === 'A');
+                              const teamBInnings = matchScorecard.innings.find((innings: any) => innings.batting_team === 'B');
+
+                              if (teamAInnings && teamBInnings) {
+                                const teamARuns = teamAInnings.total_runs;
+                                const teamBRuns = teamBInnings.total_runs;
+                                const winner = teamARuns > teamBRuns ? matchScorecard.team_a : matchScorecard.team_b;
+                                const margin = Math.abs(teamARuns - teamBRuns);
+
+                                return (
+                                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                    <div className="flex items-center space-x-2 mb-3">
+                                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                      <span className="text-xs font-medium text-green-600 uppercase tracking-wide">Match Result</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium text-gray-700">{matchScorecard.team_a}</span>
+                                        <span className="text-sm font-bold text-gray-900">{teamARuns}/{teamAInnings.total_wickets}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium text-gray-700">{matchScorecard.team_b}</span>
+                                        <span className="text-sm font-bold text-gray-900">{teamBRuns}/{teamBInnings.total_wickets}</span>
+                                      </div>
+                                      <div className="pt-2 border-t border-green-200">
+                                        <p className="text-sm font-semibold text-green-800 text-center">
+                                          {winner} won by {margin} run{margin !== 1 ? 's' : ''}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            }
+
+                            // Fallback for when scorecard data is not available yet
+                            return (
+                              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span className="text-xs font-medium text-green-600 uppercase tracking-wide">Match Result</span>
+                                </div>
+                                <p className="text-sm font-semibold text-green-800">
+                                  Match completed - Loading scores...
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              onViewScorecard?.(
-                                match.id,
-                                series.created_by || ''
-                              )
-                            }
-                            data-cy="view-scorecard-button"
-                            title="View Scorecard"
-                          >
-                            <Play className="h-4 w-4 mr-2" />
-                            Scorecard
-                          </Button>
-                          {isOwner && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditMatch(match)}
-                                data-cy="edit-match-button"
-                                title="Edit Match"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteMatch(match.id)}
-                                data-cy="delete-match-button"
-                                title="Delete Match"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        {/* Match Actions Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                onViewScorecard?.(
+                                  match.id,
+                                  series.created_by || ''
+                                )
+                              }
+                            >
+                              <Play className="h-4 w-4 mr-2" />
+                              View Scorecard
+                            </DropdownMenuItem>
+                            {isOwner && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleEditMatch(match)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit Match
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteMatch(match.id)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Match
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardContent>
                   </Card>
@@ -284,30 +471,6 @@ export function SeriesWithMatches({
           </div>
         )}
 
-        {isOwner && (
-          <div className="flex space-x-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEditSeries(series)}
-              data-cy="edit-series-button"
-              title="Edit Series"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Series
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onDeleteSeries(series.id)}
-              data-cy="delete-series-button"
-              title="Delete Series"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Series
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
