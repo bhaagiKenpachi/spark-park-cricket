@@ -55,7 +55,7 @@ func Load() *Config {
 		SessionSecret:      getEnv("SESSION_SECRET", "your-super-secret-session-key-change-this-in-production"),
 		SessionMaxAge:      getEnvInt("SESSION_MAX_AGE", 86400), // 24 hours
 		// CORS Configuration
-		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,https://spark-park.dojima.foundation"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,https://spark-park.dojima.foundation,https://cricket-dev.dojima.foundation"),
 	}
 
 	// Log database configuration

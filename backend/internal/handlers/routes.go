@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
@@ -171,6 +172,12 @@ func corsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 				allowedOrigins[i] = strings.TrimSpace(allowedOrigin)
 			}
 
+			// Debug logging for CORS
+			if origin != "" {
+				fmt.Printf("DEBUG: CORS - Request from origin: %s\n", origin)
+				fmt.Printf("DEBUG: CORS - Allowed origins: %v\n", allowedOrigins)
+			}
+
 			// Check if origin is allowed
 			allowed := false
 			for _, allowedOrigin := range allowedOrigins {
@@ -183,9 +190,15 @@ func corsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				if origin != "" {
+					fmt.Printf("DEBUG: CORS - Origin %s is allowed\n", origin)
+				}
 			} else {
 				// Fallback to wildcard for non-credential requests
 				w.Header().Set("Access-Control-Allow-Origin", "*")
+				if origin != "" {
+					fmt.Printf("DEBUG: CORS - Origin %s not allowed, using wildcard\n", origin)
+				}
 			}
 
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
