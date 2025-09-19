@@ -52,7 +52,7 @@ export const matchSlice = createSlice({
     },
     createMatchRequest: (
       state,
-      _action: PayloadAction<Omit<Match, 'id' | 'created_at' | 'updated_at'>>
+      _action: PayloadAction<Omit<Match, 'id' | 'created_at' | 'updated_at' | 'match_number'>>
     ) => {
       state.loading = true;
       state.error = null;
@@ -69,7 +69,7 @@ export const matchSlice = createSlice({
       state,
       _action: PayloadAction<{
         id: string;
-        matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'>;
+        matchData: Omit<Match, 'id' | 'created_at' | 'updated_at' | 'match_number'>;
       }>
     ) => {
       state.loading = true;

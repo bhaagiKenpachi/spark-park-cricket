@@ -221,23 +221,18 @@ class ApiService {
     }
 
     async createMatch(
-        matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'>
+        matchData: Omit<Match, 'id' | 'created_at' | 'updated_at' | 'match_number'>
     ): Promise<ApiResponse<Match>> {
-        // Remove match_number if it's 1 (default value) to let backend auto-generate
-        const dataToSend = { ...matchData };
-        if (dataToSend.match_number === 1) {
-            delete (dataToSend as Partial<typeof dataToSend>).match_number;
-        }
-
+        // Backend will auto-generate match_number, so we don't need to send it
         return this.request<Match>('/matches', {
             method: 'POST',
-            body: JSON.stringify(dataToSend),
+            body: JSON.stringify(matchData),
         });
     }
 
     async updateMatch(
         id: string,
-        matchData: Partial<Match>
+        matchData: Partial<Omit<Match, 'match_number'>>
     ): Promise<ApiResponse<Match>> {
         return this.request<Match>(`/matches/${id}`, {
             method: 'PUT',

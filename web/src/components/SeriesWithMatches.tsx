@@ -13,12 +13,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Plus, Edit, Trash2, Calendar, Play } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
+import { User } from '@/services/authService';
 
 interface SeriesWithMatchesProps {
   series: Series;
   onEditSeries: (series: Series) => void;
   onDeleteSeries: (id: string) => void;
-  onViewScorecard?: (matchId: string) => void;
+  onViewScorecard?: (matchId: string, seriesCreatedBy: string) => void;
+  currentUser?: User | null;
+  isAuthenticated: boolean;
 }
 
 export function SeriesWithMatches({
@@ -26,6 +29,8 @@ export function SeriesWithMatches({
   onEditSeries,
   onDeleteSeries,
   onViewScorecard,
+  currentUser,
+  isAuthenticated,
 }: SeriesWithMatchesProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const {
@@ -52,9 +57,12 @@ export function SeriesWithMatches({
   };
 
   // Filter matches for this series
-  const seriesMatches = (matches || []).filter(
-    match => match.series_id === series.id
-  );
+  const seriesMatches =
+    matches?.filter(match => match.series_id === series.id) || [];
+
+  // Check if current user owns this series
+  const isOwner =
+    isAuthenticated && currentUser && series.created_by === currentUser.id;
 
   useEffect(() => {
     if (expanded) {
@@ -142,15 +150,17 @@ export function SeriesWithMatches({
                     className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`}
                   />
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowMatchForm(true)}
-                  data-cy="create-match-button"
-                  title="Add Match"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Match
-                </Button>
+                {isOwner && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowMatchForm(true)}
+                    data-cy="create-match-button"
+                    title="Add Match"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Match
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -168,13 +178,15 @@ export function SeriesWithMatches({
             ) : seriesMatches.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 <p className="mb-2">No matches found for this series.</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowMatchForm(true)}
-                >
-                  Create First Match
-                </Button>
+                {isOwner && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowMatchForm(true)}
+                  >
+                    Create First Match
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -188,7 +200,12 @@ export function SeriesWithMatches({
                         {/* Match Details */}
                         <div
                           className="space-y-1 cursor-pointer"
-                          onClick={() => onViewScorecard?.(match.id)}
+                          onClick={() =>
+                            onViewScorecard?.(
+                              match.id,
+                              series.created_by || ''
+                            )
+                          }
                         >
                           <div className="font-medium">
                             Match #{match.match_number}
@@ -223,31 +240,40 @@ export function SeriesWithMatches({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => onViewScorecard?.(match.id)}
+                            onClick={() =>
+                              onViewScorecard?.(
+                                match.id,
+                                series.created_by || ''
+                              )
+                            }
                             data-cy="view-scorecard-button"
                             title="View Scorecard"
                           >
                             <Play className="h-4 w-4 mr-2" />
                             Scorecard
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditMatch(match)}
-                            data-cy="edit-match-button"
-                            title="Edit Match"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteMatch(match.id)}
-                            data-cy="delete-match-button"
-                            title="Delete Match"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isOwner && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditMatch(match)}
+                                data-cy="edit-match-button"
+                                title="Edit Match"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteMatch(match.id)}
+                                data-cy="delete-match-button"
+                                title="Delete Match"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -258,28 +284,30 @@ export function SeriesWithMatches({
           </div>
         )}
 
-        <div className="flex space-x-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEditSeries(series)}
-            data-testid="edit-series-button"
-            title="Edit Series"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Series
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => onDeleteSeries(series.id)}
-            data-testid="delete-series-button"
-            title="Delete Series"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Series
-          </Button>
-        </div>
+        {isOwner && (
+          <div className="flex space-x-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEditSeries(series)}
+              data-cy="edit-series-button"
+              title="Edit Series"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Series
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDeleteSeries(series.id)}
+              data-cy="delete-series-button"
+              title="Delete Series"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Series
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

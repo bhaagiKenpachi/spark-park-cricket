@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/cache"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
@@ -60,9 +59,6 @@ func (r *CachedSeriesRepository) GetByID(ctx context.Context, id string) (*model
 
 // GetAll retrieves all series with caching
 func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
-	log.Printf("=== CACHED SERIES REPOSITORY: GetAll ===")
-	log.Printf("Filters: %+v", filters)
-
 	// Create cache key based on filters
 	cacheKey := "series:list"
 	if filters != nil {
@@ -75,26 +71,15 @@ func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.Ser
 		}
 	}
 
-	log.Printf("Cache key: %s", cacheKey)
-
 	var series []*models.Series
 	err := r.cache.GetOrSet(cacheKey, &series, cache.MatchListTTL, func() (interface{}, error) {
-		log.Printf("Cache miss, calling underlying repository...")
-		result, err := r.repo.GetAll(ctx, filters)
-		if err != nil {
-			log.Printf("Underlying repository error: %v", err)
-			return nil, err
-		}
-		log.Printf("Underlying repository returned %d series", len(result))
-		return result, nil
+		return r.repo.GetAll(ctx, filters)
 	})
 
 	if err != nil {
-		log.Printf("Cache GetOrSet error: %v", err)
 		return nil, err
 	}
 
-	log.Printf("Cache returned %d series", len(series))
 	return series, nil
 }
 

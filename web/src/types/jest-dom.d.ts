@@ -14,14 +14,14 @@ declare global {
             toHaveDescription(text?: string | RegExp): R;
             toHaveAccessibleDescription(text?: string | RegExp): R;
             toHaveAccessibleName(text?: string | RegExp): R;
-            toHaveFormValues(expectedValues: Record<string, any>): R;
+            toHaveFormValues(expectedValues: Record<string, unknown>): R;
             toHaveDisplayValue(value: string | RegExp | (string | RegExp)[]): R;
             toBeRequired(): R;
             toBeInvalid(): R;
             toBeValid(): R;
             toHaveFocus(): R;
             toHaveAttribute(attr: string, value?: string): R;
-            toHaveStyle(css: string | Record<string, any>): R;
+            toHaveStyle(css: string | Record<string, unknown>): R;
         }
     }
 }

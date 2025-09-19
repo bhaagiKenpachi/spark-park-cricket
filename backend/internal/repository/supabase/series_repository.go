@@ -3,7 +3,6 @@ package supabase
 import (
 	"context"
 	"fmt"
-	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 
@@ -50,31 +49,20 @@ func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Seri
 }
 
 func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
-	log.Printf("=== SERIES REPOSITORY: GetAll ===")
-	log.Printf("Filters: %+v", filters)
-
 	var result []models.Series
 	query := r.client.From("series").Select("*", "", false)
 
 	if filters != nil {
 		if filters.Limit > 0 {
 			query = query.Limit(filters.Limit, "")
-			log.Printf("Applied limit: %d", filters.Limit)
 		}
 		// Note: Offset is not supported by this Supabase client version
 		// Use Range method for pagination if needed
 	}
 
-	log.Printf("Executing query to 'series' table...")
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
-		log.Printf("ERROR: Query failed: %v", err)
 		return nil, err
-	}
-
-	log.Printf("Query successful, found %d series", len(result))
-	for i, s := range result {
-		log.Printf("Series %d: ID=%s, Name=%s, CreatedBy=%s", i+1, s.ID, s.Name, s.CreatedBy)
 	}
 
 	// Convert to slice of pointers
@@ -83,7 +71,6 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 		series[i] = &result[i]
 	}
 
-	log.Printf("Returning %d series", len(series))
 	return series, nil
 }
 

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
@@ -26,10 +25,6 @@ func NewSeriesHandler(service services.SeriesServiceInterface) *SeriesHandler {
 
 // ListSeries handles GET /api/v1/series
 func (h *SeriesHandler) ListSeries(w http.ResponseWriter, r *http.Request) {
-	log.Printf("=== SERIES HANDLER: ListSeries ===")
-	log.Printf("Request URL: %s", r.URL.String())
-	log.Printf("Request method: %s", r.Method)
-
 	// Parse query parameters
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
@@ -54,22 +49,12 @@ func (h *SeriesHandler) ListSeries(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	}
 
-	log.Printf("Filters: %+v", filters)
-	log.Printf("Calling service.ListSeries...")
-
 	series, err := h.service.ListSeries(r.Context(), filters)
 	if err != nil {
-		log.Printf("ERROR: Service call failed: %v", err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
 
-	log.Printf("Service returned %d series", len(series))
-	for i, s := range series {
-		log.Printf("Series %d: ID=%s, Name=%s", i+1, s.ID, s.Name)
-	}
-
-	log.Printf("Writing success response...")
 	utils.WriteSuccess(w, series)
 }
 
