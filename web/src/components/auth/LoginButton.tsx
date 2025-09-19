@@ -18,7 +18,8 @@ export function LoginButton() {
 
     // Redirect directly to backend OAuth endpoint
     // The backend will handle the OAuth flow and redirect back
-    const oauthUrl = 'http://localhost:8080/api/v1/auth/google';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+    const oauthUrl = `${apiBaseUrl}/auth/google`;
     console.log('Redirecting to OAuth URL:', oauthUrl);
 
     window.location.href = oauthUrl;
