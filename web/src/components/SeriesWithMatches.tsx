@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchMatchesRequest,
@@ -9,7 +9,6 @@ import {
 } from '@/store/reducers/matchSlice';
 import {
   fetchScorecardRequest,
-  clearScorecard,
 } from '@/store/reducers/scorecardSlice';
 import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,17 @@ import {
 import { RefreshCw, Plus, Edit, Trash2, Calendar, Play, MoreVertical } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
+
+interface ScorecardData {
+  match_id: string;
+  team_a: string;
+  team_b: string;
+  innings: Array<{
+    batting_team: string;
+    total_runs: number;
+    total_wickets: number;
+  }>;
+}
 
 interface SeriesWithMatchesProps {
   series: Series;
@@ -52,7 +62,7 @@ export function SeriesWithMatches({
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
-  const [scorecardData, setScorecardData] = useState<{ [matchId: string]: any }>({});
+  const [scorecardData, setScorecardData] = useState<{ [matchId: string]: ScorecardData }>({});
 
   // Format date to human readable format
   const formatDate = (dateString: string) => {
@@ -69,7 +79,7 @@ export function SeriesWithMatches({
   };
 
   // Fetch scorecard data for completed matches
-  const fetchMatchScorecard = async (matchId: string) => {
+  const fetchMatchScorecard = useCallback(async (matchId: string) => {
     if (!scorecardData[matchId]) {
       try {
         dispatch(fetchScorecardRequest(matchId));
@@ -77,11 +87,13 @@ export function SeriesWithMatches({
         console.error('Error fetching scorecard:', error);
       }
     }
-  };
+  }, [dispatch, scorecardData]);
 
   // Filter matches for this series
-  const seriesMatches =
-    matches?.filter(match => match.series_id === series.id) || [];
+  const seriesMatches = useMemo(() =>
+    matches?.filter(match => match.series_id === series.id) || [],
+    [matches, series.id]
+  );
 
   // Check if current user owns this series
   const isOwner =
@@ -102,7 +114,7 @@ export function SeriesWithMatches({
         }
       });
     }
-  }, [seriesMatches]);
+  }, [seriesMatches, scorecardData, fetchMatchScorecard]);
 
   // Update scorecard data when scorecard changes
   useEffect(() => {
@@ -376,8 +388,8 @@ export function SeriesWithMatches({
                           {match.status === 'completed' && (() => {
                             const matchScorecard = scorecardData[match.id];
                             if (matchScorecard && matchScorecard.innings && Array.isArray(matchScorecard.innings)) {
-                              const teamAInnings = matchScorecard.innings.find((innings: any) => innings.batting_team === 'A');
-                              const teamBInnings = matchScorecard.innings.find((innings: any) => innings.batting_team === 'B');
+                              const teamAInnings = matchScorecard.innings.find(innings => innings.batting_team === 'A');
+                              const teamBInnings = matchScorecard.innings.find(innings => innings.batting_team === 'B');
 
                               if (teamAInnings && teamBInnings) {
                                 const teamARuns = teamAInnings.total_runs;
