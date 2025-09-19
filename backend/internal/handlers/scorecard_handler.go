@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"spark-park-cricket-backend/internal/interfaces"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 	"strconv"
 
@@ -13,11 +13,11 @@ import (
 )
 
 type ScorecardHandler struct {
-	scorecardService *services.ScorecardService
+	scorecardService interfaces.ScorecardServiceInterface
 }
 
 // NewScorecardHandler creates a new scorecard handler
-func NewScorecardHandler(scorecardService *services.ScorecardService) *ScorecardHandler {
+func NewScorecardHandler(scorecardService interfaces.ScorecardServiceInterface) *ScorecardHandler {
 	return &ScorecardHandler{
 		scorecardService: scorecardService,
 	}
