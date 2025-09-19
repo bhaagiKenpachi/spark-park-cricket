@@ -26,11 +26,22 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) error {
 	log.Printf("Starting scoring for match %s", matchID)
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
 	// Get match details
 	match, err := s.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the series
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only start scoring for matches in series you created")
 	}
 
 	// Check if match is live
@@ -68,6 +79,11 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 
 // AddBall adds a ball to the scorecard
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
 
 	// Validate ball event
 	if err := utils.ValidateBallEventRequest(req); err != nil {
@@ -80,6 +96,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the match
+	log.Printf("Ownership check - User ID: %s, Match CreatedBy: %s", userID, match.CreatedBy)
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only score balls for matches you created")
 	}
 
 	// Check if match is live
@@ -290,11 +312,22 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
 	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
 	// Get match details
 	match, err := s.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership - user must be the creator of the match
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only undo balls for matches you created")
 	}
 
 	// Check if match is live

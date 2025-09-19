@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/services"
@@ -13,7 +14,7 @@ import (
 )
 
 // SetupRoutes configures all the routes for the application
-func SetupRoutes(dbClient *database.Client) *chi.Mux {
+func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -29,7 +30,7 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 	r.Use(corsMiddleware())
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories)
+	serviceContainer := services.NewContainer(dbClient.Repositories, cfg)
 
 	// Start WebSocket hub
 	go serviceContainer.Hub.Run()
@@ -39,6 +40,9 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 
 	// Initialize health handler
 	healthHandler := NewHealthHandler(dbClient)
+
+	// Initialize auth handler
+	authHandler := NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService)
 
 	// Health check routes
 	r.Get("/", homeHandler)
@@ -50,39 +54,54 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/metrics", healthHandler.Metrics)
 
+	// Auth success page
+	r.Get("/auth/success", authSuccessHandler)
+
 	// API routes
 	r.Route("/api/v1", func(r chi.Router) {
+		// Authentication routes (public)
+		SetupAuthRoutes(r, authHandler)
+
 		// Series routes
 		r.Route("/series", func(r chi.Router) {
 			seriesHandler := NewSeriesHandler(serviceContainer.Series)
+			// Public routes (view only)
 			r.Get("/", seriesHandler.ListSeries)
-			r.Post("/", seriesHandler.CreateSeries)
 			r.Get("/{id}", seriesHandler.GetSeries)
-			r.Put("/{id}", seriesHandler.UpdateSeries)
-			r.Delete("/{id}", seriesHandler.DeleteSeries)
+
+			// Protected routes (require authentication and ownership)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", seriesHandler.CreateSeries)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", seriesHandler.UpdateSeries)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", seriesHandler.DeleteSeries)
 		})
 
 		// Match routes
 		r.Route("/matches", func(r chi.Router) {
 			matchHandler := NewMatchHandler(serviceContainer.Match)
+			// Public routes (view only)
 			r.Get("/", matchHandler.ListMatches)
-			r.Post("/", matchHandler.CreateMatch)
 			r.Get("/{id}", matchHandler.GetMatch)
-			r.Put("/{id}", matchHandler.UpdateMatch)
-			r.Delete("/{id}", matchHandler.DeleteMatch)
 			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
+
+			// Protected routes (require authentication and ownership)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", matchHandler.UpdateMatch)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", matchHandler.DeleteMatch)
 		})
 
 		// Scorecard routes
 		r.Route("/scorecard", func(r chi.Router) {
 			scorecardHandler := NewScorecardHandler(serviceContainer.Scorecard)
-			r.Post("/start", scorecardHandler.StartScoring)
-			r.Post("/ball", scorecardHandler.AddBall)
-			r.Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+			// Public routes (view only)
 			r.Get("/{match_id}", scorecardHandler.GetScorecard)
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
 			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
+
+			// Protected routes (require authentication and ownership)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
+			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
 
 		// WebSocket routes
@@ -105,11 +124,73 @@ func SetupRoutes(dbClient *database.Client) *chi.Mux {
 	return r
 }
 
+// authSuccessHandler handles the authentication success page
+func authSuccessHandler(w http.ResponseWriter, r *http.Request) {
+	html := `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Successful</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .success { color: #28a745; }
+        .container { max-width: 600px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="success">✅ Authentication Successful!</h1>
+        <p>You have been successfully authenticated with Google.</p>
+        <p>You can now close this window and return to the application.</p>
+        <script>
+            // Auto-close window after 3 seconds
+            setTimeout(function() {
+                window.close();
+            }, 3000);
+        </script>
+    </div>
+</body>
+</html>`
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(html))
+}
+
 // corsMiddleware sets up CORS middleware
 func corsMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			// Get the origin from the request
+			origin := r.Header.Get("Origin")
+
+			// Allow specific origins for credentials
+			allowedOrigins := []string{
+				"http://localhost:3000",
+				"http://localhost:3001",
+				"http://localhost:3002",
+				"http://127.0.0.1:3000",
+				"http://127.0.0.1:3001",
+				"http://127.0.0.1:3002",
+			}
+
+			// Check if origin is allowed
+			allowed := false
+			for _, allowedOrigin := range allowedOrigins {
+				if origin == allowedOrigin {
+					allowed = true
+					break
+				}
+			}
+
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			} else {
+				// Fallback to wildcard for non-credential requests
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			}
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
 			w.Header().Set("Access-Control-Max-Age", "86400")

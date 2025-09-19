@@ -112,7 +112,7 @@ func TestScorecardIntegration(t *testing.T) {
 	testutils.CleanupScorecardTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories)
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	// Setup router

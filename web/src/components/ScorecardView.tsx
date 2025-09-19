@@ -7,6 +7,7 @@ import {
   startScoringRequest,
   addBallRequest,
   clearScorecard,
+  fetchAllOversDetailsThunk,
   BallEventRequest,
   BallType,
   RunType,
@@ -25,15 +26,22 @@ import {
   ChevronUp,
   RefreshCw,
 } from 'lucide-react';
+import { User } from '@/services/authService';
 
 interface ScorecardViewProps {
   matchId: string;
   onBack: () => void;
+  seriesCreatedBy?: string;
+  currentUser?: User | null;
+  isAuthenticated: boolean;
 }
 
 export function ScorecardView({
   matchId,
   onBack,
+  seriesCreatedBy,
+  currentUser,
+  isAuthenticated,
 }: ScorecardViewProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { scorecard, loading, error, scoring } = useAppSelector(
@@ -47,6 +55,31 @@ export function ScorecardView({
   const [expandedOvers, setExpandedOvers] = useState<{
     [key: string]: boolean;
   }>({});
+
+  // Check if current user owns the series
+  const isOwner =
+    isAuthenticated && currentUser && seriesCreatedBy === currentUser.id;
+
+  // Check if match is completed or both innings are completed
+  const isMatchCompleted = scorecard?.match_status === 'completed';
+  const isBothInningsCompleted = scorecard?.innings &&
+    scorecard.innings.length >= 2 &&
+    scorecard.innings.every(innings => innings.status === 'completed');
+
+  // Determine if scoring should be available
+  const isScoringAvailable = isOwner && !isMatchCompleted && !isBothInningsCompleted;
+
+  console.log('=== SCORECARD VIEW OWNERSHIP CHECK ===');
+  console.log('Is Authenticated:', isAuthenticated);
+  console.log('Current User:', currentUser);
+  console.log('Current User ID:', currentUser?.id);
+  console.log('Series Created By:', seriesCreatedBy);
+  console.log('Is Owner:', isOwner);
+  console.log('Match ID:', matchId);
+  console.log('Match Status:', scorecard?.match_status);
+  console.log('Is Match Completed:', isMatchCompleted);
+  console.log('Is Both Innings Completed:', isBothInningsCompleted);
+  console.log('Is Scoring Available:', isScoringAvailable);
 
   useEffect(() => {
     dispatch(fetchScorecardRequest(matchId));
@@ -64,14 +97,14 @@ export function ScorecardView({
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
-    if (scorecard?.innings && Array.isArray(scorecard.innings)) {
+    if (scorecard?.innings && Array.isArray(scorecard.innings) && scorecard.innings.length > 0) {
       const currentInningsData = scorecard.innings.find(
         innings => innings.status === 'in_progress'
       );
       if (currentInningsData) {
         setCurrentInnings(currentInningsData.innings_number);
       }
-    } else if (scorecard?.innings === null) {
+    } else if (scorecard?.innings === null || (Array.isArray(scorecard?.innings) && scorecard.innings.length === 0)) {
       // If no innings exist yet, start with innings 1
       setCurrentInnings(1);
     }
@@ -94,26 +127,86 @@ export function ScorecardView({
   }, [scoring, showLiveScoring, scorecard]);
 
   const handleStartScoring = () => {
+    console.log('=== HANDLE START SCORING ===');
+    console.log('Match ID:', matchId);
+    console.log('Is Owner:', isOwner);
+    console.log('Is Authenticated:', isAuthenticated);
+    console.log('Current User:', currentUser);
+    console.log('Series Created By:', seriesCreatedBy);
+    console.log('Match Status:', scorecardData?.match_status);
+    console.log('Is Scoring Available:', isScoringAvailable);
+    console.log('Current cookies:', document.cookie);
+
+    // Check if scoring is available (ownership + match not completed)
+    if (!isScoringAvailable) {
+      if (!isOwner) {
+        console.log('❌ Not owner, blocking start scoring');
+        setScoringMessage('Only the series creator can start scoring.');
+      } else if (isMatchCompleted) {
+        console.log('❌ Match completed, blocking start scoring');
+        setScoringMessage('Cannot score on completed match.');
+      } else if (isBothInningsCompleted) {
+        console.log('❌ Both innings completed, blocking start scoring');
+        setScoringMessage('Cannot score when both innings are completed.');
+      }
+      setTimeout(() => setScoringMessage(null), 3000);
+      return;
+    }
+
+    console.log('✅ Scoring available, proceeding with start scoring');
+
     // If match is already live, just show the interface without calling the API
     if (scorecardData?.match_status === 'live') {
+      console.log('Match already live, showing interface without API call');
       setShowLiveScoring(true);
       setScoringMessage('Live scoring interface opened!');
       setTimeout(() => setScoringMessage(null), 3000);
     } else {
+      console.log('Match not live, calling startScoringRequest API');
       // Only call the API if match is not live yet
       dispatch(startScoringRequest(matchId));
       setShowLiveScoring(true);
+      setScoringMessage('Live scoring started!');
+      setTimeout(() => setScoringMessage(null), 3000);
     }
   };
 
   const handleBallScore = (runs: number, ballType: string) => {
+    console.log('=== HANDLE BALL SCORE ===');
+    console.log('Runs:', runs);
+    console.log('Ball Type:', ballType);
+    console.log('Is Owner:', isOwner);
+    console.log('Is Authenticated:', isAuthenticated);
+    console.log('Current User:', currentUser);
+    console.log('Series Created By:', seriesCreatedBy);
+    console.log('Is Scoring Available:', isScoringAvailable);
+    console.log('Current cookies:', document.cookie);
+
+    // Check if scoring is available (ownership + match not completed)
+    if (!isScoringAvailable) {
+      if (!isOwner) {
+        console.log('❌ Not owner, blocking ball scoring');
+        setScoringMessage('Only the series creator can score balls.');
+      } else if (isMatchCompleted) {
+        console.log('❌ Match completed, blocking ball scoring');
+        setScoringMessage('Cannot score on completed match.');
+      } else if (isBothInningsCompleted) {
+        console.log('❌ Both innings completed, blocking ball scoring');
+        setScoringMessage('Cannot score when both innings are completed.');
+      }
+      setTimeout(() => setScoringMessage(null), 3000);
+      return;
+    }
+
+    console.log('✅ Scoring available, proceeding with ball scoring');
+
     // Check if current innings is still in progress
     const currentInningsData = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
 
-    // If no innings exist yet (null), allow scoring to create the first innings
-    if (scorecardData?.innings === null) {
+    // If no innings exist yet (null or empty array), allow scoring to create the first innings
+    if (scorecardData?.innings === null || (Array.isArray(scorecardData?.innings) && scorecardData.innings.length === 0)) {
       // Allow scoring - this will create the first innings
     } else if (currentInningsData?.status !== 'in_progress') {
       setScoringMessage(
@@ -163,10 +256,27 @@ export function ScorecardView({
   };
 
   const toggleExpandedOvers = (inningsKey: string) => {
+    const isCurrentlyExpanded = expandedOvers[inningsKey];
+
     setExpandedOvers(prev => ({
       ...prev,
       [inningsKey]: !prev[inningsKey],
     }));
+
+    // If expanding (not collapsing), fetch all overs details
+    if (!isCurrentlyExpanded) {
+      // Extract innings number from the key (format: "A-1" or "B-1")
+      const inningsNumberStr = inningsKey.split('-')[1];
+      if (inningsNumberStr) {
+        const inningsNumber = parseInt(inningsNumberStr);
+
+        // Fetch all overs details for this innings
+        dispatch(fetchAllOversDetailsThunk({
+          matchId,
+          inningsNumber,
+        }));
+      }
+    }
   };
 
   const renderBallCircle = (ball: BallSummary, index: number) => {
@@ -210,25 +320,24 @@ export function ScorecardView({
     return (
       <div
         key={index}
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
-          isWicket
-            ? 'border-red-500 bg-red-100 text-red-700'
-            : ball.ball_type === 'wide'
-              ? 'border-yellow-500 bg-yellow-100 text-yellow-700'
-              : ball.ball_type === 'no_ball'
-                ? 'border-orange-500 bg-orange-100 text-orange-700'
-                : ball.ball_type === 'dead_ball'
-                  ? 'border-gray-500 bg-gray-100 text-gray-700'
-                  : ball.run_type === 'LB'
-                    ? 'border-amber-500 bg-amber-100 text-amber-700'
-                    : ball.runs === 4
-                      ? 'border-blue-500 bg-blue-100 text-blue-700'
-                      : ball.runs === 6
-                        ? 'border-purple-500 bg-purple-100 text-purple-700'
-                        : ball.runs === 0
-                          ? 'border-gray-300 bg-gray-100 text-gray-600'
-                          : 'border-green-500 bg-green-100 text-green-700'
-        }`}
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
+          ? 'border-red-500 bg-red-100 text-red-700'
+          : ball.ball_type === 'wide'
+            ? 'border-yellow-500 bg-yellow-100 text-yellow-700'
+            : ball.ball_type === 'no_ball'
+              ? 'border-orange-500 bg-orange-100 text-orange-700'
+              : ball.ball_type === 'dead_ball'
+                ? 'border-gray-500 bg-gray-100 text-gray-700'
+                : ball.run_type === 'LB'
+                  ? 'border-amber-500 bg-amber-100 text-amber-700'
+                  : ball.runs === 4
+                    ? 'border-blue-500 bg-blue-100 text-blue-700'
+                    : ball.runs === 6
+                      ? 'border-purple-500 bg-purple-100 text-purple-700'
+                      : ball.runs === 0
+                        ? 'border-gray-300 bg-gray-100 text-gray-600'
+                        : 'border-green-500 bg-green-100 text-green-700'
+          }`}
       >
         {displayWithByes}
       </div>
@@ -347,32 +456,48 @@ export function ScorecardView({
           >
             {scorecardData.match_status.toUpperCase()}
           </Badge>
-          {scorecardData.match_status === 'live' && !showLiveScoring && (
-            <Button
-              onClick={handleStartScoring}
-              className="bg-green-600 hover:bg-green-700"
-              title={
-                scorecardData.match_status === 'live'
-                  ? 'Open Live Scoring'
-                  : 'Start Live Scoring'
-              }
-              disabled={scoring}
-            >
-              {scoring ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Live Scoring
-                </>
-              )}
-            </Button>
-          )}
+          {scorecardData.match_status === 'live' &&
+            !showLiveScoring &&
+            isScoringAvailable && (
+              <Button
+                onClick={handleStartScoring}
+                className="bg-green-600 hover:bg-green-700"
+                title={
+                  scorecardData.match_status === 'live'
+                    ? 'Open Live Scoring'
+                    : 'Start Live Scoring'
+                }
+                disabled={scoring}
+              >
+                {scoring ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Live Scoring
+                  </>
+                )}
+              </Button>
+            )}
         </div>
         {scoringMessage && (
           <div className="mt-3">
             <Badge variant="default" className="bg-green-600">
               {scoringMessage}
+            </Badge>
+          </div>
+        )}
+        {isMatchCompleted && (
+          <div className="mt-3">
+            <Badge variant="secondary" className="bg-gray-500 text-white">
+              Match Completed - Scoring Not Available
+            </Badge>
+          </div>
+        )}
+        {isBothInningsCompleted && !isMatchCompleted && (
+          <div className="mt-3">
+            <Badge variant="secondary" className="bg-gray-500 text-white">
+              Both Innings Completed - Scoring Not Available
             </Badge>
           </div>
         )}
@@ -387,8 +512,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-            Array.isArray(scorecardData.innings) &&
-            scorecardData.innings.length > 0 ? (
+              Array.isArray(scorecardData.innings) &&
+              scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'A'
@@ -397,13 +522,13 @@ export function ScorecardView({
                   const inningsKey = `A-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                    Array.isArray(innings.overs) &&
-                    innings.overs.length > 0
+                      Array.isArray(innings.overs) &&
+                      innings.overs.length > 0
                       ? innings.overs.reduce((latest, current) =>
-                          current.over_number > latest.over_number
-                            ? current
-                            : latest
-                        )
+                        current.over_number > latest.over_number
+                          ? current
+                          : latest
+                      )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -478,8 +603,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                            Array.isArray(latestOver.balls) &&
-                            latestOver.balls.length > 0 ? (
+                              Array.isArray(latestOver.balls) &&
+                              latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -551,8 +676,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-            Array.isArray(scorecardData.innings) &&
-            scorecardData.innings.length > 0 ? (
+              Array.isArray(scorecardData.innings) &&
+              scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'B'
@@ -561,13 +686,13 @@ export function ScorecardView({
                   const inningsKey = `B-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                    Array.isArray(innings.overs) &&
-                    innings.overs.length > 0
+                      Array.isArray(innings.overs) &&
+                      innings.overs.length > 0
                       ? innings.overs.reduce((latest, current) =>
-                          current.over_number > latest.over_number
-                            ? current
-                            : latest
-                        )
+                        current.over_number > latest.over_number
+                          ? current
+                          : latest
+                      )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -642,8 +767,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                            Array.isArray(latestOver.balls) &&
-                            latestOver.balls.length > 0 ? (
+                              Array.isArray(latestOver.balls) &&
+                              latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -710,7 +835,7 @@ export function ScorecardView({
       </div>
 
       {/* Live Scoring Interface */}
-      {showLiveScoring && (
+      {showLiveScoring && isScoringAvailable && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -885,11 +1010,10 @@ export function ScorecardView({
                       key={byes}
                       onClick={() => handleByesChange(byes)}
                       disabled={scoring}
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors ${
-                        byes === currentByes
-                          ? 'border-blue-500 bg-blue-100 text-blue-700'
-                          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                      } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors ${byes === currentByes
+                        ? 'border-blue-500 bg-blue-100 text-blue-700'
+                        : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {byes}
                     </button>

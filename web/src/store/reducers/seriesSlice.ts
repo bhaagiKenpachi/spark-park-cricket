@@ -8,6 +8,7 @@ export interface Series {
   start_date: string;
   end_date: string;
   status: 'upcoming' | 'ongoing' | 'completed';
+  created_by?: string;
   created_at: string;
   updated_at: string;
 }

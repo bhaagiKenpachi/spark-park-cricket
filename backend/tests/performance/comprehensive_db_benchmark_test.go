@@ -35,7 +35,7 @@ func BenchmarkSeriesOperations(b *testing.B) {
 		b.Fatalf("Failed to setup test schema: %v", err)
 	}
 
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	router := setupBenchmarkRouter(serviceContainer)
 
 	b.Run("CreateSeries", func(b *testing.B) {
@@ -101,7 +101,7 @@ func BenchmarkMatchOperations(b *testing.B) {
 		b.Fatalf("Failed to setup test schema: %v", err)
 	}
 
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	router := setupBenchmarkRouter(serviceContainer)
 
 	b.Run("CreateMatch", func(b *testing.B) {
@@ -182,7 +182,7 @@ func BenchmarkScorecardOperations(b *testing.B) {
 		b.Fatalf("Failed to setup test schema: %v", err)
 	}
 
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	router := setupBenchmarkRouter(serviceContainer)
 
 	b.Run("StartScoring", func(b *testing.B) {
@@ -318,7 +318,7 @@ func BenchmarkDatabaseQueries(b *testing.B) {
 		b.Fatalf("Failed to setup test schema: %v", err)
 	}
 
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	router := setupBenchmarkRouter(serviceContainer)
 
 	// Create test data
@@ -384,7 +384,7 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 		b.Fatalf("Failed to setup test schema: %v", err)
 	}
 
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	router := setupBenchmarkRouter(serviceContainer)
 
 	// Create test data

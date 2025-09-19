@@ -1,6 +1,7 @@
 package services
 
 import (
+	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/interfaces"
@@ -16,10 +17,13 @@ type Container struct {
 	Hub              *websocket.Hub
 	Broadcaster      *events.EventBroadcaster
 	GraphQLWebSocket *graphql.GraphQLWebSocketService
+	// Authentication services
+	AuthService    *AuthService
+	SessionService *SessionService
 }
 
 // NewContainer creates a new service container with all services
-func NewContainer(repos *database.Repositories) *Container {
+func NewContainer(repos *database.Repositories, cfg *config.Config) *Container {
 	// Create WebSocket hub
 	hub := websocket.NewHub()
 
@@ -35,6 +39,10 @@ func NewContainer(repos *database.Repositories) *Container {
 	// Create GraphQL-integrated scorecard service
 	scorecardServiceWithGraphQL := NewScorecardServiceWithGraphQL(repos.Scorecard, repos.Match, hub)
 
+	// Create authentication services
+	sessionService := NewSessionService(repos.User, cfg)
+	authService := NewAuthService(cfg, repos.User, sessionService)
+
 	// Create container
 	container := &Container{
 		Series:           NewSeriesService(repos.Series),
@@ -43,6 +51,9 @@ func NewContainer(repos *database.Repositories) *Container {
 		Hub:              hub,
 		Broadcaster:      broadcaster,
 		GraphQLWebSocket: graphqlWebSocketService,
+		// Authentication services
+		AuthService:    authService,
+		SessionService: sessionService,
 	}
 
 	return container

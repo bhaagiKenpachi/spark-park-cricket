@@ -31,6 +31,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 				ID:         "match-1",
 				Status:     models.MatchStatusLive,
 				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
 			},
 			existingInnings: []*models.Innings{},
 			expectedError:   "",
@@ -58,6 +59,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 				ID:         "match-1",
 				Status:     models.MatchStatusLive,
 				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
 			},
 			existingInnings: []*models.Innings{
 				{ID: "innings-1", MatchID: "match-1", InningsNumber: 1},
@@ -71,6 +73,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 				ID:         "match-1",
 				Status:     models.MatchStatusLive,
 				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
 			},
 			existingInnings:    []*models.Innings{},
 			createInningsError: errors.New("database error"),
@@ -103,7 +106,9 @@ func TestScorecardService_StartScoring(t *testing.T) {
 			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
 
 			// Test
-			err := service.StartScoring(context.Background(), tt.matchID)
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.StartScoring(ctx, tt.matchID)
 
 			// Assertions
 			if tt.expectedError != "" {
@@ -148,8 +153,9 @@ func TestScorecardService_AddBall(t *testing.T) {
 				RunType:       models.RunTypeOne,
 			},
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusCancelled,
+				ID:        "match-1",
+				Status:    models.MatchStatusCancelled,
+				CreatedBy: "test-user-123",
 			},
 			expectedError: "match is not live, cannot add ball",
 		},
@@ -168,6 +174,7 @@ func TestScorecardService_AddBall(t *testing.T) {
 				BattingTeam:      models.TeamTypeA,
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			expectedError: "cannot start second innings, first innings must be played first",
 		},
@@ -196,7 +203,9 @@ func TestScorecardService_AddBall(t *testing.T) {
 			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
 
 			// Test
-			err := service.AddBall(context.Background(), tt.req)
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.AddBall(ctx, tt.req)
 
 			// Assertions
 			if tt.expectedError != "" {
@@ -367,6 +376,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			},
 			match: &models.Match{
 				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
 			},
 			firstInnings: &models.Innings{
 				TotalRuns: 140,
@@ -383,6 +393,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			},
 			match: &models.Match{
 				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
 			},
 			firstInnings: &models.Innings{
 				TotalRuns: 140,
@@ -400,6 +411,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			match: &models.Match{
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			firstInnings: &models.Innings{
 				TotalRuns: 140,
@@ -418,6 +430,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			match: &models.Match{
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			firstInnings: &models.Innings{
 				TotalRuns: 140,
@@ -433,6 +446,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			},
 			match: &models.Match{
 				TeamAPlayerCount: 11,
+				CreatedBy:        "test-user-123",
 			},
 			getFirstInningsError: errors.New("database error"),
 			expectedComplete:     false,
@@ -522,6 +536,7 @@ func TestScorecardService_UndoBall(t *testing.T) {
 				Status:           models.MatchStatusLive,
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:           "innings-1",
@@ -557,8 +572,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusCancelled,
+				ID:        "match-1",
+				Status:    models.MatchStatusCancelled,
+				CreatedBy: "test-user-123",
 			},
 			expectedError: "match is not live, cannot undo ball",
 		},
@@ -567,8 +583,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusLive,
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
 			},
 			getInningsError: errors.New("innings not found"),
 			expectedError:   "innings not found",
@@ -578,8 +595,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusLive,
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:     "innings-1",
@@ -592,8 +610,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusLive,
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:     "innings-1",
@@ -607,8 +626,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusLive,
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:     "innings-1",
@@ -625,8 +645,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			matchID:       "match-1",
 			inningsNumber: 1,
 			match: &models.Match{
-				ID:     "match-1",
-				Status: models.MatchStatusLive,
+				ID:        "match-1",
+				Status:    models.MatchStatusLive,
+				CreatedBy: "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:     "innings-1",
@@ -650,6 +671,7 @@ func TestScorecardService_UndoBall(t *testing.T) {
 				Status:           models.MatchStatusLive,
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:           "innings-1",
@@ -681,6 +703,7 @@ func TestScorecardService_UndoBall(t *testing.T) {
 				Status:           models.MatchStatusLive,
 				TeamAPlayerCount: 11,
 				TotalOvers:       20,
+				CreatedBy:        "test-user-123",
 			},
 			innings: &models.Innings{
 				ID:           "innings-1",
@@ -761,7 +784,9 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
 
 			// Test
-			err := service.UndoBall(context.Background(), tt.matchID, tt.inningsNumber)
+			// Create context with user_id for authentication
+			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			err := service.UndoBall(ctx, tt.matchID, tt.inningsNumber)
 
 			// Assertions
 			if tt.expectedError != "" {

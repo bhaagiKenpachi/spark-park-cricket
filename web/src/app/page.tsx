@@ -1,6 +1,50 @@
+'use client';
+
+import { useEffect } from 'react';
 import { SeriesList } from '@/components/SeriesList';
+import { LoginButton } from '@/components/auth/LoginButton';
+import { UserMenu } from '@/components/auth/UserMenu';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { checkAuthStatus } from '@/store/reducers/authSlice';
 
 export default function Home(): React.JSX.Element {
+  const { isAuthenticated, user, isLoading, error, isInitialized } =
+    useAppSelector(state => state.auth);
+  const dispatch = useAppDispatch();
+
+  // Debug auth state
+  console.log('=== MAIN PAGE AUTH STATE ===');
+  console.log('isAuthenticated:', isAuthenticated);
+  console.log('user:', user);
+  console.log('isLoading:', isLoading);
+  console.log('error:', error);
+  console.log('isInitialized:', isInitialized);
+
+  // Handle authentication success callback
+  useEffect(() => {
+    console.log('=== FRONTEND PAGE LOAD ===');
+    console.log('Current URL:', window.location.href);
+    console.log('Document cookies:', document.cookie);
+    console.log(
+      'LocalStorage auth state:',
+      localStorage.getItem('auth_authenticated')
+    );
+    console.log('LocalStorage user:', localStorage.getItem('auth_user'));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    console.log('URL parameters:', Object.fromEntries(urlParams.entries()));
+
+    if (urlParams.get('auth') === 'success') {
+      console.log('=== OAUTH SUCCESS CALLBACK ===');
+      console.log('Clearing URL parameter and checking auth status');
+
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Check authentication status
+      dispatch(checkAuthStatus());
+    }
+  }, [dispatch]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
@@ -24,6 +68,11 @@ export default function Home(): React.JSX.Element {
             >
               Spark Park Cricket
             </h1>
+
+            {/* Authentication Section */}
+            <div className="flex items-center">
+              {isAuthenticated ? <UserMenu /> : <LoginButton />}
+            </div>
           </div>
         </div>
       </header>

@@ -30,7 +30,7 @@ func TestSeriesIntegration(t *testing.T) {
 	defer dbClient.Close()
 
 	// Setup routes
-	router := handlers.SetupRoutes(dbClient)
+	router := handlers.SetupRoutes(dbClient, testConfig.Config)
 
 	// Clean up before each test
 	cleanupSeriesTestData(t, dbClient)
@@ -326,7 +326,7 @@ func TestSeriesConcurrentOperations(t *testing.T) {
 	defer dbClient.Close()
 
 	// Setup routes
-	router := handlers.SetupRoutes(dbClient)
+	router := handlers.SetupRoutes(dbClient, testConfig.Config)
 
 	// Clean up before test
 	cleanupSeriesTestData(t, dbClient)
@@ -388,7 +388,7 @@ func TestSeriesDataIntegrity(t *testing.T) {
 	defer dbClient.Close()
 
 	// Setup routes
-	router := handlers.SetupRoutes(dbClient)
+	router := handlers.SetupRoutes(dbClient, testConfig.Config)
 
 	// Clean up before test
 	cleanupSeriesTestData(t, dbClient)

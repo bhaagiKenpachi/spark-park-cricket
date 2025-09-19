@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -20,8 +21,11 @@ import (
 
 // SetupE2ETestServer creates a test server for e2e tests
 func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server {
+	// Load test configuration
+	cfg := config.LoadTestConfig()
+
 	// Create service container
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 
 	// Create handlers
 	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
@@ -96,7 +100,7 @@ func SetupE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client)
 	require.NoError(t, err)
 
 	// Create service container
-	serviceContainer := services.NewContainer(db.Repositories)
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
 
 	// Create handlers
 	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
@@ -397,4 +401,104 @@ func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
 	}
 
 	t.Logf("DEBUG: Completed comprehensive cleanup of all test data")
+}
+
+// CreateAuthenticatedTestUser creates a test user and session for integration tests
+func CreateAuthenticatedTestUser(t *testing.T, dbClient *database.Client) (*models.User, *models.UserSession) {
+	// Create a test user
+	user := &models.User{
+		GoogleID:      "test-google-id-123",
+		Email:         "test@example.com",
+		Name:          "Test User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+
+	// Create user in database
+	err := dbClient.Repositories.User.CreateUser(context.Background(), user)
+	require.NoError(t, err, "Failed to create test user")
+
+	// Create session for the user
+	session := &models.UserSession{
+		UserID:    user.ID,
+		SessionID: "test-session-123",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+
+	err = dbClient.Repositories.User.CreateUserSession(context.Background(), session)
+	require.NoError(t, err, "Failed to create test session")
+
+	return user, session
+}
+
+// CreateAuthenticatedTestUserWithSessionService creates a test user and proper session using session service
+func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *database.Client, sessionService *services.SessionService) (*models.User, string) {
+	// Create a test user
+	user := &models.User{
+		GoogleID:      "test-google-id-123",
+		Email:         "test@example.com",
+		Name:          "Test User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+
+	// Create user in database
+	err := dbClient.Repositories.User.CreateUser(context.Background(), user)
+	require.NoError(t, err, "Failed to create test user")
+
+	// Create a proper session using the session service
+	req := httptest.NewRequest("POST", "/auth/login", nil)
+	w := httptest.NewRecorder()
+
+	err = sessionService.CreateSession(w, req, user)
+	require.NoError(t, err, "Failed to create test session")
+
+	// Extract the session cookie from the response
+	cookies := w.Result().Cookies()
+	var sessionCookie string
+	for _, cookie := range cookies {
+		if cookie.Name == "user_session" {
+			sessionCookie = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, sessionCookie, "Session cookie not found in response")
+
+	return user, sessionCookie
+}
+
+// CreateAuthenticatedRequestWithCookie creates an HTTP request with authentication cookie
+func CreateAuthenticatedRequestWithCookie(method, url string, body []byte, sessionCookie string) *http.Request {
+	req := httptest.NewRequest(method, url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add session cookie
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // Set to true in production
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return req
+}
+
+// CreateAuthenticatedRequest creates an HTTP request with authentication cookie
+func CreateAuthenticatedRequest(method, url string, body []byte, session *models.UserSession) *http.Request {
+	req := httptest.NewRequest(method, url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add session cookie
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    session.SessionID,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, // Set to true in production
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return req
 }

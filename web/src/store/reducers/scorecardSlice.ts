@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { graphqlService } from '@/services/graphqlService';
+import { BallSummary as GraphQLBallSummary, OverSummary as GraphQLOverSummary } from '@/lib/graphql';
 
 // Enums
 export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball';
@@ -104,6 +106,7 @@ interface ScorecardState {
   loading: boolean;
   error: string | null;
   scoring: boolean;
+  inningsTransitionDetected: boolean;
 }
 
 export const initialState: ScorecardState = {
@@ -111,7 +114,42 @@ export const initialState: ScorecardState = {
   loading: false,
   error: null,
   scoring: false,
+  inningsTransitionDetected: false,
 };
+
+// Async thunks for GraphQL operations
+export const fetchInningsScoreSummaryThunk = createAsyncThunk(
+  'scorecard/fetchInningsScoreSummary',
+  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
+    const response = await graphqlService.getInningsScoreSummary(matchId, inningsNumber);
+    if (response.success && response.data) {
+      return response.data;
+    }
+    throw new Error(response.error || 'Failed to fetch innings score summary');
+  }
+);
+
+export const fetchLatestOverThunk = createAsyncThunk(
+  'scorecard/fetchLatestOver',
+  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
+    const response = await graphqlService.getLatestOverOnly(matchId, inningsNumber);
+    if (response.success && response.data) {
+      return { inningsNumber, over: response.data };
+    }
+    throw new Error(response.error || 'Failed to fetch latest over');
+  }
+);
+
+export const fetchAllOversDetailsThunk = createAsyncThunk(
+  'scorecard/fetchAllOversDetails',
+  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
+    const response = await graphqlService.getAllOversDetails(matchId, inningsNumber);
+    if (response.success && response.data) {
+      return { inningsNumber, overs: response.data };
+    }
+    throw new Error(response.error || 'Failed to fetch all overs details');
+  }
+);
 
 export const scorecardSlice = createSlice({
   name: 'scorecard',
@@ -240,7 +278,146 @@ export const scorecardSlice = createSlice({
     clearScorecard: state => {
       state.scorecard = null;
       state.error = null;
+      state.inningsTransitionDetected = false;
     },
+    clearInningsTransition: state => {
+      state.inningsTransitionDetected = false;
+    },
+    triggerInningsTransition: state => {
+      // This action will be handled by the saga
+    },
+  },
+  extraReducers: builder => {
+    builder
+      .addCase(fetchInningsScoreSummaryThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.scorecard) {
+          const inningsIndex = state.scorecard.innings.findIndex(
+            innings => innings.innings_number === action.payload.innings_number
+          );
+
+          // Check for innings transition (status changed from 'in_progress' to 'completed')
+          let inningsTransitionDetected = false;
+          if (inningsIndex !== -1) {
+            const existingInnings = state.scorecard.innings[inningsIndex];
+            const wasInProgress = existingInnings?.status === 'in_progress';
+            const isNowCompleted = action.payload.status === 'completed';
+            inningsTransitionDetected = wasInProgress && isNowCompleted;
+          }
+
+          if (inningsIndex !== -1) {
+            // Update existing innings and preserve overs array
+            const existingOvers =
+              state.scorecard.innings?.[inningsIndex]?.overs || [];
+            state.scorecard.innings![inningsIndex] = {
+              ...action.payload,
+              batting_team: action.payload.batting_team as 'A' | 'B',
+              extras: {
+                byes: 0,
+                leg_byes: 0,
+                wides: 0,
+                no_balls: 0,
+                total: action.payload.extras?.total || 0,
+              },
+              overs: existingOvers,
+            };
+          } else {
+            // Create new innings with empty overs array
+            state.scorecard.innings.push({
+              ...action.payload,
+              batting_team: action.payload.batting_team as 'A' | 'B',
+              extras: {
+                byes: 0,
+                leg_byes: 0,
+                wides: 0,
+                no_balls: 0,
+                total: action.payload.extras?.total || 0,
+              },
+              overs: [],
+            });
+          }
+
+          // Set flag to indicate innings transition was detected
+          if (inningsTransitionDetected) {
+            state.inningsTransitionDetected = true;
+            // Trigger the innings transition saga
+            // Note: We can't dispatch actions from reducers, so we'll handle this differently
+          }
+        }
+      })
+      .addCase(fetchInningsScoreSummaryThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch innings score summary';
+      })
+      .addCase(fetchLatestOverThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.scorecard) {
+          const inningsIndex = state.scorecard.innings.findIndex(
+            innings => innings.innings_number === action.payload.inningsNumber
+          );
+          if (inningsIndex !== -1) {
+            // Initialize overs array if it doesn't exist
+            if (!state.scorecard.innings![inningsIndex]!.overs) {
+              state.scorecard.innings![inningsIndex]!.overs = [];
+            }
+
+            const overIndex = state.scorecard.innings![
+              inningsIndex
+            ]!.overs!.findIndex(
+              over => over.over_number === action.payload.over.over_number
+            );
+
+            if (overIndex !== -1) {
+              // Update existing over
+              state.scorecard.innings![inningsIndex]!.overs![overIndex] = {
+                ...action.payload.over,
+                balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
+                  ...ball,
+                  ball_type: ball.ball_type as BallType,
+                  run_type: ball.run_type as RunType,
+                })),
+              };
+            } else {
+              // Add new over
+              state.scorecard.innings![inningsIndex]!.overs!.push({
+                ...action.payload.over,
+                balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
+                  ...ball,
+                  ball_type: ball.ball_type as BallType,
+                  run_type: ball.run_type as RunType,
+                })),
+              });
+            }
+          }
+        }
+      })
+      .addCase(fetchLatestOverThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch latest over';
+      })
+      .addCase(fetchAllOversDetailsThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.scorecard) {
+          const inningsIndex = state.scorecard.innings.findIndex(
+            innings => innings.innings_number === action.payload.inningsNumber
+          );
+          if (inningsIndex !== -1) {
+            // Update all overs for the innings
+            state.scorecard.innings![inningsIndex]!.overs = action.payload.overs.map((over: GraphQLOverSummary) => ({
+              ...over,
+              balls: over.balls.map((ball: GraphQLBallSummary) => ({
+                ...ball,
+                ball_type: ball.ball_type as BallType,
+                run_type: ball.run_type as RunType,
+              })),
+            }));
+          }
+        }
+      })
+      .addCase(fetchAllOversDetailsThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch all overs details';
+      });
   },
 });
 
@@ -260,6 +437,8 @@ export const {
   fetchLatestOverSuccess,
   fetchInningsFailure,
   clearScorecard,
+  clearInningsTransition,
+  triggerInningsTransition,
 } = scorecardSlice.actions;
 
 export default scorecardSlice.reducer;

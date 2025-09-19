@@ -35,7 +35,7 @@ func TestMatchWorkflow_E2E(t *testing.T) {
 	cleanupMatchWorkflowTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories)
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
 	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
 
 	// Setup router

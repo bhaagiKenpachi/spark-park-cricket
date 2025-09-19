@@ -35,7 +35,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, *database.Client) {
 	require.NoError(t, err)
 
 	// Create service container
-	serviceContainer := services.NewContainer(db.Repositories)
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
 
 	// Create handlers
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
@@ -54,11 +54,24 @@ func setupTestServer(t *testing.T) (*httptest.Server, *database.Client) {
 func createTestMatch(t *testing.T, db *database.Client) (string, string) {
 	ctx := context.Background()
 
+	// Create test user first
+	testUser := &models.User{
+		GoogleID:      fmt.Sprintf("test-google-id-match-completion-%d", time.Now().UnixNano()),
+		Email:         fmt.Sprintf("test-match-completion-%d@example.com", time.Now().UnixNano()),
+		Name:          "Test Match Completion User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+	err := db.Repositories.User.CreateUser(ctx, testUser)
+	require.NoError(t, err)
+	defer db.Repositories.User.DeleteUser(ctx, testUser.ID)
+
 	// Create test series
 	series := &models.Series{
 		Name:      fmt.Sprintf("Test Series %d", time.Now().Unix()),
 		StartDate: time.Now(),
 		EndDate:   time.Now().Add(24 * time.Hour),
+		CreatedBy: testUser.ID,
 	}
 	err := db.Repositories.Series.Create(ctx, series)
 	require.NoError(t, err)
@@ -75,6 +88,7 @@ func createTestMatch(t *testing.T, db *database.Client) (string, string) {
 		TossWinner:       models.TeamTypeA,
 		TossType:         models.TossTypeHeads,
 		BattingTeam:      models.TeamTypeA,
+		CreatedBy:        testUser.ID,
 	}
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)

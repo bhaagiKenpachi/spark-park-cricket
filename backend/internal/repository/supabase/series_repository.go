@@ -70,6 +70,7 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 	for i := range result {
 		series[i] = &result[i]
 	}
+
 	return series, nil
 }
 

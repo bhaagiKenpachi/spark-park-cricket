@@ -29,7 +29,6 @@ interface MatchFormProps {
 
 interface FormData {
   series_id: string;
-  match_number: number;
   date: string;
   team_player_count: number;
   total_overs: number;
@@ -39,7 +38,6 @@ interface FormData {
 
 interface FormErrors {
   series_id?: string;
-  match_number?: string;
   date?: string;
   team_player_count?: string;
   total_overs?: string;
@@ -58,7 +56,6 @@ export function MatchForm({
 
   const [formData, setFormData] = useState<FormData>({
     series_id: seriesId || match?.series_id || '',
-    match_number: match?.match_number || 0, // 0 means auto-generate
     date:
       (match?.date
         ? match.date.split('T')[0]
@@ -75,7 +72,6 @@ export function MatchForm({
     if (match) {
       setFormData({
         series_id: match.series_id,
-        match_number: match.match_number,
         date: match.date.split('T')[0] || '',
         team_player_count: match.team_a_player_count,
         total_overs: match.total_overs,
@@ -131,9 +127,8 @@ export function MatchForm({
     }
 
     // Convert date string to RFC3339 format for the API
-    const apiData: Omit<Match, 'id' | 'created_at' | 'updated_at'> = {
+    const apiData: Omit<Match, 'id' | 'created_at' | 'updated_at' | 'match_number'> = {
       series_id: formData.series_id,
-      match_number: formData.match_number > 0 ? formData.match_number : 1, // Use provided number or default to 1
       date: `${formData.date}T00:00:00Z`,
       status: 'live' as const,
       team_a_player_count: formData.team_player_count,
@@ -143,6 +138,9 @@ export function MatchForm({
       toss_type: formData.toss_type,
       batting_team: formData.toss_winner, // Default batting team is toss winner
     };
+
+    console.log('Form data being submitted:', formData);
+    console.log('API data being sent:', apiData);
 
     if (match) {
       dispatch(
@@ -298,23 +296,6 @@ export function MatchForm({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="match_number">Match Number (Optional)</Label>
-              <Input
-                type="number"
-                id="match_number"
-                value={formData.match_number || ''}
-                onChange={e =>
-                  handleInputChange(
-                    'match_number',
-                    e.target.value ? parseInt(e.target.value) : 0
-                  )
-                }
-                min="1"
-                placeholder="Leave empty for auto-generation"
-                data-cy="match-number"
-              />
-            </div>
 
             <div className="flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center">
               <Button

@@ -32,7 +32,7 @@ func TestUndoBallIntegration(t *testing.T) {
 	defer testutils.CleanupScorecardTestData(t, testDB)
 
 	// Setup service container and handlers
-	serviceContainer := services.NewContainer(testDB.Repositories)
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
 	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
 
 	// Setup router using testutils

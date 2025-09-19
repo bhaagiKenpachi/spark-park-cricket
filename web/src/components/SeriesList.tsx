@@ -16,9 +16,15 @@ import { RefreshCw, Plus } from 'lucide-react';
 export function SeriesList(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { series, loading, error } = useAppSelector(state => state.series);
+  const { user: currentUser, isAuthenticated } = useAppSelector(
+    state => state.auth
+  );
   const [showForm, setShowForm] = useState(false);
   const [editingSeries, setEditingSeries] = useState<Series | undefined>();
   const [viewingScorecard, setViewingScorecard] = useState<string | null>(null);
+  const [currentSeriesCreatedBy, setCurrentSeriesCreatedBy] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     dispatch(fetchSeriesRequest());
@@ -31,7 +37,129 @@ export function SeriesList(): React.JSX.Element {
   };
 
   const handleEdit = (series: Series) => {
+    if (!isAuthenticated) {
+      // Find the sign-in button and add a blinking red border effect
+      const signInButton = document.querySelector(
+        '[data-cy="login-button"]'
+      ) as HTMLElement;
+      if (signInButton) {
+        console.log('Sign-in button found:', signInButton);
+        console.log('Starting blink effect...');
+
+        // Focus and scroll to the button
+        signInButton.focus();
+        signInButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Add blinking red border effect
+        let blinkCount = 0;
+        const blinkInterval = setInterval(() => {
+          blinkCount++;
+          console.log(`Blink ${blinkCount}/6`);
+
+          if (blinkCount % 2 === 1) {
+            // Red border ON
+            console.log('Red border ON');
+            signInButton.style.setProperty(
+              'border',
+              '2px solid red',
+              'important'
+            );
+            signInButton.style.setProperty(
+              'box-shadow',
+              '0 0 10px rgba(255, 0, 0, 0.5)',
+              'important'
+            );
+            signInButton.style.setProperty(
+              'background-color',
+              '#fee2e2',
+              'important'
+            );
+          } else {
+            // Red border OFF
+            console.log('Red border OFF');
+            signInButton.style.removeProperty('border');
+            signInButton.style.removeProperty('box-shadow');
+            signInButton.style.removeProperty('background-color');
+          }
+
+          if (blinkCount >= 6) {
+            clearInterval(blinkInterval);
+            console.log('Blink effect completed');
+            // Clean up any remaining styles
+            signInButton.style.removeProperty('border');
+            signInButton.style.removeProperty('box-shadow');
+            signInButton.style.removeProperty('background-color');
+          }
+        }, 500);
+      } else {
+        console.log('Sign-in button not found');
+      }
+      return;
+    }
     setEditingSeries(series);
+    setShowForm(true);
+  };
+
+  const handleCreateSeries = () => {
+    if (!isAuthenticated) {
+      // Find the sign-in button and add a blinking red border effect
+      const signInButton = document.querySelector(
+        '[data-cy="login-button"]'
+      ) as HTMLElement;
+      if (signInButton) {
+        console.log('Sign-in button found:', signInButton);
+        console.log('Starting blink effect...');
+
+        // Focus and scroll to the button
+        signInButton.focus();
+        signInButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Add blinking red border effect
+        let blinkCount = 0;
+        const blinkInterval = setInterval(() => {
+          blinkCount++;
+          console.log(`Blink ${blinkCount}/6`);
+
+          if (blinkCount % 2 === 1) {
+            // Red border ON
+            console.log('Red border ON');
+            signInButton.style.setProperty(
+              'border',
+              '2px solid red',
+              'important'
+            );
+            signInButton.style.setProperty(
+              'box-shadow',
+              '0 0 10px rgba(255, 0, 0, 0.5)',
+              'important'
+            );
+            signInButton.style.setProperty(
+              'background-color',
+              '#fee2e2',
+              'important'
+            );
+          } else {
+            // Red border OFF
+            console.log('Red border OFF');
+            signInButton.style.removeProperty('border');
+            signInButton.style.removeProperty('box-shadow');
+            signInButton.style.removeProperty('background-color');
+          }
+
+          if (blinkCount >= 6) {
+            clearInterval(blinkInterval);
+            console.log('Blink effect completed');
+            // Clean up any remaining styles
+            signInButton.style.removeProperty('border');
+            signInButton.style.removeProperty('box-shadow');
+            signInButton.style.removeProperty('background-color');
+          }
+        }, 500);
+      } else {
+        console.log('Sign-in button not found');
+      }
+      return;
+    }
     setShowForm(true);
   };
 
@@ -46,12 +174,17 @@ export function SeriesList(): React.JSX.Element {
     setEditingSeries(undefined);
   };
 
-  const handleViewScorecard = (matchId: string) => {
+  const handleViewScorecard = (matchId: string, seriesCreatedBy: string) => {
+    console.log('=== HANDLE VIEW SCORECARD ===');
+    console.log('Match ID:', matchId);
+    console.log('Series Created By:', seriesCreatedBy);
     setViewingScorecard(matchId);
+    setCurrentSeriesCreatedBy(seriesCreatedBy);
   };
 
   const handleBackFromScorecard = () => {
     setViewingScorecard(null);
+    setCurrentSeriesCreatedBy(null);
   };
 
   if (loading && (!series || !Array.isArray(series) || series.length === 0)) {
@@ -105,6 +238,11 @@ export function SeriesList(): React.JSX.Element {
       <ScorecardView
         matchId={viewingScorecard}
         onBack={handleBackFromScorecard}
+        {...(currentSeriesCreatedBy && {
+          seriesCreatedBy: currentSeriesCreatedBy,
+        })}
+        currentUser={currentUser}
+        isAuthenticated={isAuthenticated}
       />
     );
   }
@@ -135,7 +273,7 @@ export function SeriesList(): React.JSX.Element {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
           <Button
-            onClick={() => setShowForm(true)}
+            onClick={handleCreateSeries}
             data-cy="create-series-button"
             title="Create Series"
           >
@@ -149,7 +287,7 @@ export function SeriesList(): React.JSX.Element {
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">No series found.</p>
           <Button
-            onClick={() => setShowForm(true)}
+            onClick={handleCreateSeries}
             data-cy="create-first-series-button"
             title="Create Your First Series"
           >
@@ -167,6 +305,8 @@ export function SeriesList(): React.JSX.Element {
                 onEditSeries={handleEdit}
                 onDeleteSeries={handleDelete}
                 onViewScorecard={handleViewScorecard}
+                currentUser={currentUser}
+                isAuthenticated={isAuthenticated}
               />
             ))}
         </div>

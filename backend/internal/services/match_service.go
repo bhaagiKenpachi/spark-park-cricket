@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -24,6 +25,13 @@ func NewMatchService(matchRepo interfaces.MatchRepository, seriesRepo interfaces
 
 // CreateMatch creates a new match
 func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchRequest) (*models.Match, error) {
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return nil, fmt.Errorf("user authentication required")
+	}
+	log.Printf("Creating match for user ID: %s", userID)
+
 	// Validate series exists
 	_, err := s.seriesRepo.GetByID(ctx, req.SeriesID)
 	if err != nil {
@@ -63,6 +71,7 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 		TossWinner:       req.TossWinner,
 		TossType:         req.TossType,
 		BattingTeam:      req.TossWinner, // Winner of toss bats first
+		CreatedBy:        userID,
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 	}
@@ -114,10 +123,21 @@ func (s *MatchService) UpdateMatch(ctx context.Context, id string, req *models.U
 		return nil, fmt.Errorf("match ID is required")
 	}
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return nil, fmt.Errorf("user authentication required")
+	}
+
 	// Get existing match
 	match, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get match: %w", err)
+	}
+
+	// Check ownership
+	if match.CreatedBy != userID {
+		return nil, fmt.Errorf("access denied: you can only update matches you created")
 	}
 
 	// Update fields if provided
@@ -160,10 +180,21 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 		return fmt.Errorf("match ID is required")
 	}
 
+	// Get user ID from context
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
 	// Check if match exists
 	match, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("match not found: %w", err)
+	}
+
+	// Check ownership
+	if match.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only delete matches you created")
 	}
 
 	// Cannot delete a live match

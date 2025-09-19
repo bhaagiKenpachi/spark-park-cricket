@@ -47,6 +47,10 @@ func (r *CachedMatchRepository) Create(ctx context.Context, match *models.Match)
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
 		_ = r.cache.Invalidate(seriesKey)
+
+		// Invalidate next match number cache for this series
+		nextNumberKey := fmt.Sprintf("match:next_number:series:%s", match.SeriesID)
+		_ = r.cache.Invalidate(nextNumberKey)
 	}
 
 	// Cache the new match
@@ -146,6 +150,10 @@ func (r *CachedMatchRepository) Update(ctx context.Context, id string, match *mo
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
 		_ = r.cache.Invalidate(seriesKey)
+
+		// Invalidate next match number cache for this series
+		nextNumberKey := fmt.Sprintf("match:next_number:series:%s", match.SeriesID)
+		_ = r.cache.Invalidate(nextNumberKey)
 	}
 
 	// Update cache with new data
@@ -185,6 +193,10 @@ func (r *CachedMatchRepository) Delete(ctx context.Context, id string) error {
 	if match.SeriesID != "" {
 		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
 		_ = r.cache.Invalidate(seriesKey)
+
+		// Invalidate next match number cache for this series
+		nextNumberKey := fmt.Sprintf("match:next_number:series:%s", match.SeriesID)
+		_ = r.cache.Invalidate(nextNumberKey)
 	}
 
 	return nil

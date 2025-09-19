@@ -20,6 +20,12 @@ type Config struct {
 	RedisDB                int
 	RedisUseTLS            bool
 	CacheEnabled           bool
+	// Google OAuth Configuration
+	GoogleClientID     string
+	GoogleClientSecret string
+	GoogleRedirectURL  string
+	SessionSecret      string
+	SessionMaxAge      int
 }
 
 func Load() *Config {
@@ -40,6 +46,12 @@ func Load() *Config {
 		RedisDB:                getEnvInt("REDIS_DB", 0),
 		RedisUseTLS:            getEnvBool("REDIS_USE_TLS", false),
 		CacheEnabled:           getEnvBool("CACHE_ENABLED", true),
+		// Google OAuth Configuration
+		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8081/api/v1/auth/google/callback"),
+		SessionSecret:      getEnv("SESSION_SECRET", "your-super-secret-session-key-change-this-in-production"),
+		SessionMaxAge:      getEnvInt("SESSION_MAX_AGE", 86400), // 24 hours
 	}
 
 	// Log database configuration
