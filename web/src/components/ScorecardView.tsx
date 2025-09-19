@@ -71,17 +71,6 @@ export function ScorecardView({
   // Determine if scoring should be available
   const isScoringAvailable = isOwner && !isMatchCompleted && !isBothInningsCompleted;
 
-  console.log('=== SCORECARD VIEW OWNERSHIP CHECK ===');
-  console.log('Is Authenticated:', isAuthenticated);
-  console.log('Current User:', currentUser);
-  console.log('Current User ID:', currentUser?.id);
-  console.log('Series Created By:', seriesCreatedBy);
-  console.log('Is Owner:', isOwner);
-  console.log('Match ID:', matchId);
-  console.log('Match Status:', scorecard?.match_status);
-  console.log('Is Match Completed:', isMatchCompleted);
-  console.log('Is Both Innings Completed:', isBothInningsCompleted);
-  console.log('Is Scoring Available:', isScoringAvailable);
 
   useEffect(() => {
     dispatch(fetchScorecardRequest(matchId));
@@ -99,29 +88,16 @@ export function ScorecardView({
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
-    console.log('=== SCORECARD DATA CHANGE ===');
-    console.log('Scorecard:', scorecard);
-    console.log('Scorecard innings:', scorecard?.innings);
 
     if (scorecard?.innings && Array.isArray(scorecard.innings) && scorecard.innings.length > 0) {
       const currentInningsData = scorecard.innings.find(
         innings => innings.status === 'in_progress'
       );
-      console.log('Current innings data:', currentInningsData);
       if (currentInningsData) {
-        console.log('Setting current innings to:', currentInningsData.innings_number);
         setCurrentInnings(currentInningsData.innings_number);
-
-        // Debug: Log all balls in current innings
-        const totalBalls = currentInningsData.overs?.reduce((total, over) => {
-          console.log('Over:', over.over_number, 'Balls:', over.balls?.length || 0);
-          return total + (over.balls ? over.balls.length : 0);
-        }, 0) || 0;
-        console.log('Total balls in current innings:', totalBalls);
       }
     } else if (scorecard?.innings === null || (Array.isArray(scorecard?.innings) && scorecard.innings.length === 0)) {
       // If no innings exist yet, start with innings 1
-      console.log('No innings data, setting current innings to 1');
       setCurrentInnings(1);
     }
   }, [scorecard]);
@@ -143,42 +119,27 @@ export function ScorecardView({
   }, [scoring, showLiveScoring, scorecard]);
 
   const handleStartScoring = () => {
-    console.log('=== HANDLE START SCORING ===');
-    console.log('Match ID:', matchId);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Match Status:', scorecardData?.match_status);
-    console.log('Is Scoring Available:', isScoringAvailable);
-    console.log('Current cookies:', document.cookie);
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking start scoring');
         setScoringMessage('Only the series creator can start scoring.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking start scoring');
         setScoringMessage('Cannot score on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking start scoring');
         setScoringMessage('Cannot score when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
-    console.log('✅ Scoring available, proceeding with start scoring');
 
     // If match is already live, just show the interface without calling the API
     if (scorecardData?.match_status === 'live') {
-      console.log('Match already live, showing interface without API call');
       setShowLiveScoring(true);
       setScoringMessage('Live scoring interface opened!');
       setTimeout(() => setScoringMessage(null), 3000);
     } else {
-      console.log('Match not live, calling startScoringRequest API');
       // Only call the API if match is not live yet
       dispatch(startScoringRequest(matchId));
       setShowLiveScoring(true);
@@ -188,46 +149,21 @@ export function ScorecardView({
   };
 
   const handleBallScore = (runs: number, ballType: string) => {
-    console.log('=== HANDLE BALL SCORE ===');
-    console.log('Runs:', runs);
-    console.log('Ball Type:', ballType);
-    console.log('Current Innings:', currentInnings);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Is Scoring Available:', isScoringAvailable);
-    console.log('Current cookies:', document.cookie);
 
-    // Debug: Check current scorecard state before scoring
-    const currentInningsDataBefore = scorecardData?.innings?.find(
-      innings => innings.innings_number === currentInnings
-    );
-    console.log('Current innings data before scoring:', currentInningsDataBefore);
-    if (currentInningsDataBefore) {
-      const totalBallsBefore = currentInningsDataBefore.overs?.reduce((total, over) => {
-        return total + (over.balls ? over.balls.length : 0);
-      }, 0) || 0;
-      console.log('Total balls before scoring:', totalBallsBefore);
-    }
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking ball scoring');
         setScoringMessage('Only the series creator can score balls.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking ball scoring');
         setScoringMessage('Cannot score on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking ball scoring');
         setScoringMessage('Cannot score when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
-    console.log('✅ Scoring available, proceeding with ball scoring');
 
     // Check if current innings is still in progress
     const currentInningsDataForScoring = scorecardData?.innings?.find(
@@ -278,53 +214,32 @@ export function ScorecardView({
 
   // Helper function to check if it's the first ball of the current innings
   const isFirstBallOfInnings = () => {
-    console.log('=== IS FIRST BALL CHECK ===');
-    console.log('Current innings:', currentInnings);
-    console.log('Scorecard data:', scorecardData);
 
     const currentInningsData = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
-    console.log('Current innings data:', currentInningsData);
-
     if (!currentInningsData) {
-      console.log('No innings data found, returning true (first ball)');
       return true; // If no innings data, consider it first ball
     }
 
     // Count total balls across all overs in this innings
     const totalBalls = currentInningsData.overs?.reduce((total, over) => {
-      console.log('Over', over.over_number, 'has', over.balls?.length || 0, 'balls');
       return total + (over.balls ? over.balls.length : 0);
     }, 0) || 0;
-
-    console.log('Total balls in innings:', totalBalls);
-    console.log('Is first ball (totalBalls === 1):', totalBalls === 1);
 
     // If there's exactly 1 ball, it's the first ball (and we can't undo it)
     return totalBalls === 1;
   };
 
   const handleUndoBall = () => {
-    console.log('=== HANDLE UNDO BALL ===');
-    console.log('Match ID:', matchId);
-    console.log('Current Innings:', currentInnings);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Is Scoring Available:', isScoringAvailable);
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking undo ball');
         setScoringMessage('Only the series creator can undo balls.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking undo ball');
         setScoringMessage('Cannot undo ball on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking undo ball');
         setScoringMessage('Cannot undo ball when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
@@ -346,13 +261,11 @@ export function ScorecardView({
 
     // Check if it's the first ball of the innings
     if (isFirstBallOfInnings()) {
-      console.log('❌ First ball of innings, blocking undo ball');
       setScoringMessage('Cannot undo ball - this is the first ball of the innings.');
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
-    console.log('✅ Undo ball available, proceeding with undo');
     dispatch(undoBallThunk({ matchId, inningsNumber: currentInnings }));
     setScoringMessage('Undoing last ball...');
     setTimeout(() => setScoringMessage(null), 2000);

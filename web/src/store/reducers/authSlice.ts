@@ -22,24 +22,11 @@ const initialState: AuthState = {
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkAuthStatus',
   async (_, { rejectWithValue }) => {
-    console.log('=== REDUX: checkAuthStatus START ===');
-    console.log('Document cookies:', document.cookie);
-    console.log(
-      'LocalStorage auth state:',
-      localStorage.getItem('auth_authenticated')
-    );
 
     try {
       const response = await authService.getAuthStatus();
-      console.log('=== REDUX: checkAuthStatus SUCCESS ===');
-      console.log('Response:', response);
-      console.log('Response.data:', response.data);
-      console.log('Response.data.authenticated:', response.data?.authenticated);
-      console.log('Response.data.user:', response.data?.user);
       return response.data;
     } catch (error: unknown) {
-      console.error('=== REDUX: checkAuthStatus ERROR ===');
-      console.error('Auth status check failed:', error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -80,43 +67,28 @@ export const logout = createAsyncThunk(
 export const initializeAuth = createAsyncThunk(
   'auth/initializeAuth',
   async () => {
-    console.log('=== INITIALIZE AUTH START ===');
-    console.log('Document cookies:', document.cookie);
-    console.log(
-      'LocalStorage auth state:',
-      localStorage.getItem('auth_authenticated')
-    );
-    console.log('LocalStorage user:', localStorage.getItem('auth_user'));
 
     try {
       // First check if we have stored auth state
       const storedUser = authService.getStoredUser();
       const isStoredAuthenticated = authService.isAuthenticated();
-      console.log('Stored auth state:', { storedUser, isStoredAuthenticated });
 
       if (isStoredAuthenticated && storedUser) {
         // Verify with server
-        console.log('Verifying stored auth with server...');
         const response = await authService.getAuthStatus();
-        console.log('Server response:', response);
         if (response.data.authenticated && response.data.user) {
-          console.log('Server verification successful');
           return response.data;
         } else {
           // Server says not authenticated, clear local state
-          console.log('Server verification failed, clearing local state');
           authService.clearAuthState();
           return { authenticated: false, user: null };
         }
       }
 
       // No stored state, check with server
-      console.log('No stored state, checking with server...');
       const response = await authService.getAuthStatus();
-      console.log('Server auth status:', response);
       return response.data;
-    } catch (error) {
-      console.error('=== INITIALIZE AUTH ERROR ===', error);
+    } catch {
       // If there's an error, assume not authenticated
       authService.clearAuthState();
       return { authenticated: false, user: null };
@@ -158,13 +130,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
-        console.log('=== REDUX: checkAuthStatus.fulfilled ===');
-        console.log('Action payload:', action.payload);
-        console.log(
-          'Action payload.authenticated:',
-          action.payload?.authenticated
-        );
-        console.log('Action payload.user:', action.payload?.user);
 
         state.isLoading = false;
         state.isAuthenticated = action.payload.authenticated;
@@ -175,12 +140,6 @@ const authSlice = createSlice({
           action.payload.user || undefined
         );
 
-        console.log('Updated state:', {
-          isAuthenticated: state.isAuthenticated,
-          user: state.user,
-          isLoading: state.isLoading,
-          error: state.error,
-        });
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
         state.isLoading = false;

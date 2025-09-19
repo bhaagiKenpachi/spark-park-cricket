@@ -373,21 +373,16 @@ export const scorecardSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch innings score summary';
       })
       .addCase(fetchLatestOverThunk.fulfilled, (state, action) => {
-        console.log('=== FETCH LATEST OVER FULFILLED ===');
-        console.log('Action payload:', action.payload);
-        console.log('Current state scorecard:', state.scorecard);
 
         state.loading = false;
         if (state.scorecard) {
           const inningsIndex = state.scorecard.innings.findIndex(
             innings => innings.innings_number === action.payload.inningsNumber
           );
-          console.log('Innings index:', inningsIndex);
 
           if (inningsIndex !== -1) {
             // Initialize overs array if it doesn't exist
             if (!state.scorecard.innings![inningsIndex]!.overs) {
-              console.log('Initializing overs array for innings');
               state.scorecard.innings![inningsIndex]!.overs = [];
             }
 
@@ -396,11 +391,9 @@ export const scorecardSlice = createSlice({
             ]!.overs!.findIndex(
               over => over.over_number === action.payload.over.over_number
             );
-            console.log('Over index:', overIndex);
 
             if (overIndex !== -1) {
               // Update existing over
-              console.log('Updating existing over with', action.payload.over.balls?.length || 0, 'balls');
               state.scorecard.innings![inningsIndex]!.overs![overIndex] = {
                 ...action.payload.over,
                 balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
@@ -411,7 +404,6 @@ export const scorecardSlice = createSlice({
               };
             } else {
               // Add new over
-              console.log('Adding new over with', action.payload.over.balls?.length || 0, 'balls');
               state.scorecard.innings![inningsIndex]!.overs!.push({
                 ...action.payload.over,
                 balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
@@ -422,7 +414,6 @@ export const scorecardSlice = createSlice({
               });
             }
 
-            console.log('Updated state scorecard:', state.scorecard);
           }
         }
       })

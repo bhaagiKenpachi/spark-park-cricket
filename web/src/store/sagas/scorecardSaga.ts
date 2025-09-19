@@ -146,15 +146,13 @@ export function* addBallSaga(
         // Note: Full scorecard refresh is not needed on every ball
         // It will be called automatically when innings transitions occur
         // (e.g., when first innings completes and second innings starts)
-      } catch (error) {
-        console.warn('GraphQL refresh failed, falling back to full scorecard fetch:', error);
+      } catch {
         // Fallback to full scorecard fetch if GraphQL fails
         yield put(fetchScorecardRequest(ballEvent.match_id));
       }
     } else {
       // If no innings data exists in state, do a full scorecard refresh
       // This happens for the first ball of a new innings
-      console.log('No innings data in state, doing full scorecard refresh for first ball');
       yield put(fetchScorecardRequest(ballEvent.match_id));
     }
 
@@ -169,7 +167,6 @@ export function* undoBallSaga(
   action: ReturnType<typeof undoBallThunk.fulfilled>
 ): Generator<CallEffect | PutEffect | SelectEffect, void, unknown> {
   try {
-    console.log('=== UNDO BALL SAGA ===');
     const { matchId, inningsNumber } = action.payload;
 
     // Check if innings data exists in state before using GraphQL methods
@@ -194,19 +191,15 @@ export function* undoBallSaga(
           inningsNumber
         }));
 
-        console.log('GraphQL refresh completed for undo ball');
-      } catch (error) {
-        console.warn('GraphQL refresh failed for undo ball, falling back to full scorecard fetch:', error);
+      } catch {
         // Fallback to full scorecard fetch if GraphQL fails
         yield put(fetchScorecardRequest(matchId));
       }
     } else {
       // If no innings data exists in state, do a full scorecard refresh
-      console.log('No innings data in state, doing full scorecard refresh for undo ball');
       yield put(fetchScorecardRequest(matchId));
     }
-  } catch (error) {
-    console.error('Error in undo ball saga:', error);
+  } catch {
   }
 }
 

@@ -38,12 +38,6 @@ class AuthService {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
 
-    console.log('=== AUTH SERVICE REQUEST ===');
-    console.log('URL:', url);
-    console.log('Method:', options.method || 'GET');
-    console.log('Headers:', options.headers);
-    console.log('Document cookies before request:', document.cookie);
-    console.log('Request options:', options);
 
     const defaultHeaders = {
       'Content-Type': 'application/json',
@@ -60,22 +54,13 @@ class AuthService {
       credentials: 'include', // Include cookies for session management
     };
 
-    console.log('Final request config:', config);
 
     try {
       const response = await fetch(url, config);
 
-      console.log('=== AUTH SERVICE RESPONSE ===');
-      console.log('Response status:', response.status);
-      console.log(
-        'Response headers:',
-        Object.fromEntries(response.headers.entries())
-      );
-      console.log('Response cookies:', response.headers.get('set-cookie'));
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Response error:', errorData);
         throw new ApiError(
           errorData.message || `HTTP error! status: ${response.status}`,
           response.status,
@@ -84,21 +69,12 @@ class AuthService {
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
-      console.log('Response data.data:', data.data);
-      console.log(
-        'Response data.data.authenticated:',
-        data.data?.authenticated
-      );
-      console.log('Response data.data.user:', data.data?.user);
-      console.log('Document cookies after request:', document.cookie);
       return {
         data: data.data, // Extract the nested data
         success: true,
         message: data.message,
       };
     } catch (error) {
-      console.error('Request error:', error);
       if (error instanceof ApiError) {
         throw error;
       }
@@ -122,16 +98,7 @@ class AuthService {
    * Check authentication status
    */
   async getAuthStatus(): Promise<ApiResponse<AuthStatus>> {
-    console.log('=== AUTH SERVICE: getAuthStatus ===');
-    console.log('Base URL:', this.baseURL);
-    console.log('Document cookies:', document.cookie);
-    console.log(
-      'LocalStorage auth state:',
-      localStorage.getItem('auth_authenticated')
-    );
-
     const result = await this.request<AuthStatus>('/auth/status');
-    console.log('Auth status result:', result);
     return result;
   }
 
@@ -189,8 +156,7 @@ class AuthService {
       if (userStr) {
         try {
           return JSON.parse(userStr);
-        } catch (error) {
-          console.error('Error parsing stored user:', error);
+        } catch {
           return null;
         }
       }

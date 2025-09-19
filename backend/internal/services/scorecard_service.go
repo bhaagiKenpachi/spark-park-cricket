@@ -738,7 +738,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 			}
 
 			// Check if first innings is complete (all wickets down or overs completed)
-			firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
+			maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+			firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 			if !firstInningsComplete {
 				// First innings is not complete, only toss winner can bat
@@ -767,7 +768,8 @@ func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID str
 		}
 
 		// First innings is complete if all wickets are down or overs are completed
-		firstInningsComplete := firstInnings.TotalWickets >= 10 || firstInnings.TotalOvers >= float64(match.TotalOvers)
+		maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+		firstInningsComplete := firstInnings.TotalWickets >= maxWickets || firstInnings.TotalOvers >= float64(match.TotalOvers)
 
 		if !firstInningsComplete {
 			return fmt.Errorf("first innings is not complete, cannot start second innings")

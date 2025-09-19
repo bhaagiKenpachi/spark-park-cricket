@@ -39,7 +39,6 @@ export class GraphQLService {
         data: data?.inningsScore,
       };
     } catch (error) {
-      console.error('GraphQL Error - getInningsScoreSummary:', error);
       return {
         success: false,
         error:
@@ -70,7 +69,6 @@ export class GraphQLService {
         data: data?.latestOver,
       };
     } catch (error) {
-      console.error('GraphQL Error - getLatestOverOnly:', error);
       return {
         success: false,
         error:
@@ -101,7 +99,6 @@ export class GraphQLService {
         data: data?.allOvers,
       };
     } catch (error) {
-      console.error('GraphQL Error - getAllOversDetails:', error);
       return {
         success: false,
         error:
@@ -133,7 +130,6 @@ export class GraphQLService {
         data: data?.inningsScore,
       };
     } catch (error) {
-      console.error('GraphQL Error - getInningsScore:', error);
       return {
         success: false,
         error:
@@ -163,7 +159,6 @@ export class GraphQLService {
         data: data?.inningsDetails,
       };
     } catch (error) {
-      console.error('GraphQL Error - getInningsDetails:', error);
       return {
         success: false,
         error:
@@ -192,7 +187,6 @@ export class GraphQLService {
         data: data?.liveScorecard,
       };
     } catch (error) {
-      console.error('GraphQL Error - getLiveScorecard:', error);
       return {
         success: false,
         error:
@@ -222,7 +216,6 @@ export class GraphQLService {
         data: data?.latestOver,
       };
     } catch (error) {
-      console.error('GraphQL Error - getLatestOver:', error);
       return {
         success: false,
         error:
@@ -252,7 +245,6 @@ export class GraphQLService {
         data: data?.liveScorecard,
       };
     } catch (error) {
-      console.error('GraphQL Error - getUpdatedScorecardAfterBall:', error);
       return {
         success: false,
         error:
