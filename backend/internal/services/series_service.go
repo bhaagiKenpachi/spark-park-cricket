@@ -95,6 +95,7 @@ func (s *SeriesService) ListSeries(ctx context.Context, filters *models.SeriesFi
 	fmt.Printf("DEBUG: SeriesService.ListSeries - Using filters: %+v\n", filters)
 
 	fmt.Printf("DEBUG: SeriesService.ListSeries - Calling repository.GetAll\n")
+	fmt.Printf("DEBUG: SeriesService.ListSeries - Repository type: %T\n", s.seriesRepo)
 	series, err := s.seriesRepo.GetAll(ctx, filters)
 	if err != nil {
 		fmt.Printf("DEBUG: SeriesService.ListSeries - Repository error: %v\n", err)
@@ -103,7 +104,8 @@ func (s *SeriesService) ListSeries(ctx context.Context, filters *models.SeriesFi
 
 	fmt.Printf("DEBUG: SeriesService.ListSeries - Successfully retrieved %d series\n", len(series))
 	for i, s := range series {
-		fmt.Printf("DEBUG: SeriesService.ListSeries - Series %d: ID=%s, Name=%s\n", i+1, s.ID, s.Name)
+		fmt.Printf("DEBUG: SeriesService.ListSeries - Series %d: ID=%s, Name=%s, CreatedBy=%s, CreatedAt=%s\n",
+			i+1, s.ID, s.Name, s.CreatedBy, s.CreatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	return series, nil

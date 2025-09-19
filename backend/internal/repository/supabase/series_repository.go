@@ -49,6 +49,8 @@ func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Seri
 }
 
 func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Starting with filters: %+v\n", filters)
+
 	var result []models.Series
 	query := r.client.From("series").Select("*", "", false)
 
@@ -60,9 +62,17 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 		// Use Range method for pagination if needed
 	}
 
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Executing query to database\n")
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
+		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database query error: %v\n", err)
 		return nil, err
+	}
+
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database returned %d series\n", len(result))
+	for i, s := range result {
+		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - DB Series %d: ID=%s, Name=%s, CreatedBy=%s, CreatedAt=%s\n",
+			i+1, s.ID, s.Name, s.CreatedBy, s.CreatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	// Convert to slice of pointers
@@ -71,6 +81,7 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 		series[i] = &result[i]
 	}
 
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Returning %d series\n", len(series))
 	return series, nil
 }
 
