@@ -11,6 +11,7 @@ import {
   SelectEffect,
   TakeEffect,
 } from 'redux-saga/effects';
+import { RootState } from '../index';
 import {
   fetchScorecardRequest,
   fetchScorecardSuccess,
@@ -21,6 +22,7 @@ import {
   addBallRequest,
   addBallSuccess,
   addBallFailure,
+  undoBallThunk,
   fetchInningsRequest,
   fetchInningsSuccess,
   fetchInningsFailure,
@@ -98,7 +100,7 @@ export function* startScoringSaga(
 export function* addBallSaga(
   action: ReturnType<typeof addBallRequest>
 ): Generator<
-  CallEffect | PutEffect,
+  CallEffect | PutEffect | SelectEffect,
   void,
   ApiResponse<{
     message: string;
@@ -119,32 +121,85 @@ export function* addBallSaga(
     yield call(apiService.addBall.bind(apiService), ballEvent);
     yield put(addBallSuccess());
 
-    // Use optimized GraphQL methods to refresh specific data after adding ball
-    try {
-      // Fetch innings score summary for the current innings
-      yield put(fetchInningsScoreSummaryThunk({
-        matchId: ballEvent.match_id,
-        inningsNumber: ballEvent.innings_number
-      }));
+    // Check if innings data exists in state before using GraphQL methods
+    const currentInningsData = yield select((state: RootState) =>
+      state.scorecard.scorecard?.innings?.find(
+        innings => innings.innings_number === ballEvent.innings_number
+      )
+    );
 
-      // Fetch latest over for the current innings
-      yield put(fetchLatestOverThunk({
-        matchId: ballEvent.match_id,
-        inningsNumber: ballEvent.innings_number
-      }));
+    if (currentInningsData) {
+      // Use optimized GraphQL methods to refresh specific data after adding ball
+      try {
+        // Fetch innings score summary for the current innings
+        yield put(fetchInningsScoreSummaryThunk({
+          matchId: ballEvent.match_id,
+          inningsNumber: ballEvent.innings_number
+        }));
 
-      // Note: Full scorecard refresh is not needed on every ball
-      // It will be called automatically when innings transitions occur
-      // (e.g., when first innings completes and second innings starts)
-    } catch (error) {
-      console.warn('GraphQL refresh failed, falling back to full scorecard fetch:', error);
-      // Fallback to full scorecard fetch if GraphQL fails
+        // Fetch latest over for the current innings
+        yield put(fetchLatestOverThunk({
+          matchId: ballEvent.match_id,
+          inningsNumber: ballEvent.innings_number
+        }));
+
+        // Note: Full scorecard refresh is not needed on every ball
+        // It will be called automatically when innings transitions occur
+        // (e.g., when first innings completes and second innings starts)
+      } catch {
+        // Fallback to full scorecard fetch if GraphQL fails
+        yield put(fetchScorecardRequest(ballEvent.match_id));
+      }
+    } else {
+      // If no innings data exists in state, do a full scorecard refresh
+      // This happens for the first ball of a new innings
       yield put(fetchScorecardRequest(ballEvent.match_id));
     }
+
   } catch (error) {
     const errorMessage =
       error instanceof ApiError ? error.message : 'Failed to add ball';
     yield put(addBallFailure(errorMessage));
+  }
+}
+
+export function* undoBallSaga(
+  action: ReturnType<typeof undoBallThunk.fulfilled>
+): Generator<CallEffect | PutEffect | SelectEffect, void, unknown> {
+  try {
+    const { matchId, inningsNumber } = action.payload;
+
+    // Check if innings data exists in state before using GraphQL methods
+    const currentInningsData = yield select((state: RootState) =>
+      state.scorecard.scorecard?.innings?.find(
+        innings => innings.innings_number === inningsNumber
+      )
+    );
+
+    if (currentInningsData) {
+      // Use optimized GraphQL methods to refresh specific data after undoing ball
+      try {
+        // Fetch innings score summary for the current innings
+        yield put(fetchInningsScoreSummaryThunk({
+          matchId,
+          inningsNumber
+        }));
+
+        // Fetch latest over for the current innings
+        yield put(fetchLatestOverThunk({
+          matchId,
+          inningsNumber
+        }));
+
+      } catch {
+        // Fallback to full scorecard fetch if GraphQL fails
+        yield put(fetchScorecardRequest(matchId));
+      }
+    } else {
+      // If no innings data exists in state, do a full scorecard refresh
+      yield put(fetchScorecardRequest(matchId));
+    }
+  } catch {
   }
 }
 
@@ -240,6 +295,7 @@ export function* scorecardSaga() {
   yield takeLatest(fetchScorecardRequest.type, fetchScorecardSaga);
   yield takeEvery(startScoringRequest.type, startScoringSaga);
   yield takeEvery(addBallRequest.type, addBallSaga);
+  yield takeEvery(undoBallThunk.fulfilled.type, undoBallSaga);
   yield takeLatest(fetchInningsRequest.type, fetchInningsSaga);
   yield fork(handleInningsTransitionSaga);
   yield fork(checkInningsTransitionSaga);

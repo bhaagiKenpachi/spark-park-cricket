@@ -43,8 +43,6 @@ export function SeriesList(): React.JSX.Element {
         '[data-cy="login-button"]'
       ) as HTMLElement;
       if (signInButton) {
-        console.log('Sign-in button found:', signInButton);
-        console.log('Starting blink effect...');
 
         // Focus and scroll to the button
         signInButton.focus();
@@ -54,11 +52,9 @@ export function SeriesList(): React.JSX.Element {
         let blinkCount = 0;
         const blinkInterval = setInterval(() => {
           blinkCount++;
-          console.log(`Blink ${blinkCount}/6`);
 
           if (blinkCount % 2 === 1) {
             // Red border ON
-            console.log('Red border ON');
             signInButton.style.setProperty(
               'border',
               '2px solid red',
@@ -76,7 +72,6 @@ export function SeriesList(): React.JSX.Element {
             );
           } else {
             // Red border OFF
-            console.log('Red border OFF');
             signInButton.style.removeProperty('border');
             signInButton.style.removeProperty('box-shadow');
             signInButton.style.removeProperty('background-color');
@@ -84,7 +79,6 @@ export function SeriesList(): React.JSX.Element {
 
           if (blinkCount >= 6) {
             clearInterval(blinkInterval);
-            console.log('Blink effect completed');
             // Clean up any remaining styles
             signInButton.style.removeProperty('border');
             signInButton.style.removeProperty('box-shadow');
@@ -92,7 +86,6 @@ export function SeriesList(): React.JSX.Element {
           }
         }, 500);
       } else {
-        console.log('Sign-in button not found');
       }
       return;
     }
@@ -107,8 +100,6 @@ export function SeriesList(): React.JSX.Element {
         '[data-cy="login-button"]'
       ) as HTMLElement;
       if (signInButton) {
-        console.log('Sign-in button found:', signInButton);
-        console.log('Starting blink effect...');
 
         // Focus and scroll to the button
         signInButton.focus();
@@ -118,11 +109,9 @@ export function SeriesList(): React.JSX.Element {
         let blinkCount = 0;
         const blinkInterval = setInterval(() => {
           blinkCount++;
-          console.log(`Blink ${blinkCount}/6`);
 
           if (blinkCount % 2 === 1) {
             // Red border ON
-            console.log('Red border ON');
             signInButton.style.setProperty(
               'border',
               '2px solid red',
@@ -140,7 +129,6 @@ export function SeriesList(): React.JSX.Element {
             );
           } else {
             // Red border OFF
-            console.log('Red border OFF');
             signInButton.style.removeProperty('border');
             signInButton.style.removeProperty('box-shadow');
             signInButton.style.removeProperty('background-color');
@@ -148,7 +136,6 @@ export function SeriesList(): React.JSX.Element {
 
           if (blinkCount >= 6) {
             clearInterval(blinkInterval);
-            console.log('Blink effect completed');
             // Clean up any remaining styles
             signInButton.style.removeProperty('border');
             signInButton.style.removeProperty('box-shadow');
@@ -156,7 +143,6 @@ export function SeriesList(): React.JSX.Element {
           }
         }, 500);
       } else {
-        console.log('Sign-in button not found');
       }
       return;
     }
@@ -175,9 +161,6 @@ export function SeriesList(): React.JSX.Element {
   };
 
   const handleViewScorecard = (matchId: string, seriesCreatedBy: string) => {
-    console.log('=== HANDLE VIEW SCORECARD ===');
-    console.log('Match ID:', matchId);
-    console.log('Series Created By:', seriesCreatedBy);
     setViewingScorecard(matchId);
     setCurrentSeriesCreatedBy(seriesCreatedBy);
   };

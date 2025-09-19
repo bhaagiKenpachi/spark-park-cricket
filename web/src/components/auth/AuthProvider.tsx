@@ -13,19 +13,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { isInitialized } = useAppSelector(state => state.auth);
 
   useEffect(() => {
-    console.log('=== AUTH PROVIDER: useEffect ===');
-    console.log('isInitialized:', isInitialized);
-    console.log('Document cookies:', document.cookie);
-    console.log(
-      'LocalStorage auth state:',
-      localStorage.getItem('auth_authenticated')
-    );
 
     if (!isInitialized) {
-      console.log('Dispatching initializeAuth...');
       dispatch(initializeAuth());
     } else {
-      console.log('Auth already initialized, skipping...');
     }
   }, [dispatch, isInitialized]);
 

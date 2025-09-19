@@ -17,8 +17,7 @@ export function UserMenu() {
     try {
       await dispatch(logout()).unwrap();
       setIsOpen(false);
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
     }
   };
 

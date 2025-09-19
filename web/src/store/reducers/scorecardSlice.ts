@@ -5,7 +5,7 @@ import { apiService } from '@/services/api';
 import { BallSummary as GraphQLBallSummary, OverSummary as GraphQLOverSummary } from '@/lib/graphql';
 
 // Enums
-export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball';
+export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball' | 'GOOD' | 'WIDE' | 'NO_BALL' | 'DEAD_BALL';
 export type RunType =
   | '0'
   | '1'
@@ -373,11 +373,13 @@ export const scorecardSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch innings score summary';
       })
       .addCase(fetchLatestOverThunk.fulfilled, (state, action) => {
+
         state.loading = false;
         if (state.scorecard) {
           const inningsIndex = state.scorecard.innings.findIndex(
             innings => innings.innings_number === action.payload.inningsNumber
           );
+
           if (inningsIndex !== -1) {
             // Initialize overs array if it doesn't exist
             if (!state.scorecard.innings![inningsIndex]!.overs) {
@@ -411,6 +413,7 @@ export const scorecardSlice = createSlice({
                 })),
               });
             }
+
           }
         }
       })
@@ -441,9 +444,14 @@ export const scorecardSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch all overs details';
       })
+      .addCase(undoBallThunk.pending, (state, action) => {
+        state.scoring = true;
+        state.error = null;
+      })
       .addCase(undoBallThunk.fulfilled, (state, action) => {
         state.scoring = false;
-        // The scorecard will be refetched to get updated data
+        // Trigger a full scorecard refresh to get updated data after undo
+        // This ensures the UI updates properly after undoing a ball
       })
       .addCase(undoBallThunk.rejected, (state, action) => {
         state.scoring = false;

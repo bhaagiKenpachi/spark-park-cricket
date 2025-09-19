@@ -71,17 +71,6 @@ export function ScorecardView({
   // Determine if scoring should be available
   const isScoringAvailable = isOwner && !isMatchCompleted && !isBothInningsCompleted;
 
-  console.log('=== SCORECARD VIEW OWNERSHIP CHECK ===');
-  console.log('Is Authenticated:', isAuthenticated);
-  console.log('Current User:', currentUser);
-  console.log('Current User ID:', currentUser?.id);
-  console.log('Series Created By:', seriesCreatedBy);
-  console.log('Is Owner:', isOwner);
-  console.log('Match ID:', matchId);
-  console.log('Match Status:', scorecard?.match_status);
-  console.log('Is Match Completed:', isMatchCompleted);
-  console.log('Is Both Innings Completed:', isBothInningsCompleted);
-  console.log('Is Scoring Available:', isScoringAvailable);
 
   useEffect(() => {
     dispatch(fetchScorecardRequest(matchId));
@@ -99,6 +88,7 @@ export function ScorecardView({
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
+
     if (scorecard?.innings && Array.isArray(scorecard.innings) && scorecard.innings.length > 0) {
       const currentInningsData = scorecard.innings.find(
         innings => innings.status === 'in_progress'
@@ -129,42 +119,27 @@ export function ScorecardView({
   }, [scoring, showLiveScoring, scorecard]);
 
   const handleStartScoring = () => {
-    console.log('=== HANDLE START SCORING ===');
-    console.log('Match ID:', matchId);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Match Status:', scorecardData?.match_status);
-    console.log('Is Scoring Available:', isScoringAvailable);
-    console.log('Current cookies:', document.cookie);
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking start scoring');
         setScoringMessage('Only the series creator can start scoring.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking start scoring');
         setScoringMessage('Cannot score on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking start scoring');
         setScoringMessage('Cannot score when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
-    console.log('✅ Scoring available, proceeding with start scoring');
 
     // If match is already live, just show the interface without calling the API
     if (scorecardData?.match_status === 'live') {
-      console.log('Match already live, showing interface without API call');
       setShowLiveScoring(true);
       setScoringMessage('Live scoring interface opened!');
       setTimeout(() => setScoringMessage(null), 3000);
     } else {
-      console.log('Match not live, calling startScoringRequest API');
       // Only call the API if match is not live yet
       dispatch(startScoringRequest(matchId));
       setShowLiveScoring(true);
@@ -174,43 +149,31 @@ export function ScorecardView({
   };
 
   const handleBallScore = (runs: number, ballType: string) => {
-    console.log('=== HANDLE BALL SCORE ===');
-    console.log('Runs:', runs);
-    console.log('Ball Type:', ballType);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Is Scoring Available:', isScoringAvailable);
-    console.log('Current cookies:', document.cookie);
+
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking ball scoring');
         setScoringMessage('Only the series creator can score balls.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking ball scoring');
         setScoringMessage('Cannot score on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking ball scoring');
         setScoringMessage('Cannot score when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
 
-    console.log('✅ Scoring available, proceeding with ball scoring');
 
     // Check if current innings is still in progress
-    const currentInningsData = scorecardData?.innings?.find(
+    const currentInningsDataForScoring = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
 
     // If no innings exist yet (null or empty array), allow scoring to create the first innings
     if (scorecardData?.innings === null || (Array.isArray(scorecardData?.innings) && scorecardData.innings.length === 0)) {
       // Allow scoring - this will create the first innings
-    } else if (currentInningsData?.status !== 'in_progress') {
+    } else if (currentInningsDataForScoring?.status !== 'in_progress') {
       setScoringMessage(
         'Cannot score on completed innings. Please check innings status.'
       );
@@ -249,26 +212,34 @@ export function ScorecardView({
     // Ball counting is handled by the backend
   };
 
+  // Helper function to check if it's the first ball of the current innings
+  const isFirstBallOfInnings = () => {
+
+    const currentInningsData = scorecardData?.innings?.find(
+      innings => innings.innings_number === currentInnings
+    );
+    if (!currentInningsData) {
+      return true; // If no innings data, consider it first ball
+    }
+
+    // Count total balls across all overs in this innings
+    const totalBalls = currentInningsData.overs?.reduce((total, over) => {
+      return total + (over.balls ? over.balls.length : 0);
+    }, 0) || 0;
+
+    // If there's exactly 1 ball, it's the first ball (and we can't undo it)
+    return totalBalls === 1;
+  };
+
   const handleUndoBall = () => {
-    console.log('=== HANDLE UNDO BALL ===');
-    console.log('Match ID:', matchId);
-    console.log('Current Innings:', currentInnings);
-    console.log('Is Owner:', isOwner);
-    console.log('Is Authenticated:', isAuthenticated);
-    console.log('Current User:', currentUser);
-    console.log('Series Created By:', seriesCreatedBy);
-    console.log('Is Scoring Available:', isScoringAvailable);
 
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
-        console.log('❌ Not owner, blocking undo ball');
         setScoringMessage('Only the series creator can undo balls.');
       } else if (isMatchCompleted) {
-        console.log('❌ Match completed, blocking undo ball');
         setScoringMessage('Cannot undo ball on completed match.');
       } else if (isBothInningsCompleted) {
-        console.log('❌ Both innings completed, blocking undo ball');
         setScoringMessage('Cannot undo ball when both innings are completed.');
       }
       setTimeout(() => setScoringMessage(null), 3000);
@@ -276,11 +247,11 @@ export function ScorecardView({
     }
 
     // Check if current innings is still in progress
-    const currentInningsData = scorecardData?.innings?.find(
+    const currentInningsDataForUndo = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInnings
     );
 
-    if (!currentInningsData || currentInningsData.status !== 'in_progress') {
+    if (!currentInningsDataForUndo || currentInningsDataForUndo.status !== 'in_progress') {
       setScoringMessage(
         'Cannot undo ball on completed innings. Please check innings status.'
       );
@@ -288,7 +259,13 @@ export function ScorecardView({
       return;
     }
 
-    console.log('✅ Undo ball available, proceeding with undo');
+    // Check if it's the first ball of the innings
+    if (isFirstBallOfInnings()) {
+      setScoringMessage('Cannot undo ball - this is the first ball of the innings.');
+      setTimeout(() => setScoringMessage(null), 3000);
+      return;
+    }
+
     dispatch(undoBallThunk({ matchId, inningsNumber: currentInnings }));
     setScoringMessage('Undoing last ball...');
     setTimeout(() => setScoringMessage(null), 2000);
@@ -336,12 +313,15 @@ export function ScorecardView({
     } else {
       // Check ball_type first for special deliveries
       switch (ball.ball_type) {
+        case 'WIDE':
         case 'wide':
           display = 'Wd';
           break;
+        case 'NO_BALL':
         case 'no_ball':
           display = 'Nb';
           break;
+        case 'DEAD_BALL':
         case 'dead_ball':
           display = 'Db';
           break;
@@ -362,28 +342,37 @@ export function ScorecardView({
       }
     }
 
-    const displayWithByes = ball.byes > 0 ? `${display}+${ball.byes}` : display;
+    // Handle display with byes
+    let displayWithByes: string;
+    if (ball.byes > 0) {
+      // For balls with byes, show "B" + runs + "+" + byes
+      if (ball.ball_type === 'WIDE' || ball.ball_type === 'wide' || ball.ball_type === 'NO_BALL' || ball.ball_type === 'no_ball') {
+        // For wide/no ball with byes, show ball type + "+" + byes
+        displayWithByes = `${display}+${ball.byes}`;
+      } else {
+        // For good balls with byes, show "B" + runs + "+" + byes
+        displayWithByes = `B${ball.runs}+${ball.byes}`;
+      }
+    } else {
+      displayWithByes = display;
+    }
 
     return (
       <div
         key={index}
         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
           ? 'border-red-500 bg-red-100 text-red-700'
-          : ball.ball_type === 'wide'
-            ? 'border-yellow-500 bg-yellow-100 text-yellow-700'
-            : ball.ball_type === 'no_ball'
-              ? 'border-orange-500 bg-orange-100 text-orange-700'
-              : ball.ball_type === 'dead_ball'
-                ? 'border-gray-500 bg-gray-100 text-gray-700'
-                : ball.run_type === 'LB'
-                  ? 'border-amber-500 bg-amber-100 text-amber-700'
-                  : ball.runs === 4
-                    ? 'border-blue-500 bg-blue-100 text-blue-700'
-                    : ball.runs === 6
-                      ? 'border-purple-500 bg-purple-100 text-purple-700'
-                      : ball.runs === 0
-                        ? 'border-gray-300 bg-gray-100 text-gray-600'
-                        : 'border-green-500 bg-green-100 text-green-700'
+          : ball.ball_type === 'WIDE' || ball.ball_type === 'wide' || ball.ball_type === 'NO_BALL' || ball.ball_type === 'no_ball' || ball.run_type === 'LB' || ball.byes > 0
+            ? 'border-slate-400 bg-slate-100 text-slate-700'
+            : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
+              ? 'border-gray-500 bg-gray-100 text-gray-700'
+              : ball.runs === 4
+                ? 'border-blue-500 bg-blue-100 text-blue-700'
+                : ball.runs === 6
+                  ? 'border-purple-500 bg-purple-100 text-purple-700'
+                  : ball.runs === 0
+                    ? 'border-gray-300 bg-gray-100 text-gray-600'
+                    : 'border-green-500 bg-green-100 text-green-700'
           }`}
       >
         {displayWithByes}
@@ -1074,27 +1063,51 @@ export function ScorecardView({
               </div>
             </div>
 
-            {/* Undo Ball Action */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleUndoBall}
-                  variant="outline"
-                  size="lg"
-                  className="border-red-500 text-red-700 hover:bg-red-50"
-                  disabled={scoring}
-                >
-                  {scoring ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-700"></div>
-                  ) : (
-                    <>
-                      <Undo2 className="h-4 w-4 mr-2" />
-                      Undo Last Ball
-                    </>
+            {/* Undo Ball Action - Only show if there are balls to undo */}
+            {(() => {
+              const currentInningsData = scorecardData?.innings?.find(
+                innings => innings.innings_number === currentInnings
+              );
+              const totalBalls = currentInningsData?.overs?.reduce((total, over) => {
+                return total + (over.balls ? over.balls.length : 0);
+              }, 0) || 0;
+
+              // Only show undo button if there are balls in the innings
+              if (totalBalls === 0) {
+                return null;
+              }
+
+              return (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleUndoBall}
+                      variant="outline"
+                      size="lg"
+                      className={`border-red-500 text-red-700 hover:bg-red-50 ${isFirstBallOfInnings() ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      disabled={scoring || isFirstBallOfInnings()}
+                    >
+                      {scoring ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-700"></div>
+                      ) : (
+                        <>
+                          <Undo2 className="h-4 w-4 mr-2" />
+                          Undo Last Ball
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {isFirstBallOfInnings() && (
+                    <div className="text-center mt-2">
+                      <span className="text-xs text-gray-500">
+                        Cannot undo - first ball of innings
+                      </span>
+                    </div>
                   )}
-                </Button>
-              </div>
-            </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}
