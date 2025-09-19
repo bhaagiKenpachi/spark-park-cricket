@@ -103,36 +103,6 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		log.Printf("Using direct database repositories (no cache)")
 		repositories = baseRepositories
 	}
-	log.Printf("✅ Base repositories initialized")
-
-	// Wrap repositories with caching if cache is available
-	var repositories *Repositories
-	if cacheManager != nil {
-		log.Printf("Wrapping repositories with cache layer...")
-		repositories = &Repositories{
-			Series:     cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
-			Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
-			Scoreboard: baseRepositories.Scoreboard, // Not cached yet
-			Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
-			Over:       baseRepositories.Over, // Not cached yet
-			Ball:       baseRepositories.Ball, // Not cached yet
-		}
-		log.Printf("✅ Cached repositories initialized")
-	} else {
-		log.Printf("Using direct database repositories (no cache)")
-		repositories = baseRepositories
-	}
-
-	log.Printf("=== DATABASE CONNECTION INITIALIZED ===")
-	log.Printf("Database Type: Supabase (PostgreSQL)")
-	log.Printf("Database Schema: %s", cfg.DatabaseSchema)
-	if cacheManager != nil {
-		log.Printf("Cache Layer: Enabled (Redis)")
-	} else {
-		log.Printf("Cache Layer: Disabled")
-	}
-	log.Printf("Repositories: Series, Match, Scoreboard, Scorecard, Over, Ball")
-	log.Printf("==========================================")
 
 	log.Printf("=== DATABASE CONNECTION INITIALIZED ===")
 	log.Printf("Database Type: Supabase (PostgreSQL)")
