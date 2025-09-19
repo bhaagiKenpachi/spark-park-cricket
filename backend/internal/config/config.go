@@ -42,7 +42,7 @@ func Load() *Config {
 		SupabasePublishableKey: getEnv("SUPABASE_PUBLISHABLE_KEY", ""),
 		SupabaseSecretKey:      getEnv("SUPABASE_SECRET_KEY", ""),
 		Port:                   getEnv("PORT", "8081"),
-		DatabaseSchema:         getEnv("DATABASE_SCHEMA", "prod_v1"),
+		DatabaseSchema:         getEnv("DATABASE_SCHEMA", "testing_db"),
 		RedisURL:               getEnv("REDIS_URL", "localhost:6379"),
 		RedisPassword:          getEnv("REDIS_PASSWORD", ""),
 		RedisDB:                getEnvInt("REDIS_DB", 0),

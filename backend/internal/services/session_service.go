@@ -84,7 +84,7 @@ func (s *SessionService) CreateSession(w http.ResponseWriter, r *http.Request, u
 		"email":          user.Email,
 		"name":           user.Name,
 		"authenticated":  true,
-		"session_values": session.Values,
+		"session_values": sessionValuesToMap(session.Values),
 	})
 
 	// Save session to database
@@ -126,16 +126,27 @@ func (s *SessionService) GetSession(r *http.Request) (*models.User, error) {
 		"cookies": r.Header.Get("Cookie"),
 	})
 
+	// Add debugger log to track session retrieval
+	utils.LogDebug("Attempting to retrieve session", map[string]interface{}{
+		"session_name": "user_session",
+		"request_uri":  r.URL.String(),
+	})
+
 	session, err := s.Store.Get(r, "user_session")
 	if err != nil {
 		utils.LogError(err, "Failed to get session", nil)
+		// Add debugger log for session retrieval failure
+		utils.LogDebug("Session retrieval failed", map[string]interface{}{
+			"error":        err.Error(),
+			"session_name": "user_session",
+		})
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
 	utils.LogInfo("Session retrieved", map[string]interface{}{
 		"session_id": session.ID,
 		"is_new":     session.IsNew,
-		"values":     session.Values,
+		"values":     sessionValuesToMap(session.Values),
 	})
 
 	// Check if user is authenticated
@@ -218,8 +229,26 @@ func (s *SessionService) IsAuthenticated(r *http.Request) bool {
 		"cookies": r.Header.Get("Cookie"),
 	})
 
+	// Add debugger log to track authentication flow
+	utils.LogDebug("Starting authentication check", map[string]interface{}{
+		"request_uri": r.URL.String(),
+		"user_agent":  r.Header.Get("User-Agent"),
+	})
+
 	_, err := s.GetSession(r)
 	isAuth := err == nil
+
+	// Add debugger log for authentication result
+	utils.LogDebug("Authentication check completed", map[string]interface{}{
+		"isAuthenticated": isAuth,
+		"error_message": func() string {
+			if err != nil {
+				return err.Error()
+			} else {
+				return ""
+			}
+		}(),
+	})
 
 	utils.LogInfo("Authentication check result", map[string]interface{}{
 		"isAuthenticated": isAuth,
@@ -246,4 +275,17 @@ func (s *SessionService) CleanupExpiredSessions(ctx context.Context) error {
 // GetStore returns the underlying session store
 func (s *SessionService) GetStore() *sessions.CookieStore {
 	return s.Store
+}
+
+// sessionValuesToMap converts session.Values to a JSON-marshalable map
+func sessionValuesToMap(values map[interface{}]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+	for key, value := range values {
+		if keyStr, ok := key.(string); ok {
+			result[keyStr] = value
+		} else {
+			result[fmt.Sprintf("%v", key)] = value
+		}
+	}
+	return result
 }
