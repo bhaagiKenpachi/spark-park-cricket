@@ -22,6 +22,9 @@ import {
   addBallRequest,
   addBallSuccess,
   addBallFailure,
+  undoBallSuccess,
+  undoBallFailure,
+  undoBallThunk,
 } from '../../store/reducers/scorecardSlice';
 import { rootSaga } from '../../store/sagas';
 import { apiService } from '../../services/api';
@@ -32,6 +35,7 @@ jest.mock('../../services/api', () => ({
     getScorecard: jest.fn(),
     startScoring: jest.fn(),
     addBall: jest.fn(),
+    undoBall: jest.fn(),
     getInnings: jest.fn(),
   },
 }));
@@ -167,6 +171,55 @@ jest.mock('../../store/reducers/scorecardSlice', () => ({
           };
         case 'scorecard/addBallFailure':
           return { ...state, loading: false, error: action.payload };
+        case 'scorecard/undoBallRequest':
+          return { ...state, loading: true };
+        case 'scorecard/undoBallSuccess':
+          // Update the scorecard by removing the last ball
+          if (state.scorecard) {
+            const updatedScorecard: ScorecardResponse = {
+              ...(state.scorecard as ScorecardResponse),
+            };
+            if (
+              updatedScorecard.innings &&
+              updatedScorecard.innings[0] &&
+              updatedScorecard.innings[0].overs &&
+              updatedScorecard.innings[0].overs[0]
+            ) {
+              const updatedInnings = [...updatedScorecard.innings];
+              const updatedOvers = [...updatedInnings[0]!.overs];
+              const currentBalls = updatedOvers[0]?.balls || [];
+
+              // Remove the last ball if there are any balls
+              if (currentBalls.length > 0) {
+                const updatedBalls = currentBalls.slice(0, -1);
+                updatedOvers[0] = {
+                  ...updatedOvers[0],
+                  balls: updatedBalls,
+                  over_number: updatedOvers[0]?.over_number || 1,
+                  total_runs: updatedOvers[0]?.total_runs || 0,
+                  total_balls: updatedOvers[0]?.total_balls || 0,
+                  total_wickets: updatedOvers[0]?.total_wickets || 0,
+                  status: updatedOvers[0]?.status || 'in_progress',
+                };
+                updatedInnings[0] = {
+                  ...updatedInnings[0],
+                  overs: updatedOvers,
+                  innings_number: updatedInnings[0]?.innings_number || 1,
+                  batting_team: updatedInnings[0]?.batting_team || 'A',
+                  total_runs: updatedInnings[0]?.total_runs || 0,
+                  total_wickets: updatedInnings[0]?.total_wickets || 0,
+                  total_overs: updatedInnings[0]?.total_overs || 0,
+                  total_balls: updatedInnings[0]?.total_balls || 0,
+                  status: updatedInnings[0]?.status || 'in_progress',
+                };
+                updatedScorecard.innings = updatedInnings;
+              }
+            }
+            return { ...state, loading: false, scorecard: updatedScorecard };
+          }
+          return { ...state, loading: false };
+        case 'scorecard/undoBallFailure':
+          return { ...state, loading: false, error: action.payload };
         default:
           return state;
       }
@@ -205,6 +258,21 @@ jest.mock('../../store/reducers/scorecardSlice', () => ({
   addBallFailure: jest.fn((error: string) => ({
     type: 'scorecard/addBallFailure',
     payload: error,
+  })),
+  undoBallRequest: jest.fn((payload: any) => ({
+    type: 'scorecard/undoBallRequest',
+    payload,
+  })),
+  undoBallSuccess: jest.fn(() => ({
+    type: 'scorecard/undoBallSuccess',
+  })),
+  undoBallFailure: jest.fn((error: string) => ({
+    type: 'scorecard/undoBallFailure',
+    payload: error,
+  })),
+  undoBallThunk: jest.fn((payload: any) => ({
+    type: 'scorecard/undoBallThunk',
+    payload,
   })),
   clearScorecard: jest.fn(() => ({ type: 'scorecard/clearScorecard' })),
 }));
@@ -1075,6 +1143,165 @@ describe('Scorecard Integration Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Hide All Overs')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Undo Ball Integration', () => {
+    it('should undo last ball successfully', async () => {
+      const store = createMockStore({
+        scorecard: {
+          scorecard: mockScorecardData,
+          loading: false,
+          error: null,
+          scoring: false,
+        },
+      });
+
+      // Mock the undo ball API call
+      (apiService.undoBall as jest.Mock).mockResolvedValue({
+        success: true,
+        data: {
+          message: 'Ball undone successfully',
+          match_id: 'match-1',
+          innings_number: 1,
+        },
+      });
+
+      render(
+        <Provider store={store}>
+          <ScorecardView
+            matchId="match-1"
+            onBack={mockOnBack}
+            seriesCreatedBy="user-1"
+            currentUser={{ id: 'user-1', name: 'Test User' }}
+            isAuthenticated={true}
+          />
+        </Provider>
+      );
+
+      // Open live scoring interface
+      const liveScoringButton = screen.getByText('Live Scoring');
+      fireEvent.click(liveScoringButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Undo Last Ball')).toBeInTheDocument();
+      });
+
+      // Click undo ball button
+      const undoButton = screen.getByText('Undo Last Ball');
+      fireEvent.click(undoButton);
+
+      // Verify that undoBallThunk was dispatched
+      await waitFor(() => {
+        expect(undoBallThunk).toHaveBeenCalledWith({
+          matchId: 'match-1',
+          inningsNumber: 1,
+        });
+      });
+
+      // Manually dispatch the undoBallSuccess action to simulate the saga
+      act(() => {
+        store.dispatch(undoBallSuccess());
+      });
+
+      // Check that the ball was removed from the scorecard
+      await waitFor(() => {
+        const state = store.getState();
+        expect(
+          state.scorecard.scorecard?.innings?.[0]?.overs?.[0]?.balls
+        ).toHaveLength(2); // Should have 2 balls instead of 3
+      });
+    });
+
+    it('should handle undo ball errors gracefully', async () => {
+      const store = createMockStore({
+        scorecard: {
+          scorecard: mockScorecardData,
+          loading: false,
+          error: null,
+          scoring: false,
+        },
+      });
+
+      // Mock the undo ball API call to fail
+      (apiService.undoBall as jest.Mock).mockRejectedValue(
+        new Error('No balls to undo')
+      );
+
+      render(
+        <Provider store={store}>
+          <ScorecardView
+            matchId="match-1"
+            onBack={mockOnBack}
+            seriesCreatedBy="user-1"
+            currentUser={{ id: 'user-1', name: 'Test User' }}
+            isAuthenticated={true}
+          />
+        </Provider>
+      );
+
+      // Open live scoring interface
+      const liveScoringButton = screen.getByText('Live Scoring');
+      fireEvent.click(liveScoringButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Undo Last Ball')).toBeInTheDocument();
+      });
+
+      // Click undo ball button
+      const undoButton = screen.getByText('Undo Last Ball');
+      fireEvent.click(undoButton);
+
+      // Verify that undoBallThunk was dispatched
+      await waitFor(() => {
+        expect(undoBallThunk).toHaveBeenCalledWith({
+          matchId: 'match-1',
+          inningsNumber: 1,
+        });
+      });
+
+      // Manually dispatch the undoBallFailure action to simulate the saga
+      act(() => {
+        store.dispatch(undoBallFailure('No balls to undo'));
+      });
+
+      // Check that error state is set
+      await waitFor(() => {
+        const state = store.getState();
+        expect(state.scorecard.error).toBe('No balls to undo');
+      });
+    });
+
+    it('should not show undo button for non-owners', async () => {
+      const store = createMockStore({
+        scorecard: {
+          scorecard: mockScorecardData,
+          loading: false,
+          error: null,
+          scoring: false,
+        },
+      });
+
+      render(
+        <Provider store={store}>
+          <ScorecardView
+            matchId="match-1"
+            onBack={mockOnBack}
+            seriesCreatedBy="user-2" // Different user
+            currentUser={{ id: 'user-1', name: 'Test User' }}
+            isAuthenticated={true}
+          />
+        </Provider>
+      );
+
+      // Open live scoring interface
+      const liveScoringButton = screen.getByText('Live Scoring');
+      fireEvent.click(liveScoringButton);
+
+      await waitFor(() => {
+        // Undo button should not be visible for non-owners
+        expect(screen.queryByText('Undo Last Ball')).not.toBeInTheDocument();
       });
     });
   });

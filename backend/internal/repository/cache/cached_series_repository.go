@@ -71,10 +71,17 @@ func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.Ser
 		}
 	}
 
+	fmt.Printf("DEBUG: CachedSeriesRepository.GetAll - cacheKey: %s, filters: %+v\n", cacheKey, filters)
+
 	var series []*models.Series
 	err := r.cache.GetOrSet(cacheKey, &series, cache.MatchListTTL, func() (interface{}, error) {
-		return r.repo.GetAll(ctx, filters)
+		fmt.Printf("DEBUG: Cache miss for key %s, calling underlying repo\n", cacheKey)
+		result, err := r.repo.GetAll(ctx, filters)
+		fmt.Printf("DEBUG: Underlying repo returned %d series, error: %v\n", len(result), err)
+		return result, err
 	})
+
+	fmt.Printf("DEBUG: CachedSeriesRepository.GetAll - returning %d series, error: %v\n", len(series), err)
 
 	if err != nil {
 		return nil, err

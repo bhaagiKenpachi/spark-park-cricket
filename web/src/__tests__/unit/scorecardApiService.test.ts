@@ -365,6 +365,103 @@ describe('ApiService - Scorecard Endpoints', () => {
     });
   });
 
+  describe('undoBall', () => {
+    it('should undo ball successfully', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          message: 'Ball undone successfully',
+          match_id: 'match-1',
+          innings_number: 1,
+        }),
+      };
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      const result = await apiService.undoBall('match-1', 1);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+        ),
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            'Content-Type': 'application/json',
+          }),
+        })
+      );
+
+      expect(result.data.message).toBe('Ball undone successfully');
+      expect(result.data.match_id).toBe('match-1');
+      expect(result.data.innings_number).toBe(1);
+    });
+
+    it('should undo ball with default innings number', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          message: 'Ball undone successfully',
+          match_id: 'match-1',
+          innings_number: 1,
+        }),
+      };
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      const result = await apiService.undoBall('match-1');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+        ),
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
+
+      expect(result.data.innings_number).toBe(1);
+    });
+
+    it('should handle undo ball errors', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'No balls to undo' }),
+      };
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      await expect(apiService.undoBall('match-1', 1)).rejects.toThrow(ApiError);
+    });
+
+    it('should handle access denied error', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 403,
+        json: async () => ({ error: 'Access denied: you can only undo balls for matches you created' }),
+      };
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      await expect(apiService.undoBall('match-1', 1)).rejects.toThrow(ApiError);
+    });
+
+    it('should handle match not live error', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'Match is not live, cannot undo ball' }),
+      };
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      await expect(apiService.undoBall('match-1', 1)).rejects.toThrow(ApiError);
+    });
+  });
+
   describe('getCurrentOver', () => {
     const mockOverResponse: OverSummary = {
       over_number: 5,
