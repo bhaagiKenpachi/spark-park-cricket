@@ -6,6 +6,7 @@ import { SeriesForm } from '@/components/SeriesForm';
 import { seriesSlice } from '@/store/reducers/seriesSlice';
 import { matchSlice } from '@/store/reducers/matchSlice';
 import { Series } from '@/store/reducers/seriesSlice';
+import authReducer from '@/store/reducers/authSlice';
 
 // Mock the API service
 jest.mock('@/services/api', () => ({
@@ -35,6 +36,7 @@ const createMockStore = (initialState: unknown) => {
     reducer: {
       series: seriesSlice.reducer,
       match: matchSlice.reducer,
+      auth: authReducer,
     },
     preloadedState: initialState,
   });
@@ -110,7 +112,7 @@ describe('Series Integration Tests', () => {
       fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
 
       // Submit the form
-      const submitButton = screen.getByText('Create Series');
+      const submitButton = screen.getByText('Series');
       fireEvent.click(submitButton);
 
       // Wait for the form to close and series to appear
@@ -287,6 +289,13 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        auth: {
+          user: { id: '1', name: 'Test User', email: 'test@example.com' },
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          isInitialized: true,
+        },
       });
 
       (apiService.createSeries as jest.Mock).mockRejectedValue(
@@ -309,7 +318,7 @@ describe('Series Integration Tests', () => {
       fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
 
       // Submit the form
-      const submitButton = screen.getByText('Create Series');
+      const submitButton = screen.getByText('Series');
       fireEvent.click(submitButton);
 
       // Wait for the form to be in error state (button disabled)
@@ -333,6 +342,13 @@ describe('Series Integration Tests', () => {
           loading: false,
           error: null,
         },
+        auth: {
+          user: { id: '1', name: 'Test User', email: 'test@example.com' },
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          isInitialized: true,
+        },
       });
 
       render(
@@ -342,7 +358,7 @@ describe('Series Integration Tests', () => {
       );
 
       // Try to submit without filling required fields
-      const submitButton = screen.getByText('Create Series');
+      const submitButton = screen.getByText('Series');
       fireEvent.click(submitButton);
 
       // Wait for validation errors
@@ -369,6 +385,13 @@ describe('Series Integration Tests', () => {
           currentMatch: null,
           loading: false,
           error: null,
+        },
+        auth: {
+          user: { id: '1', name: 'Test User', email: 'test@example.com' },
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          isInitialized: true,
         },
       });
 

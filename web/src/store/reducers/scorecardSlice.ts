@@ -2,10 +2,21 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { graphqlService } from '@/services/graphqlService';
 import { apiService } from '@/services/api';
-import { BallSummary as GraphQLBallSummary, OverSummary as GraphQLOverSummary } from '@/lib/graphql';
+import {
+  BallSummary as GraphQLBallSummary,
+  OverSummary as GraphQLOverSummary,
+} from '@/lib/graphql';
 
 // Enums
-export type BallType = 'good' | 'wide' | 'no_ball' | 'dead_ball' | 'GOOD' | 'WIDE' | 'NO_BALL' | 'DEAD_BALL';
+export type BallType =
+  | 'good'
+  | 'wide'
+  | 'no_ball'
+  | 'dead_ball'
+  | 'GOOD'
+  | 'WIDE'
+  | 'NO_BALL'
+  | 'DEAD_BALL';
 export type RunType =
   | '0'
   | '1'
@@ -121,8 +132,17 @@ export const initialState: ScorecardState = {
 // Async thunks for GraphQL operations
 export const fetchInningsScoreSummaryThunk = createAsyncThunk(
   'scorecard/fetchInningsScoreSummary',
-  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
-    const response = await graphqlService.getInningsScoreSummary(matchId, inningsNumber);
+  async ({
+    matchId,
+    inningsNumber,
+  }: {
+    matchId: string;
+    inningsNumber: number;
+  }) => {
+    const response = await graphqlService.getInningsScoreSummary(
+      matchId,
+      inningsNumber
+    );
     if (response.success && response.data) {
       return response.data;
     }
@@ -132,8 +152,17 @@ export const fetchInningsScoreSummaryThunk = createAsyncThunk(
 
 export const fetchLatestOverThunk = createAsyncThunk(
   'scorecard/fetchLatestOver',
-  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
-    const response = await graphqlService.getLatestOverOnly(matchId, inningsNumber);
+  async ({
+    matchId,
+    inningsNumber,
+  }: {
+    matchId: string;
+    inningsNumber: number;
+  }) => {
+    const response = await graphqlService.getLatestOverOnly(
+      matchId,
+      inningsNumber
+    );
     if (response.success && response.data) {
       return { inningsNumber, over: response.data };
     }
@@ -143,8 +172,17 @@ export const fetchLatestOverThunk = createAsyncThunk(
 
 export const fetchAllOversDetailsThunk = createAsyncThunk(
   'scorecard/fetchAllOversDetails',
-  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
-    const response = await graphqlService.getAllOversDetails(matchId, inningsNumber);
+  async ({
+    matchId,
+    inningsNumber,
+  }: {
+    matchId: string;
+    inningsNumber: number;
+  }) => {
+    const response = await graphqlService.getAllOversDetails(
+      matchId,
+      inningsNumber
+    );
     if (response.success && response.data) {
       return { inningsNumber, overs: response.data };
     }
@@ -154,7 +192,13 @@ export const fetchAllOversDetailsThunk = createAsyncThunk(
 
 export const undoBallThunk = createAsyncThunk(
   'scorecard/undoBall',
-  async ({ matchId, inningsNumber }: { matchId: string; inningsNumber: number }) => {
+  async ({
+    matchId,
+    inningsNumber,
+  }: {
+    matchId: string;
+    inningsNumber: number;
+  }) => {
     const response = await apiService.undoBall(matchId, inningsNumber);
     if (response.success) {
       return { matchId, inningsNumber, message: response.message };
@@ -204,7 +248,10 @@ export const scorecardSlice = createSlice({
       state.scoring = false;
       state.error = action.payload;
     },
-    undoBallRequest: (state, _action: PayloadAction<{ matchId: string; inningsNumber: number }>) => {
+    undoBallRequest: (
+      state,
+      _action: PayloadAction<{ matchId: string; inningsNumber: number }>
+    ) => {
       state.scoring = true;
       state.error = null;
     },
@@ -370,10 +417,10 @@ export const scorecardSlice = createSlice({
       })
       .addCase(fetchInningsScoreSummaryThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch innings score summary';
+        state.error =
+          action.error.message || 'Failed to fetch innings score summary';
       })
       .addCase(fetchLatestOverThunk.fulfilled, (state, action) => {
-
         state.loading = false;
         if (state.scorecard) {
           const inningsIndex = state.scorecard.innings.findIndex(
@@ -396,24 +443,27 @@ export const scorecardSlice = createSlice({
               // Update existing over
               state.scorecard.innings![inningsIndex]!.overs![overIndex] = {
                 ...action.payload.over,
-                balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
-                  ...ball,
-                  ball_type: ball.ball_type as BallType,
-                  run_type: ball.run_type as RunType,
-                })),
+                balls: action.payload.over.balls.map(
+                  (ball: GraphQLBallSummary) => ({
+                    ...ball,
+                    ball_type: ball.ball_type as BallType,
+                    run_type: ball.run_type as RunType,
+                  })
+                ),
               };
             } else {
               // Add new over
               state.scorecard.innings![inningsIndex]!.overs!.push({
                 ...action.payload.over,
-                balls: action.payload.over.balls.map((ball: GraphQLBallSummary) => ({
-                  ...ball,
-                  ball_type: ball.ball_type as BallType,
-                  run_type: ball.run_type as RunType,
-                })),
+                balls: action.payload.over.balls.map(
+                  (ball: GraphQLBallSummary) => ({
+                    ...ball,
+                    ball_type: ball.ball_type as BallType,
+                    run_type: ball.run_type as RunType,
+                  })
+                ),
               });
             }
-
           }
         }
       })
@@ -429,20 +479,22 @@ export const scorecardSlice = createSlice({
           );
           if (inningsIndex !== -1) {
             // Update all overs for the innings
-            state.scorecard.innings![inningsIndex]!.overs = action.payload.overs.map((over: GraphQLOverSummary) => ({
-              ...over,
-              balls: over.balls.map((ball: GraphQLBallSummary) => ({
-                ...ball,
-                ball_type: ball.ball_type as BallType,
-                run_type: ball.run_type as RunType,
-              })),
-            }));
+            state.scorecard.innings![inningsIndex]!.overs =
+              action.payload.overs.map((over: GraphQLOverSummary) => ({
+                ...over,
+                balls: over.balls.map((ball: GraphQLBallSummary) => ({
+                  ...ball,
+                  ball_type: ball.ball_type as BallType,
+                  run_type: ball.run_type as RunType,
+                })),
+              }));
           }
         }
       })
       .addCase(fetchAllOversDetailsThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch all overs details';
+        state.error =
+          action.error.message || 'Failed to fetch all overs details';
       })
       .addCase(undoBallThunk.pending, (state, action) => {
         state.scoring = true;

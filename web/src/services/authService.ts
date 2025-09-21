@@ -38,7 +38,6 @@ class AuthService {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
 
-
     const defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -54,10 +53,8 @@ class AuthService {
       credentials: 'include', // Include cookies for session management
     };
 
-
     try {
       const response = await fetch(url, config);
-
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

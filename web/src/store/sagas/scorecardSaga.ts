@@ -43,7 +43,11 @@ export function* fetchScorecardSaga(
 ): Generator<
   CallEffect | PutEffect,
   void,
-  { success: boolean; data?: LiveScorecardResponse['liveScorecard']; error?: string }
+  {
+    success: boolean;
+    data?: LiveScorecardResponse['liveScorecard'];
+    error?: string;
+  }
 > {
   try {
     const response = yield call(
@@ -64,11 +68,13 @@ export function* fetchScorecardSaga(
         toss_type: response.data.toss_type as 'H' | 'T',
         current_innings: response.data.current_innings,
         match_status: response.data.match_status,
-        innings: response.data.innings as InningsSummary[] || [],
+        innings: (response.data.innings as InningsSummary[]) || [],
       };
       yield put(fetchScorecardSuccess(scorecardData));
     } else {
-      yield put(fetchScorecardFailure(response.error || 'Failed to fetch scorecard'));
+      yield put(
+        fetchScorecardFailure(response.error || 'Failed to fetch scorecard')
+      );
     }
   } catch (error) {
     const errorMessage =
@@ -132,16 +138,20 @@ export function* addBallSaga(
       // Use optimized GraphQL methods to refresh specific data after adding ball
       try {
         // Fetch innings score summary for the current innings
-        yield put(fetchInningsScoreSummaryThunk({
-          matchId: ballEvent.match_id,
-          inningsNumber: ballEvent.innings_number
-        }));
+        yield put(
+          fetchInningsScoreSummaryThunk({
+            matchId: ballEvent.match_id,
+            inningsNumber: ballEvent.innings_number,
+          })
+        );
 
         // Fetch latest over for the current innings
-        yield put(fetchLatestOverThunk({
-          matchId: ballEvent.match_id,
-          inningsNumber: ballEvent.innings_number
-        }));
+        yield put(
+          fetchLatestOverThunk({
+            matchId: ballEvent.match_id,
+            inningsNumber: ballEvent.innings_number,
+          })
+        );
 
         // Note: Full scorecard refresh is not needed on every ball
         // It will be called automatically when innings transitions occur
@@ -155,7 +165,6 @@ export function* addBallSaga(
       // This happens for the first ball of a new innings
       yield put(fetchScorecardRequest(ballEvent.match_id));
     }
-
   } catch (error) {
     const errorMessage =
       error instanceof ApiError ? error.message : 'Failed to add ball';
@@ -180,17 +189,20 @@ export function* undoBallSaga(
       // Use optimized GraphQL methods to refresh specific data after undoing ball
       try {
         // Fetch innings score summary for the current innings
-        yield put(fetchInningsScoreSummaryThunk({
-          matchId,
-          inningsNumber
-        }));
+        yield put(
+          fetchInningsScoreSummaryThunk({
+            matchId,
+            inningsNumber,
+          })
+        );
 
         // Fetch latest over for the current innings
-        yield put(fetchLatestOverThunk({
-          matchId,
-          inningsNumber
-        }));
-
+        yield put(
+          fetchLatestOverThunk({
+            matchId,
+            inningsNumber,
+          })
+        );
       } catch {
         // Fallback to full scorecard fetch if GraphQL fails
         yield put(fetchScorecardRequest(matchId));
@@ -199,8 +211,7 @@ export function* undoBallSaga(
       // If no innings data exists in state, do a full scorecard refresh
       yield put(fetchScorecardRequest(matchId));
     }
-  } catch {
-  }
+  } catch {}
 }
 
 export function* fetchInningsSaga(
@@ -208,7 +219,11 @@ export function* fetchInningsSaga(
 ): Generator<
   CallEffect | PutEffect,
   void,
-  { success: boolean; data?: InningsDetailsResponse['inningsDetails']; error?: string }
+  {
+    success: boolean;
+    data?: InningsDetailsResponse['inningsDetails'];
+    error?: string;
+  }
 > {
   try {
     const { matchId, inningsNumber } = action.payload;
@@ -229,11 +244,13 @@ export function* fetchInningsSaga(
         total_balls: response.data.total_balls,
         status: response.data.status,
         extras: response.data.extras,
-        overs: response.data.overs as OverSummary[] || [],
+        overs: (response.data.overs as OverSummary[]) || [],
       };
       yield put(fetchInningsSuccess(inningsData));
     } else {
-      yield put(fetchInningsFailure(response.error || 'Failed to fetch innings'));
+      yield put(
+        fetchInningsFailure(response.error || 'Failed to fetch innings')
+      );
     }
   } catch (error) {
     const errorMessage =
@@ -270,7 +287,12 @@ export function* handleInningsTransitionSaga(): Generator<
 export function* checkInningsTransitionSaga(): Generator<
   TakeEffect | SelectEffect | PutEffect,
   void,
-  { scorecard: { inningsTransitionDetected: boolean; scorecard: ScorecardResponse | null } }
+  {
+    scorecard: {
+      inningsTransitionDetected: boolean;
+      scorecard: ScorecardResponse | null;
+    };
+  }
 > {
   while (true) {
     // Wait for innings score summary thunk to complete

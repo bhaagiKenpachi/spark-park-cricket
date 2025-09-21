@@ -13,7 +13,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { isInitialized } = useAppSelector(state => state.auth);
 
   useEffect(() => {
-
     if (!isInitialized) {
       dispatch(initializeAuth());
     } else {

@@ -23,22 +23,41 @@ import {
   BallEventRequest,
 } from '../../store/reducers/scorecardSlice';
 import { ApiError } from '../../services/api';
+import { graphqlService } from '../../services/graphqlService';
 
 // Mock the API service
 const mockApiService = {
-  getScorecard: jest.fn(),
   startScoring: jest.fn(),
   addBall: jest.fn(),
-  getInnings: jest.fn(),
 };
 
+// Mock the GraphQL service
+// const mockGraphqlService = {
+//   getLiveScorecard: jest.fn(),
+//   getInningsDetails: jest.fn(),
+// };
+
 jest.mock('../../services/api', () => ({
-  ApiService: jest.fn().mockImplementation(() => mockApiService),
+  ApiService: jest.fn().mockImplementation(() => ({
+    startScoring: jest.fn(),
+    addBall: jest.fn(),
+  })),
   ApiError: class extends Error {
-    constructor(message: string) {
+    public status?: number;
+    constructor(message: string, status?: number) {
       super(message);
       this.name = 'ApiError';
+      if (status !== undefined) {
+        this.status = status;
+      }
     }
+  },
+}));
+
+jest.mock('../../services/graphqlService', () => ({
+  graphqlService: {
+    getLiveScorecard: jest.fn(),
+    getInningsDetails: jest.fn(),
   },
 }));
 
@@ -52,7 +71,11 @@ describe('Scorecard Sagas', () => {
 
   const mockStore = {
     dispatch: (action: unknown) => dispatched.push(action),
-    getState: () => ({}),
+    getState: () => ({
+      scorecard: {
+        scorecard: null, // No innings data exists, so saga will call fetchScorecardRequest
+      },
+    }),
   };
 
   describe('fetchScorecardSaga', () => {
@@ -89,10 +112,9 @@ describe('Scorecard Sagas', () => {
     };
 
     it('should fetch scorecard successfully', async () => {
-      mockApiService.getScorecard.mockResolvedValueOnce({
+      (graphqlService.getLiveScorecard as jest.Mock).mockResolvedValueOnce({
+        success: true,
         data: mockScorecardData,
-        status: 200,
-        message: 'Success',
       });
 
       await runSaga(
@@ -104,15 +126,17 @@ describe('Scorecard Sagas', () => {
         fetchScorecardRequest('match-1')
       ).toPromise();
 
-      expect(mockApiService.getScorecard).toHaveBeenCalledWith('match-1');
+      expect(graphqlService.getLiveScorecard).toHaveBeenCalledWith('match-1');
       expect(dispatched).toContainEqual(
         fetchScorecardSuccess(mockScorecardData)
       );
     });
 
     it('should handle API errors', async () => {
-      const error = new ApiError('Scorecard not found', 404);
-      mockApiService.getScorecard.mockRejectedValueOnce(error);
+      (graphqlService.getLiveScorecard as jest.Mock).mockResolvedValueOnce({
+        success: false,
+        error: 'Scorecard not found',
+      });
 
       await runSaga(
         {
@@ -129,7 +153,7 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle generic errors', async () => {
-      mockApiService.getScorecard.mockRejectedValueOnce(
+      (graphqlService.getLiveScorecard as jest.Mock).mockRejectedValueOnce(
         new Error('Network error')
       );
 
@@ -142,16 +166,13 @@ describe('Scorecard Sagas', () => {
         fetchScorecardRequest('match-1')
       ).toPromise();
 
-      expect(dispatched).toContainEqual(
-        fetchScorecardFailure('Failed to fetch scorecard')
-      );
+      expect(dispatched).toContainEqual(fetchScorecardFailure('Network error'));
     });
 
     it('should handle nested data response', async () => {
-      mockApiService.getScorecard.mockResolvedValueOnce({
-        data: { data: mockScorecardData },
-        status: 200,
-        message: 'Success',
+      (graphqlService.getLiveScorecard as jest.Mock).mockResolvedValueOnce({
+        success: true,
+        data: mockScorecardData,
       });
 
       await runSaga(
@@ -171,11 +192,17 @@ describe('Scorecard Sagas', () => {
 
   describe('startScoringSaga', () => {
     it('should start scoring successfully', async () => {
-      mockApiService.startScoring.mockResolvedValueOnce({
+      const mockStartScoring = jest.fn().mockResolvedValueOnce({
         data: { message: 'Scoring started', match_id: 'match-1' },
         status: 200,
         message: 'Success',
       });
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        startScoring: mockStartScoring,
+      }));
 
       await runSaga(
         {
@@ -186,14 +213,20 @@ describe('Scorecard Sagas', () => {
         startScoringRequest('match-1')
       ).toPromise();
 
-      expect(mockApiService.startScoring).toHaveBeenCalledWith('match-1');
+      expect(mockStartScoring).toHaveBeenCalledWith('match-1');
       expect(dispatched).toContainEqual(startScoringSuccess());
       expect(dispatched).toContainEqual(fetchScorecardRequest('match-1'));
     });
 
     it('should handle start scoring API errors', async () => {
       const error = new ApiError('Match is not ready for scoring', 400);
-      mockApiService.startScoring.mockRejectedValueOnce(error);
+      const mockStartScoring = jest.fn().mockRejectedValueOnce(error);
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        startScoring: mockStartScoring,
+      }));
 
       await runSaga(
         {
@@ -210,9 +243,15 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle start scoring generic errors', async () => {
-      mockApiService.startScoring.mockRejectedValueOnce(
-        new Error('Network error')
-      );
+      const mockStartScoring = jest
+        .fn()
+        .mockRejectedValueOnce(new Error('Network error'));
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        startScoring: mockStartScoring,
+      }));
 
       await runSaga(
         {
@@ -241,7 +280,7 @@ describe('Scorecard Sagas', () => {
     };
 
     it('should add ball successfully', async () => {
-      mockApiService.addBall.mockResolvedValueOnce({
+      const mockAddBall = jest.fn().mockResolvedValueOnce({
         data: {
           message: 'Ball added successfully',
           match_id: 'match-1',
@@ -256,6 +295,12 @@ describe('Scorecard Sagas', () => {
         message: 'Success',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
+
       await runSaga(
         {
           dispatch: mockStore.dispatch,
@@ -265,8 +310,9 @@ describe('Scorecard Sagas', () => {
         addBallRequest(mockBallEvent)
       ).toPromise();
 
-      expect(mockApiService.addBall).toHaveBeenCalledWith(mockBallEvent);
+      expect(mockAddBall).toHaveBeenCalledWith(mockBallEvent);
       expect(dispatched).toContainEqual(addBallSuccess());
+      // The saga will call fetchScorecardRequest since no innings data exists in state
       expect(dispatched).toContainEqual(fetchScorecardRequest('match-1'));
     });
 
@@ -282,7 +328,7 @@ describe('Scorecard Sagas', () => {
         byes: 0,
       };
 
-      mockApiService.addBall.mockResolvedValueOnce({
+      const mockAddBall = jest.fn().mockResolvedValueOnce({
         data: {
           message: 'Wicket ball added successfully',
           match_id: 'match-1',
@@ -298,6 +344,12 @@ describe('Scorecard Sagas', () => {
         message: 'Success',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
+
       await runSaga(
         {
           dispatch: mockStore.dispatch,
@@ -307,7 +359,7 @@ describe('Scorecard Sagas', () => {
         addBallRequest(wicketBallEvent)
       ).toPromise();
 
-      expect(mockApiService.addBall).toHaveBeenCalledWith(wicketBallEvent);
+      expect(mockAddBall).toHaveBeenCalledWith(wicketBallEvent);
       expect(dispatched).toContainEqual(addBallSuccess());
       expect(dispatched).toContainEqual(fetchScorecardRequest('match-1'));
     });
@@ -323,7 +375,7 @@ describe('Scorecard Sagas', () => {
         byes: 0,
       };
 
-      mockApiService.addBall.mockResolvedValueOnce({
+      const mockAddBall = jest.fn().mockResolvedValueOnce({
         data: {
           message: 'Wide ball added successfully',
           match_id: 'match-1',
@@ -338,6 +390,12 @@ describe('Scorecard Sagas', () => {
         message: 'Success',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
+
       await runSaga(
         {
           dispatch: mockStore.dispatch,
@@ -347,7 +405,7 @@ describe('Scorecard Sagas', () => {
         addBallRequest(wideBallEvent)
       ).toPromise();
 
-      expect(mockApiService.addBall).toHaveBeenCalledWith(wideBallEvent);
+      expect(mockAddBall).toHaveBeenCalledWith(wideBallEvent);
       expect(dispatched).toContainEqual(addBallSuccess());
     });
 
@@ -362,7 +420,7 @@ describe('Scorecard Sagas', () => {
         byes: 0,
       };
 
-      mockApiService.addBall.mockResolvedValueOnce({
+      const mockAddBall = jest.fn().mockResolvedValueOnce({
         data: {
           message: 'No ball added successfully',
           match_id: 'match-1',
@@ -377,6 +435,12 @@ describe('Scorecard Sagas', () => {
         message: 'Success',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
+
       await runSaga(
         {
           dispatch: mockStore.dispatch,
@@ -386,7 +450,7 @@ describe('Scorecard Sagas', () => {
         addBallRequest(noBallEvent)
       ).toPromise();
 
-      expect(mockApiService.addBall).toHaveBeenCalledWith(noBallEvent);
+      expect(mockAddBall).toHaveBeenCalledWith(noBallEvent);
       expect(dispatched).toContainEqual(addBallSuccess());
     });
 
@@ -401,7 +465,7 @@ describe('Scorecard Sagas', () => {
         byes: 2,
       };
 
-      mockApiService.addBall.mockResolvedValueOnce({
+      const mockAddBall = jest.fn().mockResolvedValueOnce({
         data: {
           message: 'Ball with byes added successfully',
           match_id: 'match-1',
@@ -416,6 +480,12 @@ describe('Scorecard Sagas', () => {
         message: 'Success',
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
+
       await runSaga(
         {
           dispatch: mockStore.dispatch,
@@ -425,13 +495,20 @@ describe('Scorecard Sagas', () => {
         addBallRequest(ballWithByes)
       ).toPromise();
 
-      expect(mockApiService.addBall).toHaveBeenCalledWith(ballWithByes);
+      expect(mockAddBall).toHaveBeenCalledWith(ballWithByes);
       expect(dispatched).toContainEqual(addBallSuccess());
     });
 
     it('should handle add ball API errors', async () => {
       const error = new ApiError('Invalid ball data', 400);
-      mockApiService.addBall.mockRejectedValueOnce(error);
+
+      const mockAddBall = jest.fn().mockRejectedValueOnce(error);
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
 
       await runSaga(
         {
@@ -446,7 +523,15 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle add ball generic errors', async () => {
-      mockApiService.addBall.mockRejectedValueOnce(new Error('Network error'));
+      const mockAddBall = jest
+        .fn()
+        .mockRejectedValueOnce(new Error('Network error'));
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
 
       await runSaga(
         {
@@ -462,7 +547,14 @@ describe('Scorecard Sagas', () => {
 
     it('should handle innings completion error', async () => {
       const error = new ApiError('Innings already completed', 409);
-      mockApiService.addBall.mockRejectedValueOnce(error);
+
+      const mockAddBall = jest.fn().mockRejectedValueOnce(error);
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const ApiService = require('../../services/api').ApiService;
+      ApiService.mockImplementation(() => ({
+        addBall: mockAddBall,
+      }));
 
       await runSaga(
         {
@@ -499,10 +591,9 @@ describe('Scorecard Sagas', () => {
     };
 
     it('should fetch innings successfully', async () => {
-      mockApiService.getInnings.mockResolvedValueOnce({
+      (graphqlService.getInningsDetails as jest.Mock).mockResolvedValueOnce({
+        success: true,
         data: mockInningsData,
-        status: 200,
-        message: 'Success',
       });
 
       await runSaga(
@@ -514,13 +605,18 @@ describe('Scorecard Sagas', () => {
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
 
-      expect(mockApiService.getInnings).toHaveBeenCalledWith('match-1', 1);
+      expect(graphqlService.getInningsDetails).toHaveBeenCalledWith(
+        'match-1',
+        1
+      );
       expect(dispatched).toContainEqual(fetchInningsSuccess(mockInningsData));
     });
 
     it('should handle fetch innings API errors', async () => {
-      const error = new ApiError('Innings not found', 404);
-      mockApiService.getInnings.mockRejectedValueOnce(error);
+      (graphqlService.getInningsDetails as jest.Mock).mockResolvedValueOnce({
+        success: false,
+        error: 'Innings not found',
+      });
 
       await runSaga(
         {
@@ -537,7 +633,7 @@ describe('Scorecard Sagas', () => {
     });
 
     it('should handle fetch innings generic errors', async () => {
-      mockApiService.getInnings.mockRejectedValueOnce(
+      (graphqlService.getInningsDetails as jest.Mock).mockRejectedValueOnce(
         new Error('Network error')
       );
 
@@ -550,16 +646,13 @@ describe('Scorecard Sagas', () => {
         fetchInningsRequest({ matchId: 'match-1', inningsNumber: 1 })
       ).toPromise();
 
-      expect(dispatched).toContainEqual(
-        fetchInningsFailure('Failed to fetch innings')
-      );
+      expect(dispatched).toContainEqual(fetchInningsFailure('Network error'));
     });
 
     it('should handle nested data response', async () => {
-      mockApiService.getInnings.mockResolvedValueOnce({
-        data: { data: mockInningsData },
-        status: 200,
-        message: 'Success',
+      (graphqlService.getInningsDetails as jest.Mock).mockResolvedValueOnce({
+        success: true,
+        data: mockInningsData,
       });
 
       await runSaga(
