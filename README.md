@@ -445,7 +445,7 @@ web/
 │   │   └── hooks.ts            # Typed Redux hooks
 │   ├── providers/              # React context providers
 │   └── services/               # API service layer
-├── cypress/                    # E2E tests
+├── tests/e2e/                 # Playwright E2E tests
 └── __tests__/                  # Test utilities
 ```
 

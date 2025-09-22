@@ -34,7 +34,7 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
-    '<rootDir>/cypress/',
+    '<rootDir>/tests/e2e/',
   ],
   // CI-specific configuration
   ...(process.env.CI && {
