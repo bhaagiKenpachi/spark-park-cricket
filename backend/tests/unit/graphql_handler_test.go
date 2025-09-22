@@ -59,9 +59,30 @@ func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 		Status:       "in_progress",
 	}
 
+	// Mock balls for the current over
+	mockBalls := []*models.ScorecardBall{
+		{
+			ID:         "ball-1",
+			BallNumber: 1,
+			BallType:   models.BallTypeGood,
+			RunType:    models.RunTypeOne,
+			Runs:       1,
+			IsWicket:   false,
+		},
+		{
+			ID:         "ball-2",
+			BallNumber: 2,
+			BallType:   models.BallTypeGood,
+			RunType:    models.RunTypeTwo,
+			Runs:       2,
+			IsWicket:   false,
+		},
+	}
+
 	// Set up mock expectations
 	mockScorecardService.On("GetScorecard", mock.Anything, matchID).Return(scorecard, nil)
 	mockScorecardService.On("GetCurrentOver", mock.Anything, matchID, 1).Return(currentOver, nil)
+	mockScorecardService.On("GetBallsByOver", mock.Anything, "over-123").Return(mockBalls, nil)
 
 	// Test query
 	query := `

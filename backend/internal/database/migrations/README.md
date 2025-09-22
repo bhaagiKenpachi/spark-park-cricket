@@ -5,6 +5,7 @@ This directory contains comprehensive SQL migration scripts for the Spark Park C
 ## Overview
 
 The database schema supports multiple environments and includes:
+
 - **User Authentication**: Google OAuth integration with session management
 - **Cricket Tournament Management**: Series, matches, and live scoring
 - **Ball-by-Ball Tracking**: Complete cricket scoring with all ball types and wicket types
@@ -13,17 +14,21 @@ The database schema supports multiple environments and includes:
 ## Schema Structure
 
 ### Global Schema (Public)
+
 Shared across all environments:
+
 - `users` - User authentication and profile data
 - `user_sessions` - Session management
 - `oauth_states` - OAuth security state parameters
 
 ### Environment-Specific Schemas
+
 - `dev_v1` - Development environment
-- `testing_db` - Testing environment  
+- `testing_db` - Testing environment
 - `prod_v1` - Production environment
 
 Each environment schema contains:
+
 - `series` - Cricket tournaments and competitions
 - `matches` - Individual cricket matches
 - `live_scoreboard` - Real-time match scoring
@@ -149,6 +154,7 @@ CREATE SCHEMA IF NOT EXISTS your_custom_schema;
 ## Verification
 
 Each script includes verification queries that will:
+
 1. Confirm successful schema creation
 2. List all created tables in global schema
 3. List all created tables in environment-specific schema
@@ -185,21 +191,22 @@ The application uses these schemas based on configuration:
 
 ```sql
 -- Check if schemas exist
-SELECT schema_name FROM information_schema.schemata 
+SELECT schema_name FROM information_schema.schemata
 WHERE schema_name IN ('dev_v1', 'testing_db', 'prod_v1');
 
 -- Check if tables exist in a schema
-SELECT table_name FROM information_schema.tables 
+SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'your_schema_name';
 
 -- Check if indexes exist
-SELECT indexname FROM pg_indexes 
+SELECT indexname FROM pg_indexes
 WHERE schemaname = 'your_schema_name';
 ```
 
 ## Support
 
 For issues or questions about the database schema:
+
 1. Check the verification output for errors
 2. Review the constraint definitions
 3. Ensure proper schema creation

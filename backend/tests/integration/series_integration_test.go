@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
@@ -17,6 +19,42 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Helper function to create an authenticated user and session cookie
+func createAuthenticatedUserForSeries(t *testing.T, db *database.Client, sessionService *services.SessionService) (*models.User, string) {
+	// Create a unique test user
+	user := &models.User{
+		GoogleID:      "test-google-id-" + time.Now().Format("20060102150405"),
+		Email:         "test-series-" + time.Now().Format("20060102150405") + "@example.com",
+		Name:          "Test Series User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+
+	// Create user in database
+	err := db.Repositories.User.CreateUser(context.Background(), user)
+	require.NoError(t, err, "Failed to create test user")
+
+	// Create a proper session using the session service
+	req := httptest.NewRequest("POST", "/auth/login", nil)
+	w := httptest.NewRecorder()
+
+	err = sessionService.CreateSession(w, req, user)
+	require.NoError(t, err, "Failed to create test session")
+
+	// Extract the session cookie from the response
+	cookies := w.Result().Cookies()
+	var sessionCookie string
+	for _, cookie := range cookies {
+		if cookie.Name == "user_session" {
+			sessionCookie = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, sessionCookie, "Session cookie not found in response")
+
+	return user, sessionCookie
+}
 
 // TestSeriesIntegration runs integration tests for series API endpoints
 func TestSeriesIntegration(t *testing.T) {
@@ -29,30 +67,41 @@ func TestSeriesIntegration(t *testing.T) {
 	require.NoError(t, err, "Failed to initialize test database client")
 	defer dbClient.Close()
 
+	// Initialize services
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
+
+	// Create authenticated user and session
+	testUser, sessionCookie := createAuthenticatedUserForSeries(t, dbClient, serviceContainer.SessionService)
+
+	// Clean up test user at the end
+	defer func() {
+		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
+	}()
 
 	// Clean up before each test
 	cleanupSeriesTestData(t, dbClient)
 
 	t.Run("Complete Series CRUD Flow", func(t *testing.T) {
-		testCompleteSeriesCRUDFlow(t, router)
+		testCompleteSeriesCRUDFlow(t, router, sessionCookie)
 	})
 
 	t.Run("Series Pagination", func(t *testing.T) {
-		testSeriesPagination(t, router, dbClient)
+		testSeriesPagination(t, router, dbClient, sessionCookie)
 	})
 
 	t.Run("Series Validation", func(t *testing.T) {
-		testSeriesValidation(t, router)
+		testSeriesValidation(t, router, sessionCookie)
 	})
 
 	t.Run("Series Error Handling", func(t *testing.T) {
-		testSeriesErrorHandling(t, router)
+		testSeriesErrorHandling(t, router, sessionCookie)
 	})
 }
 
-func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
+func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler, sessionCookie string) {
 	// Create a new series
 	createReq := models.CreateSeriesRequest{
 		Name:      "Test Cricket Series",
@@ -65,6 +114,14 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -84,6 +141,14 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	// Get the created series
 	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/series/%s", createdSeries.ID), nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -108,6 +173,14 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	req = httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/series/%s", createdSeries.ID), bytes.NewBuffer(updateBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -123,6 +196,14 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	// Verify the updated series directly by getting it
 	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/series/%s", updatedSeries.ID), nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -138,6 +219,14 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	// Delete the series
 	req = httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/series/%s", createdSeries.ID), nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -145,13 +234,21 @@ func testCompleteSeriesCRUDFlow(t *testing.T, router http.Handler) {
 
 	// Verify series is deleted
 	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/series/%s", createdSeries.ID), nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
-func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.Client) {
+func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.Client, sessionCookie string) {
 	// Create multiple series for pagination testing
 	seriesNames := []string{"Series 1", "Series 2", "Series 3", "Series 4", "Series 5"}
 
@@ -167,6 +264,14 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 		req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -175,6 +280,14 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 	// Test pagination with limit
 	req := httptest.NewRequest("GET", "/api/v1/series?limit=3", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -190,6 +303,14 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 	// Test pagination with offset
 	req = httptest.NewRequest("GET", "/api/v1/series?limit=2&offset=2", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -202,6 +323,14 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 	// Test invalid pagination parameters
 	req = httptest.NewRequest("GET", "/api/v1/series?limit=invalid&offset=-1", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -213,7 +342,7 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 	assert.GreaterOrEqual(t, len(seriesList), 5, "Should have at least 5 series with default pagination")
 }
 
-func testSeriesValidation(t *testing.T, router http.Handler) {
+func testSeriesValidation(t *testing.T, router http.Handler, sessionCookie string) {
 	// Test invalid date range
 	createReq := models.CreateSeriesRequest{
 		Name:      "Invalid Series",
@@ -226,6 +355,14 @@ func testSeriesValidation(t *testing.T, router http.Handler) {
 
 	req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -242,6 +379,14 @@ func testSeriesValidation(t *testing.T, router http.Handler) {
 
 	req = httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(invalidBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -256,15 +401,31 @@ func testSeriesValidation(t *testing.T, router http.Handler) {
 	// Test invalid JSON
 	req = httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
 }
 
-func testSeriesErrorHandling(t *testing.T, router http.Handler) {
+func testSeriesErrorHandling(t *testing.T, router http.Handler, sessionCookie string) {
 	// Test getting non-existent series
 	req := httptest.NewRequest("GET", "/api/v1/series/non-existent-id", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -280,6 +441,14 @@ func testSeriesErrorHandling(t *testing.T, router http.Handler) {
 
 	req = httptest.NewRequest("PUT", "/api/v1/series/non-existent-id", bytes.NewBuffer(updateBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -287,6 +456,14 @@ func testSeriesErrorHandling(t *testing.T, router http.Handler) {
 
 	// Test deleting non-existent series
 	req = httptest.NewRequest("DELETE", "/api/v1/series/non-existent-id", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -294,6 +471,14 @@ func testSeriesErrorHandling(t *testing.T, router http.Handler) {
 
 	// Test empty series ID - use a route that would have an empty ID parameter
 	req = httptest.NewRequest("GET", "/api/v1/series/", nil)
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -325,8 +510,19 @@ func TestSeriesConcurrentOperations(t *testing.T) {
 	require.NoError(t, err, "Failed to initialize test database client")
 	defer dbClient.Close()
 
+	// Initialize services
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
+
+	// Create authenticated user and session
+	testUser, sessionCookie := createAuthenticatedUserForSeries(t, dbClient, serviceContainer.SessionService)
+
+	// Clean up test user at the end
+	defer func() {
+		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
+	}()
 
 	// Clean up before test
 	cleanupSeriesTestData(t, dbClient)
@@ -343,6 +539,14 @@ func TestSeriesConcurrentOperations(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -359,6 +563,14 @@ func TestSeriesConcurrentOperations(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			go func() {
 				req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/series/%s", createdSeries.ID), nil)
+				req.AddCookie(&http.Cookie{
+					Name:     "user_session",
+					Value:    sessionCookie,
+					Path:     "/",
+					HttpOnly: true,
+					Secure:   false,
+					SameSite: http.SameSiteLaxMode,
+				})
 				w := httptest.NewRecorder()
 				router.ServeHTTP(w, req)
 				assert.Equal(t, http.StatusOK, w.Code)
@@ -387,8 +599,19 @@ func TestSeriesDataIntegrity(t *testing.T) {
 	require.NoError(t, err, "Failed to initialize test database client")
 	defer dbClient.Close()
 
+	// Initialize services
+	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
+
+	// Create authenticated user and session
+	testUser, sessionCookie := createAuthenticatedUserForSeries(t, dbClient, serviceContainer.SessionService)
+
+	// Clean up test user at the end
+	defer func() {
+		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
+	}()
 
 	// Clean up before test
 	cleanupSeriesTestData(t, dbClient)
@@ -406,6 +629,14 @@ func TestSeriesDataIntegrity(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -416,6 +647,14 @@ func TestSeriesDataIntegrity(t *testing.T) {
 		// If you have a unique constraint on name, this should fail
 		req = httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w = httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -440,6 +679,14 @@ func TestSeriesDataIntegrity(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
@@ -457,6 +704,14 @@ func TestSeriesDataIntegrity(t *testing.T) {
 
 		req = httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(createBody2))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w = httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)

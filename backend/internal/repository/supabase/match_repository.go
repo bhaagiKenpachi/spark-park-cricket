@@ -77,7 +77,11 @@ func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilte
 		query = query.Eq("status", string(*filters.Status))
 	}
 
-	query = query.Range(filters.Offset, filters.Offset+filters.Limit-1, "")
+	// Note: Offset is not supported by this Supabase client version
+	// Use Limit for basic pagination, but offset functionality is limited
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit, "")
+	}
 
 	_, err := query.ExecuteTo(&result)
 	if err != nil {

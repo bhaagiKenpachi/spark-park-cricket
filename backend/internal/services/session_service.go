@@ -176,7 +176,7 @@ func (s *SessionService) GetSession(r *http.Request) (*models.User, error) {
 	// Check if session is expired
 	if time.Now().After(userSession.ExpiresAt) {
 		// Clean up expired session
-		s.userRepo.DeleteUserSession(r.Context(), sessionID)
+		_ = s.userRepo.DeleteUserSession(r.Context(), sessionID)
 		return nil, fmt.Errorf("session expired")
 	}
 

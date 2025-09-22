@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 )
@@ -26,9 +27,9 @@ func AuthMiddleware(sessionSvc services.SessionServiceInterface) func(http.Handl
 
 			// Add user to request context
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, "user", user)
-			ctx = context.WithValue(ctx, "user_id", user.ID)
-			ctx = context.WithValue(ctx, "user_email", user.Email)
+			ctx = context.WithValue(ctx, contextkeys.UserKey, user)
+			ctx = context.WithValue(ctx, contextkeys.UserIDKey, user.ID)
+			ctx = context.WithValue(ctx, contextkeys.UserEmailKey, user.Email)
 
 			// Continue with authenticated request
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -46,15 +47,15 @@ func OptionalAuthMiddleware(sessionSvc services.SessionServiceInterface) func(ht
 			if err == nil && user != nil {
 				// User is authenticated, add to context
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, "user", user)
-				ctx = context.WithValue(ctx, "user_id", user.ID)
-				ctx = context.WithValue(ctx, "user_email", user.Email)
-				ctx = context.WithValue(ctx, "authenticated", true)
+				ctx = context.WithValue(ctx, contextkeys.UserKey, user)
+				ctx = context.WithValue(ctx, contextkeys.UserIDKey, user.ID)
+				ctx = context.WithValue(ctx, contextkeys.UserEmailKey, user.Email)
+				ctx = context.WithValue(ctx, contextkeys.AuthenticatedKey, true)
 				r = r.WithContext(ctx)
 			} else {
 				// User is not authenticated, but continue anyway
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, "authenticated", false)
+				ctx = context.WithValue(ctx, contextkeys.AuthenticatedKey, false)
 				r = r.WithContext(ctx)
 			}
 
@@ -96,10 +97,10 @@ func AdminMiddleware(sessionSvc services.SessionServiceInterface) func(http.Hand
 
 			// Add user to request context
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, "user", user)
-			ctx = context.WithValue(ctx, "user_id", user.ID)
-			ctx = context.WithValue(ctx, "user_email", user.Email)
-			ctx = context.WithValue(ctx, "is_admin", true)
+			ctx = context.WithValue(ctx, contextkeys.UserKey, user)
+			ctx = context.WithValue(ctx, contextkeys.UserIDKey, user.ID)
+			ctx = context.WithValue(ctx, contextkeys.UserEmailKey, user.Email)
+			ctx = context.WithValue(ctx, contextkeys.IsAdminKey, true)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

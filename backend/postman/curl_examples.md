@@ -5,6 +5,7 @@
 This document provides cURL examples for the simplified Spark Park Cricket API with Team A vs Team B matches and toss functionality.
 
 ## Base URL
+
 ```
 http://localhost:8080
 ```
@@ -12,16 +13,19 @@ http://localhost:8080
 ## Health Checks
 
 ### Home
+
 ```bash
 curl --location 'http://localhost:8080/'
 ```
 
 ### Health Check
+
 ```bash
 curl --location 'http://localhost:8080/health'
 ```
 
 ### Database Health
+
 ```bash
 curl --location 'http://localhost:8080/health/database'
 ```
@@ -29,6 +33,7 @@ curl --location 'http://localhost:8080/health/database'
 ## Series Management
 
 ### Create Series
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/series' \
 --header 'Content-Type: application/json' \
@@ -40,16 +45,19 @@ curl --location 'http://localhost:8080/api/v1/series' \
 ```
 
 ### List Series
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/series'
 ```
 
 ### Get Series
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/series/d577f3b7-c8aa-413e-8c43-021f233aaa33'
 ```
 
 ### Update Series
+
 ```bash
 curl --location --request PUT 'http://localhost:8080/api/v1/series/d577f3b7-c8aa-413e-8c43-021f233aaa33' \
 --header 'Content-Type: application/json' \
@@ -61,6 +69,7 @@ curl --location --request PUT 'http://localhost:8080/api/v1/series/d577f3b7-c8aa
 ```
 
 ### Delete Series
+
 ```bash
 curl --location --request DELETE 'http://localhost:8080/api/v1/series/d577f3b7-c8aa-413e-8c43-021f233aaa33'
 ```
@@ -68,6 +77,7 @@ curl --location --request DELETE 'http://localhost:8080/api/v1/series/d577f3b7-c
 ## Match Management
 
 ### Create Match (with Toss)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/matches' \
 --header 'Content-Type: application/json' \
@@ -84,16 +94,19 @@ curl --location 'http://localhost:8080/api/v1/matches' \
 ```
 
 ### List Matches
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/matches'
 ```
 
 ### Get Match
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/matches/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7'
 ```
 
 ### Update Match
+
 ```bash
 curl --location --request PUT 'http://localhost:8080/api/v1/matches/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7' \
 --header 'Content-Type: application/json' \
@@ -106,11 +119,13 @@ curl --location --request PUT 'http://localhost:8080/api/v1/matches/99ba81c4-5a4
 ```
 
 ### Delete Match
+
 ```bash
 curl --location --request DELETE 'http://localhost:8080/api/v1/matches/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7'
 ```
 
 ### Get Matches by Series
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/matches/series/d577f3b7-c8aa-413e-8c43-021f233aaa33'
 ```
@@ -118,21 +133,25 @@ curl --location 'http://localhost:8080/api/v1/matches/series/d577f3b7-c8aa-413e-
 ## WebSocket
 
 ### Match WebSocket Connection
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/ws/match/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7'
 ```
 
 ### WebSocket Stats
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/ws/stats'
 ```
 
 ### Room Stats
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/ws/stats/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7'
 ```
 
 ### Test Broadcast
+
 ```bash
 curl --location --request POST 'http://localhost:8080/api/v1/ws/test/99ba81c4-5a4e-43c7-ac3d-0a0c24e792a7'
 ```
@@ -140,6 +159,7 @@ curl --location --request POST 'http://localhost:8080/api/v1/ws/test/99ba81c4-5a
 ## Data Models
 
 ### Series
+
 ```json
 {
   "id": "uuid",
@@ -152,6 +172,7 @@ curl --location --request POST 'http://localhost:8080/api/v1/ws/test/99ba81c4-5a
 ```
 
 ### Match
+
 ```json
 {
   "id": "uuid",
@@ -173,6 +194,7 @@ curl --location --request POST 'http://localhost:8080/api/v1/ws/test/99ba81c4-5a
 ## Field Descriptions
 
 ### Match Fields
+
 - **team_a_player_count**: Number of players in Team A (1-11)
 - **team_b_player_count**: Number of players in Team B (1-11)
 - **total_overs**: Total overs for the match (1-20)
@@ -182,6 +204,7 @@ curl --location --request POST 'http://localhost:8080/api/v1/ws/test/99ba81c4-5a
 - **status**: Match status ("live", "completed", "cancelled")
 
 ### Run Types (for future scoring)
+
 - **Numbers**: "1", "2", "3", "4", "5", "6", "7", "8", "9"
 - **Special**: "NB" (No Ball), "WD" (Wide), "LB" (Leg Byes)
 
@@ -207,6 +230,7 @@ All endpoints return standardized error responses:
 ```
 
 Common error codes:
+
 - `VALIDATION_ERROR`: Invalid input data
 - `NOT_FOUND`: Resource not found
 - `INTERNAL_ERROR`: Server error
@@ -214,6 +238,7 @@ Common error codes:
 ## Scorecard Management
 
 ### Start Scoring
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/start' \
 --header 'Content-Type: application/json' \
@@ -223,6 +248,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/start' \
 ```
 
 ### Add Ball (1 run)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -237,6 +263,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Dot Ball (0 runs)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -251,6 +278,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Dot Ball with Byes
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -265,6 +293,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Wide Ball (Extras)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -279,6 +308,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add No Ball (Extras)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -293,6 +323,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Wicket
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -308,6 +339,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Boundary (4 runs)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -323,6 +355,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Six (6 runs)
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -338,6 +371,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Wide Ball
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -353,6 +387,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add No Ball
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -367,6 +402,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Add Ball with Byes
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 --header 'Content-Type: application/json' \
@@ -381,31 +417,37 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 ### Get Complete Scorecard
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 ```
 
 ### Get Current Over
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id/current-over?innings=1'
 ```
 
 ### Get Innings Details
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id/innings/1'
 ```
 
 ### Get Over Details
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id/innings/1/over/1'
 ```
 
 ### Undo Last Ball
+
 ```bash
 curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
 ```
 
 ### Undo Last Ball - Innings 2
+
 ```bash
 curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=2'
 ```
@@ -415,6 +457,7 @@ curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-ma
 ### Complete Cricket Match Scoring Workflow
 
 1. **Create a Series**
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/series' \
 --header 'Content-Type: application/json' \
@@ -426,6 +469,7 @@ curl --location 'http://localhost:8080/api/v1/series' \
 ```
 
 2. **Create a Match with Toss**
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/matches' \
 --header 'Content-Type: application/json' \
@@ -442,6 +486,7 @@ curl --location 'http://localhost:8080/api/v1/matches' \
 ```
 
 3. **Start Scoring**
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/start' \
 --header 'Content-Type: application/json' \
@@ -451,6 +496,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/start' \
 ```
 
 4. **Add Balls to Complete First Over**
+
 ```bash
 # Ball 1: 1 run
 curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
@@ -533,17 +579,20 @@ curl --location 'http://localhost:8080/api/v1/scorecard/ball' \
 ```
 
 5. **View Complete Scorecard**
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 ```
 
 6. **Undo Last Ball (if needed)**
+
 ```bash
 # Undo the wicket ball from the previous step
 curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
 ```
 
 7. **View Updated Scorecard**
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 ```
@@ -551,6 +600,7 @@ curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 ## Run Types and Ball Types
 
 ### Run Types
+
 - `"0"`: Dot Ball (0 runs)
 - `"1"` to `"9"`: Regular runs (1-9)
 - `"NB"`: No Ball (1 run + extra ball)
@@ -559,12 +609,14 @@ curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 - `"WC"`: Wicket (0 runs, wicket taken)
 
 ### Ball Types
+
 - `"good"`: Regular ball
 - `"wide"`: Wide ball
 - `"no_ball"`: No ball
 - `"dead_ball"`: Dead ball
 
 ### Wicket Types
+
 - `"bowled"`: Bowled
 - `"caught"`: Caught
 - `"lbw"`: Leg Before Wicket
@@ -577,12 +629,14 @@ curl --location 'http://localhost:8080/api/v1/scorecard/your-match-id'
 The undo ball feature allows you to remove the last ball from the current over and automatically recalculate all statistics.
 
 ### Key Features:
+
 - **Removes Last Ball**: Deletes the most recently added ball from the current over
 - **Statistics Recalculation**: Automatically updates runs, balls, wickets, and overs
 - **Status Management**: Properly handles over and innings status changes
 - **Validation**: Ensures match is live and innings is in progress
 
 ### Usage:
+
 ```bash
 # Undo last ball from innings 1
 curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-match-id/ball?innings=1'
@@ -592,6 +646,7 @@ curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-ma
 ```
 
 ### What Gets Undone:
+
 - **Runs**: Removes runs from the ball (including byes)
 - **Balls**: Decrements legal ball count (good balls only)
 - **Wickets**: Removes wicket if the ball was a wicket
@@ -599,6 +654,7 @@ curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-ma
 - **Innings**: Updates innings statistics and completion status
 
 ### Error Cases:
+
 - Match not found
 - Match not live
 - Innings not found or not in progress
@@ -610,6 +666,7 @@ curl --location --request DELETE 'http://localhost:8080/api/v1/scorecard/your-ma
 GraphQL allows you to fetch only the fields you need, reducing payload size and improving performance.
 
 ### Get Live Scorecard - Minimal
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -622,6 +679,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### Get Live Scorecard - Detailed
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -634,6 +692,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### Get Current Score Only
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -646,6 +705,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### Get Current Over Only
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -658,6 +718,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### Get Match Summary
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -670,6 +731,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### Get Innings Summary
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -682,6 +744,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 ### GraphQL Playground
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql/playground'
 ```
@@ -689,9 +752,11 @@ curl --location 'http://localhost:8080/api/v1/graphql/playground'
 ## GraphQL Benefits
 
 ### Field Selection
+
 GraphQL allows you to fetch only the fields you need:
 
 **Minimal payload** - Only current score:
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \
@@ -701,6 +766,7 @@ curl --location 'http://localhost:8080/api/v1/graphql' \
 ```
 
 **Comprehensive payload** - Full scorecard:
+
 ```bash
 curl --location 'http://localhost:8080/api/v1/graphql' \
 --header 'Content-Type: application/json' \

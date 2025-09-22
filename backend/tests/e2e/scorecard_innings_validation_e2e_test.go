@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"spark-park-cricket-backend/internal/config"
-	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/pkg/testutils"
 
@@ -17,18 +15,13 @@ import (
 )
 
 func TestScorecardInningsValidation_E2E(t *testing.T) {
-	// Setup test database
-	cfg := config.LoadTestConfig()
-	testDB, err := database.NewTestClient(cfg)
-	require.NoError(t, err)
-	defer testDB.Close()
+	// Setup with authentication
+	server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
+	defer server.Close()
+	defer db.Close()
 
 	// Clean up before test
-	testutils.CleanupTestData(t, testDB)
-
-	// Start test server
-	server := testutils.SetupE2ETestServer(t, testDB)
-	defer server.Close()
+	testutils.CleanupTestData(t, db)
 
 	t.Run("API prevents adding ball to second innings before first innings", func(t *testing.T) {
 		// Create a test series via API
@@ -39,22 +32,30 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesResp, err := http.Post(server.URL+"/api/v1/series", "application/json", bytes.NewBuffer(seriesBody))
+		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHttpReq.Header.Set("Content-Type", "application/json")
+		seriesHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
 		var seriesRespData map[string]interface{}
 		err = json.NewDecoder(seriesResp.Body).Decode(&seriesRespData)
 		require.NoError(t, err)
-		seriesResp.Body.Close()
 
+		// Extract series ID from response
 		seriesData := seriesRespData["data"].(map[string]interface{})
 		seriesID := seriesData["id"].(string)
 
-		// Create a match with Team A winning toss
+		// Create a test match via API
 		matchReq := &models.CreateMatchRequest{
 			SeriesID:         seriesID,
-			MatchNumber:      nil, // Auto-increment
 			Date:             time.Now(),
 			TeamAPlayerCount: 11,
 			TeamBPlayerCount: 11,
@@ -64,65 +65,130 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchResp, err := http.Post(server.URL+"/api/v1/matches", "application/json", bytes.NewBuffer(matchBody))
+		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHttpReq.Header.Set("Content-Type", "application/json")
+		matchHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		matchResp, err := http.DefaultClient.Do(matchHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
 		var matchRespData map[string]interface{}
 		err = json.NewDecoder(matchResp.Body).Decode(&matchRespData)
 		require.NoError(t, err)
-		matchResp.Body.Close()
 
+		// Extract match ID from response
 		matchData := matchRespData["data"].(map[string]interface{})
 		matchID := matchData["id"].(string)
 
-		// Try to add a ball to second innings directly - this should fail
+		// Start scoring for the match
+		startReq := map[string]interface{}{
+			"match_id": matchID,
+		}
+		startBody, _ := json.Marshal(startReq)
+		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHttpReq.Header.Set("Content-Type", "application/json")
+		startHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		startResp, err := http.DefaultClient.Do(startHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, startResp.StatusCode)
+
+		// Add some balls to first innings
 		ballEvent := &models.BallEventRequest{
 			MatchID:       matchID,
-			InningsNumber: 2,
+			InningsNumber: 1, // First innings
 			BallType:      models.BallTypeGood,
 			RunType:       models.RunTypeOne,
 			IsWicket:      false,
 		}
 
 		ballBody, _ := json.Marshal(ballEvent)
-		ballResp, err := http.Post(server.URL+"/api/v1/scorecard/ball", "application/json", bytes.NewBuffer(ballBody))
+		ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err := http.DefaultClient.Do(ballHttpReq)
 		require.NoError(t, err)
-		require.Equal(t, http.StatusInternalServerError, ballResp.StatusCode)
+		require.Equal(t, http.StatusOK, ballResp.StatusCode)
+
+		// Try to add ball to second innings before first innings is complete
+		ballEvent = &models.BallEventRequest{
+			MatchID:       matchID,
+			InningsNumber: 2, // Second innings
+			BallType:      models.BallTypeGood,
+			RunType:       models.RunTypeOne,
+			IsWicket:      false,
+		}
+
+		ballBody, _ = json.Marshal(ballEvent)
+		ballHttpReq, _ = http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err = http.DefaultClient.Do(ballHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, ballResp.StatusCode)
 
 		var errorResp map[string]interface{}
 		err = json.NewDecoder(ballResp.Body).Decode(&errorResp)
 		require.NoError(t, err)
-		ballResp.Body.Close()
-
-		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "cannot start second innings, first innings must be played first")
+		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "first innings is not complete, cannot start second innings")
 	})
 
-	t.Run("API prevents adding ball to wrong team in first innings", func(t *testing.T) {
+	t.Run("API prevents adding ball to wrong team", func(t *testing.T) {
 		// Create a test series via API
 		seriesReq := &models.CreateSeriesRequest{
-			Name:      "Test E2E Innings Series 2",
+			Name:      "Test E2E Team Validation Series",
 			StartDate: time.Now(),
 			EndDate:   time.Now().AddDate(0, 0, 7),
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesResp, err := http.Post(server.URL+"/api/v1/series", "application/json", bytes.NewBuffer(seriesBody))
+		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHttpReq.Header.Set("Content-Type", "application/json")
+		seriesHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
 		var seriesRespData map[string]interface{}
 		err = json.NewDecoder(seriesResp.Body).Decode(&seriesRespData)
 		require.NoError(t, err)
-		seriesResp.Body.Close()
 
+		// Extract series ID from response
 		seriesData := seriesRespData["data"].(map[string]interface{})
 		seriesID := seriesData["id"].(string)
 
-		// Create a match with Team A winning toss
+		// Create a test match via API
 		matchReq := &models.CreateMatchRequest{
 			SeriesID:         seriesID,
-			MatchNumber:      nil, // Auto-increment
 			Date:             time.Now(),
 			TeamAPlayerCount: 11,
 			TeamBPlayerCount: 11,
@@ -132,81 +198,130 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchResp, err := http.Post(server.URL+"/api/v1/matches", "application/json", bytes.NewBuffer(matchBody))
+		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHttpReq.Header.Set("Content-Type", "application/json")
+		matchHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		matchResp, err := http.DefaultClient.Do(matchHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
 		var matchRespData map[string]interface{}
 		err = json.NewDecoder(matchResp.Body).Decode(&matchRespData)
 		require.NoError(t, err)
-		matchResp.Body.Close()
 
+		// Extract match ID from response
 		matchData := matchRespData["data"].(map[string]interface{})
 		matchID := matchData["id"].(string)
 
-		// Manually update the match to change batting team to Team B (non-toss winner)
-		updateReq := &models.UpdateMatchRequest{
-			BattingTeam: &[]models.TeamType{models.TeamTypeB}[0],
+		// Start scoring for the match
+		startReq := map[string]interface{}{
+			"match_id": matchID,
 		}
+		startBody, _ := json.Marshal(startReq)
+		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHttpReq.Header.Set("Content-Type", "application/json")
+		startHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
-		updateBody, _ := json.Marshal(updateReq)
-		updateResp, err := http.NewRequest("PUT", server.URL+"/api/v1/matches/"+matchID, bytes.NewBuffer(updateBody))
+		startResp, err := http.DefaultClient.Do(startHttpReq)
 		require.NoError(t, err)
-		updateResp.Header.Set("Content-Type", "application/json")
+		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
-		client := &http.Client{}
-		updateRespResult, err := client.Do(updateResp)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, updateRespResult.StatusCode)
-		updateRespResult.Body.Close()
-
-		// Try to add a ball to first innings with Team B - this should fail
+		// Add some balls to first innings
 		ballEvent := &models.BallEventRequest{
 			MatchID:       matchID,
-			InningsNumber: 1,
+			InningsNumber: 1, // First innings
 			BallType:      models.BallTypeGood,
 			RunType:       models.RunTypeOne,
 			IsWicket:      false,
 		}
 
 		ballBody, _ := json.Marshal(ballEvent)
-		ballResp, err := http.Post(server.URL+"/api/v1/scorecard/ball", "application/json", bytes.NewBuffer(ballBody))
+		ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err := http.DefaultClient.Do(ballHttpReq)
 		require.NoError(t, err)
-		require.Equal(t, http.StatusInternalServerError, ballResp.StatusCode)
+		require.Equal(t, http.StatusOK, ballResp.StatusCode)
+
+		// Try to add ball to second innings (should fail)
+		ballEvent = &models.BallEventRequest{
+			MatchID:       matchID,
+			InningsNumber: 2, // Second innings
+			BallType:      models.BallTypeGood,
+			RunType:       models.RunTypeOne,
+			IsWicket:      false,
+		}
+
+		ballBody, _ = json.Marshal(ballEvent)
+		ballHttpReq, _ = http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err = http.DefaultClient.Do(ballHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, ballResp.StatusCode)
 
 		var errorResp map[string]interface{}
 		err = json.NewDecoder(ballResp.Body).Decode(&errorResp)
 		require.NoError(t, err)
-		ballResp.Body.Close()
-
-		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "first innings must be played by the toss-winning team")
+		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "first innings is not complete, cannot start second innings")
 	})
 
-	t.Run("API allows correct first innings ball", func(t *testing.T) {
+	t.Run("API prevents adding ball to first innings after second innings started", func(t *testing.T) {
 		// Create a test series via API
 		seriesReq := &models.CreateSeriesRequest{
-			Name:      "Test E2E Innings Series 3",
+			Name:      "Test E2E Innings Order Series",
 			StartDate: time.Now(),
 			EndDate:   time.Now().AddDate(0, 0, 7),
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesResp, err := http.Post(server.URL+"/api/v1/series", "application/json", bytes.NewBuffer(seriesBody))
+		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHttpReq.Header.Set("Content-Type", "application/json")
+		seriesHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
 		var seriesRespData map[string]interface{}
 		err = json.NewDecoder(seriesResp.Body).Decode(&seriesRespData)
 		require.NoError(t, err)
-		seriesResp.Body.Close()
 
+		// Extract series ID from response
 		seriesData := seriesRespData["data"].(map[string]interface{})
 		seriesID := seriesData["id"].(string)
 
-		// Create a match with Team A winning toss
+		// Create a test match via API
 		matchReq := &models.CreateMatchRequest{
 			SeriesID:         seriesID,
-			MatchNumber:      nil, // Auto-increment
 			Date:             time.Now(),
 			TeamAPlayerCount: 11,
 			TeamBPlayerCount: 11,
@@ -216,42 +331,236 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchResp, err := http.Post(server.URL+"/api/v1/matches", "application/json", bytes.NewBuffer(matchBody))
+		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHttpReq.Header.Set("Content-Type", "application/json")
+		matchHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		matchResp, err := http.DefaultClient.Do(matchHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
 		var matchRespData map[string]interface{}
 		err = json.NewDecoder(matchResp.Body).Decode(&matchRespData)
 		require.NoError(t, err)
-		matchResp.Body.Close()
 
+		// Extract match ID from response
 		matchData := matchRespData["data"].(map[string]interface{})
 		matchID := matchData["id"].(string)
 
-		// Try to add a ball to first innings with Team A (toss winner) - this should work
+		// Start scoring for the match
+		startReq := map[string]interface{}{
+			"match_id": matchID,
+		}
+		startBody, _ := json.Marshal(startReq)
+		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHttpReq.Header.Set("Content-Type", "application/json")
+		startHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		startResp, err := http.DefaultClient.Do(startHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, startResp.StatusCode)
+
+		// Complete first innings by adding 120 balls (20 overs * 6 balls)
+		for i := 1; i <= 20; i++ {
+			for j := 1; j <= 6; j++ {
+				ballEvent := &models.BallEventRequest{
+					MatchID:       matchID,
+					InningsNumber: 1, // First innings
+					BallType:      models.BallTypeGood,
+					RunType:       models.RunTypeOne,
+					IsWicket:      false,
+				}
+
+				ballBody, _ := json.Marshal(ballEvent)
+				ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+				ballHttpReq.Header.Set("Content-Type", "application/json")
+				ballHttpReq.AddCookie(&http.Cookie{
+					Name:     "user_session",
+					Value:    sessionCookie,
+					Path:     "/",
+					HttpOnly: true,
+				})
+
+				ballResp, err := http.DefaultClient.Do(ballHttpReq)
+				require.NoError(t, err)
+				require.Equal(t, http.StatusOK, ballResp.StatusCode)
+			}
+		}
+
+		// Start second innings
 		ballEvent := &models.BallEventRequest{
 			MatchID:       matchID,
-			InningsNumber: 1,
+			InningsNumber: 2, // Second innings
 			BallType:      models.BallTypeGood,
 			RunType:       models.RunTypeOne,
 			IsWicket:      false,
 		}
 
 		ballBody, _ := json.Marshal(ballEvent)
-		ballResp, err := http.Post(server.URL+"/api/v1/scorecard/ball", "application/json", bytes.NewBuffer(ballBody))
+		ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err := http.DefaultClient.Do(ballHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, ballResp.StatusCode)
+
+		// Try to add ball to first innings (should fail)
+		ballEvent = &models.BallEventRequest{
+			MatchID:       matchID,
+			InningsNumber: 1, // First innings
+			BallType:      models.BallTypeGood,
+			RunType:       models.RunTypeOne,
+			IsWicket:      false,
+		}
+
+		ballBody, _ = json.Marshal(ballEvent)
+		ballHttpReq, _ = http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err = http.DefaultClient.Do(ballHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, ballResp.StatusCode)
+
+		var errorResp map[string]interface{}
+		err = json.NewDecoder(ballResp.Body).Decode(&errorResp)
+		require.NoError(t, err)
+		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "first innings is complete, cannot add more balls to first innings")
+	})
+
+	t.Run("API allows adding ball to correct innings", func(t *testing.T) {
+		// Create a test series via API
+		seriesReq := &models.CreateSeriesRequest{
+			Name:      "Test E2E Correct Innings Series",
+			StartDate: time.Now(),
+			EndDate:   time.Now().AddDate(0, 0, 7),
+		}
+
+		seriesBody, _ := json.Marshal(seriesReq)
+		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHttpReq.Header.Set("Content-Type", "application/json")
+		seriesHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
+
+		var seriesRespData map[string]interface{}
+		err = json.NewDecoder(seriesResp.Body).Decode(&seriesRespData)
+		require.NoError(t, err)
+
+		// Extract series ID from response
+		seriesData := seriesRespData["data"].(map[string]interface{})
+		seriesID := seriesData["id"].(string)
+
+		// Create a test match via API
+		matchReq := &models.CreateMatchRequest{
+			SeriesID:         seriesID,
+			Date:             time.Now(),
+			TeamAPlayerCount: 11,
+			TeamBPlayerCount: 11,
+			TotalOvers:       20,
+			TossWinner:       models.TeamTypeA,
+			TossType:         models.TossTypeHeads,
+		}
+
+		matchBody, _ := json.Marshal(matchReq)
+		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHttpReq.Header.Set("Content-Type", "application/json")
+		matchHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		matchResp, err := http.DefaultClient.Do(matchHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
+
+		var matchRespData map[string]interface{}
+		err = json.NewDecoder(matchResp.Body).Decode(&matchRespData)
+		require.NoError(t, err)
+
+		// Extract match ID from response
+		matchData := matchRespData["data"].(map[string]interface{})
+		matchID := matchData["id"].(string)
+
+		// Start scoring for the match
+		startReq := map[string]interface{}{
+			"match_id": matchID,
+		}
+		startBody, _ := json.Marshal(startReq)
+		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHttpReq.Header.Set("Content-Type", "application/json")
+		startHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		startResp, err := http.DefaultClient.Do(startHttpReq)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, startResp.StatusCode)
+
+		// Add ball to first innings (should succeed)
+		ballEvent := &models.BallEventRequest{
+			MatchID:       matchID,
+			InningsNumber: 1, // First innings
+			BallType:      models.BallTypeGood,
+			RunType:       models.RunTypeFour,
+			IsWicket:      false,
+		}
+
+		ballBody, _ := json.Marshal(ballEvent)
+		ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+		ballHttpReq.Header.Set("Content-Type", "application/json")
+		ballHttpReq.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
+
+		ballResp, err := http.DefaultClient.Do(ballHttpReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, ballResp.StatusCode)
 
 		var successResp map[string]interface{}
 		err = json.NewDecoder(ballResp.Body).Decode(&successResp)
 		require.NoError(t, err)
-		ballResp.Body.Close()
-
 		// The response is wrapped in a "data" field
 		data := successResp["data"].(map[string]interface{})
 		assert.Equal(t, "Ball added successfully", data["message"])
 	})
 
 	// Clean up after test
-	testutils.CleanupTestData(t, testDB)
+	testutils.CleanupTestData(t, db)
 }

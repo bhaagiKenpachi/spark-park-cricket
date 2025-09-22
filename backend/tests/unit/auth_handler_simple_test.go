@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"testing"
@@ -28,7 +29,8 @@ func TestAuthHandler_GetCurrentUser_Authenticated(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("GET", "/auth/me", nil)
@@ -58,7 +60,8 @@ func TestAuthHandler_GetCurrentUser_Unauthenticated(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, errors.New("not authenticated"))
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("GET", "/auth/me", nil)
@@ -87,7 +90,8 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 	mockSessionService.On("DestroySession", mock.AnythingOfType("*httptest.ResponseRecorder"), mock.AnythingOfType("*http.Request")).Return(nil)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("POST", "/auth/logout", nil)
@@ -115,7 +119,8 @@ func TestAuthHandler_Logout_Error(t *testing.T) {
 	mockSessionService.On("DestroySession", mock.AnythingOfType("*httptest.ResponseRecorder"), mock.AnythingOfType("*http.Request")).Return(errors.New("logout error"))
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("POST", "/auth/logout", nil)
@@ -152,7 +157,8 @@ func TestAuthHandler_AuthStatus_Authenticated(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("GET", "/auth/status", nil)
@@ -183,7 +189,8 @@ func TestAuthHandler_AuthStatus_Unauthenticated(t *testing.T) {
 	mockSessionService.On("IsAuthenticated", mock.AnythingOfType("*http.Request")).Return(false)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService)
+	testConfig := &config.Config{}
+	authHandler := handlers.NewAuthHandler(mockAuthService, mockSessionService, testConfig)
 
 	// Create request
 	req := httptest.NewRequest("GET", "/auth/status", nil)

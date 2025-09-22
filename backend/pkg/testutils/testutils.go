@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
+	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"testing"
@@ -19,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// SetupE2ETestServer creates a test server for e2e tests
+// SetupE2ETestServer creates a test server for e2e tests with authentication
 func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server {
 	// Load test configuration
 	cfg := config.LoadTestConfig()
@@ -86,7 +89,7 @@ func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server 
 	return httptest.NewServer(router)
 }
 
-// SetupE2ETestServerWithDB creates a test server and database for e2e tests
+// SetupE2ETestServerWithDB creates a test server and database for e2e tests with authentication
 func SetupE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client) {
 	// Load test configuration with testing_db schema
 	cfg := config.LoadTestConfig()
@@ -433,10 +436,13 @@ func CreateAuthenticatedTestUser(t *testing.T, dbClient *database.Client) (*mode
 
 // CreateAuthenticatedTestUserWithSessionService creates a test user and proper session using session service
 func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *database.Client, sessionService *services.SessionService) (*models.User, string) {
+	// Generate unique IDs to avoid duplicate key constraints
+	randomID := rand.Intn(1000000)
+
 	// Create a test user
 	user := &models.User{
-		GoogleID:      "test-google-id-123",
-		Email:         "test@example.com",
+		GoogleID:      fmt.Sprintf("test-google-id-%d", randomID),
+		Email:         fmt.Sprintf("test%d@example.com", randomID),
 		Name:          "Test User",
 		Picture:       "https://example.com/picture.jpg",
 		EmailVerified: true,
@@ -469,7 +475,7 @@ func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *datab
 
 // CreateAuthenticatedRequestWithCookie creates an HTTP request with authentication cookie
 func CreateAuthenticatedRequestWithCookie(method, url string, body []byte, sessionCookie string) *http.Request {
-	req := httptest.NewRequest(method, url, bytes.NewBuffer(body))
+	req, _ := http.NewRequest(method, url, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	// Add session cookie
@@ -501,4 +507,225 @@ func CreateAuthenticatedRequest(method, url string, body []byte, session *models
 	})
 
 	return req
+}
+
+// SetupAuthenticatedE2ETestServer creates a test server with authentication middleware for e2e tests
+func SetupAuthenticatedE2ETestServer(t *testing.T, testDB *database.Client) (*httptest.Server, *models.User, string) {
+	// Load test configuration
+	cfg := config.LoadTestConfig()
+
+	// Create service container
+	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
+
+	// Create a test user and session
+	user, sessionCookie := CreateAuthenticatedTestUserWithSessionService(t, testDB, serviceContainer.SessionService)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Create router with authentication middleware
+	router := chi.NewRouter()
+
+	// Add middleware
+	router.Use(chimiddleware.Recoverer)
+	router.Use(chimiddleware.Logger)
+	router.Use(chimiddleware.RequestID)
+	router.Use(chimiddleware.RealIP)
+	router.Use(chimiddleware.Timeout(60 * time.Second))
+	router.Use(CORSMiddleware())
+
+	// API routes
+	router.Route("/api/v1", func(r chi.Router) {
+		// Series routes
+		r.Route("/series", func(r chi.Router) {
+			r.Post("/", seriesHandler.CreateSeries)
+			r.Get("/{id}", seriesHandler.GetSeries)
+			r.Put("/{id}", seriesHandler.UpdateSeries)
+			r.Delete("/{id}", seriesHandler.DeleteSeries)
+		})
+
+		// Match routes
+		r.Route("/matches", func(r chi.Router) {
+			r.Post("/", matchHandler.CreateMatch)
+			r.Get("/{id}", matchHandler.GetMatch)
+			r.Put("/{id}", matchHandler.UpdateMatch)
+			r.Delete("/{id}", matchHandler.DeleteMatch)
+		})
+
+		// Scorecard routes
+		r.Route("/scorecard", func(r chi.Router) {
+			r.Post("/start", scorecardHandler.StartScoring)
+			r.Post("/ball", scorecardHandler.AddBall)
+			r.Get("/{match_id}", scorecardHandler.GetScorecard)
+			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
+			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
+			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
+		})
+	})
+
+	server := httptest.NewServer(router)
+	return server, user, sessionCookie
+}
+
+// SetupAuthenticatedE2ETestServerWithDB creates a test server and database with authentication for e2e tests
+func SetupAuthenticatedE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client, *models.User, string) {
+	// Load test configuration with testing_db schema
+	cfg := config.LoadTestConfig()
+
+	// Initialize test database
+	db, err := database.NewTestClient(cfg)
+	require.NoError(t, err)
+
+	// Setup test schema
+	err = database.SetupTestSchema(cfg)
+	require.NoError(t, err)
+
+	// Create service container
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+
+	// Create a test user and session
+	user, sessionCookie := CreateAuthenticatedTestUserWithSessionService(t, db, serviceContainer.SessionService)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Create router with authentication middleware
+	router := chi.NewRouter()
+
+	// Add middleware
+	router.Use(chimiddleware.Recoverer)
+	router.Use(chimiddleware.Logger)
+	router.Use(chimiddleware.RequestID)
+	router.Use(chimiddleware.RealIP)
+	router.Use(chimiddleware.Timeout(60 * time.Second))
+	router.Use(CORSMiddleware())
+
+	// API routes
+	router.Route("/api/v1", func(r chi.Router) {
+		// Auth routes (public - no authentication required)
+		authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg.Config)
+		handlers.SetupAuthRoutes(r, authHandler)
+
+		// Protected routes (require authentication)
+		r.Route("/", func(r chi.Router) {
+			// Apply authentication middleware to protected routes
+			r.Use(middleware.AuthMiddleware(serviceContainer.SessionService))
+
+			// Series routes
+			r.Route("/series", func(r chi.Router) {
+				r.Get("/", seriesHandler.ListSeries)
+				r.Post("/", seriesHandler.CreateSeries)
+				r.Get("/{id}", seriesHandler.GetSeries)
+				r.Put("/{id}", seriesHandler.UpdateSeries)
+				r.Delete("/{id}", seriesHandler.DeleteSeries)
+			})
+
+			// Match routes
+			r.Route("/matches", func(r chi.Router) {
+				r.Post("/", matchHandler.CreateMatch)
+				r.Get("/{id}", matchHandler.GetMatch)
+				r.Put("/{id}", matchHandler.UpdateMatch)
+				r.Delete("/{id}", matchHandler.DeleteMatch)
+				r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
+			})
+
+			// Scorecard routes
+			r.Route("/scorecard", func(r chi.Router) {
+				r.Post("/start", scorecardHandler.StartScoring)
+				r.Post("/ball", scorecardHandler.AddBall)
+				r.Get("/{match_id}", scorecardHandler.GetScorecard)
+				r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
+				r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
+				r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
+			})
+		})
+	})
+
+	server := httptest.NewServer(router)
+	return server, db, user, sessionCookie
+}
+
+// CreateAuthenticatedTestSeriesForWorkflow creates a test series with authentication for workflow tests
+func CreateAuthenticatedTestSeriesForWorkflow(t *testing.T, router http.Handler, sessionCookie string) string {
+	seriesReq := map[string]interface{}{
+		"name":        "E2E Test Series " + time.Now().Format("2006-01-02 15:04:05"),
+		"description": "E2E test series for scorecard workflow tests",
+		"start_date":  time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
+		"end_date":    time.Now().AddDate(0, 0, 7).Format(time.RFC3339),
+	}
+
+	body, err := json.Marshal(seriesReq)
+	require.NoError(t, err)
+
+	req := CreateAuthenticatedRequestWithCookie("POST", "/api/v1/series", body, sessionCookie)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusCreated, w.Code)
+
+	var response struct {
+		Data models.Series `json:"data"`
+	}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	return response.Data.ID
+}
+
+// CreateAuthenticatedTestMatchForWorkflow creates a test match with authentication for workflow tests
+func CreateAuthenticatedTestMatchForWorkflow(t *testing.T, router http.Handler, seriesID string, sessionCookie string) string {
+	return CreateAuthenticatedTestMatchForWorkflowWithNumber(t, router, seriesID, sessionCookie, 1)
+}
+
+// CreateAuthenticatedTestMatchForWorkflowWithNumber creates a test match with authentication for workflow tests with specific match number
+func CreateAuthenticatedTestMatchForWorkflowWithNumber(t *testing.T, router http.Handler, seriesID string, sessionCookie string, matchNumber int) string {
+	matchReq := map[string]interface{}{
+		"series_id":           seriesID,
+		"match_number":        matchNumber,
+		"date":                time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
+		"venue":               "E2E Test Venue",
+		"team_a_player_count": 11,
+		"team_b_player_count": 11,
+		"total_overs":         20,
+		"toss_winner":         "A",
+		"toss_type":           "H",
+		"batting_team":        "A",
+	}
+
+	body, err := json.Marshal(matchReq)
+	require.NoError(t, err)
+
+	req := CreateAuthenticatedRequestWithCookie("POST", "/api/v1/matches", body, sessionCookie)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusCreated, w.Code)
+
+	var response struct {
+		Data models.Match `json:"data"`
+	}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	return response.Data.ID
+}
+
+// UpdateAuthenticatedMatchToLiveForWorkflow updates match status to live with authentication for workflow tests
+func UpdateAuthenticatedMatchToLiveForWorkflow(t *testing.T, router http.Handler, matchID string, sessionCookie string) {
+	updateReq := map[string]interface{}{
+		"status": "live",
+	}
+
+	body, err := json.Marshal(updateReq)
+	require.NoError(t, err)
+
+	req := CreateAuthenticatedRequestWithCookie("PUT", "/api/v1/matches/"+matchID, body, sessionCookie)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
 }

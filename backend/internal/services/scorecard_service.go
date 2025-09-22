@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
@@ -27,7 +28,7 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 	log.Printf("Starting scoring for match %s", matchID)
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		return fmt.Errorf("user authentication required")
 	}
@@ -80,7 +81,7 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 // AddBall adds a ball to the scorecard
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		return fmt.Errorf("user authentication required")
 	}
@@ -313,7 +314,7 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		return fmt.Errorf("user authentication required")
 	}

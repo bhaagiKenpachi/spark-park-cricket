@@ -22,16 +22,17 @@ A high-performance Go backend service with Supabase integration and Redis cachin
 
 ### 🎯 **Redis Cache Performance Results**
 
-| Operation | Before Cache | After Cache | Improvement |
-|-----------|-------------|-------------|-------------|
-| **Database Queries** | 10,867,275 ns/op | 28,881 ns/op | **376x faster** |
-| **Series Operations** | 67ms | ~3ms | **24x faster** |
-| **Scorecard Operations** | 500-700ms | ~20-30ms | **17-24x faster** |
-| **Ball-by-Ball Scoring** | 700ms per ball | ~30ms per ball | **90% reduction** |
+| Operation                | Before Cache     | After Cache    | Improvement       |
+| ------------------------ | ---------------- | -------------- | ----------------- |
+| **Database Queries**     | 10,867,275 ns/op | 28,881 ns/op   | **376x faster**   |
+| **Series Operations**    | 67ms             | ~3ms           | **24x faster**    |
+| **Scorecard Operations** | 500-700ms        | ~20-30ms       | **17-24x faster** |
+| **Ball-by-Ball Scoring** | 700ms per ball   | ~30ms per ball | **90% reduction** |
 
 ### 📈 **Real-World Impact**
 
 **Before Redis Caching:**
+
 ```
 Ball 1: 700ms (fetch entire scorecard)
 Ball 2: 700ms (fetch entire scorecard)
@@ -41,6 +42,7 @@ Total for 20 overs: ~14 seconds just for scorecard fetching
 ```
 
 **After Redis Caching:**
+
 ```
 Ball 1: 700ms (fetch + cache scorecard)
 Ball 2: ~30ms (cache hit)
@@ -52,6 +54,7 @@ Total for 20 overs: ~1.3 seconds (90% reduction)
 ## 🏗️ Architecture
 
 ### **Layered Architecture**
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   HTTP Layer    │    │  Business Logic  │    │  Data Access    │
@@ -76,6 +79,7 @@ Total for 20 overs: ~1.3 seconds (90% reduction)
 ```
 
 ### **Core Entities**
+
 - **Series**: Tournament/competition management
 - **Matches**: Individual cricket matches within series
 - **Teams**: Cricket teams with variable player counts
@@ -87,11 +91,13 @@ Total for 20 overs: ~1.3 seconds (90% reduction)
 ## 🚀 Quick Start
 
 ### 1. **Prerequisites**
+
 - Go 1.23+
 - Redis server (for caching)
 - Supabase account
 
 ### 2. **Environment Setup**
+
 ```bash
 # Copy environment template
 cp env.example .env
@@ -107,16 +113,18 @@ PORT=8081
 ```
 
 ### 3. **Installation & Run**
-   ```bash
+
+```bash
 # Install dependencies
-   go mod tidy
+go mod tidy
 
 # Run the server
 go run cmd/server/main.go
-   ```
+```
 
 ### 4. **Verify Setup**
-   ```bash
+
+```bash
 # Health check
 curl http://localhost:8081/health
 
@@ -127,6 +135,7 @@ curl http://localhost:8081/db-health
 ## 📚 API Endpoints
 
 ### **Series Management**
+
 - `GET /api/v1/series` - List all series
 - `POST /api/v1/series` - Create new series
 - `GET /api/v1/series/{id}` - Get series details
@@ -134,6 +143,7 @@ curl http://localhost:8081/db-health
 - `DELETE /api/v1/series/{id}` - Delete series
 
 ### **Match Management**
+
 - `GET /api/v1/matches` - List matches
 - `POST /api/v1/matches` - Create new match
 - `GET /api/v1/matches/{id}` - Get match details
@@ -141,17 +151,20 @@ curl http://localhost:8081/db-health
 - `DELETE /api/v1/matches/{id}` - Delete match
 
 ### **Live Scoring**
+
 - `POST /api/v1/scorecard/start` - Start match scoring
 - `POST /api/v1/scorecard/ball` - Add ball to scorecard
 - `DELETE /api/v1/scorecard/{match_id}/ball` - Undo last ball
 - `GET /api/v1/scorecard/{match_id}` - Get complete scorecard
 
 ### **WebSocket**
+
 - `WS /live/{match_id}` - Real-time match updates
 
 ## 🔧 Configuration
 
 ### **Environment Variables**
+
 ```bash
 # Supabase Configuration
 SUPABASE_URL=your_supabase_project_url
@@ -171,6 +184,7 @@ CACHE_ENABLED=true
 ```
 
 ### **Cache Configuration**
+
 ```go
 // TTL Settings
 SeriesTTL      = 24 * time.Hour    // Static data
@@ -183,34 +197,35 @@ ScorecardShortTTL = 5 * time.Minute // Rapidly changing
 
 ### **Database Operations Performance**
 
-| Operation Type | Response Time | Throughput | Data Transfer | Status |
-|----------------|---------------|------------|---------------|---------|
-| **Series Operations** |
-| Get Series | 55.01ms | 22 ops/sec | 242 bytes | ✅ Excellent |
-| Create Series | 58.18ms | 18 ops/sec | 240 bytes | ✅ Excellent |
-| Series with Matches | 65.73ms | 19.8 ops/sec | 242 bytes | ✅ Excellent |
-| **Match Operations** |
-| Create Match | 170.5ms | 5.6 ops/sec | 381 bytes | ⚠️ Good |
-| Update Match | 115.6ms | 9.8 ops/sec | 381 bytes | ⚠️ Good |
+| Operation Type           | Response Time | Throughput   | Data Transfer | Status                      |
+| ------------------------ | ------------- | ------------ | ------------- | --------------------------- |
+| **Series Operations**    |
+| Get Series               | 55.01ms       | 22 ops/sec   | 242 bytes     | ✅ Excellent                |
+| Create Series            | 58.18ms       | 18 ops/sec   | 240 bytes     | ✅ Excellent                |
+| Series with Matches      | 65.73ms       | 19.8 ops/sec | 242 bytes     | ✅ Excellent                |
+| **Match Operations**     |
+| Create Match             | 170.5ms       | 5.6 ops/sec  | 381 bytes     | ⚠️ Good                     |
+| Update Match             | 115.6ms       | 9.8 ops/sec  | 381 bytes     | ⚠️ Good                     |
 | **Scorecard Operations** |
-| Start Scoring | 189.3ms | 5.2 ops/sec | 102 bytes | ⚠️ Good |
-| Add Ball | 677.8ms | 1.4 ops/sec | 186 bytes | ❌ **Optimized with Cache** |
-| Get Scorecard | 755.2ms | 1.4 ops/sec | 5,749 bytes | ❌ **Optimized with Cache** |
-| Complex Scorecard Query | 788.9ms | 1.4 ops/sec | 5,749 bytes | ❌ **Optimized with Cache** |
+| Start Scoring            | 189.3ms       | 5.2 ops/sec  | 102 bytes     | ⚠️ Good                     |
+| Add Ball                 | 677.8ms       | 1.4 ops/sec  | 186 bytes     | ❌ **Optimized with Cache** |
+| Get Scorecard            | 755.2ms       | 1.4 ops/sec  | 5,749 bytes   | ❌ **Optimized with Cache** |
+| Complex Scorecard Query  | 788.9ms       | 1.4 ops/sec  | 5,749 bytes   | ❌ **Optimized with Cache** |
 
 ### **Cache Performance Results**
 
-| Operation | Performance | Notes |
-|-----------|-------------|-------|
-| **Cache Set** | 36,457 ns/op (36μs) | Very fast storage |
-| **Cache Get** | 29,531 ns/op (29μs) | Very fast retrieval |
-| **Cache GetOrSet** | 41,300 ns/op (41μs) | Cache-aside pattern |
-| **Scorecard Cache Set** | 35,325 ns/op (35μs) | Complex data caching |
+| Operation               | Performance         | Notes                  |
+| ----------------------- | ------------------- | ---------------------- |
+| **Cache Set**           | 36,457 ns/op (36μs) | Very fast storage      |
+| **Cache Get**           | 29,531 ns/op (29μs) | Very fast retrieval    |
+| **Cache GetOrSet**      | 41,300 ns/op (41μs) | Cache-aside pattern    |
+| **Scorecard Cache Set** | 35,325 ns/op (35μs) | Complex data caching   |
 | **Scorecard Cache Get** | 38,590 ns/op (39μs) | Complex data retrieval |
 
 ## 🧪 Testing
 
 ### **Run All Tests**
+
 ```bash
 # Unit tests
 go test ./...
@@ -226,6 +241,7 @@ go test ./tests/e2e/...
 ```
 
 ### **Cache Performance Tests**
+
 ```bash
 # Cache benchmarks
 go test -bench=BenchmarkCacheOperations -benchmem ./tests/performance/
@@ -295,11 +311,13 @@ backend/
 ## 🔄 Cache Implementation Details
 
 ### **Cache Strategy**
+
 - **Cache-aside pattern**: Application manages cache
 - **Write-through**: Updates invalidate relevant cache keys
 - **Graceful degradation**: Falls back to database if cache fails
 
 ### **Cache Key Patterns**
+
 ```
 Series: series:{series_id}
 Matches: match:{match_id}
@@ -310,6 +328,7 @@ Balls: balls:over:{over_id}
 ```
 
 ### **Cache Invalidation**
+
 - **Series/Match updates**: Invalidate related cache keys
 - **Ball additions**: Invalidate scorecard cache
 - **Pattern-based**: Invalidate related keys when parent data changes
@@ -317,6 +336,7 @@ Balls: balls:over:{over_id}
 ## 🚀 Deployment
 
 ### **Docker Setup**
+
 ```bash
 # Start Redis
 docker run -d --name redis -p 6379:6379 redis:alpine
@@ -326,6 +346,7 @@ go run cmd/server/main.go
 ```
 
 ### **Production Considerations**
+
 1. **Redis Configuration**: Set up Redis persistence and memory limits
 2. **Environment Variables**: Configure production credentials
 3. **Monitoring**: Set up cache performance monitoring
@@ -334,11 +355,13 @@ go run cmd/server/main.go
 ## 🔍 Monitoring & Observability
 
 ### **Health Checks**
+
 - `GET /health` - Basic application health
 - `GET /db-health` - Database connection health
 - Cache health monitoring via Redis ping
 
 ### **Performance Metrics**
+
 - Cache hit/miss ratios
 - Response times for cached vs non-cached operations
 - Redis memory usage
@@ -347,17 +370,20 @@ go run cmd/server/main.go
 ## 🎯 Key Findings & Optimizations
 
 ### **Performance Bottlenecks Identified**
+
 1. **Scorecard operations**: 700-800ms response times
 2. **Ball addition**: 677ms per operation
 3. **Complex scorecard queries**: Nearly 800ms
 
 ### **Solutions Implemented**
+
 1. **Redis Caching**: 376x faster database operations
 2. **Smart TTL Strategy**: Different TTLs for different data types
 3. **Cache Invalidation**: Automatic invalidation on updates
 4. **Repository Pattern**: Clean separation with cached wrappers
 
 ### **Results Achieved**
+
 - **90% reduction** in ball-by-ball scoring time
 - **24x faster** series data access
 - **17-24x faster** scorecard operations
@@ -366,6 +392,7 @@ go run cmd/server/main.go
 ## 🛠️ Development
 
 ### **Adding New Features**
+
 1. Create model in `internal/models/`
 2. Add repository interface in `internal/repository/interfaces/`
 3. Implement Supabase repository in `internal/repository/supabase/`
@@ -375,11 +402,13 @@ go run cmd/server/main.go
 7. Update routes in `internal/handlers/routes.go`
 
 ### **Running Migrations**
+
 ```bash
 go run cmd/migrate/main.go
 ```
 
 ### **Code Quality**
+
 ```bash
 # Format code
 go fmt ./...
