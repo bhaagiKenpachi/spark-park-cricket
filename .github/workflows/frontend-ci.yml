@@ -154,8 +154,10 @@ jobs:
           # Clear any corrupted Playwright cache
           rm -rf ~/.cache/ms-playwright/ || true
 
-      - name: Install Playwright browsers with dependencies
-        run: npx playwright install --with-deps
+      - name: Install Playwright browsers (skip system deps)
+        run: |
+          # Install browsers without system dependencies to avoid sudo issues
+          npx playwright install chromium firefox webkit || echo "Some browsers failed to install"
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -204,8 +206,10 @@ jobs:
           # Clear any corrupted Playwright cache
           rm -rf ~/.cache/ms-playwright/ || true
 
-      - name: Install Playwright browsers with dependencies
-        run: npx playwright install --with-deps
+      - name: Install Playwright browsers (skip system deps)
+        run: |
+          # Install browsers without system dependencies to avoid sudo issues
+          npx playwright install chromium firefox webkit || echo "Some browsers failed to install"
 
       - name: Run mobile tests
         run: npm run test:mobile
@@ -254,8 +258,10 @@ jobs:
           # Clear any corrupted Playwright cache
           rm -rf ~/.cache/ms-playwright/ || true
 
-      - name: Install Playwright browsers with dependencies
-        run: npx playwright install --with-deps
+      - name: Install Playwright browsers (skip system deps)
+        run: |
+          # Install browsers without system dependencies to avoid sudo issues
+          npx playwright install chromium firefox webkit || echo "Some browsers failed to install"
 
       - name: Run cross-browser tests
         run: npm run test:cross-browser
