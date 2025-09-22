@@ -143,8 +143,8 @@ jobs:
 
       - name: Fix system permissions
         run: |
-          # Fix temporary file permissions for apt operations
-          sudo chmod 1777 /tmp
+          # Fix temporary file permissions for apt operations (optional)
+          sudo chmod 1777 /tmp || echo "Warning: Could not fix /tmp permissions, continuing anyway"
 
       - name: Install dependencies
         run: npm ci
@@ -155,13 +155,7 @@ jobs:
           rm -rf ~/.cache/ms-playwright/ || true
 
       - name: Install Playwright browsers with dependencies
-        run: |
-          npx playwright install --with-deps
-
-      - name: Verify Playwright installation
-        run: |
-          npx playwright --version
-          npx playwright install --dry-run
+        run: npx playwright install --with-deps
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -199,8 +193,8 @@ jobs:
 
       - name: Fix system permissions
         run: |
-          # Fix temporary file permissions for apt operations
-          sudo chmod 1777 /tmp
+          # Fix temporary file permissions for apt operations (optional)
+          sudo chmod 1777 /tmp || echo "Warning: Could not fix /tmp permissions, continuing anyway"
 
       - name: Install dependencies
         run: npm ci
@@ -211,8 +205,7 @@ jobs:
           rm -rf ~/.cache/ms-playwright/ || true
 
       - name: Install Playwright browsers with dependencies
-        run: |
-          npx playwright install --with-deps
+        run: npx playwright install --with-deps
 
       - name: Run mobile tests
         run: npm run test:mobile
@@ -250,8 +243,8 @@ jobs:
 
       - name: Fix system permissions
         run: |
-          # Fix temporary file permissions for apt operations
-          sudo chmod 1777 /tmp
+          # Fix temporary file permissions for apt operations (optional)
+          sudo chmod 1777 /tmp || echo "Warning: Could not fix /tmp permissions, continuing anyway"
 
       - name: Install dependencies
         run: npm ci
@@ -262,8 +255,7 @@ jobs:
           rm -rf ~/.cache/ms-playwright/ || true
 
       - name: Install Playwright browsers with dependencies
-        run: |
-          npx playwright install --with-deps
+        run: npx playwright install --with-deps
 
       - name: Run cross-browser tests
         run: npm run test:cross-browser
