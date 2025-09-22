@@ -31,16 +31,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
-		seriesHttpReq.Header.Set("Content-Type", "application/json")
-		seriesHttpReq.AddCookie(&http.Cookie{
+		seriesHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHTTPReq.Header.Set("Content-Type", "application/json")
+		seriesHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
+		seriesResp, err := http.DefaultClient.Do(seriesHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
@@ -64,16 +64,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
-		matchHttpReq.Header.Set("Content-Type", "application/json")
-		matchHttpReq.AddCookie(&http.Cookie{
+		matchHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHTTPReq.Header.Set("Content-Type", "application/json")
+		matchHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		matchResp, err := http.DefaultClient.Do(matchHttpReq)
+		matchResp, err := http.DefaultClient.Do(matchHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
@@ -90,16 +90,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 			"match_id": matchID,
 		}
 		startBody, _ := json.Marshal(startReq)
-		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
-		startHttpReq.Header.Set("Content-Type", "application/json")
-		startHttpReq.AddCookie(&http.Cookie{
+		startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHTTPReq.Header.Set("Content-Type", "application/json")
+		startHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		startResp, err := http.DefaultClient.Do(startHttpReq)
+		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
@@ -114,30 +114,30 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 			}
 
 			ballBody, _ := json.Marshal(ballEvent)
-			ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
-			ballHttpReq.Header.Set("Content-Type", "application/json")
-			ballHttpReq.AddCookie(&http.Cookie{
+			ballHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+			ballHTTPReq.Header.Set("Content-Type", "application/json")
+			ballHTTPReq.AddCookie(&http.Cookie{
 				Name:     "user_session",
 				Value:    sessionCookie,
 				Path:     "/",
 				HttpOnly: true,
 			})
 
-			ballResp, err := http.DefaultClient.Do(ballHttpReq)
+			ballResp, err := http.DefaultClient.Do(ballHTTPReq)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, ballResp.StatusCode)
 		}
 
 		// Get final scorecard
-		scorecardHttpReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
-		scorecardHttpReq.AddCookie(&http.Cookie{
+		scorecardHTTPReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
+		scorecardHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		scorecardResp, err := http.DefaultClient.Do(scorecardHttpReq)
+		scorecardResp, err := http.DefaultClient.Do(scorecardHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, scorecardResp.StatusCode)
 
@@ -172,16 +172,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
-		seriesHttpReq.Header.Set("Content-Type", "application/json")
-		seriesHttpReq.AddCookie(&http.Cookie{
+		seriesHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHTTPReq.Header.Set("Content-Type", "application/json")
+		seriesHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
+		seriesResp, err := http.DefaultClient.Do(seriesHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
@@ -205,16 +205,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
-		matchHttpReq.Header.Set("Content-Type", "application/json")
-		matchHttpReq.AddCookie(&http.Cookie{
+		matchHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHTTPReq.Header.Set("Content-Type", "application/json")
+		matchHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		matchResp, err := http.DefaultClient.Do(matchHttpReq)
+		matchResp, err := http.DefaultClient.Do(matchHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
@@ -231,16 +231,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 			"match_id": matchID,
 		}
 		startBody, _ := json.Marshal(startReq)
-		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
-		startHttpReq.Header.Set("Content-Type", "application/json")
-		startHttpReq.AddCookie(&http.Cookie{
+		startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHTTPReq.Header.Set("Content-Type", "application/json")
+		startHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		startResp, err := http.DefaultClient.Do(startHttpReq)
+		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
@@ -256,31 +256,31 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 				}
 
 				ballBody, _ := json.Marshal(ballEvent)
-				ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
-				ballHttpReq.Header.Set("Content-Type", "application/json")
-				ballHttpReq.AddCookie(&http.Cookie{
+				ballHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+				ballHTTPReq.Header.Set("Content-Type", "application/json")
+				ballHTTPReq.AddCookie(&http.Cookie{
 					Name:     "user_session",
 					Value:    sessionCookie,
 					Path:     "/",
 					HttpOnly: true,
 				})
 
-				ballResp, err := http.DefaultClient.Do(ballHttpReq)
+				ballResp, err := http.DefaultClient.Do(ballHTTPReq)
 				require.NoError(t, err)
 				require.Equal(t, http.StatusOK, ballResp.StatusCode)
 			}
 		}
 
 		// Get final scorecard
-		scorecardHttpReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
-		scorecardHttpReq.AddCookie(&http.Cookie{
+		scorecardHTTPReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
+		scorecardHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		scorecardResp, err := http.DefaultClient.Do(scorecardHttpReq)
+		scorecardResp, err := http.DefaultClient.Do(scorecardHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, scorecardResp.StatusCode)
 
@@ -315,16 +315,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		seriesBody, _ := json.Marshal(seriesReq)
-		seriesHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
-		seriesHttpReq.Header.Set("Content-Type", "application/json")
-		seriesHttpReq.AddCookie(&http.Cookie{
+		seriesHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesBody))
+		seriesHTTPReq.Header.Set("Content-Type", "application/json")
+		seriesHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		seriesResp, err := http.DefaultClient.Do(seriesHttpReq)
+		seriesResp, err := http.DefaultClient.Do(seriesHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, seriesResp.StatusCode)
 
@@ -348,16 +348,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		}
 
 		matchBody, _ := json.Marshal(matchReq)
-		matchHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
-		matchHttpReq.Header.Set("Content-Type", "application/json")
-		matchHttpReq.AddCookie(&http.Cookie{
+		matchHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchBody))
+		matchHTTPReq.Header.Set("Content-Type", "application/json")
+		matchHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		matchResp, err := http.DefaultClient.Do(matchHttpReq)
+		matchResp, err := http.DefaultClient.Do(matchHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusCreated, matchResp.StatusCode)
 
@@ -374,16 +374,16 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 			"match_id": matchID,
 		}
 		startBody, _ := json.Marshal(startReq)
-		startHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
-		startHttpReq.Header.Set("Content-Type", "application/json")
-		startHttpReq.AddCookie(&http.Cookie{
+		startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+		startHTTPReq.Header.Set("Content-Type", "application/json")
+		startHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		startResp, err := http.DefaultClient.Do(startHttpReq)
+		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
@@ -410,30 +410,30 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 			}
 
 			ballBody, _ := json.Marshal(ballEvent)
-			ballHttpReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
-			ballHttpReq.Header.Set("Content-Type", "application/json")
-			ballHttpReq.AddCookie(&http.Cookie{
+			ballHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballBody))
+			ballHTTPReq.Header.Set("Content-Type", "application/json")
+			ballHTTPReq.AddCookie(&http.Cookie{
 				Name:     "user_session",
 				Value:    sessionCookie,
 				Path:     "/",
 				HttpOnly: true,
 			})
 
-			ballResp, err := http.DefaultClient.Do(ballHttpReq)
+			ballResp, err := http.DefaultClient.Do(ballHTTPReq)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusOK, ballResp.StatusCode)
 		}
 
 		// Get final scorecard
-		scorecardHttpReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
-		scorecardHttpReq.AddCookie(&http.Cookie{
+		scorecardHTTPReq, _ := http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
+		scorecardHTTPReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
 			Value:    sessionCookie,
 			Path:     "/",
 			HttpOnly: true,
 		})
 
-		scorecardResp, err := http.DefaultClient.Do(scorecardHttpReq)
+		scorecardResp, err := http.DefaultClient.Do(scorecardHTTPReq)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, scorecardResp.StatusCode)
 
