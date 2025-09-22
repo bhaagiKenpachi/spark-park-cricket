@@ -24,8 +24,8 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	require.NoError(t, err)
 	defer testDB.Close()
 
-	// Clean up before test
-	testutils.CleanupScorecardTestData(t, testDB)
+	// Clean up ALL test data before test to ensure complete isolation
+	testutils.CleanupAllTestData(t, testDB)
 
 	// Create a test user for authentication
 	testUser := &models.User{
@@ -324,7 +324,7 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	})
 
 	// Clean up after test
-	testutils.CleanupScorecardTestData(t, testDB)
+	testutils.CleanupAllTestData(t, testDB)
 
 	// Clean up test user
 	err = testDB.Repositories.User.DeleteUser(ctx, testUser.ID)

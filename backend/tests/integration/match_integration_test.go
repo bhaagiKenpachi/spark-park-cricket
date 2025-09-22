@@ -71,8 +71,8 @@ func TestMatchIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer dbClient.Close()
 
-	// Clean up any existing test data
-	testutils.CleanupScorecardTestData(t, dbClient)
+	// Clean up ALL existing test data before starting
+	testutils.CleanupAllTestData(t, dbClient)
 
 	// Setup router with authentication
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
@@ -82,26 +82,31 @@ func TestMatchIntegration(t *testing.T) {
 	defer func() { _ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID) }()
 
 	t.Run("Match Pagination", func(t *testing.T) {
-		// Clean up before pagination test to ensure isolation
-		testutils.CleanupScorecardTestData(t, dbClient)
+		// Clean up ALL test data before pagination test to ensure complete isolation
+		testutils.CleanupAllTestData(t, dbClient)
 		// Add a small delay to ensure cleanup is complete
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		testMatchPagination(t, router, dbClient, sessionCookie)
 	})
 
 	t.Run("Complete Match CRUD Flow", func(t *testing.T) {
+		// Clean up before CRUD test to ensure isolation
+		testutils.CleanupAllTestData(t, dbClient)
+		time.Sleep(100 * time.Millisecond)
 		testCompleteMatchCRUDFlow(t, router, dbClient, sessionCookie, testUser.ID)
 	})
 
 	t.Run("Match Validation", func(t *testing.T) {
 		// Clean up before validation test to ensure isolation
-		testutils.CleanupScorecardTestData(t, dbClient)
+		testutils.CleanupAllTestData(t, dbClient)
+		time.Sleep(100 * time.Millisecond)
 		testMatchValidation(t, router, sessionCookie)
 	})
 
 	t.Run("Match Error Handling", func(t *testing.T) {
 		// Clean up before error handling test to ensure isolation
-		testutils.CleanupScorecardTestData(t, dbClient)
+		testutils.CleanupAllTestData(t, dbClient)
+		time.Sleep(100 * time.Millisecond)
 		testMatchErrorHandling(t, router, sessionCookie)
 	})
 }
@@ -220,13 +225,17 @@ func testCompleteMatchCRUDFlow(t *testing.T, router http.Handler, dbClient *data
 }
 
 func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.Client, sessionCookie *http.Cookie) {
-	// First, check how many matches exist before creating new ones
+	// Verify database is clean before starting
 	var existingMatches []models.Match
 	_, err := dbClient.Supabase.From("matches").Select("*", "", false).ExecuteTo(&existingMatches)
 	if err != nil {
 		t.Logf("DEBUG: Error checking existing matches: %v", err)
 	} else {
 		t.Logf("DEBUG: Found %d existing matches before creating new ones", len(existingMatches))
+		// If there are existing matches, this indicates cleanup didn't work properly
+		if len(existingMatches) > 0 {
+			t.Logf("WARNING: Found %d existing matches, cleanup may not have worked properly", len(existingMatches))
+		}
 	}
 
 	// First, create a series to associate with matches
@@ -269,6 +278,9 @@ func testMatchPagination(t *testing.T, router http.Handler, dbClient *database.C
 		createdMatchIDs = append(createdMatchIDs, createResponse.Data.ID)
 		t.Logf("DEBUG: Created match %d with ID: %s", i, createResponse.Data.ID)
 	}
+
+	// Wait a moment for database consistency
+	time.Sleep(100 * time.Millisecond)
 
 	// Test pagination with limit
 	req := httptest.NewRequest("GET", "/api/v1/matches?limit=3", nil)

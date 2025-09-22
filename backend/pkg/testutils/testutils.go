@@ -406,6 +406,57 @@ func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
 	t.Logf("DEBUG: Completed comprehensive cleanup of all test data")
 }
 
+// CleanupAllTestData performs a comprehensive cleanup of ALL test data
+func CleanupAllTestData(t *testing.T, dbClient *database.Client) {
+	t.Logf("DEBUG: Starting comprehensive cleanup of ALL test data")
+
+	// Clean up all tables in reverse order of dependencies
+	// Balls -> Overs -> Innings -> Matches -> Series
+	// NOTE: We don't clean up users or user_sessions to avoid breaking authentication
+
+	// Clean up balls - delete ALL records
+	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup balls: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up balls table")
+	}
+
+	// Clean up overs - delete ALL records
+	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup overs: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up overs table")
+	}
+
+	// Clean up innings - delete ALL records
+	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup innings: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up innings table")
+	}
+
+	// Clean up matches - delete ALL records
+	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup matches: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up matches table")
+	}
+
+	// Clean up series - delete ALL records
+	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup series: %v", err)
+	} else {
+		t.Logf("DEBUG: Successfully cleaned up series table")
+	}
+
+	t.Logf("DEBUG: Completed comprehensive cleanup of ALL test data (preserving users and sessions)")
+}
+
 // CreateAuthenticatedTestUser creates a test user and session for integration tests
 func CreateAuthenticatedTestUser(t *testing.T, dbClient *database.Client) (*models.User, *models.UserSession) {
 	// Create a test user
