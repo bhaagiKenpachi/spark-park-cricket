@@ -35,7 +35,7 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 	log.Printf("Creating innings for match %s, innings %d, batting team %s", innings.MatchID, innings.InningsNumber, innings.BattingTeam)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -71,7 +71,7 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 	log.Printf("Getting innings for match %s", matchID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var innings []*models.Innings
@@ -94,7 +94,7 @@ func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, ma
 	log.Printf("Getting innings %d for match %s", inningsNumber, matchID)
 
 	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var innings []*models.Innings
@@ -122,7 +122,7 @@ func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models
 	log.Printf("Updating innings %s", innings.ID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -154,7 +154,7 @@ func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID str
 	log.Printf("Completing innings %s", inningsID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -182,7 +182,7 @@ func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.Score
 	log.Printf("Creating over %d for innings %s", over.OverNumber, over.InningsID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -216,7 +216,7 @@ func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inn
 	log.Printf("Getting over %d for innings %s", overNumber, inningsID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var overs []*models.ScorecardOver
@@ -244,7 +244,7 @@ func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID stri
 	log.Printf("Getting current over for innings %s", inningsID)
 
 	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var overs []*models.ScorecardOver
@@ -273,7 +273,7 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 	log.Printf("Getting all overs for innings %s", inningsID)
 
 	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var overs []*models.ScorecardOver
@@ -297,7 +297,7 @@ func (r *scorecardRepository) UpdateOver(ctx context.Context, over *models.Score
 	log.Printf("Updating over %s", over.ID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -328,7 +328,7 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 	log.Printf("Completing over %s", overID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -357,7 +357,7 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -396,7 +396,7 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 	log.Printf("Getting balls for over %s", overID)
 
 	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var balls []*models.ScorecardBall
@@ -428,7 +428,7 @@ func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*
 	log.Printf("Getting last ball for over %s", overID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	var balls []*models.ScorecardBall
@@ -456,7 +456,7 @@ func (r *scorecardRepository) DeleteBall(ctx context.Context, ballID string) err
 	log.Printf("Deleting ball %s", ballID)
 
 	// Add timeout to prevent hanging queries
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	_, _, err := r.client.From(r.getTableName("balls")).
@@ -478,7 +478,7 @@ func (r *scorecardRepository) StartScoring(ctx context.Context, matchID string) 
 	log.Printf("Starting scoring for match %s", matchID)
 
 	// Add timeout to prevent hanging queries (longer timeout for initialization)
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	_, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 
 	// Create first innings
@@ -508,7 +508,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 	log.Printf("Getting scorecard for match %s", matchID)
 
 	// Add timeout to prevent hanging queries (longer timeout for complex scorecard building)
-	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	_, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 
 	// Get match details
