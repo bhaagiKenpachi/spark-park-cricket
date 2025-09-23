@@ -441,7 +441,10 @@ describe('ApiService - Scorecard Endpoints', () => {
       const mockResponse = {
         ok: false,
         status: 403,
-        json: async () => ({ error: 'Access denied: you can only undo balls for matches you created' }),
+        json: async () => ({
+          error:
+            'Access denied: you can only undo balls for matches you created',
+        }),
       };
 
       mockFetch.mockResolvedValueOnce(mockResponse);

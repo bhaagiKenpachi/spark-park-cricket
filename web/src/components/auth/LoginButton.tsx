@@ -7,7 +7,8 @@ export function LoginButton() {
   const handleGoogleLogin = () => {
     // Redirect directly to backend OAuth endpoint
     // The backend will handle the OAuth flow and redirect back
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+    const apiBaseUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
     const oauthUrl = `${apiBaseUrl}/auth/google`;
 
     window.location.href = oauthUrl;

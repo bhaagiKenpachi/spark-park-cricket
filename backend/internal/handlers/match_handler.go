@@ -98,7 +98,16 @@ func (h *MatchHandler) CreateMatch(w http.ResponseWriter, r *http.Request) {
 	match, err := h.service.CreateMatch(r.Context(), &req)
 	if err != nil {
 		log.Printf("DEBUG: service.CreateMatch failed: %v", err)
-		utils.WriteInternalError(w, err.Error())
+
+		// Check if it's a validation error (should return 400) or internal error (500)
+		errorMsg := err.Error()
+		if strings.Contains(errorMsg, "must be greater than 0") ||
+			strings.Contains(errorMsg, "already exists") ||
+			strings.Contains(errorMsg, "series not found") {
+			utils.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", errorMsg, errorMsg)
+		} else {
+			utils.WriteInternalError(w, errorMsg)
+		}
 		return
 	}
 

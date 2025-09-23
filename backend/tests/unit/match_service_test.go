@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 )
@@ -154,7 +155,7 @@ func TestMatchService_CreateMatch(t *testing.T) {
 			tt.mockSetup(mockMatchRepo, mockSeriesRepo)
 
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
 			result, err := service.CreateMatch(ctx, tt.request)
@@ -518,7 +519,7 @@ func TestMatchService_UpdateMatch(t *testing.T) {
 			tt.mockSetup(mockMatchRepo)
 
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
 			result, err := service.UpdateMatch(ctx, tt.matchID, tt.request)
@@ -634,7 +635,7 @@ func TestMatchService_DeleteMatch(t *testing.T) {
 			tt.mockSetup(mockMatchRepo)
 
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			service := services.NewMatchService(mockMatchRepo, mockSeriesRepo)
 			err := service.DeleteMatch(ctx, tt.matchID)

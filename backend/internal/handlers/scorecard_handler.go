@@ -4,20 +4,21 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"spark-park-cricket-backend/internal/interfaces"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type ScorecardHandler struct {
-	scorecardService *services.ScorecardService
+	scorecardService interfaces.ScorecardServiceInterface
 }
 
 // NewScorecardHandler creates a new scorecard handler
-func NewScorecardHandler(scorecardService *services.ScorecardService) *ScorecardHandler {
+func NewScorecardHandler(scorecardService interfaces.ScorecardServiceInterface) *ScorecardHandler {
 	return &ScorecardHandler{
 		scorecardService: scorecardService,
 	}
@@ -81,7 +82,23 @@ func (h *ScorecardHandler) AddBall(w http.ResponseWriter, r *http.Request) {
 	err := h.scorecardService.AddBall(r.Context(), &req)
 	if err != nil {
 		log.Printf("Error adding ball: %v", err)
-		utils.WriteErrorResponse(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+
+		// Check if this is a business logic validation error
+		errorMsg := err.Error()
+		if strings.Contains(errorMsg, "innings validation failed") ||
+			strings.Contains(errorMsg, "cannot start second innings") ||
+			strings.Contains(errorMsg, "first innings is complete") ||
+			strings.Contains(errorMsg, "first innings must be played") ||
+			strings.Contains(errorMsg, "second innings must be played") ||
+			strings.Contains(errorMsg, "first innings is not complete") ||
+			strings.Contains(errorMsg, "match is not live") ||
+			strings.Contains(errorMsg, "access denied") ||
+			strings.Contains(errorMsg, "innings is not in progress") ||
+			strings.Contains(errorMsg, "over is not in progress") {
+			utils.WriteErrorResponse(w, http.StatusBadRequest, "VALIDATION_ERROR", errorMsg)
+		} else {
+			utils.WriteErrorResponse(w, http.StatusInternalServerError, "INTERNAL_ERROR", errorMsg)
+		}
 		return
 	}
 

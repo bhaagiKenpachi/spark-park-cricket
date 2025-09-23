@@ -50,9 +50,6 @@ describe('MatchForm', () => {
     expect(screen.getByLabelText(/Total Overs \*/)).toBeInTheDocument();
     expect(screen.getByText(/Toss Winner \*/)).toBeInTheDocument();
     expect(screen.getByText(/Toss Type \*/)).toBeInTheDocument();
-    expect(
-      screen.getByLabelText(/Match Number \(Optional\)/)
-    ).toBeInTheDocument();
     expect(screen.getByText('Match')).toBeInTheDocument();
     expect(screen.getByTitle('Cancel')).toBeInTheDocument();
   });
@@ -97,7 +94,6 @@ describe('MatchForm', () => {
     expect(screen.getByDisplayValue('2024-01-01')).toBeInTheDocument();
     expect(screen.getByDisplayValue('11')).toBeInTheDocument();
     expect(screen.getByDisplayValue('20')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('1')).toBeInTheDocument();
     expect(screen.getByText('Match')).toBeInTheDocument();
   });
 
@@ -328,13 +324,11 @@ describe('MatchForm', () => {
     const dateInput = screen.getByLabelText(/Date \*/);
     const playerCountInput = screen.getByLabelText(/Team Player Count \*/);
     const oversInput = screen.getByLabelText(/Total Overs \*/);
-    const matchNumberInput = screen.getByLabelText(/Match Number \(Optional\)/);
     const submitButton = screen.getByText('Match');
 
     fireEvent.change(dateInput, { target: { value: '2024-01-01' } });
     fireEvent.change(playerCountInput, { target: { value: '11' } });
     fireEvent.change(oversInput, { target: { value: '20' } });
-    fireEvent.change(matchNumberInput, { target: { value: '1' } });
     fireEvent.click(submitButton);
 
     expect(mockOnSuccess).toHaveBeenCalledTimes(1);

@@ -118,7 +118,11 @@ describe('scorecardSaga', () => {
       // Ball success
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Refresh scorecard after adding ball
+      // Check if innings data exists in state (SELECT effect)
+      const selectResult = generator.next().value;
+      expect(selectResult.type).toBe('SELECT');
+
+      // Refresh scorecard after adding ball (PUT effect)
       const refreshCallResult = generator.next().value;
       expect(refreshCallResult).toEqual(
         put(fetchScorecardRequest('test-match-id'))
@@ -195,7 +199,11 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Refresh scorecard after adding ball
+      // Check if innings data exists in state (SELECT effect)
+      const selectResult = generator.next().value;
+      expect(selectResult.type).toBe('SELECT');
+
+      // Refresh scorecard after adding ball (PUT effect)
       const refreshCallResult = generator.next().value;
       expect(refreshCallResult).toEqual(
         put(fetchScorecardRequest('test-match-id'))
@@ -244,7 +252,11 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Refresh scorecard after adding ball
+      // Check if innings data exists in state (SELECT effect)
+      const selectResult = generator.next().value;
+      expect(selectResult.type).toBe('SELECT');
+
+      // Refresh scorecard after adding ball (PUT effect)
       const refreshCallResult = generator.next().value;
       expect(refreshCallResult).toEqual(
         put(fetchScorecardRequest('test-match-id'))
@@ -290,7 +302,11 @@ describe('scorecardSaga', () => {
 
       expect(generator.next().value).toEqual(put(addBallSuccess()));
 
-      // Refresh scorecard after adding ball
+      // Check if innings data exists in state (SELECT effect)
+      const selectResult = generator.next().value;
+      expect(selectResult.type).toBe('SELECT');
+
+      // Refresh scorecard after adding ball (PUT effect)
       const refreshCallResult = generator.next().value;
       expect(refreshCallResult).toEqual(
         put(fetchScorecardRequest('test-match-id'))

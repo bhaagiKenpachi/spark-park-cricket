@@ -32,32 +32,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
-	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
-
-	router := http.NewServeMux()
-	router.HandleFunc("/api/v1/scorecard/ball", scorecardHandler.AddBall)
-	router.HandleFunc("/api/v1/scorecard/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if len(path) > len("/api/v1/scorecard/") {
-			matchID := path[len("/api/v1/scorecard/"):]
-			// Create a custom handler that extracts match_id from URL
-			scorecard, err := serviceContainer.Scorecard.GetScorecard(r.Context(), matchID)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": scorecard,
-			}); err != nil {
-				http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-				return
-			}
-		} else {
-			http.NotFound(w, r)
-		}
-	})
+	// Use the standard router setup that includes authentication middleware
+	router := handlers.SetupRoutes(db, cfg.Config)
 
 	server := httptest.NewServer(router)
 	defer server.Close()
@@ -73,7 +49,28 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	}
 	err = db.Repositories.User.CreateUser(ctx, testUser)
 	require.NoError(t, err)
-	defer db.Repositories.User.DeleteUser(ctx, testUser.ID)
+	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
+
+	// Create user session for authentication
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	sessionService := serviceContainer.SessionService
+
+	mockReq := httptest.NewRequest("GET", "/", nil)
+	mockWriter := httptest.NewRecorder()
+
+	err = sessionService.CreateSession(mockWriter, mockReq, testUser)
+	require.NoError(t, err)
+
+	// Extract the session cookie
+	cookies := mockWriter.Result().Cookies()
+	var sessionCookie *http.Cookie
+	for _, cookie := range cookies {
+		if cookie.Name == "user_session" {
+			sessionCookie = cookie
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie, "Session cookie should be created")
 
 	// Create test match
 	series := &models.Series{
@@ -127,6 +124,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(sessionCookie) // Add authentication
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -281,6 +279,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	ballJSON, _ := json.Marshal(nextBallReq)
 	req, _ = http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(sessionCookie) // Add authentication
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -323,42 +322,52 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
-	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
-
-	router := http.NewServeMux()
-	router.HandleFunc("/api/v1/scorecard/ball", scorecardHandler.AddBall)
-	router.HandleFunc("/api/v1/scorecard/", func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if len(path) > len("/api/v1/scorecard/") {
-			matchID := path[len("/api/v1/scorecard/"):]
-			// Create a custom handler that extracts match_id from URL
-			scorecard, err := serviceContainer.Scorecard.GetScorecard(r.Context(), matchID)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": scorecard,
-			}); err != nil {
-				http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-				return
-			}
-		} else {
-			http.NotFound(w, r)
-		}
-	})
+	// Use the standard router setup that includes authentication middleware
+	router := handlers.SetupRoutes(db, cfg.Config)
 
 	server := httptest.NewServer(router)
 	defer server.Close()
 
-	// Create test match
+	// Create test user first
 	ctx := context.Background()
+	testUser := &models.User{
+		GoogleID:      fmt.Sprintf("test-google-id-illegal-over-%d", time.Now().UnixNano()),
+		Email:         fmt.Sprintf("test-illegal-over-%d@example.com", time.Now().UnixNano()),
+		Name:          "Test Illegal Balls Over User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+	err = db.Repositories.User.CreateUser(ctx, testUser)
+	require.NoError(t, err)
+	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
+
+	// Create user session for authentication
+	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	sessionService := serviceContainer.SessionService
+
+	mockReq := httptest.NewRequest("GET", "/", nil)
+	mockWriter := httptest.NewRecorder()
+
+	err = sessionService.CreateSession(mockWriter, mockReq, testUser)
+	require.NoError(t, err)
+
+	// Extract the session cookie
+	cookies := mockWriter.Result().Cookies()
+	var sessionCookie *http.Cookie
+	for _, cookie := range cookies {
+		if cookie.Name == "user_session" {
+			sessionCookie = cookie
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie, "Session cookie should be created")
+
+	// Create test match
 	series := &models.Series{
 		Name:      fmt.Sprintf("Over Completion Test %d", time.Now().Unix()),
 		StartDate: time.Now(),
 		EndDate:   time.Now().Add(24 * time.Hour),
+		CreatedBy: testUser.ID,
 	}
 	err = db.Repositories.Series.Create(ctx, series)
 	require.NoError(t, err)
@@ -398,6 +407,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(sessionCookie) // Add authentication
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -450,6 +460,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	ballJSON, _ := json.Marshal(completingBallReq)
 	req, _ = http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(sessionCookie) // Add authentication
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)

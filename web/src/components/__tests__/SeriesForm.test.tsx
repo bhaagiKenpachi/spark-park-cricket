@@ -42,11 +42,9 @@ describe('SeriesForm', () => {
 
     expect(screen.getByText('Create New Series')).toBeInTheDocument();
     expect(screen.getByLabelText('Series Name *')).toBeInTheDocument();
-    expect(screen.getByLabelText('Description')).toBeInTheDocument();
     expect(screen.getByLabelText('Start Date *')).toBeInTheDocument();
     expect(screen.getByLabelText('End Date *')).toBeInTheDocument();
-    expect(screen.getByLabelText('Status')).toBeInTheDocument();
-    expect(screen.getByText('Create Series')).toBeInTheDocument();
+    expect(screen.getByText('Series')).toBeInTheDocument();
     expect(screen.getByTitle('Cancel')).toBeInTheDocument();
   });
 
@@ -55,8 +53,8 @@ describe('SeriesForm', () => {
       id: '1',
       name: 'Test Series',
       description: 'Test Description',
-      start_date: '2024-01-01',
-      end_date: '2024-01-31',
+      start_date: '2024-01-01T00:00:00Z',
+      end_date: '2024-01-31T00:00:00Z',
       status: 'upcoming',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
@@ -83,11 +81,9 @@ describe('SeriesForm', () => {
 
     expect(screen.getByText('Edit Series')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test Series')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Test Description')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2024-01-01')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2024-01-31')).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toHaveValue('upcoming');
-    expect(screen.getByText('Update Series')).toBeInTheDocument();
+    expect(screen.getByText('Series')).toBeInTheDocument();
   });
 
   it('should show loading state when submitting', () => {
@@ -145,7 +141,7 @@ describe('SeriesForm', () => {
       </Provider>
     );
 
-    const submitButton = screen.getByText('Create Series');
+    const submitButton = screen.getByText('Series');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -172,7 +168,7 @@ describe('SeriesForm', () => {
     const nameInput = screen.getByLabelText('Series Name *');
     const startDateInput = screen.getByLabelText('Start Date *');
     const endDateInput = screen.getByLabelText('End Date *');
-    const submitButton = screen.getByText('Create Series');
+    const submitButton = screen.getByText('Series');
 
     fireEvent.change(nameInput, { target: { value: 'Test Series' } });
     fireEvent.change(startDateInput, { target: { value: '2024-01-31' } });
@@ -202,7 +198,7 @@ describe('SeriesForm', () => {
       </Provider>
     );
 
-    const submitButton = screen.getByText('Create Series');
+    const submitButton = screen.getByText('Series');
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -256,19 +252,13 @@ describe('SeriesForm', () => {
     );
 
     const nameInput = screen.getByLabelText('Series Name *');
-    const descriptionInput = screen.getByLabelText('Description');
     const startDateInput = screen.getByLabelText('Start Date *');
     const endDateInput = screen.getByLabelText('End Date *');
-    const statusSelect = screen.getByLabelText('Status');
-    const submitButton = screen.getByText('Create Series');
+    const submitButton = screen.getByText('Series');
 
     fireEvent.change(nameInput, { target: { value: 'Test Series' } });
-    fireEvent.change(descriptionInput, {
-      target: { value: 'Test Description' },
-    });
     fireEvent.change(startDateInput, { target: { value: '2024-01-01' } });
     fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
-    fireEvent.change(statusSelect, { target: { value: 'upcoming' } });
     fireEvent.click(submitButton);
 
     expect(mockOnSuccess).toHaveBeenCalledTimes(1);

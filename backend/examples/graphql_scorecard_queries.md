@@ -5,6 +5,7 @@ This document provides comprehensive examples of GraphQL queries for fetching cr
 ## Available Queries
 
 ### 1. Live Scorecard
+
 Get the complete live scorecard for a match with current score and all innings data.
 
 ```graphql
@@ -80,6 +81,7 @@ query GetLiveScorecard($matchId: String!) {
 ```
 
 ### 2. Match Details
+
 Get basic match information and details.
 
 ```graphql
@@ -103,6 +105,7 @@ query GetMatchDetails($matchId: String!) {
 ```
 
 ### 3. Match Statistics
+
 Get aggregated statistics for the entire match.
 
 ```graphql
@@ -126,6 +129,7 @@ query GetMatchStatistics($matchId: String!) {
 ```
 
 ### 4. Innings Score
+
 Get basic score information for a specific innings.
 
 ```graphql
@@ -150,6 +154,7 @@ query GetInningsScore($matchId: String!, $inningsNumber: Int!) {
 ```
 
 ### 5. Innings Details
+
 Get complete details for a specific innings including all overs.
 
 ```graphql
@@ -190,11 +195,20 @@ query GetInningsDetails($matchId: String!, $inningsNumber: Int!) {
 ```
 
 ### 6. Over Details
+
 Get details for a specific over in a specific innings.
 
 ```graphql
-query GetOverDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!) {
-  overDetails(match_id: $matchId, innings_number: $inningsNumber, over_number: $overNumber) {
+query GetOverDetails(
+  $matchId: String!
+  $inningsNumber: Int!
+  $overNumber: Int!
+) {
+  overDetails(
+    match_id: $matchId
+    innings_number: $inningsNumber
+    over_number: $overNumber
+  ) {
     over_number
     total_runs
     total_balls
@@ -214,6 +228,7 @@ query GetOverDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!)
 ```
 
 ### 7. Latest Over
+
 Get the current/latest over for a specific innings.
 
 ```graphql
@@ -238,6 +253,7 @@ query GetLatestOver($matchId: String!, $inningsNumber: Int!) {
 ```
 
 ### 8. All Overs
+
 Get all overs for a specific innings.
 
 ```graphql
@@ -262,11 +278,20 @@ query GetAllOvers($matchId: String!, $inningsNumber: Int!) {
 ```
 
 ### 9. Ball Details
+
 Get all balls for a specific over.
 
 ```graphql
-query GetBallDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!) {
-  ballDetails(match_id: $matchId, innings_number: $inningsNumber, over_number: $overNumber) {
+query GetBallDetails(
+  $matchId: String!
+  $inningsNumber: Int!
+  $overNumber: Int!
+) {
+  ballDetails(
+    match_id: $matchId
+    innings_number: $inningsNumber
+    over_number: $overNumber
+  ) {
     ball_number
     ball_type
     run_type
@@ -279,6 +304,7 @@ query GetBallDetails($matchId: String!, $inningsNumber: Int!, $overNumber: Int!)
 ```
 
 ### 10. Match Teams
+
 Get team information for a match.
 
 ```graphql
@@ -294,6 +320,7 @@ query GetMatchTeams($matchId: String!) {
 ```
 
 ### 11. Match Players
+
 Get player information for a match.
 
 ```graphql
@@ -309,6 +336,7 @@ query GetMatchPlayers($matchId: String!) {
 ```
 
 ### 12. Player Statistics
+
 Get player performance statistics for a match.
 
 ```graphql
@@ -341,12 +369,14 @@ query GetPlayerStatistics($matchId: String!) {
 ## Enums
 
 ### BallType
+
 - `GOOD` - Legal delivery
 - `WIDE` - Wide ball
 - `NO_BALL` - No ball
 - `DEAD_BALL` - Dead ball
 
 ### RunType
+
 - `ZERO` - 0 runs
 - `ONE` - 1 run
 - `TWO` - 2 runs
@@ -363,12 +393,14 @@ query GetPlayerStatistics($matchId: String!) {
 - `WICKET` - Wicket
 
 ### TeamType
+
 - `A` - Team A
 - `B` - Team B
 
 ## Usage Examples
 
 ### Get Current Match Status
+
 ```graphql
 query GetCurrentStatus($matchId: String!) {
   liveScorecard(match_id: $matchId) {
@@ -385,6 +417,7 @@ query GetCurrentStatus($matchId: String!) {
 ```
 
 ### Get First Innings Summary
+
 ```graphql
 query GetFirstInnings($matchId: String!) {
   inningsDetails(match_id: $matchId, innings_number: 1) {
@@ -400,6 +433,7 @@ query GetFirstInnings($matchId: String!) {
 ```
 
 ### Get Recent Overs
+
 ```graphql
 query GetRecentOvers($matchId: String!, $inningsNumber: Int!) {
   allOvers(match_id: $matchId, innings_number: $inningsNumber) {
@@ -434,4 +468,3 @@ subscription ScorecardUpdates($matchId: String!) {
   }
 }
 ```
-

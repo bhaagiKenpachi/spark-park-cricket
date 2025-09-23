@@ -55,7 +55,7 @@ describe('ApiService - Match Endpoints', () => {
             Accept: 'application/json',
           }),
           mode: 'cors',
-          credentials: 'omit',
+          credentials: 'include',
         })
       );
 
@@ -141,7 +141,7 @@ describe('ApiService - Match Endpoints', () => {
             Accept: 'application/json',
           }),
           mode: 'cors',
-          credentials: 'omit',
+          credentials: 'include',
         })
       );
 
@@ -203,6 +203,7 @@ describe('ApiService - Match Endpoints', () => {
           method: 'POST',
           body: JSON.stringify({
             series_id: 'series-1',
+            match_number: 1,
             date: '2024-01-01T00:00:00Z',
             status: 'live',
             team_a_player_count: 11,
@@ -216,7 +217,7 @@ describe('ApiService - Match Endpoints', () => {
             'Content-Type': 'application/json',
           }),
           mode: 'cors',
-          credentials: 'omit',
+          credentials: 'include',
         })
       );
 
@@ -227,10 +228,12 @@ describe('ApiService - Match Endpoints', () => {
       });
     });
 
-    it('should remove match_number when it is 1 for auto-generation', async () => {
-      const matchData: Omit<Match, 'id' | 'created_at' | 'updated_at'> = {
+    it('should not include match_number in request body for auto-generation', async () => {
+      const matchData: Omit<
+        Match,
+        'id' | 'created_at' | 'updated_at' | 'match_number'
+      > = {
         series_id: 'series-1',
-        match_number: 1, // Should be removed for auto-generation
         date: '2024-01-01T00:00:00Z',
         status: 'live',
         team_a_player_count: 11,
@@ -251,14 +254,11 @@ describe('ApiService - Match Endpoints', () => {
 
       await apiService.createMatch(matchData);
 
-      const expectedData = { ...matchData };
-      delete (expectedData as any).match_number;
-
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/matches?_t='),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify(expectedData),
+          body: JSON.stringify(matchData),
         })
       );
     });
@@ -445,7 +445,7 @@ describe('ApiService - Match Endpoints', () => {
             Accept: 'application/json',
           }),
           mode: 'cors',
-          credentials: 'omit',
+          credentials: 'include',
         })
       );
 
@@ -531,7 +531,7 @@ describe('ApiService - Match Endpoints', () => {
             Expires: '0',
           }),
           mode: 'cors',
-          credentials: 'omit',
+          credentials: 'include',
         })
       );
     });

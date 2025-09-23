@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	contextkeys "spark-park-cricket-backend/internal/context"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -67,7 +69,7 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			result, err := service.CreateSeries(ctx, tt.request)
 
@@ -338,7 +340,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
 
@@ -399,7 +401,7 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
 

@@ -43,7 +43,6 @@ export function SeriesList(): React.JSX.Element {
         '[data-cy="login-button"]'
       ) as HTMLElement;
       if (signInButton) {
-
         // Focus and scroll to the button
         signInButton.focus();
         signInButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -100,7 +99,6 @@ export function SeriesList(): React.JSX.Element {
         '[data-cy="login-button"]'
       ) as HTMLElement;
       if (signInButton) {
-
         // Focus and scroll to the button
         signInButton.focus();
         signInButton.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -34,6 +34,10 @@ func (r *scorecardRepository) getTableName(table string) string {
 func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models.Innings) error {
 	log.Printf("Creating innings for match %s, innings %d, batting team %s", innings.MatchID, innings.InningsNumber, innings.BattingTeam)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	data := map[string]interface{}{
 		"match_id":       innings.MatchID,
 		"innings_number": innings.InningsNumber,
@@ -66,6 +70,10 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID string) ([]*models.Innings, error) {
 	log.Printf("Getting innings for match %s", matchID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	var innings []*models.Innings
 	_, err := r.client.From("innings").
 		Select("*", "", false).
@@ -84,6 +92,10 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 // GetInningsByMatchAndNumber gets a specific innings
 func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, matchID string, inningsNumber int) (*models.Innings, error) {
 	log.Printf("Getting innings %d for match %s", inningsNumber, matchID)
+
+	// Add timeout to prevent hanging queries (longer timeout for complex queries)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	var innings []*models.Innings
 	_, err := r.client.From("innings").
@@ -108,6 +120,10 @@ func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, ma
 // UpdateInnings updates an innings
 func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models.Innings) error {
 	log.Printf("Updating innings %s", innings.ID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	data := map[string]interface{}{
 		"total_runs":    innings.TotalRuns,
@@ -137,6 +153,10 @@ func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models
 func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID string) error {
 	log.Printf("Completing innings %s", inningsID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	data := map[string]interface{}{
 		"status":     string(models.InningsStatusCompleted),
 		"updated_at": time.Now(),
@@ -160,6 +180,10 @@ func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID str
 // CreateOver creates a new over
 func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.ScorecardOver) error {
 	log.Printf("Creating over %d for innings %s", over.OverNumber, over.InningsID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	data := map[string]interface{}{
 		"innings_id":    over.InningsID,
@@ -191,6 +215,10 @@ func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.Score
 func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inningsID string, overNumber int) (*models.ScorecardOver, error) {
 	log.Printf("Getting over %d for innings %s", overNumber, inningsID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	var overs []*models.ScorecardOver
 	_, err := r.client.From(r.getTableName("overs")).
 		Select("*", "", false).
@@ -214,6 +242,10 @@ func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inn
 // GetCurrentOver gets the current in-progress over
 func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
 	log.Printf("Getting current over for innings %s", inningsID)
+
+	// Add timeout to prevent hanging queries (longer timeout for complex queries)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	var overs []*models.ScorecardOver
 	_, err := r.client.From(r.getTableName("overs")).
@@ -240,6 +272,10 @@ func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID stri
 func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error) {
 	log.Printf("Getting all overs for innings %s", inningsID)
 
+	// Add timeout to prevent hanging queries (longer timeout for complex queries)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	var overs []*models.ScorecardOver
 	_, err := r.client.From(r.getTableName("overs")).
 		Select("*", "", false).
@@ -259,6 +295,10 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 // UpdateOver updates an over
 func (r *scorecardRepository) UpdateOver(ctx context.Context, over *models.ScorecardOver) error {
 	log.Printf("Updating over %s", over.ID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	data := map[string]interface{}{
 		"total_runs":    over.TotalRuns,
@@ -287,6 +327,10 @@ func (r *scorecardRepository) UpdateOver(ctx context.Context, over *models.Score
 func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) error {
 	log.Printf("Completing over %s", overID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	data := map[string]interface{}{
 		"status":     string(models.OverStatusCompleted),
 		"updated_at": time.Now(),
@@ -311,6 +355,10 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.ScorecardBall) error {
 	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
 		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	data := map[string]interface{}{
 		"over_id":     ball.OverID,
@@ -347,6 +395,10 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
 	log.Printf("Getting balls for over %s", overID)
 
+	// Add timeout to prevent hanging queries (longer timeout for complex queries)
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	var balls []*models.ScorecardBall
 	_, err := r.client.From(r.getTableName("balls")).
 		Select("*", "", false).
@@ -375,6 +427,10 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*models.ScorecardBall, error) {
 	log.Printf("Getting last ball for over %s", overID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	var balls []*models.ScorecardBall
 	_, err := r.client.From(r.getTableName("balls")).
 		Select("*", "", false).
@@ -399,6 +455,10 @@ func (r *scorecardRepository) GetLastBall(ctx context.Context, overID string) (*
 func (r *scorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
 	log.Printf("Deleting ball %s", ballID)
 
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
 	_, _, err := r.client.From(r.getTableName("balls")).
 		Delete("", "").
 		Eq("id", ballID).
@@ -416,6 +476,10 @@ func (r *scorecardRepository) DeleteBall(ctx context.Context, ballID string) err
 // StartScoring starts scoring for a match
 func (r *scorecardRepository) StartScoring(ctx context.Context, matchID string) error {
 	log.Printf("Starting scoring for match %s", matchID)
+
+	// Add timeout to prevent hanging queries (longer timeout for initialization)
+	_, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 
 	// Create first innings
 	innings := &models.Innings{
@@ -442,6 +506,10 @@ func (r *scorecardRepository) StartScoring(ctx context.Context, matchID string) 
 // GetScorecard gets the complete scorecard for a match
 func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error) {
 	log.Printf("Getting scorecard for match %s", matchID)
+
+	// Add timeout to prevent hanging queries (longer timeout for complex scorecard building)
+	_, cancel := context.WithTimeout(ctx, 120*time.Second)
+	defer cancel()
 
 	// Get match details
 	var matches []*models.Match

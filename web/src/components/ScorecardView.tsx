@@ -64,13 +64,14 @@ export function ScorecardView({
 
   // Check if match is completed or both innings are completed
   const isMatchCompleted = scorecard?.match_status === 'completed';
-  const isBothInnCompleted = scorecard?.innings &&
+  const isBothInnCompleted =
+    scorecard?.innings &&
     scorecard.innings.length >= 2 &&
     scorecard.innings.every(innings => innings.status === 'completed');
 
   // Determine if scoring should be available
-  const isScoringAvailable = isOwner && !isMatchCompleted && !isBothInnCompleted;
-
+  const isScoringAvailable =
+    isOwner && !isMatchCompleted && !isBothInnCompleted;
 
   useEffect(() => {
     dispatch(fetchScorecardRequest(matchId));
@@ -88,15 +89,21 @@ export function ScorecardView({
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
-
-    if (scorecard?.innings && Array.isArray(scorecard.innings) && scorecard.innings.length > 0) {
+    if (
+      scorecard?.innings &&
+      Array.isArray(scorecard.innings) &&
+      scorecard.innings.length > 0
+    ) {
       const currentInnData = scorecard.innings.find(
         innings => innings.status === 'in_progress'
       );
       if (currentInnData) {
         setCurrentInn(currentInnData.innings_number);
       }
-    } else if (scorecard?.innings === null || (Array.isArray(scorecard?.innings) && scorecard.innings.length === 0)) {
+    } else if (
+      scorecard?.innings === null ||
+      (Array.isArray(scorecard?.innings) && scorecard.innings.length === 0)
+    ) {
       // If no innings exist yet, start with innings 1
       setCurrentInn(1);
     }
@@ -119,7 +126,6 @@ export function ScorecardView({
   }, [scoring, showLiveScoring, scorecard]);
 
   const handleStartScoring = () => {
-
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
@@ -132,7 +138,6 @@ export function ScorecardView({
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
-
 
     // If match is already live, just show the interface without calling the API
     if (scorecardData?.match_status === 'live') {
@@ -149,8 +154,6 @@ export function ScorecardView({
   };
 
   const handleBallScore = (runs: number, ballType: string) => {
-
-
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
@@ -164,14 +167,17 @@ export function ScorecardView({
       return;
     }
 
-
     // Check if current innings is still in progress
     const currentInnDataForScoring = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInn
     );
 
     // If no innings exist yet (null or empty array), allow scoring to create the first innings
-    if (scorecardData?.innings === null || (Array.isArray(scorecardData?.innings) && scorecardData.innings.length === 0)) {
+    if (
+      scorecardData?.innings === null ||
+      (Array.isArray(scorecardData?.innings) &&
+        scorecardData.innings.length === 0)
+    ) {
       // Allow scoring - this will create the first innings
     } else if (currentInnDataForScoring?.status !== 'in_progress') {
       setScoringMessage(
@@ -214,7 +220,6 @@ export function ScorecardView({
 
   // Helper function to check if it's the first ball of the current innings
   const isFirstBallOfInn = () => {
-
     const currentInnData = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInn
     );
@@ -223,16 +228,16 @@ export function ScorecardView({
     }
 
     // Count total balls across all overs in this innings
-    const totalBalls = currentInnData.overs?.reduce((total, over) => {
-      return total + (over.balls ? over.balls.length : 0);
-    }, 0) || 0;
+    const totalBalls =
+      currentInnData.overs?.reduce((total, over) => {
+        return total + (over.balls ? over.balls.length : 0);
+      }, 0) || 0;
 
     // If there's exactly 1 ball, it's the first ball (and we can't undo it)
     return totalBalls === 1;
   };
 
   const handleUndoBall = () => {
-
     // Check if scoring is available (ownership + match not completed)
     if (!isScoringAvailable) {
       if (!isOwner) {
@@ -251,7 +256,10 @@ export function ScorecardView({
       innings => innings.innings_number === currentInn
     );
 
-    if (!currentInnDataForUndo || currentInnDataForUndo.status !== 'in_progress') {
+    if (
+      !currentInnDataForUndo ||
+      currentInnDataForUndo.status !== 'in_progress'
+    ) {
       setScoringMessage(
         'Cannot undo ball on completed innings. Please check innings status.'
       );
@@ -261,7 +269,9 @@ export function ScorecardView({
 
     // Check if it's the first ball of the innings
     if (isFirstBallOfInn()) {
-      setScoringMessage('Cannot undo ball - this is the first ball of the innings.');
+      setScoringMessage(
+        'Cannot undo ball - this is the first ball of the innings.'
+      );
       setTimeout(() => setScoringMessage(null), 3000);
       return;
     }
@@ -300,10 +310,12 @@ export function ScorecardView({
         const inningsNumber = parseInt(inningsNumberStr);
 
         // Fetch all overs details for this innings
-        dispatch(fetchAllOversDetailsThunk({
-          matchId,
-          inningsNumber,
-        }));
+        dispatch(
+          fetchAllOversDetailsThunk({
+            matchId,
+            inningsNumber,
+          })
+        );
       }
     }
   };
@@ -357,7 +369,9 @@ export function ScorecardView({
           key={index}
           className="w-8 h-8 rounded-full border-2 border-orange-500 bg-orange-100 flex flex-col items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-orange-700 font-bold">nb</div>
+          <div className="text-[10px] leading-none text-orange-700 font-bold">
+            nb
+          </div>
           <div className="text-[6px] leading-none text-orange-600">+</div>
           <div className="text-[8px] leading-none text-orange-700 font-bold">
             {noBallRuns + noBallByes}
@@ -375,7 +389,9 @@ export function ScorecardView({
           key={index}
           className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-slate-700 font-bold">B</div>
+          <div className="text-[10px] leading-none text-slate-700 font-bold">
+            B
+          </div>
           <div className="text-[8px] leading-none text-slate-600">+</div>
           <div className="text-[10px] leading-none text-slate-700 font-bold">
             {totalRuns}
@@ -388,20 +404,23 @@ export function ScorecardView({
     return (
       <div
         key={index}
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
-          ? 'border-red-500 bg-red-100 text-red-700'
-          : ball.ball_type === 'WIDE' || ball.ball_type === 'wide' || ball.run_type === 'LB'
-            ? 'border-slate-400 bg-slate-100 text-slate-700'
-            : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
-              ? 'border-gray-500 bg-gray-100 text-gray-700'
-              : ball.runs === 4
-                ? 'border-blue-500 bg-blue-100 text-blue-700'
-                : ball.runs === 6
-                  ? 'border-purple-500 bg-purple-100 text-purple-700'
-                  : ball.runs === 0
-                    ? 'border-gray-300 bg-gray-100 text-gray-600'
-                    : 'border-green-500 bg-green-100 text-green-700'
-          }`}
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
+          isWicket
+            ? 'border-red-500 bg-red-100 text-red-700'
+            : ball.ball_type === 'WIDE' ||
+                ball.ball_type === 'wide' ||
+                ball.run_type === 'LB'
+              ? 'border-slate-400 bg-slate-100 text-slate-700'
+              : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
+                ? 'border-gray-500 bg-gray-100 text-gray-700'
+                : ball.runs === 4
+                  ? 'border-blue-500 bg-blue-100 text-blue-700'
+                  : ball.runs === 6
+                    ? 'border-purple-500 bg-purple-100 text-purple-700'
+                    : ball.runs === 0
+                      ? 'border-gray-300 bg-gray-100 text-gray-600'
+                      : 'border-green-500 bg-green-100 text-green-700'
+        }`}
       >
         {display}
       </div>
@@ -520,7 +539,8 @@ export function ScorecardView({
           >
             {scorecardData.match_status.toUpperCase()}
           </Badge>
-          {scorecardData.match_status === 'live' &&
+          {(scorecardData.match_status === 'live' ||
+            scorecardData.match_status === 'scheduled') &&
             !showLiveScoring &&
             isScoringAvailable && (
               <Button
@@ -568,86 +588,105 @@ export function ScorecardView({
       </div>
 
       {/* Match Completion Summary */}
-      {isMatchCompleted && scorecardData.innings && Array.isArray(scorecardData.innings) && (
-        <Card className="mb-6 border-2 border-green-200 bg-gradient-to-r from-green-50 to-blue-50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center">
-              <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-              Match Completed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Team A Summary */}
+      {isMatchCompleted &&
+        scorecardData.innings &&
+        Array.isArray(scorecardData.innings) && (
+          <Card className="mb-6 border-2 border-green-200 bg-gradient-to-r from-green-50 to-blue-50">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                Match Completed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Team A Summary */}
+                {(() => {
+                  const teamAInnings = scorecardData.innings.find(
+                    innings => innings.batting_team === 'A'
+                  );
+                  return teamAInnings ? (
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        {scorecardData.team_a}
+                      </h3>
+                      <div className="text-3xl font-bold text-blue-600 mb-1">
+                        {teamAInnings.total_runs}/{teamAInnings.total_wickets}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {teamAInnings.total_overs} overs
+                      </div>
+                      {teamAInnings.extras && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Extras: {teamAInnings.extras.total}
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Team B Summary */}
+                {(() => {
+                  const teamBInnings = scorecardData.innings.find(
+                    innings => innings.batting_team === 'B'
+                  );
+                  return teamBInnings ? (
+                    <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        {scorecardData.team_b}
+                      </h3>
+                      <div className="text-3xl font-bold text-blue-600 mb-1">
+                        {teamBInnings.total_runs}/{teamBInnings.total_wickets}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {teamBInnings.total_overs} overs
+                      </div>
+                      {teamBInnings.extras && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Extras: {teamBInnings.extras.total}
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
+              {/* Match Result */}
               {(() => {
-                const teamAInnings = scorecardData.innings.find(innings => innings.batting_team === 'A');
-                return teamAInnings ? (
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{scorecardData.team_a}</h3>
-                    <div className="text-3xl font-bold text-blue-600 mb-1">
-                      {teamAInnings.total_runs}/{teamAInnings.total_wickets}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {teamAInnings.total_overs} overs
-                    </div>
-                    {teamAInnings.extras && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Extras: {teamAInnings.extras.total}
-                      </div>
-                    )}
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Team B Summary */}
-              {(() => {
-                const teamBInnings = scorecardData.innings.find(innings => innings.batting_team === 'B');
-                return teamBInnings ? (
-                  <div className="text-center p-4 bg-white rounded-lg shadow-sm border">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">{scorecardData.team_b}</h3>
-                    <div className="text-3xl font-bold text-blue-600 mb-1">
-                      {teamBInnings.total_runs}/{teamBInnings.total_wickets}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {teamBInnings.total_overs} overs
-                    </div>
-                    {teamBInnings.extras && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Extras: {teamBInnings.extras.total}
-                      </div>
-                    )}
-                  </div>
-                ) : null;
-              })()}
-            </div>
-
-            {/* Match Result */}
-            {(() => {
-              const teamAInnings = scorecardData.innings.find(innings => innings.batting_team === 'A');
-              const teamBInnings = scorecardData.innings.find(innings => innings.batting_team === 'B');
-
-              if (teamAInnings && teamBInnings) {
-                const teamARuns = teamAInnings.total_runs;
-                const teamBRuns = teamBInnings.total_runs;
-                const winner = teamARuns > teamBRuns ? scorecardData.team_a : scorecardData.team_b;
-                const margin = Math.abs(teamARuns - teamBRuns);
-
-                return (
-                  <div className="mt-6 text-center">
-                    <div className="inline-block bg-white rounded-lg px-6 py-4 shadow-sm border">
-                      <div className="text-lg font-semibold text-gray-800 mb-1">Result</div>
-                      <div className="text-xl font-bold text-green-600">
-                        {winner} won by {margin} run{margin !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
+                const teamAInnings = scorecardData.innings.find(
+                  innings => innings.batting_team === 'A'
                 );
-              }
-              return null;
-            })()}
-          </CardContent>
-        </Card>
-      )}
+                const teamBInnings = scorecardData.innings.find(
+                  innings => innings.batting_team === 'B'
+                );
+
+                if (teamAInnings && teamBInnings) {
+                  const teamARuns = teamAInnings.total_runs;
+                  const teamBRuns = teamBInnings.total_runs;
+                  const winner =
+                    teamARuns > teamBRuns
+                      ? scorecardData.team_a
+                      : scorecardData.team_b;
+                  const margin = Math.abs(teamARuns - teamBRuns);
+
+                  return (
+                    <div className="mt-6 text-center">
+                      <div className="inline-block bg-white rounded-lg px-6 py-4 shadow-sm border">
+                        <div className="text-lg font-semibold text-gray-800 mb-1">
+                          Result
+                        </div>
+                        <div className="text-xl font-bold text-green-600">
+                          {winner} won by {margin} run{margin !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
       {/* Teams Scorecard - Horizontal Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -658,8 +697,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-              Array.isArray(scorecardData.innings) &&
-              scorecardData.innings.length > 0 ? (
+            Array.isArray(scorecardData.innings) &&
+            scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'A'
@@ -668,13 +707,14 @@ export function ScorecardView({
                   const inningsKey = `A-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                      Array.isArray(innings.overs) &&
-                      innings.overs.length > 0
-                      ? innings.overs.reduce((latest: OverSummary, current: OverSummary) =>
-                        current.over_number > latest.over_number
-                          ? current
-                          : latest
-                      )
+                    Array.isArray(innings.overs) &&
+                    innings.overs.length > 0
+                      ? innings.overs.reduce(
+                          (latest: OverSummary, current: OverSummary) =>
+                            current.over_number > latest.over_number
+                              ? current
+                              : latest
+                        )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -749,8 +789,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                              Array.isArray(latestOver.balls) &&
-                              latestOver.balls.length > 0 ? (
+                            Array.isArray(latestOver.balls) &&
+                            latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -795,7 +835,10 @@ export function ScorecardView({
                         innings.overs.length > 0 && (
                           <div className="mt-2 space-y-2 border-t pt-2">
                             {[...innings.overs]
-                              .sort((a: OverSummary, b: OverSummary) => b.over_number - a.over_number)
+                              .sort(
+                                (a: OverSummary, b: OverSummary) =>
+                                  b.over_number - a.over_number
+                              )
                               .map((over: OverSummary) =>
                                 renderOverDetails(over)
                               )}
@@ -824,8 +867,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-              Array.isArray(scorecardData.innings) &&
-              scorecardData.innings.length > 0 ? (
+            Array.isArray(scorecardData.innings) &&
+            scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'B'
@@ -834,13 +877,14 @@ export function ScorecardView({
                   const inningsKey = `B-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                      Array.isArray(innings.overs) &&
-                      innings.overs.length > 0
-                      ? innings.overs.reduce((latest: OverSummary, current: OverSummary) =>
-                        current.over_number > latest.over_number
-                          ? current
-                          : latest
-                      )
+                    Array.isArray(innings.overs) &&
+                    innings.overs.length > 0
+                      ? innings.overs.reduce(
+                          (latest: OverSummary, current: OverSummary) =>
+                            current.over_number > latest.over_number
+                              ? current
+                              : latest
+                        )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -883,37 +927,44 @@ export function ScorecardView({
                       </div>
 
                       {/* Runs Required for Team B */}
-                      {innings.batting_team === 'B' && innings.status === 'in_progress' && (() => {
-                        // Find Team A's total runs to calculate target
-                        const teamAInn = scorecardData?.innings?.find(
-                          (teamInn: InningsSummary) => teamInn.batting_team === 'A'
-                        );
-                        if (teamAInn) {
-                          const target = teamAInn.total_runs + 1;
-                          const runsRequired = target - innings.total_runs;
-                          const totalBalls = (scorecardData?.total_overs || 0) * 6;
-                          // Calculate balls bowled more accurately
-                          const completedOvers = Math.floor(innings.total_overs);
-                          const ballsInCurrentOver = latestOver?.balls?.length || 0;
-                          const ballsBowled = (completedOvers * 6) + ballsInCurrentOver;
-                          const ballsRemaining = totalBalls - ballsBowled;
-
-                          return (
-                            <div className="text-xs text-red-600 font-medium mb-2">
-                              {runsRequired > 0 ? (
-                                <>
-                                  Need {runsRequired} runs in {ballsRemaining} balls
-                                </>
-                              ) : (
-                                <>
-                                  Won by {Math.abs(runsRequired)} runs
-                                </>
-                              )}
-                            </div>
+                      {innings.batting_team === 'B' &&
+                        innings.status === 'in_progress' &&
+                        (() => {
+                          // Find Team A's total runs to calculate target
+                          const teamAInn = scorecardData?.innings?.find(
+                            (teamInn: InningsSummary) =>
+                              teamInn.batting_team === 'A'
                           );
-                        }
-                        return null;
-                      })()}
+                          if (teamAInn) {
+                            const target = teamAInn.total_runs + 1;
+                            const runsRequired = target - innings.total_runs;
+                            const totalBalls =
+                              (scorecardData?.total_overs || 0) * 6;
+                            // Calculate balls bowled more accurately
+                            const completedOvers = Math.floor(
+                              innings.total_overs
+                            );
+                            const ballsInCurrentOver =
+                              latestOver?.balls?.length || 0;
+                            const ballsBowled =
+                              completedOvers * 6 + ballsInCurrentOver;
+                            const ballsRemaining = totalBalls - ballsBowled;
+
+                            return (
+                              <div className="text-xs text-red-600 font-medium mb-2">
+                                {runsRequired > 0 ? (
+                                  <>
+                                    Need {runsRequired} runs in {ballsRemaining}{' '}
+                                    balls
+                                  </>
+                                ) : (
+                                  <>Won by {Math.abs(runsRequired)} runs</>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                       {/* Extras Display */}
                       {innings.extras && (
@@ -948,8 +999,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                              Array.isArray(latestOver.balls) &&
-                              latestOver.balls.length > 0 ? (
+                            Array.isArray(latestOver.balls) &&
+                            latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -994,7 +1045,10 @@ export function ScorecardView({
                         innings.overs.length > 0 && (
                           <div className="mt-2 space-y-2 border-t pt-2">
                             {[...innings.overs]
-                              .sort((a: OverSummary, b: OverSummary) => b.over_number - a.over_number)
+                              .sort(
+                                (a: OverSummary, b: OverSummary) =>
+                                  b.over_number - a.over_number
+                              )
                               .map((over: OverSummary) =>
                                 renderOverDetails(over)
                               )}
@@ -1024,7 +1078,9 @@ export function ScorecardView({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xl font-bold text-gray-800">Live Score</span>
+                <span className="text-xl font-bold text-gray-800">
+                  Live Score
+                </span>
                 {scoring && (
                   <div className="ml-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
@@ -1032,7 +1088,10 @@ export function ScorecardView({
                 )}
               </div>
               <div className="flex items-center space-x-3">
-                <Badge variant="default" className="bg-green-600 text-white font-semibold px-1.5 py-1">
+                <Badge
+                  variant="default"
+                  className="bg-green-600 text-white font-semibold px-1.5 py-1"
+                >
                   Inn {currentInn}
                 </Badge>
                 <Button
@@ -1104,12 +1163,13 @@ export function ScorecardView({
                           ? 'secondary'
                           : 'outline'
                     }
-                    className={`h-14 text-lg font-bold transition-all duration-200 ${runs === 4
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                      : runs === 6
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
-                        : 'border-2 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
-                      }`}
+                    className={`h-14 text-lg font-bold transition-all duration-200 ${
+                      runs === 4
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                        : runs === 6
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
+                          : 'border-2 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                    }`}
                     disabled={scoring}
                   >
                     {scoring ? (
@@ -1208,10 +1268,11 @@ export function ScorecardView({
                       key={byes}
                       onClick={() => handleByesChange(byes)}
                       disabled={scoring}
-                      className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-200 ${byes === currentByes
-                        ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-lg scale-110'
-                        : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-400 hover:scale-105'
-                        } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-200 ${
+                        byes === currentByes
+                          ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-lg scale-110'
+                          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-400 hover:scale-105'
+                      } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {byes}
                     </button>
@@ -1230,9 +1291,10 @@ export function ScorecardView({
               const currentInnData = scorecardData?.innings?.find(
                 innings => innings.innings_number === currentInn
               );
-              const totalBalls = currentInnData?.overs?.reduce((total, over) => {
-                return total + (over.balls ? over.balls.length : 0);
-              }, 0) || 0;
+              const totalBalls =
+                currentInnData?.overs?.reduce((total, over) => {
+                  return total + (over.balls ? over.balls.length : 0);
+                }, 0) || 0;
 
               // Only show undo button if there are balls in the innings
               if (totalBalls === 0) {
@@ -1246,8 +1308,11 @@ export function ScorecardView({
                       onClick={handleUndoBall}
                       variant="outline"
                       size="lg"
-                      className={`h-12 border-2 border-red-500 text-red-700 hover:bg-red-50 hover:border-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl ${isFirstBallOfInn() ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                      className={`h-12 border-2 border-red-500 text-red-700 hover:bg-red-50 hover:border-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl ${
+                        isFirstBallOfInn()
+                          ? 'opacity-50 cursor-not-allowed'
+                          : ''
+                      }`}
                       disabled={scoring || isFirstBallOfInn()}
                     >
                       {scoring ? (

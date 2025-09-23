@@ -224,7 +224,8 @@ func (c *Client) readPump() {
 func (c *Client) writePump() {
 	defer c.conn.Close()
 
-	//nolint:staticcheck,gosimple // websocket write pump requires for{select{}} pattern
+	//lint:ignore S1000 websocket write pump requires for{select{}} pattern
+	//nolint:gosimple // websocket write pump requires for{select{}} pattern
 	for {
 		select {
 		case message, ok := <-c.send:

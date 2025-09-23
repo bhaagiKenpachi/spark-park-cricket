@@ -6,6 +6,7 @@ import (
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -77,7 +78,14 @@ func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilte
 		query = query.Eq("status", string(*filters.Status))
 	}
 
-	query = query.Range(filters.Offset, filters.Offset+filters.Limit-1, "")
+	// Add consistent ordering by created_at DESC to ensure predictable results
+	query = query.Order("created_at", &postgrest.OrderOpts{Ascending: false})
+
+	// Note: Offset is not supported by this Supabase client version
+	// Use Limit for basic pagination, but offset functionality is limited
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit, "")
+	}
 
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
@@ -94,7 +102,7 @@ func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilte
 
 func (r *matchRepository) GetBySeriesID(ctx context.Context, seriesID string) ([]*models.Match, error) {
 	var result []models.Match
-	_, err := r.client.From("matches").Select("*", "", false).Eq("series_id", seriesID).ExecuteTo(&result)
+	_, err := r.client.From("matches").Select("*", "", false).Eq("series_id", seriesID).Order("created_at", &postgrest.OrderOpts{Ascending: false}).ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}

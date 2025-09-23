@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/config"
@@ -11,6 +12,7 @@ import (
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,9 +38,9 @@ func TestAuthSessionJSONMarshaling(t *testing.T) {
 
 	// Create test user
 	testUser := &models.User{
-		ID:            "test-user-123",
-		Email:         "test@example.com",
-		Name:          "Test User",
+		GoogleID:      fmt.Sprintf("test-google-id-json-%d", time.Now().UnixNano()),
+		Email:         fmt.Sprintf("test-json-%d@example.com", time.Now().UnixNano()),
+		Name:          "Test JSON User",
 		EmailVerified: true,
 	}
 
@@ -47,7 +49,7 @@ func TestAuthSessionJSONMarshaling(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService)
+	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg.Config)
 
 	// Test 1: Auth status check without session (should not cause JSON marshaling error)
 	t.Run("AuthStatus_NoSession", func(t *testing.T) {
@@ -149,9 +151,9 @@ func TestSessionValuesJSONMarshaling(t *testing.T) {
 
 	// Create test user
 	testUser := &models.User{
-		ID:            "test-user-456",
-		Email:         "test2@example.com",
-		Name:          "Test User 2",
+		GoogleID:      fmt.Sprintf("test-google-id-session-json-%d", time.Now().UnixNano()),
+		Email:         fmt.Sprintf("test-session-json-%d@example.com", time.Now().UnixNano()),
+		Name:          "Test User Session JSON",
 		EmailVerified: true,
 	}
 

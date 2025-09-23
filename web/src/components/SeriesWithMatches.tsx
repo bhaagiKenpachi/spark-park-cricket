@@ -7,9 +7,7 @@ import {
   deleteMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
-import {
-  fetchScorecardRequest,
-} from '@/store/reducers/scorecardSlice';
+import { fetchScorecardRequest } from '@/store/reducers/scorecardSlice';
 import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { RefreshCw, Plus, Edit, Trash2, Calendar, Play, MoreVertical } from 'lucide-react';
+import {
+  RefreshCw,
+  Plus,
+  Edit,
+  Trash2,
+  Calendar,
+  Play,
+  MoreVertical,
+} from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
 
@@ -62,7 +68,9 @@ export function SeriesWithMatches({
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
-  const [scorecardData, setScorecardData] = useState<{ [matchId: string]: ScorecardData }>({});
+  const [scorecardData, setScorecardData] = useState<{
+    [matchId: string]: ScorecardData;
+  }>({});
 
   // Format date to human readable format
   const formatDate = (dateString: string) => {
@@ -79,19 +87,22 @@ export function SeriesWithMatches({
   };
 
   // Fetch scorecard data for completed matches
-  const fetchMatchScorecard = useCallback(async (matchId: string) => {
-    if (!scorecardData[matchId]) {
-      try {
-        dispatch(fetchScorecardRequest(matchId));
-      } catch (error) {
-        console.error('Error fetching scorecard:', error);
+  const fetchMatchScorecard = useCallback(
+    async (matchId: string) => {
+      if (!scorecardData[matchId]) {
+        try {
+          dispatch(fetchScorecardRequest(matchId));
+        } catch (error) {
+          console.error('Error fetching scorecard:', error);
+        }
       }
-    }
-  }, [dispatch, scorecardData]);
+    },
+    [dispatch, scorecardData]
+  );
 
   // Filter matches for this series
-  const seriesMatches = useMemo(() =>
-    matches?.filter(match => match.series_id === series.id) || [],
+  const seriesMatches = useMemo(
+    () => matches?.filter(match => match.series_id === series.id) || [],
     [matches, series.id]
   );
 
@@ -121,7 +132,7 @@ export function SeriesWithMatches({
     if (scorecard && scorecard.match_id) {
       setScorecardData(prev => ({
         ...prev,
-        [scorecard.match_id]: scorecard
+        [scorecard.match_id]: scorecard,
       }));
     }
   }, [scorecard]);
@@ -160,11 +171,18 @@ export function SeriesWithMatches({
   }
 
   return (
-    <Card key={series.id} data-cy="series-item" className="shadow-sm hover:shadow-md transition-shadow duration-200 border-0 bg-gradient-to-br from-white to-gray-50/30">
+    <Card
+      key={series.id}
+      data-cy="series-item"
+      className="shadow-sm hover:shadow-md transition-shadow duration-200 border-0 bg-gradient-to-br from-white to-gray-50/30"
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <CardTitle data-cy="series-name" className="text-xl font-semibold text-gray-900 mb-1">
+            <CardTitle
+              data-cy="series-name"
+              className="text-xl font-semibold text-gray-900 mb-1"
+            >
               {series.name}
             </CardTitle>
             {series.description && (
@@ -183,7 +201,11 @@ export function SeriesWithMatches({
             {isOwner && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-gray-100"
+                  >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -212,8 +234,12 @@ export function SeriesWithMatches({
               <Calendar className="h-4 w-4 text-green-600" />
             </div>
             <div>
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Start Date</span>
-              <p className="text-sm font-semibold text-gray-900">{formatDate(series.start_date)}</p>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Start Date
+              </span>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDate(series.start_date)}
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
@@ -221,8 +247,12 @@ export function SeriesWithMatches({
               <Calendar className="h-4 w-4 text-red-600" />
             </div>
             <div>
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">End Date</span>
-              <p className="text-sm font-semibold text-gray-900">{formatDate(series.end_date)}</p>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                End Date
+              </span>
+              <p className="text-sm font-semibold text-gray-900">
+                {formatDate(series.end_date)}
+              </p>
             </div>
           </div>
         </div>
@@ -231,11 +261,11 @@ export function SeriesWithMatches({
           <div className="mt-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Matches
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900">Matches</h3>
                 <p className="text-sm text-gray-500">
-                  {seriesMatches.length} {seriesMatches.length === 1 ? 'match' : 'matches'} in this series
+                  {seriesMatches.length}{' '}
+                  {seriesMatches.length === 1 ? 'match' : 'matches'} in this
+                  series
                 </p>
               </div>
               <div className="flex space-x-2">
@@ -282,7 +312,9 @@ export function SeriesWithMatches({
               <div className="text-center py-12">
                 <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <Play className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No matches found for this series.</p>
+                  <p className="text-gray-500 mb-4">
+                    No matches found for this series.
+                  </p>
                   {isOwner && (
                     <Button
                       size="sm"
@@ -307,10 +339,7 @@ export function SeriesWithMatches({
                         <div
                           className="space-y-4 cursor-pointer flex-1 group"
                           onClick={() =>
-                            onViewScorecard?.(
-                              match.id,
-                              series.created_by || ''
-                            )
+                            onViewScorecard?.(match.id, series.created_by || '')
                           }
                         >
                           {/* Match Header */}
@@ -320,12 +349,15 @@ export function SeriesWithMatches({
                                 Match #{match.match_number}
                               </h4>
                               <p className="text-sm text-gray-500 mt-1">
-                                {new Date(match.date).toLocaleDateString('en-US', {
-                                  weekday: 'short',
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
+                                {new Date(match.date).toLocaleDateString(
+                                  'en-US',
+                                  {
+                                    weekday: 'short',
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  }
+                                )}
                               </p>
                             </div>
                             <Badge
@@ -354,10 +386,13 @@ export function SeriesWithMatches({
                             <div className="bg-gray-50 rounded-lg p-3">
                               <div className="flex items-center space-x-2 mb-2">
                                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Teams</span>
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  Teams
+                                </span>
                               </div>
                               <p className="text-sm font-semibold text-gray-900">
-                                {match.team_a_player_count} vs {match.team_b_player_count} players
+                                {match.team_a_player_count} vs{' '}
+                                {match.team_b_player_count} players
                               </p>
                             </div>
 
@@ -365,7 +400,9 @@ export function SeriesWithMatches({
                             <div className="bg-gray-50 rounded-lg p-3">
                               <div className="flex items-center space-x-2 mb-2">
                                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Format</span>
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  Format
+                                </span>
                               </div>
                               <p className="text-sm font-semibold text-gray-900">
                                 {match.total_overs} overs
@@ -377,71 +414,111 @@ export function SeriesWithMatches({
                           <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
                             <div className="flex items-center space-x-2 mb-2">
                               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Toss Result</span>
+                              <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                                Toss Result
+                              </span>
                             </div>
                             <p className="text-sm font-semibold text-blue-900">
-                              Team {match.toss_winner} won the toss and chose to {match.toss_type === 'H' ? 'bat first' : 'bowl first'}
+                              Team {match.toss_winner} won the toss and chose to{' '}
+                              {match.toss_type === 'H'
+                                ? 'bat first'
+                                : 'bowl first'}
                             </p>
                           </div>
 
                           {/* Match Completion Summary */}
-                          {match.status === 'completed' && (() => {
-                            const matchScorecard = scorecardData[match.id];
-                            if (matchScorecard && matchScorecard.innings && Array.isArray(matchScorecard.innings)) {
-                              const teamAInnings = matchScorecard.innings.find(innings => innings.batting_team === 'A');
-                              const teamBInnings = matchScorecard.innings.find(innings => innings.batting_team === 'B');
+                          {match.status === 'completed' &&
+                            (() => {
+                              const matchScorecard = scorecardData[match.id];
+                              if (
+                                matchScorecard &&
+                                matchScorecard.innings &&
+                                Array.isArray(matchScorecard.innings)
+                              ) {
+                                const teamAInnings =
+                                  matchScorecard.innings.find(
+                                    innings => innings.batting_team === 'A'
+                                  );
+                                const teamBInnings =
+                                  matchScorecard.innings.find(
+                                    innings => innings.batting_team === 'B'
+                                  );
 
-                              if (teamAInnings && teamBInnings) {
-                                const teamARuns = teamAInnings.total_runs;
-                                const teamBRuns = teamBInnings.total_runs;
-                                const winner = teamARuns > teamBRuns ? matchScorecard.team_a : matchScorecard.team_b;
-                                const margin = Math.abs(teamARuns - teamBRuns);
+                                if (teamAInnings && teamBInnings) {
+                                  const teamARuns = teamAInnings.total_runs;
+                                  const teamBRuns = teamBInnings.total_runs;
+                                  const winner =
+                                    teamARuns > teamBRuns
+                                      ? matchScorecard.team_a
+                                      : matchScorecard.team_b;
+                                  const margin = Math.abs(
+                                    teamARuns - teamBRuns
+                                  );
 
-                                return (
-                                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                                    <div className="flex items-center space-x-2 mb-3">
-                                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                      <span className="text-xs font-medium text-green-600 uppercase tracking-wide">Match Result</span>
+                                  return (
+                                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                      <div className="flex items-center space-x-2 mb-3">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                          Match Result
+                                        </span>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-sm font-medium text-gray-700">
+                                            {matchScorecard.team_a}
+                                          </span>
+                                          <span className="text-sm font-bold text-gray-900">
+                                            {teamARuns}/
+                                            {teamAInnings.total_wickets}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-sm font-medium text-gray-700">
+                                            {matchScorecard.team_b}
+                                          </span>
+                                          <span className="text-sm font-bold text-gray-900">
+                                            {teamBRuns}/
+                                            {teamBInnings.total_wickets}
+                                          </span>
+                                        </div>
+                                        <div className="pt-2 border-t border-green-200">
+                                          <p className="text-sm font-semibold text-green-800 text-center">
+                                            {winner} won by {margin} run
+                                            {margin !== 1 ? 's' : ''}
+                                          </p>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium text-gray-700">{matchScorecard.team_a}</span>
-                                        <span className="text-sm font-bold text-gray-900">{teamARuns}/{teamAInnings.total_wickets}</span>
-                                      </div>
-                                      <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium text-gray-700">{matchScorecard.team_b}</span>
-                                        <span className="text-sm font-bold text-gray-900">{teamBRuns}/{teamBInnings.total_wickets}</span>
-                                      </div>
-                                      <div className="pt-2 border-t border-green-200">
-                                        <p className="text-sm font-semibold text-green-800 text-center">
-                                          {winner} won by {margin} run{margin !== 1 ? 's' : ''}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
+                                  );
+                                }
                               }
-                            }
 
-                            // Fallback for when scorecard data is not available yet
-                            return (
-                              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                                <div className="flex items-center space-x-2 mb-2">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-xs font-medium text-green-600 uppercase tracking-wide">Match Result</span>
+                              // Fallback for when scorecard data is not available yet
+                              return (
+                                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                      Match Result
+                                    </span>
+                                  </div>
+                                  <p className="text-sm font-semibold text-green-800">
+                                    Match completed - Loading scores...
+                                  </p>
                                 </div>
-                                <p className="text-sm font-semibold text-green-800">
-                                  Match completed - Loading scores...
-                                </p>
-                              </div>
-                            );
-                          })()}
+                              );
+                            })()}
                         </div>
 
                         {/* Match Actions Dropdown */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="hover:bg-gray-100"
+                            >
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -459,7 +536,9 @@ export function SeriesWithMatches({
                             </DropdownMenuItem>
                             {isOwner && (
                               <>
-                                <DropdownMenuItem onClick={() => handleEditMatch(match)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleEditMatch(match)}
+                                >
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit Match
                                 </DropdownMenuItem>
@@ -482,7 +561,6 @@ export function SeriesWithMatches({
             )}
           </div>
         )}
-
       </CardContent>
     </Card>
   );

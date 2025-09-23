@@ -17,8 +17,7 @@ export function UserMenu() {
     try {
       await dispatch(logout()).unwrap();
       setIsOpen(false);
-    } catch {
-    }
+    } catch {}
   };
 
   if (!user) {
@@ -32,6 +31,7 @@ export function UserMenu() {
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-2"
+        data-testid="user-menu"
       >
         {user.picture ? (
           <Image
@@ -94,9 +94,10 @@ export function UserMenu() {
                   size="sm"
                   className="w-full justify-start gap-2"
                   onClick={() => setIsOpen(false)}
+                  data-cy="profile-button"
                 >
                   <Settings className="h-4 w-4" />
-                  Settings
+                  Profile
                 </Button>
 
                 <Button
@@ -105,6 +106,7 @@ export function UserMenu() {
                   className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                   onClick={handleLogout}
                   disabled={isLoading}
+                  data-cy="sign-out-button"
                 >
                   <LogOut className="h-4 w-4" />
                   {isLoading ? 'Signing out...' : 'Sign out'}

@@ -7,6 +7,8 @@ import (
 	"spark-park-cricket-backend/internal/services"
 	"testing"
 
+	contextkeys "spark-park-cricket-backend/internal/context"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -49,6 +51,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 				ID:         "match-1",
 				Status:     models.MatchStatusCancelled,
 				TossWinner: models.TeamTypeA,
+				CreatedBy:  "test-user-123",
 			},
 			expectedError: "match is not live, cannot start scoring",
 		},
@@ -107,7 +110,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 
 			// Test
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 			err := service.StartScoring(ctx, tt.matchID)
 
 			// Assertions
@@ -204,7 +207,7 @@ func TestScorecardService_AddBall(t *testing.T) {
 
 			// Test
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 			err := service.AddBall(ctx, tt.req)
 
 			// Assertions
@@ -785,7 +788,7 @@ func TestScorecardService_UndoBall(t *testing.T) {
 
 			// Test
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 			err := service.UndoBall(ctx, tt.matchID, tt.inningsNumber)
 
 			// Assertions

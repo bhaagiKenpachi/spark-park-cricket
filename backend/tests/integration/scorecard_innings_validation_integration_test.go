@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"spark-park-cricket-backend/internal/config"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +24,26 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	require.NoError(t, err)
 	defer testDB.Close()
 
-	// Clean up before test
-	testutils.CleanupScorecardTestData(t, testDB)
+	// Clean up ALL test data before test to ensure complete isolation
+	testutils.CleanupAllTestData(t, testDB)
+
+	// Create a test user for authentication
+	testUser := &models.User{
+		ID:        uuid.New().String(),
+		Email:     "test-scorecard-validation@example.com",
+		Name:      "Test Scorecard Validation User",
+		GoogleID:  uuid.New().String(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Create the user in the database
+	ctx := context.Background()
+	err = testDB.Repositories.User.CreateUser(ctx, testUser)
+	require.NoError(t, err)
+
+	// Create authenticated context
+	ctx = context.WithValue(ctx, contextkeys.UserIDKey, testUser.ID) // nolint:staticcheck // Test context key
 
 	// Use repositories from test client
 	seriesRepo := testDB.Repositories.Series
@@ -34,8 +54,6 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	seriesService := services.NewSeriesService(seriesRepo)
 	matchService := services.NewMatchService(matchRepo, seriesRepo)
 	scorecardService := services.NewScorecardService(scorecardRepo, matchRepo)
-
-	ctx := context.Background()
 
 	t.Run("First ball must be played by toss-winning team", func(t *testing.T) {
 		// Create a test series
@@ -306,5 +324,9 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	})
 
 	// Clean up after test
-	testutils.CleanupScorecardTestData(t, testDB)
+	testutils.CleanupAllTestData(t, testDB)
+
+	// Clean up test user
+	err = testDB.Repositories.User.DeleteUser(ctx, testUser.ID)
+	require.NoError(t, err)
 }

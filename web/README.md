@@ -14,7 +14,7 @@ A modern Next.js frontend for the Spark Park Cricket tournament management syste
 - **Language**: TypeScript with strict configuration
 - **State Management**: Redux Toolkit + Redux Saga
 - **Styling**: Tailwind CSS
-- **Testing**: Jest, React Testing Library, Cypress
+- **Testing**: Jest, React Testing Library, Playwright
 - **Code Quality**: ESLint, Prettier, Husky
 
 ## 📁 Project Structure
@@ -30,7 +30,7 @@ web/
 │   │   └── hooks.ts            # Typed Redux hooks
 │   ├── providers/              # React context providers
 │   └── types/                  # TypeScript type definitions
-├── cypress/                    # E2E tests
+├── tests/e2e/                 # Playwright E2E tests
 ├── .cursor/rules/              # Cursor IDE rules
 └── __tests__/                  # Test utilities and setup
 ```
@@ -75,11 +75,20 @@ npm run test:ci
 ### End-to-End Tests
 
 ```bash
-# Run E2E tests headlessly
-npm run e2e
+# Run E2E tests (Chrome & Firefox)
+npm run test:e2e
 
-# Open Cypress test runner
-npm run e2e:open
+# Run all browsers including Safari
+npm run test:e2e:all
+
+# Run with UI for debugging
+npm run test:e2e:ui
+
+# Run mobile tests
+npm run test:mobile
+
+# Install Playwright browsers (one-time setup)
+npm run playwright:install
 ```
 
 ## 🔧 Code Quality
@@ -120,8 +129,8 @@ npm run type-check
 | `test`          | Run Jest tests                          |
 | `test:watch`    | Run tests in watch mode                 |
 | `test:coverage` | Run tests with coverage report          |
-| `e2e`           | Run Cypress E2E tests                   |
-| `e2e:open`      | Open Cypress test runner                |
+| `test:e2e`      | Run Playwright E2E tests                |
+| `test:e2e:ui`   | Open Playwright test runner             |
 | `type-check`    | Run TypeScript compiler check           |
 
 ## 🏗️ Architecture
@@ -211,7 +220,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
 - [Redux Toolkit Documentation](https://redux-toolkit.js.org/)
 - [Redux Saga Documentation](https://redux-saga.js.org/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Cypress Documentation](https://docs.cypress.io/)
+- [Playwright Documentation](https://playwright.dev/)
 
 ## 🤝 Contributing
 

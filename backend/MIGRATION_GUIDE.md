@@ -7,16 +7,19 @@ This guide explains how to reset and migrate the Supabase database to the new si
 ## What Changed
 
 ### 🗑️ **Removed Tables**
+
 - `teams` - No longer needed (using Team A and Team B)
 - `players` - No longer needed (simplified player management)
 
 ### 🔄 **Updated Tables**
+
 - `matches` - Added toss functionality and team simplification
 - `live_scoreboard` - Simplified to use TeamType instead of team IDs
 - `overs` - Updated to use TeamType
 - `balls` - Updated to use new run types and removed player references
 
 ### ✨ **New Features**
+
 - **Toss System**: Heads/Tails toss with winner batting first
 - **Team Simplification**: Team A vs Team B with configurable player counts
 - **Run Types**: 1-9, NB (No Ball), WD (Wide), LB (Leg Byes)
@@ -25,12 +28,14 @@ This guide explains how to reset and migrate the Supabase database to the new si
 ## Migration Steps
 
 ### 1. **Backup Current Data** (Optional)
+
 ```bash
 # Export current data if needed
 pg_dump your_database > backup_before_migration.sql
 ```
 
 ### 2. **Reset Database**
+
 ```bash
 # Option 1: Using the comprehensive Go script
 go run scripts/reset_and_migrate.go
@@ -40,6 +45,7 @@ go run scripts/reset_and_migrate.go
 ```
 
 ### 3. **Execute Schema Update** (CRITICAL)
+
 **You MUST execute this manually in Supabase Dashboard:**
 
 1. Go to your Supabase Dashboard
@@ -50,6 +56,7 @@ go run scripts/reset_and_migrate.go
 **This fixes the `batting_team` column issue and all other schema problems.**
 
 ### 4. **Verify Migration**
+
 ```bash
 # Check if tables were created correctly
 curl http://localhost:8080/health/database
@@ -62,6 +69,7 @@ curl http://localhost:8080/api/v1/matches
 ## Database Schema
 
 ### **Series Table**
+
 ```sql
 CREATE TABLE series (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -74,6 +82,7 @@ CREATE TABLE series (
 ```
 
 ### **Matches Table**
+
 ```sql
 CREATE TABLE matches (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -93,6 +102,7 @@ CREATE TABLE matches (
 ```
 
 ### **Live Scoreboard Table**
+
 ```sql
 CREATE TABLE live_scoreboard (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -108,6 +118,7 @@ CREATE TABLE live_scoreboard (
 ```
 
 ### **Overs Table**
+
 ```sql
 CREATE TABLE overs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -121,6 +132,7 @@ CREATE TABLE overs (
 ```
 
 ### **Balls Table**
+
 ```sql
 CREATE TABLE balls (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -148,6 +160,7 @@ This provides a clean slate for testing and development.
 ## API Changes
 
 ### **Removed Endpoints**
+
 - `GET /api/v1/teams` - Teams API removed
 - `POST /api/v1/teams` - Create team removed
 - `GET /api/v1/players` - Players API removed
@@ -157,10 +170,12 @@ This provides a clean slate for testing and development.
 - `PUT /api/v1/scoreboard/{match_id}/wicket` - Wicket API removed
 
 ### **Updated Endpoints**
+
 - `POST /api/v1/matches` - Now includes toss functionality
 - `PUT /api/v1/matches/{id}` - Can update player counts and overs
 
 ### **New Fields**
+
 - `team_a_player_count`: Number of players in Team A (1-11)
 - `team_b_player_count`: Number of players in Team B (1-11)
 - `total_overs`: Total overs for the match (1-20)
@@ -171,11 +186,13 @@ This provides a clean slate for testing and development.
 ## Testing the Migration
 
 ### 1. **Health Check**
+
 ```bash
 curl http://localhost:8080/health/database
 ```
 
 ### 2. **Create Series**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/series \
   -H "Content-Type: application/json" \
@@ -187,6 +204,7 @@ curl -X POST http://localhost:8080/api/v1/series \
 ```
 
 ### 3. **Create Match with Toss**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/matches \
   -H "Content-Type: application/json" \
@@ -203,6 +221,7 @@ curl -X POST http://localhost:8080/api/v1/matches \
 ```
 
 ### 4. **List Matches**
+
 ```bash
 curl http://localhost:8080/api/v1/matches
 ```
@@ -260,6 +279,7 @@ If you need to rollback:
 ## Support
 
 For issues or questions:
+
 1. Check the server logs for detailed error messages
 2. Verify environment variables are set correctly
 3. Ensure Supabase connection is working
@@ -268,6 +288,7 @@ For issues or questions:
 ## Next Steps
 
 After successful migration:
+
 1. Update your Postman collection
 2. Test all API endpoints
 3. Update your frontend application

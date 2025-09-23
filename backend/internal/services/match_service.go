@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -28,7 +29,7 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	fmt.Printf("DEBUG: MatchService.CreateMatch - Starting creation with request: %+v\n", req)
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: MatchService.CreateMatch - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
@@ -44,6 +45,20 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 		return nil, fmt.Errorf("series not found: %w", err)
 	}
 	fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation successful\n")
+
+	// Validate request fields
+	if req.TeamAPlayerCount <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamAPlayerCount must be greater than 0\n")
+		return nil, fmt.Errorf("team A player count must be greater than 0")
+	}
+	if req.TeamBPlayerCount <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamBPlayerCount must be greater than 0\n")
+		return nil, fmt.Errorf("team B player count must be greater than 0")
+	}
+	if req.TotalOvers <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TotalOvers must be greater than 0\n")
+		return nil, fmt.Errorf("total overs must be greater than 0")
+	}
 
 	// Determine match number - use provided number or auto-increment
 	var matchNumber int
@@ -162,7 +177,7 @@ func (s *MatchService) UpdateMatch(ctx context.Context, id string, req *models.U
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: MatchService.UpdateMatch - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
@@ -225,13 +240,13 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		return fmt.Errorf("user authentication required")
 	}
 
 	// Check if match exists
-	_, err := s.matchRepo.GetByID(ctx, id)
+	match, err := s.matchRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("match not found: %w", err)
 	}

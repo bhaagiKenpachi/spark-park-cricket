@@ -28,6 +28,7 @@ query GetLiveScorecard($matchId: String!) {
 ```
 
 Variables:
+
 ```json
 {
   "matchId": "your-match-id-here"
@@ -255,21 +256,21 @@ const query = `
 `;
 
 const variables = {
-  matchId: "your-match-id-here"
+  matchId: "your-match-id-here",
 };
 
-fetch('http://localhost:8080/api/v1/graphql', {
-  method: 'POST',
+fetch("http://localhost:8080/api/v1/graphql", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   body: JSON.stringify({
     query,
-    variables
-  })
+    variables,
+  }),
 })
-.then(response => response.json())
-.then(data => console.log(data));
+  .then((response) => response.json())
+  .then((data) => console.log(data));
 ```
 
 ## Benefits of GraphQL

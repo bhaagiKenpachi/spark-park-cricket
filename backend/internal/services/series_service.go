@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -31,7 +32,7 @@ func (s *SeriesService) CreateSeries(ctx context.Context, req *models.CreateSeri
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: SeriesService.CreateSeries - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
@@ -121,7 +122,7 @@ func (s *SeriesService) UpdateSeries(ctx context.Context, id string, req *models
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: SeriesService.UpdateSeries - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
@@ -188,7 +189,7 @@ func (s *SeriesService) DeleteSeries(ctx context.Context, id string) error {
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: SeriesService.DeleteSeries - Authentication failed: no user_id in context\n")
 		return fmt.Errorf("user authentication required")

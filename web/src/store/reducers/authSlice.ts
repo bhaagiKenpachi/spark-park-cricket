@@ -22,7 +22,6 @@ const initialState: AuthState = {
 export const checkAuthStatus = createAsyncThunk(
   'auth/checkAuthStatus',
   async (_, { rejectWithValue }) => {
-
     try {
       const response = await authService.getAuthStatus();
       return response.data;
@@ -67,7 +66,6 @@ export const logout = createAsyncThunk(
 export const initializeAuth = createAsyncThunk(
   'auth/initializeAuth',
   async () => {
-
     try {
       // First check if we have stored auth state
       const storedUser = authService.getStoredUser();
@@ -130,7 +128,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
-
         state.isLoading = false;
         state.isAuthenticated = action.payload.authenticated;
         state.user = action.payload.user || null;
@@ -139,7 +136,6 @@ const authSlice = createSlice({
           action.payload.authenticated,
           action.payload.user || undefined
         );
-
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
         state.isLoading = false;
