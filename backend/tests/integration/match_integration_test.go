@@ -370,9 +370,9 @@ func testMatchValidation(t *testing.T, router http.Handler, sessionCookie *http.
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code) // Business logic error returns 500
+	assert.Equal(t, http.StatusBadRequest, w.Code) // Invalid UUID format returns 400
 
-	// Test missing required fields - this should return 500 for business logic errors (invalid UUID)
+	// Test missing required fields - this should return 400 for invalid UUID format
 	invalidReq := map[string]interface{}{
 		"series_id": "test-series", // Invalid UUID format
 		"date":      "2025-09-14T10:00:00Z",
@@ -388,8 +388,8 @@ func testMatchValidation(t *testing.T, router http.Handler, sessionCookie *http.
 	w = httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
-	// Invalid UUID format causes business logic error, not validation error
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	// Invalid UUID format returns 400 Bad Request
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	// Test invalid JSON
 	req = httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer([]byte("invalid json")))
