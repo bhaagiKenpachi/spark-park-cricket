@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -205,7 +206,11 @@ func testMatchSeriesIntegrationWithAuth(t *testing.T, server *httptest.Server, s
 	series2Matches := getMatchesBySeriesWithAuth(t, server, sessionCookie, series2ID)
 	assert.Len(t, series2Matches, 1)
 
-	// Clean up
+	// Clean up - complete matches before deletion (live matches cannot be deleted)
+	completeMatchWithAuth(t, server, sessionCookie, match1ID)
+	completeMatchWithAuth(t, server, sessionCookie, match2ID)
+	completeMatchWithAuth(t, server, sessionCookie, match3ID)
+
 	deleteMatchWithAuth(t, server, sessionCookie, match1ID)
 	deleteMatchWithAuth(t, server, sessionCookie, match2ID)
 	deleteMatchWithAuth(t, server, sessionCookie, match3ID)
@@ -252,7 +257,8 @@ func testMatchValidationWorkflowWithAuth(t *testing.T, server *httptest.Server, 
 	}
 	updateBattingTeamWithAuth(t, server, sessionCookie, matchID, invalidUpdateReq)
 
-	// Clean up
+	// Clean up - complete match before deletion (live matches cannot be deleted)
+	completeMatchWithAuth(t, server, sessionCookie, matchID)
 	deleteMatchWithAuth(t, server, sessionCookie, matchID)
 }
 
@@ -369,6 +375,25 @@ func getMatchesBySeriesWithAuth(t *testing.T, server *httptest.Server, sessionCo
 		}
 	}
 	return matches
+}
+
+func completeMatchWithAuth(t *testing.T, server *httptest.Server, sessionCookie string, matchID string) {
+	httpReq, _ := http.NewRequest("PUT", server.URL+"/api/v1/matches/"+matchID, nil)
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.AddCookie(&http.Cookie{Name: "user_session", Value: sessionCookie})
+
+	// Update match status to completed
+	updateReq := models.UpdateMatchRequest{
+		Status: &[]models.MatchStatus{models.MatchStatusCompleted}[0],
+	}
+	reqBody, _ := json.Marshal(updateReq)
+	httpReq.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+
+	resp, err := server.Client().Do(httpReq)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, 200, resp.StatusCode)
 }
 
 func deleteMatchWithAuth(t *testing.T, server *httptest.Server, sessionCookie string, matchID string) {

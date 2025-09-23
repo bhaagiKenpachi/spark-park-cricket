@@ -46,6 +46,20 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	}
 	fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation successful\n")
 
+	// Validate request fields
+	if req.TeamAPlayerCount <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamAPlayerCount must be greater than 0\n")
+		return nil, fmt.Errorf("team A player count must be greater than 0")
+	}
+	if req.TeamBPlayerCount <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamBPlayerCount must be greater than 0\n")
+		return nil, fmt.Errorf("team B player count must be greater than 0")
+	}
+	if req.TotalOvers <= 0 {
+		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TotalOvers must be greater than 0\n")
+		return nil, fmt.Errorf("total overs must be greater than 0")
+	}
+
 	// Determine match number - use provided number or auto-increment
 	var matchNumber int
 	if req.MatchNumber != nil {
