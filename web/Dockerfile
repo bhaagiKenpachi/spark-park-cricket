@@ -1,0 +1,31 @@
+# Development stage
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm install --ignore-scripts
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000 || exit 1
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=3000
+
+# Run the application in development mode
+CMD ["npm", "run", "dev"]
