@@ -43,6 +43,9 @@ func PrometheusHandler() http.Handler {
 		// This will be handled by the Prometheus client library
 		// The actual metrics endpoint will be registered separately
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("# Prometheus metrics endpoint\n"))
+		if _, err := w.Write([]byte("# Prometheus metrics endpoint\n")); err != nil {
+			// Log error if write fails
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 }

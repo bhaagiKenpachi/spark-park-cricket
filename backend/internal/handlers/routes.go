@@ -80,7 +80,10 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Database monitoring test completed successfully"))
+		if _, err := w.Write([]byte("Database monitoring test completed successfully")); err != nil {
+			// Log error if write fails
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	})
 
 	// Auth success page
