@@ -5,6 +5,7 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/interfaces"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/pkg/events"
 	"spark-park-cricket-backend/pkg/websocket"
 )
@@ -20,10 +21,14 @@ type Container struct {
 	// Authentication services
 	AuthService    *AuthService
 	SessionService *SessionService
+	// Monitoring
+	Metrics *monitoring.Metrics
 }
 
 // NewContainer creates a new service container with all services
 func NewContainer(repos *database.Repositories, cfg *config.Config) *Container {
+	// Initialize Prometheus metrics
+	metrics := monitoring.NewMetrics()
 	// Create WebSocket hub
 	hub := websocket.NewHub()
 
@@ -31,13 +36,13 @@ func NewContainer(repos *database.Repositories, cfg *config.Config) *Container {
 	broadcaster := events.NewEventBroadcaster(hub)
 
 	// Create base scorecard service
-	baseScorecardService := NewScorecardService(repos.Scorecard, repos.Match)
+	baseScorecardService := NewScorecardService(repos.Scorecard, repos.Match, metrics)
 
 	// Create GraphQL WebSocket service
 	graphqlWebSocketService := graphql.NewGraphQLWebSocketService(baseScorecardService, hub)
 
 	// Create GraphQL-integrated scorecard service
-	scorecardServiceWithGraphQL := NewScorecardServiceWithGraphQL(repos.Scorecard, repos.Match, hub)
+	scorecardServiceWithGraphQL := NewScorecardServiceWithGraphQL(repos.Scorecard, repos.Match, hub, metrics)
 
 	// Create authentication services
 	sessionService := NewSessionService(repos.User, cfg)
@@ -54,6 +59,8 @@ func NewContainer(repos *database.Repositories, cfg *config.Config) *Container {
 		// Authentication services
 		AuthService:    authService,
 		SessionService: sessionService,
+		// Monitoring
+		Metrics: metrics,
 	}
 
 	return container

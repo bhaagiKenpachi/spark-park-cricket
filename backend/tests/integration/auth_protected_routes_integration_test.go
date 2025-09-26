@@ -11,7 +11,6 @@ import (
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
-	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
@@ -632,7 +631,7 @@ func TestAuthProtectedRoutesIntegration_ContextValues(t *testing.T) {
 
 		// Create a test router with auth middleware
 		testRouter := chi.NewRouter()
-		testRouter.Use(middleware.AuthMiddleware(serviceContainer.SessionService))
+		testRouter.Use(services.AuthMiddleware(serviceContainer.SessionService))
 		testRouter.Post("/test-context", testHandler)
 
 		req := httptest.NewRequest("POST", "/test-context", nil)

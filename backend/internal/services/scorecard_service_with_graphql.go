@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/pkg/websocket"
 )
@@ -15,8 +16,8 @@ type ScorecardServiceWithGraphQL struct {
 }
 
 // NewScorecardServiceWithGraphQL creates a new scorecard service with GraphQL integration
-func NewScorecardServiceWithGraphQL(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, hub *websocket.Hub) *ScorecardServiceWithGraphQL {
-	baseService := NewScorecardService(scorecardRepo, matchRepo)
+func NewScorecardServiceWithGraphQL(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, hub *websocket.Hub, metrics *monitoring.Metrics) *ScorecardServiceWithGraphQL {
+	baseService := NewScorecardService(scorecardRepo, matchRepo, metrics)
 
 	return &ScorecardServiceWithGraphQL{
 		ScorecardService: baseService,

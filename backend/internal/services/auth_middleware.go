@@ -1,15 +1,14 @@
-package middleware
+package services
 
 import (
 	"context"
 	"net/http"
 	contextkeys "spark-park-cricket-backend/internal/context"
-	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 )
 
 // AuthMiddleware provides authentication middleware
-func AuthMiddleware(sessionSvc services.SessionServiceInterface) func(http.Handler) http.Handler {
+func AuthMiddleware(sessionSvc SessionServiceInterface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Check if user is authenticated
@@ -39,7 +38,7 @@ func AuthMiddleware(sessionSvc services.SessionServiceInterface) func(http.Handl
 
 // OptionalAuthMiddleware provides optional authentication middleware
 // This allows both authenticated and unauthenticated requests
-func OptionalAuthMiddleware(sessionSvc services.SessionServiceInterface) func(http.Handler) http.Handler {
+func OptionalAuthMiddleware(sessionSvc SessionServiceInterface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Try to get user session, but don't fail if not authenticated
@@ -65,7 +64,7 @@ func OptionalAuthMiddleware(sessionSvc services.SessionServiceInterface) func(ht
 }
 
 // AdminMiddleware provides admin-only access middleware
-func AdminMiddleware(sessionSvc services.SessionServiceInterface) func(http.Handler) http.Handler {
+func AdminMiddleware(sessionSvc SessionServiceInterface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// First check authentication

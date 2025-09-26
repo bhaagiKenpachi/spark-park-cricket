@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
-	"spark-park-cricket-backend/internal/middleware"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 	"strings"
@@ -19,20 +20,21 @@ import (
 func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
-	// Middleware
-	r.Use(middleware.RecoveryMiddleware)
-	r.Use(middleware.LoggerMiddleware)
-	r.Use(middleware.RequestIDMiddleware)
-	r.Use(chimiddleware.RealIP)
-	r.Use(middleware.TimeoutMiddleware(60 * time.Second))
-	r.Use(middleware.SecurityMiddleware)
-	r.Use(middleware.ValidationMiddleware)
-	r.Use(middleware.MetricsMiddleware)
-	r.Use(middleware.RateLimitMiddleware(100)) // 100 requests per minute
-	r.Use(corsMiddleware(cfg))
-
 	// Initialize services
 	serviceContainer := services.NewContainer(dbClient.Repositories, cfg)
+
+	// Middleware
+	r.Use(services.RecoveryMiddleware)
+	r.Use(services.LoggerMiddleware)
+	r.Use(services.RequestIDMiddleware)
+	r.Use(chimiddleware.RealIP)
+	r.Use(services.TimeoutMiddleware(60 * time.Second))
+	r.Use(services.SecurityMiddleware)
+	r.Use(services.ValidationMiddleware)
+	r.Use(services.MetricsMiddleware)
+	r.Use(services.PrometheusMiddleware(serviceContainer.Metrics)) // Add Prometheus metrics middleware
+	r.Use(services.RateLimitMiddleware(100))                       // 100 requests per minute
+	r.Use(corsMiddleware(cfg))
 
 	// Start WebSocket hub
 	go serviceContainer.Hub.Run()
@@ -56,6 +58,31 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/metrics", healthHandler.Metrics)
 
+	// Test endpoint for database monitoring (no auth required)
+	r.Get("/test-db-monitoring", func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a database operation with monitoring
+		ctx := r.Context()
+		metrics := serviceContainer.Metrics
+
+		// Test the database monitoring
+		err := monitoring.WithDatabaseMonitoringContext(
+			ctx, metrics, "SELECT", "test_table", "test_match_id",
+			func(ctx context.Context) error {
+				// Simulate database operation
+				time.Sleep(100 * time.Millisecond)
+				return nil
+			},
+		)
+
+		if err != nil {
+			http.Error(w, "Database monitoring test failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Database monitoring test completed successfully"))
+	})
+
 	// Auth success page
 	r.Get("/auth/success", authSuccessHandler)
 
@@ -72,9 +99,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{id}", seriesHandler.GetSeries)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", seriesHandler.CreateSeries)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", seriesHandler.UpdateSeries)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", seriesHandler.DeleteSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", seriesHandler.CreateSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", seriesHandler.UpdateSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", seriesHandler.DeleteSeries)
 		})
 
 		// Match routes
@@ -86,9 +113,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", matchHandler.UpdateMatch)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", matchHandler.DeleteMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", matchHandler.UpdateMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", matchHandler.DeleteMatch)
 		})
 
 		// Scorecard routes
@@ -101,9 +128,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
 
 		// WebSocket routes

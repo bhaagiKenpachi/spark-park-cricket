@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"testing"
 
@@ -106,7 +107,7 @@ func TestScorecardService_StartScoring(t *testing.T) {
 			}
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			// Create context with user_id for authentication
@@ -203,7 +204,7 @@ func TestScorecardService_AddBall(t *testing.T) {
 			}
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			// Create context with user_id for authentication
@@ -259,7 +260,7 @@ func TestScorecardService_GetScorecard(t *testing.T) {
 			mockScorecardRepo.On("GetScorecard", mock.Anything, tt.matchID).Return(tt.scorecard, tt.getScorecardError)
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			result, err := service.GetScorecard(context.Background(), tt.matchID)
@@ -338,7 +339,7 @@ func TestScorecardService_GetCurrentOver(t *testing.T) {
 			}
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			result, err := service.GetCurrentOver(context.Background(), tt.matchID, tt.inningsNumber)
@@ -467,7 +468,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 			mockScorecardRepo.On("GetInningsByMatchAndNumber", mock.Anything, tt.matchID, 1).Return(tt.firstInnings, tt.getFirstInningsError)
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			complete, reason := service.ShouldCompleteMatch(context.Background(), tt.matchID, tt.secondInnings, tt.match)
@@ -484,7 +485,7 @@ func TestScorecardService_ShouldCompleteMatch(t *testing.T) {
 }
 
 func TestScorecardService_GetNonTossWinner(t *testing.T) {
-	service := services.NewScorecardService(nil, nil)
+	service := services.NewScorecardService(nil, nil, monitoring.NewMetrics())
 
 	tests := []struct {
 		name       string
@@ -784,7 +785,7 @@ func TestScorecardService_UndoBall(t *testing.T) {
 			}
 
 			// Create service
-			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+			service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 			// Test
 			// Create context with user_id for authentication

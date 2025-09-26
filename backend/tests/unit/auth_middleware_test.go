@@ -3,8 +3,8 @@ package unit
 import (
 	"net/http"
 	"net/http/httptest"
-	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
 	"testing"
 
 	contextkeys "spark-park-cricket-backend/internal/context"
@@ -28,7 +28,7 @@ func TestAuthMiddleware_AuthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create middleware
-	authMiddleware := middleware.AuthMiddleware(mockSessionService)
+	authMiddleware := services.AuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func TestAuthMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	authMiddleware := middleware.AuthMiddleware(mockSessionService)
+	authMiddleware := services.AuthMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +109,7 @@ func TestOptionalAuthMiddleware_AuthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create middleware
-	optionalAuthMiddleware := middleware.OptionalAuthMiddleware(mockSessionService)
+	optionalAuthMiddleware := services.OptionalAuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +151,7 @@ func TestOptionalAuthMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	optionalAuthMiddleware := middleware.OptionalAuthMiddleware(mockSessionService)
+	optionalAuthMiddleware := services.OptionalAuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -196,7 +196,7 @@ func TestAdminMiddleware_AdminUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(adminUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +245,7 @@ func TestAdminMiddleware_NonAdminUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(regularUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +279,7 @@ func TestAdminMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -320,7 +320,7 @@ func TestAdminMiddleware_AlternativeAdminEmail(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(adminUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

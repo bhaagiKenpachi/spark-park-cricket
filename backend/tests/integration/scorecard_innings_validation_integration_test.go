@@ -9,6 +9,7 @@ import (
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 
@@ -53,7 +54,7 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	// Create services
 	seriesService := services.NewSeriesService(seriesRepo)
 	matchService := services.NewMatchService(matchRepo, seriesRepo)
-	scorecardService := services.NewScorecardService(scorecardRepo, matchRepo)
+	scorecardService := services.NewScorecardService(scorecardRepo, matchRepo, monitoring.NewMetrics())
 
 	t.Run("First ball must be played by toss-winning team", func(t *testing.T) {
 		// Create a test series

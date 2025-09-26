@@ -11,7 +11,6 @@ import (
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
-	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"testing"
@@ -664,7 +663,7 @@ func SetupAuthenticatedE2ETestServerWithDB(t *testing.T) (*httptest.Server, *dat
 		// Protected routes (require authentication)
 		r.Route("/", func(r chi.Router) {
 			// Apply authentication middleware to protected routes
-			r.Use(middleware.AuthMiddleware(serviceContainer.SessionService))
+			r.Use(services.AuthMiddleware(serviceContainer.SessionService))
 
 			// Series routes
 			r.Route("/series", func(r chi.Router) {
