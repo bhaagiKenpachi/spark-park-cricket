@@ -9,6 +9,7 @@ import (
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"time"
 )
 
 type ScorecardService struct {
@@ -216,12 +217,25 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		WicketType: req.WicketType,
 	}
 
+	// Record ball addition metrics
+	start := time.Now()
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "INSERT", "balls", req.MatchID,
 		func(ctx context.Context) error {
 			return s.scorecardRepo.CreateBall(ctx, ball)
 		},
 	)
+	duration := time.Since(start)
+
+	// Record cricket-specific metrics
+	s.metrics.RecordBallAddition(
+		req.MatchID,
+		fmt.Sprintf("innings_%d", req.InningsNumber),
+		string(req.BallType),
+		string(req.RunType),
+		duration,
+	)
+
 	if err != nil {
 		log.Printf("Error creating ball: %v", err)
 		return fmt.Errorf("failed to add ball: %w", err)

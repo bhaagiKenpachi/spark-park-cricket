@@ -8,6 +8,7 @@ import (
 	"spark-park-cricket-backend/internal/monitoring"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // PrometheusMiddleware creates a middleware that records Prometheus metrics
@@ -39,13 +40,5 @@ func PrometheusMiddleware(metrics *monitoring.Metrics) func(http.Handler) http.H
 
 // PrometheusHandler creates a handler for Prometheus metrics endpoint
 func PrometheusHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// This will be handled by the Prometheus client library
-		// The actual metrics endpoint will be registered separately
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("# Prometheus metrics endpoint\n")); err != nil {
-			// Log error if write fails
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		}
-	})
+	return promhttp.Handler()
 }

@@ -30,6 +30,9 @@ type Config struct {
 	FrontendURL string
 	// CORS Configuration
 	AllowedOrigins string
+	// Monitoring Configuration
+	PrometheusURL string
+	GrafanaURL    string
 }
 
 func Load() *Config {
@@ -60,6 +63,9 @@ func Load() *Config {
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 		// CORS Configuration
 		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,https://spark-park.dojima.foundation,https://cricket-dev.dojima.foundation"),
+		// Monitoring Configuration
+		PrometheusURL: getEnv("PROMETHEUS_URL", getDefaultPrometheusURL()),
+		GrafanaURL:    getEnv("GRAFANA_URL", getDefaultGrafanaURL()),
 	}
 
 	// Log database configuration
@@ -162,4 +168,30 @@ func getEnvBool(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
+}
+
+// getDefaultPrometheusURL returns the default Prometheus URL based on environment
+func getDefaultPrometheusURL() string {
+	env := getEnv("ENVIRONMENT", "local")
+	switch env {
+	case "dev":
+		return "https://cricket-dev.dojima.foundation:9090"
+	case "prod":
+		return "https://cricket.dojima.foundation:9090"
+	default:
+		return "http://localhost:9090"
+	}
+}
+
+// getDefaultGrafanaURL returns the default Grafana URL based on environment
+func getDefaultGrafanaURL() string {
+	env := getEnv("ENVIRONMENT", "local")
+	switch env {
+	case "dev":
+		return "https://cricket-dev.dojima.foundation:3000"
+	case "prod":
+		return "https://cricket.dojima.foundation:3000"
+	default:
+		return "http://localhost:3002"
+	}
 }
