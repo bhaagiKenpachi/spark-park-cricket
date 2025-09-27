@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
-	"spark-park-cricket-backend/internal/middleware"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 	"strings"
@@ -19,20 +20,21 @@ import (
 func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
-	// Middleware
-	r.Use(middleware.RecoveryMiddleware)
-	r.Use(middleware.LoggerMiddleware)
-	r.Use(middleware.RequestIDMiddleware)
-	r.Use(chimiddleware.RealIP)
-	r.Use(middleware.TimeoutMiddleware(60 * time.Second))
-	r.Use(middleware.SecurityMiddleware)
-	r.Use(middleware.ValidationMiddleware)
-	r.Use(middleware.MetricsMiddleware)
-	r.Use(middleware.RateLimitMiddleware(100)) // 100 requests per minute
-	r.Use(corsMiddleware(cfg))
-
 	// Initialize services
 	serviceContainer := services.NewContainer(dbClient.Repositories, cfg)
+
+	// Middleware
+	r.Use(services.RecoveryMiddleware)
+	r.Use(services.LoggerMiddleware)
+	r.Use(services.RequestIDMiddleware)
+	r.Use(chimiddleware.RealIP)
+	r.Use(services.TimeoutMiddleware(60 * time.Second))
+	r.Use(services.SecurityMiddleware)
+	r.Use(services.ValidationMiddleware)
+	r.Use(services.MetricsMiddleware)
+	r.Use(services.PrometheusMiddleware(serviceContainer.Metrics)) // Add Prometheus metrics middleware
+	r.Use(services.RateLimitMiddleware(100))                       // 100 requests per minute
+	r.Use(corsMiddleware(cfg))
 
 	// Start WebSocket hub
 	go serviceContainer.Hub.Run()
@@ -56,6 +58,48 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/metrics", healthHandler.Metrics)
 
+	// Prometheus metrics endpoint
+	r.Get("/metrics", services.PrometheusHandler().ServeHTTP)
+
+	// Monitoring endpoints
+	r.Get("/monitoring/prometheus", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, cfg.PrometheusURL, http.StatusTemporaryRedirect)
+	})
+	r.Get("/monitoring/grafana", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, cfg.GrafanaURL, http.StatusTemporaryRedirect)
+	})
+	r.Get("/monitoring", func(w http.ResponseWriter, r *http.Request) {
+		monitoringHandler(w, r, cfg)
+	})
+
+	// Test endpoint for database monitoring (no auth required)
+	r.Get("/test-db-monitoring", func(w http.ResponseWriter, r *http.Request) {
+		// Simulate a database operation with monitoring
+		ctx := r.Context()
+		metrics := serviceContainer.Metrics
+
+		// Test the database monitoring
+		err := monitoring.WithDatabaseMonitoringContext(
+			ctx, metrics, "SELECT", "test_table", "test_match_id",
+			func(ctx context.Context) error {
+				// Simulate database operation
+				time.Sleep(100 * time.Millisecond)
+				return nil
+			},
+		)
+
+		if err != nil {
+			http.Error(w, "Database monitoring test failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte("Database monitoring test completed successfully")); err != nil {
+			// Log error if write fails
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
+	})
+
 	// Auth success page
 	r.Get("/auth/success", authSuccessHandler)
 
@@ -72,9 +116,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{id}", seriesHandler.GetSeries)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", seriesHandler.CreateSeries)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", seriesHandler.UpdateSeries)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", seriesHandler.DeleteSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", seriesHandler.CreateSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", seriesHandler.UpdateSeries)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", seriesHandler.DeleteSeries)
 		})
 
 		// Match routes
@@ -86,9 +130,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", matchHandler.UpdateMatch)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", matchHandler.DeleteMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", matchHandler.UpdateMatch)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", matchHandler.DeleteMatch)
 		})
 
 		// Scorecard routes
@@ -101,9 +145,9 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
 
 			// Protected routes (require authentication and ownership)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
-			r.With(middleware.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
 
 		// WebSocket routes
@@ -221,4 +265,150 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Welcome to Spark Park Cricket Backend!",
 		"version": "1.0.0",
 	})
+}
+
+// monitoringHandler provides a monitoring dashboard with links to Prometheus and Grafana
+func monitoringHandler(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
+	html := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spark Park Cricket - Monitoring Dashboard</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5f5; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            color: #333; 
+        }
+        .monitoring-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin-top: 30px; 
+        }
+        .monitoring-card { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border-left: 4px solid #007bff; 
+            text-align: center; 
+        }
+        .monitoring-card h3 { 
+            margin-top: 0; 
+            color: #007bff; 
+        }
+        .monitoring-card p { 
+            color: #666; 
+            margin-bottom: 20px; 
+        }
+        .btn { 
+            display: inline-block; 
+            padding: 10px 20px; 
+            background: #007bff; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            transition: background 0.3s; 
+        }
+        .btn:hover { 
+            background: #0056b3; 
+        }
+        .status { 
+            display: inline-block; 
+            padding: 5px 10px; 
+            border-radius: 15px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            margin-left: 10px; 
+        }
+        .status.active { 
+            background: #d4edda; 
+            color: #155724; 
+        }
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        .info-item { 
+            background: #e9ecef; 
+            padding: 15px; 
+            border-radius: 5px; 
+        }
+        .info-item strong { 
+            color: #495057; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏏 Spark Park Cricket - Monitoring Dashboard</h1>
+            <p>Real-time monitoring and observability for your cricket application</p>
+        </div>
+
+        <div class="monitoring-grid">
+            <div class="monitoring-card">
+                <h3>📊 Prometheus</h3>
+                <p>Metrics collection and querying</p>
+                <a href="%s" target="_blank" class="btn">Open Prometheus</a>
+                <span class="status active">Active</span>
+            </div>
+
+            <div class="monitoring-card">
+                <h3>📈 Grafana</h3>
+                <p>Visualization and dashboards</p>
+                <a href="%s" target="_blank" class="btn">Open Grafana</a>
+                <span class="status active">Active</span>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Prometheus URL:</strong><br>
+                <a href="%s" target="_blank">%s</a>
+            </div>
+            <div class="info-item">
+                <strong>Grafana URL:</strong><br>
+                <a href="%s" target="_blank">%s</a>
+            </div>
+            <div class="info-item">
+                <strong>Grafana Login:</strong><br>
+                Username: admin<br>
+                Password: admin123
+            </div>
+            <div class="info-item">
+                <strong>Backend Health:</strong><br>
+                <a href="/health" target="_blank">Check Health Status</a>
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; color: #666;">
+            <p>💡 <strong>Tip:</strong> Use Grafana to create custom dashboards for your cricket metrics!</p>
+        </div>
+    </div>
+</body>
+</html>`,
+		cfg.PrometheusURL, cfg.GrafanaURL,
+		cfg.PrometheusURL, cfg.PrometheusURL,
+		cfg.GrafanaURL, cfg.GrafanaURL)
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(html))
 }

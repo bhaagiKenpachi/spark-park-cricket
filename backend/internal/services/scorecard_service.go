@@ -6,20 +6,24 @@ import (
 	"log"
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"time"
 )
 
 type ScorecardService struct {
 	scorecardRepo interfaces.ScorecardRepository
 	matchRepo     interfaces.MatchRepository
+	metrics       *monitoring.Metrics
 }
 
 // NewScorecardService creates a new scorecard service
-func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository) *ScorecardService {
+func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics) *ScorecardService {
 	return &ScorecardService{
 		scorecardRepo: scorecardRepo,
 		matchRepo:     matchRepo,
+		metrics:       metrics,
 	}
 }
 
@@ -92,8 +96,16 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("invalid ball event: %w", err)
 	}
 
-	// Get match details
-	match, err := s.matchRepo.GetByID(ctx, req.MatchID)
+	// Get match details with monitoring
+	var match *models.Match
+	err := monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "SELECT", "matches", req.MatchID,
+		func(ctx context.Context) error {
+			var dbErr error
+			match, dbErr = s.matchRepo.GetByID(ctx, req.MatchID)
+			return dbErr
+		},
+	)
 	if err != nil {
 		log.Printf("Error getting match: %v", err)
 		return fmt.Errorf("match not found: %w", err)
@@ -115,8 +127,16 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("innings validation failed: %w", err)
 	}
 
-	// Get innings or create if doesn't exist
-	innings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, req.MatchID, req.InningsNumber)
+	// Get innings or create if doesn't exist with monitoring
+	var innings *models.Innings
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "SELECT", "innings", req.MatchID,
+		func(ctx context.Context) error {
+			var dbErr error
+			innings, dbErr = s.scorecardRepo.GetInningsByMatchAndNumber(ctx, req.MatchID, req.InningsNumber)
+			return dbErr
+		},
+	)
 	if err != nil {
 		log.Printf("Innings not found, creating new innings: %v", err)
 		// Create innings if it doesn't exist
@@ -130,7 +150,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 			TotalBalls:    0,
 			Status:        string(models.InningsStatusInProgress),
 		}
-		err = s.scorecardRepo.CreateInnings(ctx, innings)
+		err = monitoring.WithDatabaseMonitoringContext(
+			ctx, s.metrics, "INSERT", "innings", req.MatchID,
+			func(ctx context.Context) error {
+				return s.scorecardRepo.CreateInnings(ctx, innings)
+			},
+		)
 		if err != nil {
 			log.Printf("Error creating innings: %v", err)
 			return fmt.Errorf("failed to create innings: %w", err)
@@ -143,8 +168,16 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("innings is not in progress, cannot add ball")
 	}
 
-	// Get current over or create new one
-	over, err := s.getCurrentOver(ctx, innings.ID)
+	// Get current over or create new one with monitoring
+	var over *models.ScorecardOver
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "SELECT", "overs", req.MatchID,
+		func(ctx context.Context) error {
+			var dbErr error
+			over, dbErr = s.getCurrentOver(ctx, innings.ID)
+			return dbErr
+		},
+	)
 	if err != nil {
 		log.Printf("Error getting current over: %v", err)
 		return fmt.Errorf("failed to get current over: %w", err)
@@ -184,7 +217,25 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		WicketType: req.WicketType,
 	}
 
-	err = s.scorecardRepo.CreateBall(ctx, ball)
+	// Record ball addition metrics
+	start := time.Now()
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "INSERT", "balls", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.CreateBall(ctx, ball)
+		},
+	)
+	duration := time.Since(start)
+
+	// Record cricket-specific metrics
+	s.metrics.RecordBallAddition(
+		req.MatchID,
+		fmt.Sprintf("innings_%d", req.InningsNumber),
+		string(req.BallType),
+		string(req.RunType),
+		duration,
+	)
+
 	if err != nil {
 		log.Printf("Error creating ball: %v", err)
 		return fmt.Errorf("failed to add ball: %w", err)
@@ -205,7 +256,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		over.Status = string(models.OverStatusCompleted)
 	}
 
-	err = s.scorecardRepo.UpdateOver(ctx, over)
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "overs", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateOver(ctx, over)
+		},
+	)
 	if err != nil {
 		log.Printf("Error updating over: %v", err)
 		return fmt.Errorf("failed to update over: %w", err)
@@ -267,7 +323,12 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	}
 	// For second innings, we don't automatically complete here - let shouldCompleteMatch handle it
 
-	err = s.scorecardRepo.UpdateInnings(ctx, innings)
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "innings", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateInnings(ctx, innings)
+		},
+	)
 	if err != nil {
 		log.Printf("Error updating innings: %v", err)
 		return fmt.Errorf("failed to update innings: %w", err)

@@ -9,7 +9,9 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/utils"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -52,6 +54,12 @@ func main() {
 	router := handlers.SetupRoutes(dbClient, cfg)
 	log.Printf("✅ API routes configured")
 
+	// Add Prometheus metrics endpoint
+	router.Route("/metrics", func(r chi.Router) {
+		r.Get("/", promhttp.Handler().ServeHTTP)
+	})
+	log.Printf("✅ Prometheus metrics endpoint configured at /metrics")
+
 	// Log startup information
 	log.Println("=== SERVER STARTUP COMPLETE ===")
 	log.Printf("🚀 Server starting on port: %s", cfg.Port)
@@ -66,6 +74,7 @@ func main() {
 	log.Printf("   - GraphQL: http://localhost:%s/api/v1/graphql", cfg.Port)
 	log.Printf("   - GraphQL Playground: http://localhost:%s/api/v1/graphql/playground", cfg.Port)
 	log.Printf("   - Health Check: http://localhost:%s/health", cfg.Port)
+	log.Printf("   - Metrics: http://localhost:%s/metrics", cfg.Port)
 	log.Printf("   - WebSocket: ws://localhost:%s/api/v1/ws/match/{match_id}", cfg.Port)
 	log.Println("===============================================")
 

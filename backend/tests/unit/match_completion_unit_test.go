@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 )
 
@@ -205,7 +206,7 @@ func TestShouldCompleteMatch_TargetReached(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -255,7 +256,7 @@ func TestShouldCompleteMatch_AllWicketsLost(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -305,7 +306,7 @@ func TestShouldCompleteMatch_AllOversCompleted(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -355,7 +356,7 @@ func TestShouldCompleteMatch_MatchContinues(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -404,7 +405,7 @@ func TestShouldCompleteMatch_ErrorGettingFirstInnings(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -443,7 +444,7 @@ func TestShouldCompleteMatch_EdgeCase_ExactTarget(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -493,7 +494,7 @@ func TestShouldCompleteMatch_EdgeCase_ExactWickets(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo)
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
 
 	ctx := context.Background()
 	matchID := "test-match-id"

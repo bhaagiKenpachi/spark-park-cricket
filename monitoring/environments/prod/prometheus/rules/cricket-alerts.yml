@@ -1,0 +1,52 @@
+groups:
+  - name: cricket-prod-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          environment: prod
+        annotations:
+          summary: "High error rate detected in production environment"
+          description: "Error rate is {{ $value }} errors per second"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 2m
+        labels:
+          severity: critical
+          environment: prod
+        annotations:
+          summary: "High response time in production environment"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      - alert: DatabaseConnectionIssues
+        expr: up{job="cricket-backend-prod"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          environment: prod
+        annotations:
+          summary: "Database connection issues in production environment"
+          description: "Backend service is down"
+
+      - alert: HighBallAdditionLatency
+        expr: histogram_quantile(0.95, rate(cricket_ball_addition_duration_seconds_bucket[5m])) > 3
+        for: 1m
+        labels:
+          severity: critical
+          environment: prod
+        annotations:
+          summary: "High ball addition latency in production environment"
+          description: "95th percentile ball addition time is {{ $value }} seconds"
+
+      - alert: ServiceDown
+        expr: up{job=~"cricket-.*-prod"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          environment: prod
+        annotations:
+          summary: "Service down in production environment"
+          description: "Service {{ $labels.job }} is down"

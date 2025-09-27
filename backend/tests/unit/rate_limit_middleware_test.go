@@ -3,14 +3,14 @@ package unit
 import (
 	"net/http"
 	"net/http/httptest"
-	"spark-park-cricket-backend/internal/middleware"
+	"spark-park-cricket-backend/internal/services"
 	"sync"
 	"testing"
 )
 
 func TestRateLimitMiddlewareConcurrency(t *testing.T) {
 	// Create rate limit middleware with low limit for testing
-	rateLimitMiddleware := middleware.RateLimitMiddleware(5) // 5 requests per minute
+	rateLimitMiddleware := services.RateLimitMiddleware(5) // 5 requests per minute
 
 	// Create a test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func TestRateLimitMiddlewareConcurrency(t *testing.T) {
 
 func TestRateLimitMiddlewareBasic(t *testing.T) {
 	// Create rate limit middleware
-	rateLimitMiddleware := middleware.RateLimitMiddleware(3) // 3 requests per minute
+	rateLimitMiddleware := services.RateLimitMiddleware(3) // 3 requests per minute
 
 	// Create a test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +164,7 @@ func TestRateLimitMiddlewareBasic(t *testing.T) {
 
 func TestRateLimitMiddlewareTimeWindow(t *testing.T) {
 	// Create rate limit middleware with very low limit
-	rateLimitMiddleware := middleware.RateLimitMiddleware(2) // 2 requests per minute
+	rateLimitMiddleware := services.RateLimitMiddleware(2) // 2 requests per minute
 
 	// Create a test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
