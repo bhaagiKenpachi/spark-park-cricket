@@ -10,6 +10,10 @@ import {
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
+// Mock Date.now to ensure consistent timestamps in tests
+const mockDateNow = jest.fn(() => 1234567890);
+global.Date.now = mockDateNow;
+
 // Mock console methods to avoid noise in tests
 const originalConsoleError = console.error;
 const originalConsoleLog = console.log;
@@ -30,6 +34,7 @@ describe('ApiService - Scorecard Endpoints', () => {
   beforeEach(() => {
     apiService = new ApiService();
     mockFetch.mockClear();
+    mockDateNow.mockReturnValue(1234567890);
   });
 
   describe('getScorecard', () => {
@@ -78,7 +83,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\?_t=1234567890$/
         ),
         expect.any(Object)
       );
@@ -125,7 +130,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.startScoring('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/start\?_t=\d+$/),
+        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/start\?_t=1234567890$/),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -186,7 +191,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.addBall(mockBallEvent);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/ball\?_t=\d+$/),
+        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/ball\?_t=1234567890$/),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -379,7 +384,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=1234567890$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -411,7 +416,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=1234567890$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -509,7 +514,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=1234567890$/
         ),
         expect.any(Object)
       );
@@ -530,7 +535,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=1234567890$/
         ),
         expect.any(Object)
       );
@@ -583,7 +588,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\?_t=1234567890$/
         ),
         expect.any(Object)
       );
@@ -663,7 +668,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\/over\/3\?_t=1234567890$/
         ),
         expect.any(Object)
       );
@@ -747,7 +752,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\?_t=/),
+        expect.stringMatching(/\?_t=1234567890/),
         expect.any(Object)
       );
     });
