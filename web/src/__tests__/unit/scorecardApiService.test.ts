@@ -82,9 +82,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\?_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1?_t=1234567890',
         expect.any(Object)
       );
 
@@ -130,7 +128,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.startScoring('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/start\?_t=1234567890$/),
+        'http://localhost:8080/scorecard/start?_t=1234567890',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -191,7 +189,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.addBall(mockBallEvent);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/ball\?_t=1234567890$/),
+        'http://localhost:8080/scorecard/ball?_t=1234567890',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -383,9 +381,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.undoBall('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/ball?innings=1&_t=1234567890',
         expect.objectContaining({
           method: 'DELETE',
           headers: expect.objectContaining({
@@ -415,9 +411,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.undoBall('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/ball?innings=1&_t=1234567890',
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -513,9 +507,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getCurrentOver('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/current-over?innings=1&_t=1234567890',
         expect.any(Object)
       );
 
@@ -534,9 +526,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       await apiService.getCurrentOver('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/current-over?innings=1&_t=1234567890',
         expect.any(Object)
       );
     });
@@ -587,9 +577,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getInnings('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\?_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/innings/1?_t=1234567890',
         expect.any(Object)
       );
 
@@ -667,9 +655,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getOver('match-1', 1, 3);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\/over\/3\?_t=1234567890$/
-        ),
+        'http://localhost:8080/scorecard/match-1/innings/1/over/3?_t=1234567890',
         expect.any(Object)
       );
 
@@ -752,7 +738,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\?_t=1234567890/),
+        'http://localhost:8080/scorecard/match-1?_t=1234567890',
         expect.any(Object)
       );
     });
