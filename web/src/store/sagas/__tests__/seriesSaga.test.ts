@@ -14,21 +14,6 @@ import {
   deleteSeriesFailure,
 } from '../../reducers/seriesSlice';
 import { Series } from '../../reducers/seriesSlice';
-import { ApiResponse, PaginatedSeriesResult } from '@/services/api';
-
-// Type definition that matches the actual API response structure used in sagas
-interface NestedApiResponse<T> {
-  data: {
-    data: T;
-  };
-  success: boolean;
-  message?: string;
-}
-
-// Create a type that extends PaginatedSeriesResult to include the nested data property
-type ExtendedPaginatedSeriesResult = PaginatedSeriesResult & {
-  data: PaginatedSeriesResult;
-};
 
 // Module augmentation to fix the type mismatch in saga code
 declare module '@/services/api' {
@@ -125,13 +110,15 @@ describe('seriesSaga', () => {
         success: true,
       };
       (mockApiService.getSeries as jest.Mock).mockResolvedValue(
-        mockResponse as any
+        mockResponse as unknown as ReturnType<typeof mockApiService.getSeries>
       );
 
       const action = fetchSeriesRequest({ page: 1, pageSize: 20 });
       const generator = fetchSeriesSaga(action);
       const apiCall = generator.next().value;
-      const putAction = generator.next(mockResponse as any).value;
+      const putAction = generator.next(
+        mockResponse as unknown as ReturnType<typeof mockApiService.getSeries>
+      ).value;
 
       expect(apiCall).toMatchObject({
         '@@redux-saga/IO': true,
@@ -209,7 +196,9 @@ describe('seriesSaga', () => {
       const generator = createSeriesSaga(action);
 
       const apiCall = generator.next().value;
-      const putAction = generator.next(mockResponse as any).value;
+      const putAction = generator.next(
+        mockResponse as unknown as ReturnType<typeof mockApiService.getSeries>
+      ).value;
 
       expect(apiCall).toMatchObject({
         '@@redux-saga/IO': true,
@@ -260,7 +249,9 @@ describe('seriesSaga', () => {
       const generator = updateSeriesSaga(action);
 
       const apiCall = generator.next().value;
-      const putAction = generator.next(mockResponse as any).value;
+      const putAction = generator.next(
+        mockResponse as unknown as ReturnType<typeof mockApiService.getSeries>
+      ).value;
 
       expect(apiCall).toMatchObject({
         '@@redux-saga/IO': true,
@@ -292,7 +283,9 @@ describe('seriesSaga', () => {
       const generator = deleteSeriesSaga(action);
 
       const apiCall = generator.next().value;
-      const putAction = generator.next(mockResponse as any).value;
+      const putAction = generator.next(
+        mockResponse as unknown as ReturnType<typeof mockApiService.getSeries>
+      ).value;
 
       expect(apiCall).toMatchObject({
         '@@redux-saga/IO': true,

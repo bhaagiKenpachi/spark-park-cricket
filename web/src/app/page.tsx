@@ -8,8 +8,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { checkAuthStatus } from '@/store/reducers/authSlice';
 
 export default function Home(): React.JSX.Element {
-  const { isAuthenticated, user, isLoading, error, isInitialized } =
-    useAppSelector(state => state.auth);
+  const { isAuthenticated } = useAppSelector(state => state.auth);
   const dispatch = useAppDispatch();
 
   // Handle authentication success callback

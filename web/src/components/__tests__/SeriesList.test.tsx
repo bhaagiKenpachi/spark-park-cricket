@@ -136,21 +136,6 @@ describe('SeriesList', () => {
       return selector(mockState);
     });
 
-    const mockStore = createMockStore({
-      series: {
-        series: [],
-        currentSeries: null,
-        loading: false,
-        error: 'Failed to fetch series',
-        pagination: {
-          currentPage: 1,
-          pageSize: 20,
-          totalItems: 0,
-          totalPages: 0,
-        },
-      },
-    });
-
     render(<SeriesList />);
 
     expect(screen.getByText('Error:')).toBeInTheDocument();
@@ -236,26 +221,6 @@ describe('SeriesList', () => {
         },
       };
       return selector(mockState);
-    });
-
-    const mockStore = createMockStore({
-      series: {
-        series: mockSeries,
-        currentSeries: null,
-        loading: false,
-        error: null,
-        pagination: {
-          currentPage: 1,
-          pageSize: 20,
-          totalItems: mockSeries.length,
-          totalPages: 1,
-        },
-      },
-      match: {
-        matches: [],
-        loading: false,
-        error: null,
-      },
     });
 
     render(<SeriesList />);
@@ -626,26 +591,6 @@ describe('SeriesList', () => {
         },
       };
       return selector(mockState);
-    });
-
-    const mockStore = createMockStore({
-      series: {
-        series: mockSeries,
-        currentSeries: null,
-        loading: false,
-        error: null,
-        pagination: {
-          currentPage: 1,
-          pageSize: 20,
-          totalItems: mockSeries.length,
-          totalPages: 1,
-        },
-      },
-      match: {
-        matches: [],
-        loading: false,
-        error: null,
-      },
     });
 
     render(<SeriesList />);
