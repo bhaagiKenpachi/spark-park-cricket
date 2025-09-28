@@ -14,6 +14,9 @@ global.fetch = mockFetch;
 const mockDateNow = jest.fn(() => 1234567890);
 global.Date.now = mockDateNow;
 
+// Set the correct API base URL for tests
+process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8080/api/v1';
+
 // Mock console methods to avoid noise in tests
 const originalConsoleError = console.error;
 const originalConsoleLog = console.log;
