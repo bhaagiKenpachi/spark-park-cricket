@@ -9,6 +9,7 @@ import (
 
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/monitoring"
+	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
 )
 
@@ -174,12 +175,12 @@ func (m *MockSeriesRepository) GetByID(ctx context.Context, id string) (*models.
 	return args.Get(0).(*models.Series), args.Error(1)
 }
 
-func (m *MockSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+func (m *MockSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) (*interfaces.PaginatedSeriesResult, error) {
 	args := m.Called(ctx, filters)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*models.Series), args.Error(1)
+	return args.Get(0).(*interfaces.PaginatedSeriesResult), args.Error(1)
 }
 
 func (m *MockSeriesRepository) Create(ctx context.Context, series *models.Series) error {

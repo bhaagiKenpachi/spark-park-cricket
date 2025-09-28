@@ -1,7 +1,7 @@
 # Spark Park Cricket Backend - Makefile
 # This Makefile provides commands for running tests and managing the project
 
-.PHONY: help test test-unit test-integration test-e2e test-illegal test-series test-match test-scorecard test-all build run clean setup-test-db clear-db
+.PHONY: help test test-unit test-integration test-e2e test-illegal test-series test-match test-scorecard test-all build run clean setup-test-db clear-db redis-start redis-test redis-stop
 
 # Default target
 help:
@@ -27,10 +27,16 @@ help:
 	@echo "  setup-test-db    Instructions for setting up test database"
 	@echo "  clear-db         Clear all data from database tables (DANGEROUS!)"
 	@echo ""
+	@echo "Redis Commands:"
+	@echo "  redis-start      Start Redis container for local development"
+	@echo "  redis-test       Test Redis connection and functionality"
+	@echo "  redis-stop       Stop Redis container"
+	@echo ""
 	@echo "Examples:"
 	@echo "  make test-unit"
 	@echo "  make test-all"
 	@echo "  make build"
+	@echo "  make redis-start"
 
 # Unit tests (no database required)
 test-unit:
@@ -180,3 +186,31 @@ clear-db:
 	@echo ""
 	@echo "Running database clear script..."
 	go run cmd/clear-db/main.go
+
+# Start Redis container for local development
+redis-start:
+	@echo "🚀 Starting Redis container..."
+	@echo "==============================="
+	cd .. && docker compose up -d redis
+	@echo "✅ Redis container started"
+	@echo "📊 Redis is available at localhost:6379"
+
+# Test Redis connection and functionality
+redis-test:
+	@echo "🧪 Testing Redis Connection..."
+	@echo "=============================="
+	@echo "Testing Redis ping..."
+	cd .. && docker compose exec redis redis-cli ping
+	@echo "Testing Redis set/get operations..."
+	cd .. && docker compose exec redis redis-cli set test:key "Hello Redis"
+	cd .. && docker compose exec redis redis-cli get test:key
+	@echo "Cleaning up test data..."
+	cd .. && docker compose exec redis redis-cli del test:key
+	@echo "✅ Redis test completed successfully"
+
+# Stop Redis container
+redis-stop:
+	@echo "🛑 Stopping Redis container..."
+	@echo "==============================="
+	cd .. && docker compose stop redis
+	@echo "✅ Redis container stopped"

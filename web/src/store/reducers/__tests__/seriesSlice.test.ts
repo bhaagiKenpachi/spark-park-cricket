@@ -6,6 +6,12 @@ describe('seriesSlice', () => {
     currentSeries: null,
     loading: false,
     error: null,
+    pagination: {
+      currentPage: 1,
+      pageSize: 20,
+      totalItems: 0,
+      totalPages: 0,
+    },
   };
 
   it('should handle initial state', () => {
@@ -39,7 +45,7 @@ describe('seriesSlice', () => {
 
     const actual = seriesSlice.reducer(
       { ...initialState, loading: true },
-      seriesSlice.actions.fetchSeriesSuccess(mockSeries)
+      seriesSlice.actions.fetchSeriesSuccess({ series: mockSeries, totalItems: mockSeries.length })
     );
 
     expect(actual.loading).toBe(false);

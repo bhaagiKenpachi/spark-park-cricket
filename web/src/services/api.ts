@@ -1,5 +1,13 @@
 import { Series } from '@/store/reducers/seriesSlice';
 import { Match } from '@/store/reducers/matchSlice';
+
+export interface PaginatedSeriesResult {
+  series: Series[];
+  total_items: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
 import {
   ScorecardResponse,
   BallEventRequest,
@@ -181,8 +189,18 @@ class ApiService {
   }
 
   // Series API methods
-  async getSeries(): Promise<ApiResponse<Series[]>> {
-    return this.request<Series[]>('/series');
+  async getSeries(
+    limit?: number,
+    offset?: number
+  ): Promise<ApiResponse<PaginatedSeriesResult>> {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append('limit', limit.toString());
+    if (offset !== undefined) params.append('offset', offset.toString());
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/series?${queryString}` : '/series';
+
+    return this.request<PaginatedSeriesResult>(endpoint);
   }
 
   async getSeriesById(id: string): Promise<ApiResponse<Series>> {

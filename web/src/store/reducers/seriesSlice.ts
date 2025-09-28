@@ -18,6 +18,12 @@ interface SeriesState {
   currentSeries: Series | null;
   loading: boolean;
   error: string | null;
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
 }
 
 const initialState: SeriesState = {
@@ -25,19 +31,45 @@ const initialState: SeriesState = {
   currentSeries: null,
   loading: false,
   error: null,
+  pagination: {
+    currentPage: 1,
+    pageSize: 20,
+    totalItems: 0,
+    totalPages: 0,
+  },
 };
 
 export const seriesSlice = createSlice({
   name: 'series',
   initialState,
   reducers: {
-    fetchSeriesRequest: state => {
+    fetchSeriesRequest: (
+      state,
+      action: PayloadAction<{ page?: number; pageSize?: number } | undefined>
+    ) => {
       state.loading = true;
       state.error = null;
+
+      // Update pagination parameters if provided
+      if (action.payload) {
+        if (action.payload.page !== undefined) {
+          state.pagination.currentPage = action.payload.page;
+        }
+        if (action.payload.pageSize !== undefined) {
+          state.pagination.pageSize = action.payload.pageSize;
+        }
+      }
     },
-    fetchSeriesSuccess: (state, action: PayloadAction<Series[]>) => {
+    fetchSeriesSuccess: (
+      state,
+      action: PayloadAction<{ series: Series[]; totalItems: number }>
+    ) => {
       state.loading = false;
-      state.series = action.payload;
+      state.series = action.payload.series;
+      state.pagination.totalItems = action.payload.totalItems;
+      state.pagination.totalPages = Math.ceil(
+        action.payload.totalItems / state.pagination.pageSize
+      );
     },
     fetchSeriesFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -95,6 +127,13 @@ export const seriesSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    setPage: (state, action: PayloadAction<number>) => {
+      state.pagination.currentPage = action.payload;
+    },
+    setPageSize: (state, action: PayloadAction<number>) => {
+      state.pagination.pageSize = action.payload;
+      state.pagination.currentPage = 1; // Reset to first page when page size changes
+    },
   },
 });
 
@@ -112,6 +151,8 @@ export const {
   deleteSeriesRequest,
   deleteSeriesSuccess,
   deleteSeriesFailure,
+  setPage,
+  setPageSize,
 } = seriesSlice.actions;
 
 export default seriesSlice.reducer;

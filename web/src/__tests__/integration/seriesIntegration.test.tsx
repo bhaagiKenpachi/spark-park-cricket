@@ -55,6 +55,12 @@ describe('Series Integration Tests', () => {
           currentSeries: null,
           loading: false,
           error: null,
+          pagination: {
+            currentPage: 1,
+            pageSize: 20,
+            totalItems: 0,
+            totalPages: 0,
+          },
         },
         match: {
           matches: [],
@@ -282,6 +288,12 @@ describe('Series Integration Tests', () => {
           currentSeries: null,
           loading: false,
           error: null,
+          pagination: {
+            currentPage: 1,
+            pageSize: 20,
+            totalItems: 0,
+            totalPages: 0,
+          },
         },
         match: {
           matches: [],
@@ -335,6 +347,12 @@ describe('Series Integration Tests', () => {
           currentSeries: null,
           loading: false,
           error: null,
+          pagination: {
+            currentPage: 1,
+            pageSize: 20,
+            totalItems: 0,
+            totalPages: 0,
+          },
         },
         match: {
           matches: [],
@@ -379,6 +397,12 @@ describe('Series Integration Tests', () => {
           currentSeries: null,
           loading: true,
           error: null,
+          pagination: {
+            currentPage: 1,
+            pageSize: 20,
+            totalItems: 0,
+            totalPages: 0,
+          },
         },
         match: {
           matches: [],
@@ -411,6 +435,12 @@ describe('Series Integration Tests', () => {
           currentSeries: null,
           loading: true,
           error: null,
+          pagination: {
+            currentPage: 1,
+            pageSize: 20,
+            totalItems: 0,
+            totalPages: 0,
+          },
         },
         match: {
           matches: [],

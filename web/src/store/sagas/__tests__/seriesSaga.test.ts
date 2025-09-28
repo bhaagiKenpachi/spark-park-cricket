@@ -1,5 +1,6 @@
 import { put } from 'redux-saga/effects';
 import {
+  fetchSeriesRequest,
   fetchSeriesSuccess,
   fetchSeriesFailure,
   createSeriesRequest,
@@ -13,11 +14,12 @@ import {
   deleteSeriesFailure,
 } from '../../reducers/seriesSlice';
 import { Series } from '../../reducers/seriesSlice';
+import { PaginatedSeriesResult } from '@/services/api';
 
 // Mock the API service
 jest.mock('@/services/api', () => ({
   ApiService: jest.fn().mockImplementation(() => ({
-    getSeries: jest.fn(),
+    getSeries: jest.fn().mockResolvedValue({ data: { series: [], total_items: 0, page: 1, page_size: 20, total_pages: 0 }, success: true }),
     createSeries: jest.fn(),
     updateSeries: jest.fn(),
     deleteSeries: jest.fn(),
@@ -80,10 +82,11 @@ describe('seriesSaga', () => {
         },
       ];
 
-      const mockResponse = { data: { data: mockSeries }, success: true };
+      const mockResponse = { data: { data: { series: mockSeries, total_items: mockSeries.length, page: 1, page_size: 20, total_pages: 1 } }, success: true };
       mockApiService.getSeries.mockResolvedValue(mockResponse);
 
-      const generator = fetchSeriesSaga();
+      const action = fetchSeriesRequest({ page: 1, pageSize: 20 });
+      const generator = fetchSeriesSaga(action);
       const apiCall = generator.next().value;
       const putAction = generator.next(mockResponse).value;
 
@@ -92,12 +95,13 @@ describe('seriesSaga', () => {
         combinator: false,
         type: 'CALL',
       });
-      expect(putAction).toEqual(put(fetchSeriesSuccess(mockSeries)));
+      expect(putAction).toEqual(put(fetchSeriesSuccess({ series: mockSeries, totalItems: mockSeries.length })));
     });
 
     it('should handle fetch series failure with ApiError', () => {
       const error = new ApiError('Network error', 500);
-      const generator = fetchSeriesSaga();
+      const action = fetchSeriesRequest({ page: 1, pageSize: 20 });
+      const generator = fetchSeriesSaga(action);
 
       generator.next(); // Skip the API call
       const delayAction = generator.throw(error).value;
@@ -113,7 +117,8 @@ describe('seriesSaga', () => {
 
     it('should handle fetch series failure with generic error', () => {
       const error = new Error('Generic error');
-      const generator = fetchSeriesSaga();
+      const action = fetchSeriesRequest({ page: 1, pageSize: 20 });
+      const generator = fetchSeriesSaga(action);
 
       generator.next(); // Skip the API call
       const delayAction = generator.throw(error).value;

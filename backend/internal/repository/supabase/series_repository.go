@@ -3,9 +3,11 @@ package supabase
 import (
 	"context"
 	"fmt"
+	"math"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -48,41 +50,83 @@ func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Seri
 	return &result[0], nil
 }
 
-func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) (*interfaces.PaginatedSeriesResult, error) {
 	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Starting with filters: %+v\n", filters)
 
 	var result []models.Series
-	query := r.client.From("series").Select("*", "", false)
+	query := r.client.From("series").Select("*", "", false).Order("created_at", &postgrest.OrderOpts{
+		Ascending: false, // DESC order - newest first
+	})
 
-	if filters != nil {
-		if filters.Limit > 0 {
-			query = query.Limit(filters.Limit, "")
-		}
-		// Note: Offset is not supported by this Supabase client version
-		// Use Range method for pagination if needed
-	}
-
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Executing query to database\n")
+	// Always fetch all results and paginate in application layer
+	// This ensures consistent ordering and proper pagination
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Executing query to database (fetching all for pagination)\n")
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
 		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database query error: %v\n", err)
 		return nil, err
 	}
 
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database returned %d series\n", len(result))
-	for i, s := range result {
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database returned %d total series\n", len(result))
+
+	// Apply pagination in application layer
+	var paginatedResult []models.Series
+	if filters != nil {
+		start := filters.Offset
+		end := start + filters.Limit
+
+		if start >= len(result) {
+			// Offset is beyond available data
+			paginatedResult = []models.Series{}
+		} else {
+			if end > len(result) {
+				end = len(result)
+			}
+			paginatedResult = result[start:end]
+		}
+
+		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Applied pagination: offset=%d, limit=%d, result=%d\n",
+			start, filters.Limit, len(paginatedResult))
+	} else {
+		paginatedResult = result
+	}
+
+	for i, s := range paginatedResult {
 		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - DB Series %d: ID=%s, Name=%s, CreatedBy=%s, CreatedAt=%s\n",
 			i+1, s.ID, s.Name, s.CreatedBy, s.CreatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	// Convert to slice of pointers
-	series := make([]*models.Series, len(result))
-	for i := range result {
-		series[i] = &result[i]
+	series := make([]*models.Series, len(paginatedResult))
+	for i := range paginatedResult {
+		series[i] = &paginatedResult[i]
 	}
 
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Returning %d series\n", len(series))
-	return series, nil
+	// Calculate pagination metadata
+	totalItems := len(result) // Total items in database
+	currentPage := 1
+	if filters != nil && filters.Offset > 0 {
+		currentPage = (filters.Offset / filters.Limit) + 1
+	}
+	pageSize := totalItems
+	if filters != nil && filters.Limit > 0 {
+		pageSize = filters.Limit
+	}
+	totalPages := 1
+	if pageSize > 0 {
+		totalPages = int(math.Ceil(float64(totalItems) / float64(pageSize)))
+	}
+
+	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Returning %d series (page %d of %d, %d total items)\n",
+		len(series), currentPage, totalPages, totalItems)
+
+	return &interfaces.PaginatedSeriesResult{
+		Series:     series,
+		TotalItems: totalItems,
+		Page:       currentPage,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
 }
 
 func (r *seriesRepository) Update(ctx context.Context, id string, series *models.Series) error {

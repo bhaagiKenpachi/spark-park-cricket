@@ -93,7 +93,12 @@ func (r *RedisClient) Get(key string, dest interface{}) error {
 
 // Delete removes a key from Redis
 func (r *RedisClient) Delete(key string) error {
-	return r.client.Del(r.ctx, key).Err()
+	result := r.client.Del(r.ctx, key)
+	err := result.Err()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Exists checks if a key exists in Redis

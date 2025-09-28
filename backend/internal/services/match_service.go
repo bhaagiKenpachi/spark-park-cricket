@@ -26,37 +26,28 @@ func NewMatchService(matchRepo interfaces.MatchRepository, seriesRepo interfaces
 
 // CreateMatch creates a new match
 func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchRequest) (*models.Match, error) {
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Starting creation with request: %+v\n", req)
 
 	// Get user ID from context
 	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
 	}
-	fmt.Printf("DEBUG: MatchService.CreateMatch - User ID from context: %s\n", userID)
 	log.Printf("Creating match for user ID: %s", userID)
 
 	// Validate series exists
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Validating series exists with ID: %s\n", req.SeriesID)
 	_, err := s.seriesRepo.GetByID(ctx, req.SeriesID)
 	if err != nil {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation failed: %v\n", err)
 		return nil, fmt.Errorf("series not found: %w", err)
 	}
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation successful\n")
 
 	// Validate request fields
 	if req.TeamAPlayerCount <= 0 {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamAPlayerCount must be greater than 0\n")
 		return nil, fmt.Errorf("team A player count must be greater than 0")
 	}
 	if req.TeamBPlayerCount <= 0 {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TeamBPlayerCount must be greater than 0\n")
 		return nil, fmt.Errorf("team B player count must be greater than 0")
 	}
 	if req.TotalOvers <= 0 {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Validation failed: TotalOvers must be greater than 0\n")
 		return nil, fmt.Errorf("total overs must be greater than 0")
 	}
 
@@ -64,10 +55,8 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	var matchNumber int
 	if req.MatchNumber != nil {
 		matchNumber = *req.MatchNumber
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Using provided match number: %d\n", matchNumber)
 
 		// Validate that the match number doesn't already exist for this series
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Checking match number uniqueness\n")
 		exists, err := s.matchRepo.ExistsBySeriesAndMatchNumber(ctx, req.SeriesID, matchNumber)
 		if err != nil {
 			fmt.Printf("DEBUG: MatchService.CreateMatch - Failed to check match number uniqueness: %v\n", err)

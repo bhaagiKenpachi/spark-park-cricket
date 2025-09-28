@@ -5,17 +5,22 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchSeriesRequest,
   deleteSeriesRequest,
+  setPage,
+  setPageSize,
   Series,
 } from '@/store/reducers/seriesSlice';
 import { SeriesForm } from './SeriesForm';
 import { SeriesWithMatches } from './SeriesWithMatches';
 import { ScorecardView } from './ScorecardView';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { RefreshCw, Plus } from 'lucide-react';
 
 export function SeriesList(): React.JSX.Element {
   const dispatch = useAppDispatch();
-  const { series, loading, error } = useAppSelector(state => state.series);
+  const { series, loading, error, pagination } = useAppSelector(
+    state => state.series
+  );
   const { user: currentUser, isAuthenticated } = useAppSelector(
     state => state.auth
   );
@@ -26,9 +31,15 @@ export function SeriesList(): React.JSX.Element {
     string | null
   >(null);
 
+  // Fetch series data on component mount
   useEffect(() => {
-    dispatch(fetchSeriesRequest());
-  }, [dispatch]);
+    dispatch(
+      fetchSeriesRequest({
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+      })
+    );
+  }, [dispatch, pagination.currentPage, pagination.pageSize]);
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this series?')) {
@@ -150,7 +161,29 @@ export function SeriesList(): React.JSX.Element {
   const handleFormSuccess = () => {
     setShowForm(false);
     setEditingSeries(undefined);
-    dispatch(fetchSeriesRequest());
+    dispatch(
+      fetchSeriesRequest({
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+      })
+    );
+  };
+
+  const handlePageChange = (page: number) => {
+    dispatch(setPage(page));
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    dispatch(setPageSize(pageSize));
+  };
+
+  const handleRefresh = () => {
+    dispatch(
+      fetchSeriesRequest({
+        page: pagination.currentPage,
+        pageSize: pagination.pageSize,
+      })
+    );
   };
 
   const handleFormCancel = () => {
@@ -168,15 +201,10 @@ export function SeriesList(): React.JSX.Element {
     setCurrentSeriesCreatedBy(null);
   };
 
-  if (loading && (!series || !Array.isArray(series) || series.length === 0)) {
+  // Show loading state only when we have no data and are loading
+  if (loading || !series || !Array.isArray(series) || series.length === 0) {
     return (
-      <div
-        className="
-        w-full max-w-sm mx-auto px-4 py-8
-        sm:max-w-md sm:px-6
-        md:max-w-lg md:px-8
-      "
-      >
+      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-6 md:max-w-lg md:px-8">
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="text-sm text-gray-600">Loading series...</span>
@@ -187,24 +215,14 @@ export function SeriesList(): React.JSX.Element {
 
   if (error) {
     return (
-      <div
-        className="
-        w-full max-w-sm mx-auto px-4 py-6
-        sm:max-w-md sm:px-6
-        md:max-w-lg md:px-8
-      "
-      >
+      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-6 md:max-w-lg md:px-8">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
           <strong className="font-bold">Error:</strong>
           <span className="block sm:inline"> {error}</span>
           <div className="mt-3">
             <button
-              onClick={() => dispatch(fetchSeriesRequest())}
-              className="
-                                w-full py-2 px-4 bg-red-600 text-white rounded-lg font-medium
-                                active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500
-                                sm:w-auto sm:px-6
-                            "
+              onClick={handleRefresh}
+              className="w-full py-2 px-4 bg-red-600 text-white rounded-lg font-medium active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 sm:w-auto sm:px-6"
             >
               Retry
             </button>
@@ -246,7 +264,7 @@ export function SeriesList(): React.JSX.Element {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => dispatch(fetchSeriesRequest())}
+            onClick={handleRefresh}
             disabled={loading}
             data-cy="refresh-series-button"
             title="Refresh"
@@ -277,19 +295,34 @@ export function SeriesList(): React.JSX.Element {
           </Button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {Array.isArray(series) &&
-            series.map((seriesItem, index) => (
-              <SeriesWithMatches
-                key={seriesItem.id || `series-${index}`}
-                series={seriesItem}
-                onEditSeries={handleEdit}
-                onDeleteSeries={handleDelete}
-                onViewScorecard={handleViewScorecard}
-                currentUser={currentUser}
-                isAuthenticated={isAuthenticated}
-              />
-            ))}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            {Array.isArray(series) &&
+              series.map((seriesItem, index) => (
+                <SeriesWithMatches
+                  key={seriesItem.id || `series-${index}`}
+                  series={seriesItem}
+                  onEditSeries={handleEdit}
+                  onDeleteSeries={handleDelete}
+                  onViewScorecard={handleViewScorecard}
+                  currentUser={currentUser}
+                  isAuthenticated={isAuthenticated}
+                />
+              ))}
+          </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[10, 20, 50]}
+            showPageSizeSelector={true}
+            showTotalInfo={true}
+          />
         </div>
       )}
     </div>

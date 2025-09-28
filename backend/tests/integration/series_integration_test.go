@@ -11,6 +11,7 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
@@ -294,11 +295,11 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var listResponse struct {
-		Data []models.Series `json:"data"`
+		Data interfaces.PaginatedSeriesResult `json:"data"`
 	}
 	err := json.Unmarshal(w.Body.Bytes(), &listResponse)
 	require.NoError(t, err)
-	seriesList := listResponse.Data
+	seriesList := listResponse.Data.Series
 	assert.GreaterOrEqual(t, len(seriesList), 3, "Should have at least 3 series")
 
 	// Test pagination with offset
@@ -318,7 +319,7 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 	err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 	require.NoError(t, err)
-	seriesList = listResponse.Data
+	seriesList = listResponse.Data.Series
 	assert.GreaterOrEqual(t, len(seriesList), 2, "Should have at least 2 series")
 
 	// Test invalid pagination parameters
@@ -338,7 +339,7 @@ func testSeriesPagination(t *testing.T, router http.Handler, dbClient *database.
 
 	err = json.Unmarshal(w.Body.Bytes(), &listResponse)
 	require.NoError(t, err)
-	seriesList = listResponse.Data
+	seriesList = listResponse.Data.Series
 	assert.GreaterOrEqual(t, len(seriesList), 5, "Should have at least 5 series with default pagination")
 }
 

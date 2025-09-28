@@ -22,21 +22,38 @@ import {
   deleteSeriesFailure,
 } from '../reducers/seriesSlice';
 import { Series } from '../reducers/seriesSlice';
-import { ApiService, ApiError, ApiResponse } from '@/services/api';
+import { ApiService, ApiError, ApiResponse, PaginatedSeriesResult } from '@/services/api';
 
-export function* fetchSeriesSaga(): Generator<
-  CallEffect | PutEffect,
-  void,
-  ApiResponse<{ data: Series[] }>
-> {
+export function* fetchSeriesSaga(
+  action: ReturnType<typeof fetchSeriesRequest>
+): Generator<CallEffect | PutEffect, void, ApiResponse<PaginatedSeriesResult>> {
   try {
     const apiService = new ApiService();
-    const response = yield call(apiService.getSeries.bind(apiService));
 
-    // Extract the actual array from the nested response structure
-    const seriesArray = response.data.data || response.data;
+    // Get pagination parameters from action payload or use defaults
+    const { page = 1, pageSize = 20 } = action.payload || {};
+    const offset = (page - 1) * pageSize;
 
-    yield put(fetchSeriesSuccess(seriesArray));
+    const response = yield call(
+      apiService.getSeries.bind(apiService),
+      pageSize,
+      offset
+    );
+
+    // Extract the paginated result from the response
+    // API service wraps the response in a data property
+    const paginatedResult = response.data.data;
+
+    // Extract series array and pagination metadata
+    const seriesArray = paginatedResult.series;
+    const totalItems = paginatedResult.total_items;
+
+    yield put(
+      fetchSeriesSuccess({
+        series: seriesArray,
+        totalItems,
+      })
+    );
   } catch (error) {
     const errorMessage =
       error instanceof ApiError ? error.message : 'Failed to fetch series';
