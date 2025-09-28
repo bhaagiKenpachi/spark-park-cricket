@@ -14,12 +14,20 @@ import {
   deleteSeriesFailure,
 } from '../../reducers/seriesSlice';
 import { Series } from '../../reducers/seriesSlice';
-import { PaginatedSeriesResult } from '@/services/api';
 
 // Mock the API service
 jest.mock('@/services/api', () => ({
   ApiService: jest.fn().mockImplementation(() => ({
-    getSeries: jest.fn().mockResolvedValue({ data: { series: [], total_items: 0, page: 1, page_size: 20, total_pages: 0 }, success: true }),
+    getSeries: jest.fn().mockResolvedValue({
+      data: {
+        series: [],
+        total_items: 0,
+        page: 1,
+        page_size: 20,
+        total_pages: 0,
+      },
+      success: true,
+    }),
     createSeries: jest.fn(),
     updateSeries: jest.fn(),
     deleteSeries: jest.fn(),
@@ -82,7 +90,18 @@ describe('seriesSaga', () => {
         },
       ];
 
-      const mockResponse = { data: { data: { series: mockSeries, total_items: mockSeries.length, page: 1, page_size: 20, total_pages: 1 } }, success: true };
+      const mockResponse = {
+        data: {
+          data: {
+            series: mockSeries,
+            total_items: mockSeries.length,
+            page: 1,
+            page_size: 20,
+            total_pages: 1,
+          },
+        },
+        success: true,
+      };
       mockApiService.getSeries.mockResolvedValue(mockResponse);
 
       const action = fetchSeriesRequest({ page: 1, pageSize: 20 });
@@ -95,7 +114,14 @@ describe('seriesSaga', () => {
         combinator: false,
         type: 'CALL',
       });
-      expect(putAction).toEqual(put(fetchSeriesSuccess({ series: mockSeries, totalItems: mockSeries.length })));
+      expect(putAction).toEqual(
+        put(
+          fetchSeriesSuccess({
+            series: mockSeries,
+            totalItems: mockSeries.length,
+          })
+        )
+      );
     });
 
     it('should handle fetch series failure with ApiError', () => {

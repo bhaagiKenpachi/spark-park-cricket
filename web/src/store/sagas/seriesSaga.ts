@@ -22,7 +22,12 @@ import {
   deleteSeriesFailure,
 } from '../reducers/seriesSlice';
 import { Series } from '../reducers/seriesSlice';
-import { ApiService, ApiError, ApiResponse, PaginatedSeriesResult } from '@/services/api';
+import {
+  ApiService,
+  ApiError,
+  ApiResponse,
+  PaginatedSeriesResult,
+} from '@/services/api';
 
 export function* fetchSeriesSaga(
   action: ReturnType<typeof fetchSeriesRequest>

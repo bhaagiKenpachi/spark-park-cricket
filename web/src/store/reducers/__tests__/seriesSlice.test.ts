@@ -45,7 +45,10 @@ describe('seriesSlice', () => {
 
     const actual = seriesSlice.reducer(
       { ...initialState, loading: true },
-      seriesSlice.actions.fetchSeriesSuccess({ series: mockSeries, totalItems: mockSeries.length })
+      seriesSlice.actions.fetchSeriesSuccess({
+        series: mockSeries,
+        totalItems: mockSeries.length,
+      })
     );
 
     expect(actual.loading).toBe(false);

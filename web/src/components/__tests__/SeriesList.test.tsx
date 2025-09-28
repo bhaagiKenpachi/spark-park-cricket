@@ -41,7 +41,7 @@ describe('SeriesList', () => {
   });
 
   it('should render loading state when loading is true and no series', () => {
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
           series: [],
@@ -96,10 +96,20 @@ describe('SeriesList', () => {
   });
 
   it('should render error state when error exists', () => {
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
-          series: [{ id: '1', name: 'Test Series', start_date: '2024-01-01', end_date: '2024-01-31', status: 'upcoming', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }],
+          series: [
+            {
+              id: '1',
+              name: 'Test Series',
+              start_date: '2024-01-01',
+              end_date: '2024-01-31',
+              status: 'upcoming',
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+            },
+          ],
           currentSeries: null,
           loading: false,
           error: 'Failed to fetch series',
@@ -148,7 +158,7 @@ describe('SeriesList', () => {
   });
 
   it('should render empty state when no series and no loading', () => {
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
           series: [],
@@ -178,21 +188,6 @@ describe('SeriesList', () => {
       return selector(mockState);
     });
 
-    const mockStore = createMockStore({
-      series: {
-        series: [],
-        currentSeries: null,
-        loading: false,
-        error: null,
-        pagination: {
-          currentPage: 1,
-          pageSize: 20,
-          totalItems: 0,
-          totalPages: 0,
-        },
-      },
-    });
-
     render(<SeriesList />);
 
     // Due to component logic, empty series array shows loading state
@@ -213,7 +208,7 @@ describe('SeriesList', () => {
       },
     ];
 
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
           series: mockSeries,
@@ -271,10 +266,20 @@ describe('SeriesList', () => {
 
   it('should show create series form when create button is clicked', () => {
     // Mock the auth state first
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
-          series: [{ id: '1', name: 'Test Series', start_date: '2024-01-01', end_date: '2024-01-31', status: 'upcoming', created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z' }],
+          series: [
+            {
+              id: '1',
+              name: 'Test Series',
+              start_date: '2024-01-01',
+              end_date: '2024-01-31',
+              status: 'upcoming',
+              created_at: '2024-01-01T00:00:00Z',
+              updated_at: '2024-01-01T00:00:00Z',
+            },
+          ],
           currentSeries: null,
           loading: false,
           error: null,
@@ -299,21 +304,6 @@ describe('SeriesList', () => {
         },
       };
       return selector(mockState);
-    });
-
-    const mockStore = createMockStore({
-      series: {
-        series: [],
-        currentSeries: null,
-        loading: false,
-        error: null,
-        pagination: {
-          currentPage: 1,
-          pageSize: 20,
-          totalItems: 0,
-          totalPages: 0,
-        },
-      },
     });
 
     render(<SeriesList />);
@@ -608,7 +598,7 @@ describe('SeriesList', () => {
       },
     ];
 
-    (useAppSelector as jest.Mock).mockImplementation((selector) => {
+    (useAppSelector as jest.Mock).mockImplementation(selector => {
       const mockState = {
         series: {
           series: mockSeries,
