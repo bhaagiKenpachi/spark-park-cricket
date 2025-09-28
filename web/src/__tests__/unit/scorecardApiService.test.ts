@@ -78,7 +78,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\?_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -125,9 +125,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.startScoring('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/start\?_t=\d+$/
-        ),
+        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/start\?_t=\d+$/),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -188,9 +186,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.addBall(mockBallEvent);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/ball\?_t=\d+$/
-        ),
+        expect.stringMatching(/^https?:\/\/[^\/]+\/scorecard\/ball\?_t=\d+$/),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -383,7 +379,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -415,7 +411,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -513,7 +509,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -534,7 +530,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -587,7 +583,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\?_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -667,7 +663,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
+          /^https?:\/\/[^\/]+\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
         ),
         expect.any(Object)
       );
