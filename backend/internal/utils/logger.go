@@ -104,18 +104,6 @@ func LogHTTPRequest(method, path, userAgent string, statusCode int, duration tim
 	GetLogger().WithFields(fields).Info("HTTP request")
 }
 
-// LogWebSocketEvent logs WebSocket events
-func LogWebSocketEvent(eventType, roomID, clientID string, fields logrus.Fields) {
-	if fields == nil {
-		fields = make(logrus.Fields)
-	}
-
-	fields["event_type"] = eventType
-	fields["room_id"] = roomID
-	fields["client_id"] = clientID
-
-	GetLogger().WithFields(fields).Info("WebSocket event")
-}
 
 // LogDatabaseOperation logs database operations
 func LogDatabaseOperation(operation, table string, duration time.Duration, fields logrus.Fields) {

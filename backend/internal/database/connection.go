@@ -74,11 +74,14 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 	// Initialize base repositories
 	log.Printf("Initializing database repositories...")
+
+	// Create repositories in order to handle dependencies
+	matchRepo := supabase.NewMatchRepository(client)
 	baseRepositories := &Repositories{
 		Series:     supabase.NewSeriesRepository(client),
-		Match:      supabase.NewMatchRepository(client),
+		Match:      matchRepo,
 		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema),
+		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema, matchRepo),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),

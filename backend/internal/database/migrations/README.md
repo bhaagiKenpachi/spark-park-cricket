@@ -9,7 +9,7 @@ The database schema supports multiple environments and includes:
 - **User Authentication**: Google OAuth integration with session management
 - **Cricket Tournament Management**: Series, matches, and live scoring
 - **Ball-by-Ball Tracking**: Complete cricket scoring with all ball types and wicket types
-- **Real-time Updates**: WebSocket-ready schema for live scoreboards
+- **Real-time Updates**: Optimized schema for live scoreboards
 
 ## Schema Structure
 

@@ -75,7 +75,6 @@ func main() {
 	log.Printf("   - GraphQL Playground: http://localhost:%s/api/v1/graphql/playground", cfg.Port)
 	log.Printf("   - Health Check: http://localhost:%s/health", cfg.Port)
 	log.Printf("   - Metrics: http://localhost:%s/metrics", cfg.Port)
-	log.Printf("   - WebSocket: ws://localhost:%s/api/v1/ws/match/{match_id}", cfg.Port)
 	log.Println("===============================================")
 
 	fmt.Printf("🚀 Spark Park Cricket Backend is running on :%s\n", cfg.Port)

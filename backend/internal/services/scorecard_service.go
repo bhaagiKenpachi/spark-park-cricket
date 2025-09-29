@@ -186,7 +186,7 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		return fmt.Errorf("failed to add ball: %w", err)
 	}
 
-	// Update over statistics (in-memory calculation)
+	// Update over statistics (optimized in-memory calculation)
 	over := &models.ScorecardOver{
 		ID:           data.OverID,
 		InningsID:    data.InningsID,
@@ -242,27 +242,16 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		innings.TotalWickets++
 	}
 
-	// Calculate total overs properly (in-memory calculation)
+	// Calculate total overs properly (optimized in-memory calculation)
 	completedOvers := data.CompletedOvers
 	currentOverBalls := over.TotalBalls
+	innings.TotalOvers = s.calculateOversInMemory(completedOvers, currentOverBalls)
 
-	// Total overs = completed overs + current over balls as decimal
-	var currentOverDecimal float64
-	if currentOverBalls > 0 {
-		// Convert balls to cricket scoring format (0.1, 0.2, 0.3, 0.4, 0.5, 1.0)
-		if currentOverBalls == 6 {
-			currentOverDecimal = 1.0
-		} else {
-			currentOverDecimal = float64(currentOverBalls) / 10.0
-		}
-	}
-	innings.TotalOvers = float64(completedOvers) + currentOverDecimal
-
-	// Check if innings is complete
+	// Check if innings is complete (optimized in-memory calculation)
 	maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
 	if req.InningsNumber == 1 {
-		if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(data.TotalOvers) {
-			innings.Status = string(models.InningsStatusCompleted)
+		innings.Status = s.calculateInningsStatusInMemory(innings, maxWickets, data.TotalOvers)
+		if innings.Status == string(models.InningsStatusCompleted) {
 			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
 				innings.InningsNumber, req.MatchID, innings.TotalWickets, maxWickets, innings.TotalOvers, data.TotalOvers)
 		}
@@ -326,8 +315,8 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		}
 	}
 
-	// Invalidate match-related caches after successful ball addition
-	s.invalidateMatchCaches(ctx, req.MatchID, data.InningsID, data.OverID)
+	// Invalidate match-related caches after successful ball addition (async)
+	go s.invalidateMatchCachesAsync(req.MatchID, data.InningsID, data.OverID)
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
@@ -973,6 +962,36 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 	_ = s.cache.Invalidate(lastBallKey)
 
 	log.Printf("Invalidated all caches for match %s, innings %s, over %s", matchID, inningsID, overID)
+}
+
+// invalidateMatchCachesAsync invalidates caches asynchronously
+func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID string) {
+	ctx := context.Background()
+	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
+}
+
+// calculateOversInMemory performs optimized overs calculation in memory
+func (s *ScorecardService) calculateOversInMemory(completedOvers int, currentOverBalls int) float64 {
+	// Total overs = completed overs + current over balls as decimal
+	var currentOverDecimal float64
+	if currentOverBalls > 0 {
+		// Convert balls to cricket scoring format (0.1, 0.2, 0.3, 0.4, 0.5, 1.0)
+		if currentOverBalls == 6 {
+			currentOverDecimal = 1.0
+		} else {
+			currentOverDecimal = float64(currentOverBalls) / 10.0
+		}
+	}
+	return float64(completedOvers) + currentOverDecimal
+}
+
+// calculateInningsStatusInMemory performs optimized innings completion check in memory
+func (s *ScorecardService) calculateInningsStatusInMemory(innings *models.Innings, maxWickets int, totalOvers int) string {
+	// Check if innings is complete
+	if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(totalOvers) {
+		return string(models.InningsStatusCompleted)
+	}
+	return string(models.InningsStatusInProgress)
 }
 
 // ShouldCompleteMatch determines if the match should be completed based on cricket rules

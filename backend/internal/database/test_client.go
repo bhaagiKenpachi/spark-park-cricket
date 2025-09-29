@@ -25,11 +25,12 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 	}
 
 	// Initialize repositories
+	matchRepo := supabase.NewMatchRepository(client)
 	repositories := &Repositories{
 		Series:     supabase.NewSeriesRepository(client),
-		Match:      supabase.NewMatchRepository(client),
+		Match:      matchRepo,
 		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client, "testing_db"),
+		Scorecard:  supabase.NewScorecardRepository(client, "testing_db", matchRepo),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),

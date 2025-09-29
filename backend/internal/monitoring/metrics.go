@@ -36,9 +36,6 @@ type Metrics struct {
 	CacheOperationsTotal   *prometheus.CounterVec
 	CacheOperationDuration *prometheus.HistogramVec
 
-	// WebSocket metrics
-	WebSocketConnections   *prometheus.GaugeVec
-	WebSocketMessagesTotal *prometheus.CounterVec
 
 	// System metrics
 	MemoryUsage     *prometheus.GaugeVec
@@ -193,22 +190,6 @@ func NewMetrics() *Metrics {
 				[]string{"operation", "cache_type"},
 			),
 
-			// WebSocket metrics
-			WebSocketConnections: promauto.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Name: "websocket_connections_active",
-					Help: "Number of active WebSocket connections",
-				},
-				[]string{"match_id"},
-			),
-
-			WebSocketMessagesTotal: promauto.NewCounterVec(
-				prometheus.CounterOpts{
-					Name: "websocket_messages_total",
-					Help: "Total number of WebSocket messages sent",
-				},
-				[]string{"match_id", "message_type"},
-			),
 
 			// System metrics
 			MemoryUsage: promauto.NewGaugeVec(
@@ -299,19 +280,6 @@ func (m *Metrics) RecordCacheOperation(operation, cacheType string, duration tim
 	m.CacheOperationDuration.WithLabelValues(operation, cacheType).Observe(duration.Seconds())
 }
 
-// RecordWebSocketConnection records WebSocket connection metrics
-func (m *Metrics) RecordWebSocketConnection(matchID string, connected bool) {
-	if connected {
-		m.WebSocketConnections.WithLabelValues(matchID).Inc()
-	} else {
-		m.WebSocketConnections.WithLabelValues(matchID).Dec()
-	}
-}
-
-// RecordWebSocketMessage records WebSocket message metrics
-func (m *Metrics) RecordWebSocketMessage(matchID, messageType string) {
-	m.WebSocketMessagesTotal.WithLabelValues(matchID, messageType).Inc()
-}
 
 // UpdateSystemMetrics updates system metrics
 func (m *Metrics) UpdateSystemMetrics() {
