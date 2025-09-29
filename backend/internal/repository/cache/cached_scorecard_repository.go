@@ -237,6 +237,38 @@ func (r *CachedScorecardRepository) GetBallsByOver(ctx context.Context, overID s
 	return balls, nil
 }
 
+// GetBallCountByOver retrieves ball count with caching
+func (r *CachedScorecardRepository) GetBallCountByOver(ctx context.Context, overID string) (int, error) {
+	cacheKey := fmt.Sprintf("ball_count:over:%s", overID)
+
+	var ballCount int
+	err := r.cache.GetOrSet(cacheKey, &ballCount, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetBallCountByOver(ctx, overID)
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return ballCount, nil
+}
+
+// GetBallsForNextNumber retrieves balls for next number calculation with caching
+func (r *CachedScorecardRepository) GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	cacheKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+
+	var balls []*models.ScorecardBall
+	err := r.cache.GetOrSet(cacheKey, &balls, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetBallsForNextNumber(ctx, overID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return balls, nil
+}
+
 // GetLastBall retrieves last ball with caching
 func (r *CachedScorecardRepository) GetLastBall(ctx context.Context, overID string) (*models.ScorecardBall, error) {
 	cacheKey := fmt.Sprintf("ball:last:over:%s", overID)

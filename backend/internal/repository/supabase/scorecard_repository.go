@@ -34,8 +34,8 @@ func (r *scorecardRepository) getTableName(table string) string {
 func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models.Innings) error {
 	log.Printf("Creating innings for match %s, innings %d, batting team %s", innings.MatchID, innings.InningsNumber, innings.BattingTeam)
 
-	// Add timeout to prevent hanging queries
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple INSERT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -93,8 +93,8 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, matchID string, inningsNumber int) (*models.Innings, error) {
 	log.Printf("Getting innings %d for match %s", inningsNumber, matchID)
 
-	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple SELECT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var innings []*models.Innings
@@ -243,8 +243,8 @@ func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inn
 func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
 	log.Printf("Getting current over for innings %s", inningsID)
 
-	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple SELECT with LIMIT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var overs []*models.ScorecardOver
@@ -356,8 +356,8 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
 		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
-	// Add timeout to prevent hanging queries
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple INSERT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -420,6 +420,53 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 	}
 
 	log.Printf("Found %d balls for over %s", len(balls), overID)
+	return balls, nil
+}
+
+// GetBallCountByOver gets the count of balls for an over (optimized for performance)
+func (r *scorecardRepository) GetBallCountByOver(ctx context.Context, overID string) (int, error) {
+	log.Printf("Getting ball count for over %s", overID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("id", "", false). // Only select ID for counting
+		Eq("over_id", overID).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting ball count: %v", err)
+		return 0, fmt.Errorf("failed to get ball count: %w", err)
+	}
+
+	ballCount := len(balls)
+	log.Printf("Found %d balls for over %s", ballCount, overID)
+	return ballCount, nil
+}
+
+// GetBallsForNextNumber gets only the necessary fields for ball number calculation (optimized)
+func (r *scorecardRepository) GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	log.Printf("Getting balls for next number calculation for over %s", overID)
+
+	// Add timeout to prevent hanging queries (optimized for simple SELECT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("ball_number,ball_type", "", false). // Only select necessary fields
+		Eq("over_id", overID).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting balls for next number: %v", err)
+		return nil, fmt.Errorf("failed to get balls for next number: %w", err)
+	}
+
+	log.Printf("Found %d balls for next number calculation for over %s", len(balls), overID)
 	return balls, nil
 }
 

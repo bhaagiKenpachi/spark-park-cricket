@@ -25,6 +25,8 @@ type ScorecardRepository interface {
 	// Ball operations
 	CreateBall(ctx context.Context, ball *models.ScorecardBall) error
 	GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error)
+	GetBallCountByOver(ctx context.Context, overID string) (int, error)
+	GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error)
 	GetLastBall(ctx context.Context, overID string) (*models.ScorecardBall, error)
 	DeleteBall(ctx context.Context, ballID string) error
 

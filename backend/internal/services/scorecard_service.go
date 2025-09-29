@@ -169,12 +169,14 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	}
 
 	// Get current over or create new one with monitoring
+	// Also get all overs for this innings to avoid duplicate query later
 	var over *models.ScorecardOver
+	var allOvers []*models.ScorecardOver
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "SELECT", "overs", req.MatchID,
 		func(ctx context.Context) error {
 			var dbErr error
-			over, dbErr = s.getCurrentOver(ctx, innings.ID)
+			over, allOvers, dbErr = s.getCurrentOverWithOvers(ctx, innings.ID)
 			return dbErr
 		},
 	)
@@ -278,12 +280,8 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	}
 
 	// Calculate total overs properly
-	// Get all overs for this innings to calculate completed overs + current over balls
-	overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
-	if err != nil {
-		log.Printf("Error getting overs for innings: %v", err)
-		return fmt.Errorf("failed to get overs: %w", err)
-	}
+	// Use cached overs from getCurrentOverWithOvers to avoid duplicate query
+	overs := allOvers
 
 	completedOvers := 0
 	currentOverBalls := 0
@@ -599,10 +597,64 @@ func (s *ScorecardService) getCurrentOver(ctx context.Context, inningsID string)
 	return newOver, nil
 }
 
-// getNextBallNumber gets the next ball number for an over
+// getCurrentOverWithOvers gets the current over and all overs for the innings in one call
+// This avoids duplicate GetOversByInnings calls
+func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsID string) (*models.ScorecardOver, []*models.ScorecardOver, error) {
+	// Try to get current over first
+	over, err := s.scorecardRepo.GetCurrentOver(ctx, inningsID)
+	if err == nil && over != nil {
+		// If we found a current over, we still need to get all overs for calculations
+		allOvers, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get overs: %w", err)
+		}
+		return over, allOvers, nil
+	}
+
+	// Get all overs for this innings to determine next over number
+	overs, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+	if err != nil {
+		log.Printf("Error getting overs: %v", err)
+		return nil, nil, fmt.Errorf("failed to get overs: %w", err)
+	}
+
+	// Calculate next over number
+	nextOverNumber := 1
+	if len(overs) > 0 {
+		// Find the highest over number and add 1
+		maxOverNumber := 0
+		for _, o := range overs {
+			if o.OverNumber > maxOverNumber {
+				maxOverNumber = o.OverNumber
+			}
+		}
+		nextOverNumber = maxOverNumber + 1
+	}
+
+	// Create new over
+	newOver := &models.ScorecardOver{
+		InningsID:    inningsID,
+		OverNumber:   nextOverNumber,
+		TotalRuns:    0,
+		TotalBalls:   0,
+		TotalWickets: 0,
+		Status:       string(models.OverStatusInProgress),
+	}
+
+	err = s.scorecardRepo.CreateOver(ctx, newOver)
+	if err != nil {
+		log.Printf("Error creating over: %v", err)
+		return nil, nil, fmt.Errorf("failed to create over: %w", err)
+	}
+
+	log.Printf("Created new over %d for innings %s", nextOverNumber, inningsID)
+	return newOver, overs, nil
+}
+
+// getNextBallNumber gets the next ball number for an over (optimized but preserves cricket logic)
 func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string) (int, error) {
-	// Get all balls for this over
-	balls, err := s.scorecardRepo.GetBallsByOver(ctx, overID)
+	// Get only necessary ball fields for cricket logic (optimized query)
+	balls, err := s.scorecardRepo.GetBallsForNextNumber(ctx, overID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get balls: %w", err)
 	}
