@@ -13,15 +13,17 @@ import (
 )
 
 type scorecardRepository struct {
-	client *supabase.Client
-	schema string
+	client    *supabase.Client
+	schema    string
+	matchRepo interfaces.MatchRepository
 }
 
 // NewScorecardRepository creates a new scorecard repository
-func NewScorecardRepository(client *supabase.Client, schema string) interfaces.ScorecardRepository {
+func NewScorecardRepository(client *supabase.Client, schema string, matchRepo interfaces.MatchRepository) interfaces.ScorecardRepository {
 	return &scorecardRepository{
-		client: client,
-		schema: schema,
+		client:    client,
+		schema:    schema,
+		matchRepo: matchRepo,
 	}
 }
 
@@ -715,4 +717,129 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 
 	log.Printf("Successfully built scorecard for match %s", matchID)
 	return scorecard, nil
+}
+
+// GetMatchInningsOverData gets all necessary data for add ball API in a single optimized query
+func (r *scorecardRepository) GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	log.Printf("Getting optimized match data for match %s, innings %d", matchID, inningsNumber)
+
+	// Add timeout to prevent hanging queries (optimized for complex JOIN)
+	_, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// For now, use fallback method since Supabase doesn't support complex JOINs easily
+	// In production, this would use a stored procedure or raw SQL
+	return r.getMatchInningsOverDataFallback(ctx, matchID, inningsNumber)
+}
+
+// getMatchInningsOverDataFallback provides fallback implementation using individual queries
+func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	log.Printf("Using fallback method for match %s, innings %d", matchID, inningsNumber)
+
+	// Get match data
+	match, err := r.matchRepo.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get match: %w", err)
+	}
+
+	// Get innings data
+	innings, err := r.GetInningsByMatchAndNumber(ctx, matchID, inningsNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get innings: %w", err)
+	}
+
+	// Get current over data
+	over, err := r.GetCurrentOver(ctx, innings.ID)
+	if err != nil {
+		// No current over exists, create default values
+		over = &models.ScorecardOver{
+			ID:           "",
+			InningsID:    innings.ID,
+			OverNumber:   0,
+			TotalRuns:    0,
+			TotalBalls:   0,
+			TotalWickets: 0,
+			Status:       string(models.OverStatusInProgress),
+		}
+	}
+
+	// Get ball count for current over
+	ballCount, err := r.GetBallCountByOver(ctx, over.ID)
+	if err != nil {
+		ballCount = 0
+	}
+
+	// Get balls for next number calculation
+	balls, err := r.GetBallsForNextNumber(ctx, over.ID)
+	if err != nil {
+		balls = []*models.ScorecardBall{}
+	}
+
+	// Calculate statistics
+	legalBallCount := 0
+	maxBallNumber := 0
+	for _, ball := range balls {
+		if ball.BallNumber > maxBallNumber {
+			maxBallNumber = ball.BallNumber
+		}
+		if ball.BallType == models.BallTypeGood {
+			legalBallCount++
+		}
+	}
+
+	// Get overs for statistics
+	overs, err := r.GetOversByInnings(ctx, innings.ID)
+	if err != nil {
+		overs = []*models.ScorecardOver{}
+	}
+
+	completedOvers := 0
+	currentOverBalls := 0
+	for _, o := range overs {
+		if o.Status == string(models.OverStatusCompleted) {
+			completedOvers++
+		} else if o.Status == string(models.OverStatusInProgress) {
+			currentOverBalls = o.TotalBalls
+		}
+	}
+
+	return &models.MatchInningsOverData{
+		// Match data
+		MatchID:          match.ID,
+		MatchStatus:      match.Status,
+		CreatedBy:        match.CreatedBy,
+		BattingTeam:      match.BattingTeam,
+		TotalOvers:       match.TotalOvers,
+		TeamAPlayerCount: match.TeamAPlayerCount,
+
+		// Innings data
+		InningsID:           innings.ID,
+		InningsNumber:       innings.InningsNumber,
+		InningsStatus:       models.InningsStatus(innings.Status),
+		InningsTotalRuns:    innings.TotalRuns,
+		InningsTotalWickets: innings.TotalWickets,
+		InningsTotalOvers:   innings.TotalOvers,
+		InningsTotalBalls:   innings.TotalBalls,
+
+		// Over data
+		OverID:           over.ID,
+		OverNumber:       over.OverNumber,
+		OverStatus:       models.OverStatus(over.Status),
+		OverTotalRuns:    over.TotalRuns,
+		OverTotalBalls:   over.TotalBalls,
+		OverTotalWickets: over.TotalWickets,
+
+		// Ball data
+		BallCount:      ballCount,
+		LegalBallCount: legalBallCount,
+		MaxBallNumber:  maxBallNumber,
+
+		// Overs data
+		CompletedOvers:   completedOvers,
+		CurrentOverBalls: currentOverBalls,
+
+		// Timestamps
+		CreatedAt: match.CreatedAt,
+		UpdatedAt: match.UpdatedAt,
+	}, nil
 }

@@ -33,4 +33,7 @@ type ScorecardRepository interface {
 	// Scorecard operations
 	GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error)
 	StartScoring(ctx context.Context, matchID string) error
+
+	// Optimized operations for add ball API
+	GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error)
 }

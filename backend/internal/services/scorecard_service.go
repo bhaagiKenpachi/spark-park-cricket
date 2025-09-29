@@ -85,8 +85,256 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 	return nil
 }
 
-// AddBall adds a ball to the scorecard
+// AddBall adds a ball to the scorecard (optimized version)
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
+	// Use optimized method for better performance
+	return s.AddBallOptimized(ctx, req)
+}
+
+// AddBallOptimized adds a ball using optimized data fetching
+func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.BallEventRequest) error {
+	// Get user ID from context
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
+	// Validate ball event
+	if err := utils.ValidateBallEventRequest(req); err != nil {
+		log.Printf("Invalid ball event: %v", err)
+		return fmt.Errorf("invalid ball event: %w", err)
+	}
+
+	// Get all necessary data in a single optimized call
+	data, err := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
+	if err != nil {
+		log.Printf("Error getting optimized match data: %v", err)
+		return fmt.Errorf("failed to get match data: %w", err)
+	}
+
+	// Validate user access
+	if data.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only score balls for matches you created")
+	}
+
+	// Validate match status
+	if data.MatchStatus != models.MatchStatusLive {
+		return fmt.Errorf("match is not live, cannot add ball")
+	}
+
+	// Validate innings status
+	if data.InningsStatus != models.InningsStatusInProgress {
+		return fmt.Errorf("innings is not in progress, cannot add ball")
+	}
+
+	// Validate over status
+	if data.OverStatus != models.OverStatusInProgress {
+		return fmt.Errorf("over is not in progress, cannot add ball")
+	}
+
+	// Check if over is complete (6 legal balls)
+	if data.LegalBallCount >= 6 {
+		return fmt.Errorf("over is complete, cannot add more balls")
+	}
+
+	// Calculate next ball number
+	nextBallNumber := data.MaxBallNumber + 1
+
+	// Calculate runs from run type and byes
+	runs := req.RunType.GetRunValue()
+	byes := req.Byes
+	if req.IsWicket && req.RunType == models.RunTypeWC {
+		runs = 0 // Wicket doesn't count as runs
+	}
+
+	// Total runs = ball runs + byes
+	totalRuns := runs + byes
+
+	// Create ball
+	ball := &models.ScorecardBall{
+		OverID:     data.OverID,
+		BallNumber: nextBallNumber,
+		BallType:   req.BallType,
+		RunType:    req.RunType,
+		Runs:       runs,
+		Byes:       byes,
+		IsWicket:   req.IsWicket,
+		WicketType: req.WicketType,
+	}
+
+	// Record ball addition metrics
+	start := time.Now()
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "INSERT", "balls", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.CreateBall(ctx, ball)
+		},
+	)
+	duration := time.Since(start)
+
+	// Record cricket-specific metrics
+	s.metrics.RecordBallAddition(
+		req.MatchID,
+		fmt.Sprintf("innings_%d", req.InningsNumber),
+		string(req.BallType),
+		string(req.RunType),
+		duration,
+	)
+
+	if err != nil {
+		log.Printf("Error creating ball: %v", err)
+		return fmt.Errorf("failed to add ball: %w", err)
+	}
+
+	// Update over statistics (in-memory calculation)
+	over := &models.ScorecardOver{
+		ID:           data.OverID,
+		InningsID:    data.InningsID,
+		OverNumber:   data.OverNumber,
+		TotalRuns:    data.OverTotalRuns + totalRuns,
+		TotalBalls:   data.OverTotalBalls,
+		TotalWickets: data.OverTotalWickets,
+		Status:       string(data.OverStatus),
+	}
+
+	// Only count legal balls (good balls) for over completion
+	if req.BallType == models.BallTypeGood {
+		over.TotalBalls++
+	}
+	if req.IsWicket {
+		over.TotalWickets++
+	}
+
+	// Check if over is complete (6 legal balls or all wickets)
+	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+		over.Status = string(models.OverStatusCompleted)
+	}
+
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "overs", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateOver(ctx, over)
+		},
+	)
+	if err != nil {
+		log.Printf("Error updating over: %v", err)
+		return fmt.Errorf("failed to update over: %w", err)
+	}
+
+	// Update innings statistics (in-memory calculation)
+	innings := &models.Innings{
+		ID:            data.InningsID,
+		MatchID:       req.MatchID,
+		InningsNumber: data.InningsNumber,
+		BattingTeam:   data.BattingTeam,
+		TotalRuns:     data.InningsTotalRuns + totalRuns,
+		TotalWickets:  data.InningsTotalWickets,
+		TotalOvers:    data.InningsTotalOvers,
+		TotalBalls:    data.InningsTotalBalls,
+		Status:        string(data.InningsStatus),
+	}
+
+	// Only count legal balls for innings overs calculation
+	if req.BallType == models.BallTypeGood {
+		innings.TotalBalls++
+	}
+	if req.IsWicket {
+		innings.TotalWickets++
+	}
+
+	// Calculate total overs properly (in-memory calculation)
+	completedOvers := data.CompletedOvers
+	currentOverBalls := over.TotalBalls
+
+	// Total overs = completed overs + current over balls as decimal
+	var currentOverDecimal float64
+	if currentOverBalls > 0 {
+		// Convert balls to cricket scoring format (0.1, 0.2, 0.3, 0.4, 0.5, 1.0)
+		if currentOverBalls == 6 {
+			currentOverDecimal = 1.0
+		} else {
+			currentOverDecimal = float64(currentOverBalls) / 10.0
+		}
+	}
+	innings.TotalOvers = float64(completedOvers) + currentOverDecimal
+
+	// Check if innings is complete
+	maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
+	if req.InningsNumber == 1 {
+		if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(data.TotalOvers) {
+			innings.Status = string(models.InningsStatusCompleted)
+			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
+				innings.InningsNumber, req.MatchID, innings.TotalWickets, maxWickets, innings.TotalOvers, data.TotalOvers)
+		}
+	}
+
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "innings", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateInnings(ctx, innings)
+		},
+	)
+	if err != nil {
+		log.Printf("Error updating innings: %v", err)
+		return fmt.Errorf("failed to update innings: %w", err)
+	}
+
+	// Handle match progression
+	if req.InningsNumber == 1 {
+		// First innings - check if completed and start second innings
+		if innings.Status == string(models.InningsStatusCompleted) {
+			err = s.startSecondInnings(ctx, req.MatchID, &models.Match{
+				ID:               req.MatchID,
+				Status:           models.MatchStatusLive,
+				BattingTeam:      data.BattingTeam,
+				TotalOvers:       data.TotalOvers,
+				TeamAPlayerCount: data.TeamAPlayerCount,
+			})
+			if err != nil {
+				log.Printf("Error starting second innings: %v", err)
+				return fmt.Errorf("failed to start second innings: %w", err)
+			}
+			log.Printf("Second innings started for match %s", req.MatchID)
+		}
+	} else if req.InningsNumber == 2 {
+		// Second innings - check for match completion after every ball
+		shouldCompleteMatch, reason := s.ShouldCompleteMatch(ctx, req.MatchID, innings, &models.Match{
+			ID:               req.MatchID,
+			Status:           models.MatchStatusLive,
+			BattingTeam:      data.BattingTeam,
+			TotalOvers:       data.TotalOvers,
+			TeamAPlayerCount: data.TeamAPlayerCount,
+		})
+		if shouldCompleteMatch {
+			// Complete the innings first
+			innings.Status = string(models.InningsStatusCompleted)
+			err = s.scorecardRepo.UpdateInnings(ctx, innings)
+			if err != nil {
+				return fmt.Errorf("failed to update innings status: %w", err)
+			}
+
+			// Complete the match
+			match := &models.Match{
+				ID:     req.MatchID,
+				Status: models.MatchStatusCompleted,
+			}
+			err = s.matchRepo.Update(ctx, req.MatchID, match)
+			if err != nil {
+				return fmt.Errorf("failed to complete match: %w", err)
+			}
+			log.Printf("Match %s completed - %s", req.MatchID, reason)
+		}
+	}
+
+	// Invalidate match-related caches after successful ball addition
+	s.invalidateMatchCaches(ctx, req.MatchID, data.InningsID, data.OverID)
+
+	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
+	return nil
+}
+
+// AddBallLegacy is the original AddBall method (kept for reference)
+func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEventRequest) error {
 	// Get user ID from context
 	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {

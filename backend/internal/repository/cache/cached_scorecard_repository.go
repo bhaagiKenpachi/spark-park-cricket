@@ -350,3 +350,19 @@ func (r *CachedScorecardRepository) StartScoring(ctx context.Context, matchID st
 
 	return nil
 }
+
+// GetMatchInningsOverData retrieves optimized match data with caching
+func (r *CachedScorecardRepository) GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	cacheKey := fmt.Sprintf("match_innings_over:%s:%d", matchID, inningsNumber)
+
+	var data models.MatchInningsOverData
+	err := r.cache.GetOrSet(cacheKey, &data, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetMatchInningsOverData(ctx, matchID, inningsNumber)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
