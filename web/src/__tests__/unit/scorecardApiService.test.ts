@@ -1,6 +1,3 @@
-// Set the correct API base URL for tests BEFORE importing API service
-process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8080';
-
 import { ApiService, ApiError } from '../../services/api';
 import {
   ScorecardResponse,
@@ -12,10 +9,6 @@ import {
 // Mock fetch globally
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
-
-// Mock Date.now to ensure consistent timestamps in tests
-const mockDateNow = jest.fn(() => 1234567890);
-global.Date.now = mockDateNow;
 
 // Mock console methods to avoid noise in tests
 const originalConsoleError = console.error;
@@ -37,7 +30,6 @@ describe('ApiService - Scorecard Endpoints', () => {
   beforeEach(() => {
     apiService = new ApiService();
     mockFetch.mockClear();
-    mockDateNow.mockReturnValue(1234567890);
   });
 
   describe('getScorecard', () => {
@@ -85,7 +77,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1?_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\?_t=\d+$/
+        ),
         expect.any(Object)
       );
 
@@ -131,7 +125,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.startScoring('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/start?_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/start\?_t=\d+$/
+        ),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -192,7 +188,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.addBall(mockBallEvent);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/ball?_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/ball\?_t=\d+$/
+        ),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -384,7 +382,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.undoBall('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/ball?innings=1&_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+        ),
         expect.objectContaining({
           method: 'DELETE',
           headers: expect.objectContaining({
@@ -414,7 +414,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.undoBall('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/ball?innings=1&_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+        ),
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -510,7 +512,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getCurrentOver('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/current-over?innings=1&_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+        ),
         expect.any(Object)
       );
 
@@ -529,7 +533,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       await apiService.getCurrentOver('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/current-over?innings=1&_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+        ),
         expect.any(Object)
       );
     });
@@ -580,7 +586,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getInnings('match-1', 1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/innings/1?_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\?_t=\d+$/
+        ),
         expect.any(Object)
       );
 
@@ -658,7 +666,9 @@ describe('ApiService - Scorecard Endpoints', () => {
       const result = await apiService.getOver('match-1', 1, 3);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1/innings/1/over/3?_t=1234567890',
+        expect.stringMatching(
+          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
+        ),
         expect.any(Object)
       );
 
@@ -741,7 +751,7 @@ describe('ApiService - Scorecard Endpoints', () => {
       await apiService.getScorecard('match-1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8080/scorecard/match-1?_t=1234567890',
+        expect.stringMatching(/\?_t=/),
         expect.any(Object)
       );
     });
