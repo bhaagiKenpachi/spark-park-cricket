@@ -209,6 +209,14 @@ func (r *CachedScorecardRepository) CreateBall(ctx context.Context, ball *models
 	lastBallCacheKey := fmt.Sprintf("ball:last:over:%s", ball.OverID)
 	_ = r.cache.Invalidate(lastBallCacheKey)
 
+	// Invalidate ball count cache for this over
+	ballCountCacheKey := fmt.Sprintf("ball_count:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(ballCountCacheKey)
+
+	// Invalidate balls for next number calculation cache
+	ballsNextNumberCacheKey := fmt.Sprintf("balls_next_number:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(ballsNextNumberCacheKey)
+
 	err := r.repo.CreateBall(ctx, ball)
 	if err != nil {
 		return err

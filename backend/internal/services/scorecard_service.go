@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"spark-park-cricket-backend/internal/cache"
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/monitoring"
@@ -16,14 +17,16 @@ type ScorecardService struct {
 	scorecardRepo interfaces.ScorecardRepository
 	matchRepo     interfaces.MatchRepository
 	metrics       *monitoring.Metrics
+	cache         *cache.CacheManager
 }
 
 // NewScorecardService creates a new scorecard service
-func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics) *ScorecardService {
+func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics, cache *cache.CacheManager) *ScorecardService {
 	return &ScorecardService{
 		scorecardRepo: scorecardRepo,
 		matchRepo:     matchRepo,
 		metrics:       metrics,
+		cache:         cache,
 	}
 }
 
@@ -364,6 +367,9 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		}
 	}
 
+	// Invalidate match-related caches after successful ball addition
+	s.invalidateMatchCaches(ctx, req.MatchID, innings.ID, over.ID)
+
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
 }
@@ -682,6 +688,43 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 	nextBallNumber := maxBallNumber + 1
 
 	return nextBallNumber, nil
+}
+
+// invalidateMatchCaches invalidates all caches related to a match after ball addition
+func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, inningsID, overID string) {
+	// Invalidate scorecard cache for the match
+	scorecardKey := fmt.Sprintf("scorecard:%s", matchID)
+	_ = s.cache.Invalidate(scorecardKey)
+
+	// Invalidate innings cache
+	inningsKey := fmt.Sprintf("innings:match:%s", matchID)
+	_ = s.cache.Invalidate(inningsKey)
+
+	// Invalidate overs cache for this innings
+	oversKey := fmt.Sprintf("overs:innings:%s", inningsID)
+	_ = s.cache.Invalidate(oversKey)
+
+	// Invalidate current over cache
+	currentOverKey := fmt.Sprintf("over:current:innings:%s", inningsID)
+	_ = s.cache.Invalidate(currentOverKey)
+
+	// Invalidate balls cache for this over
+	ballsKey := fmt.Sprintf("balls:over:%s", overID)
+	_ = s.cache.Invalidate(ballsKey)
+
+	// Invalidate ball count cache
+	ballCountKey := fmt.Sprintf("ball_count:over:%s", overID)
+	_ = s.cache.Invalidate(ballCountKey)
+
+	// Invalidate balls for next number cache
+	ballsNextNumberKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+	_ = s.cache.Invalidate(ballsNextNumberKey)
+
+	// Invalidate last ball cache
+	lastBallKey := fmt.Sprintf("ball:last:over:%s", overID)
+	_ = s.cache.Invalidate(lastBallKey)
+
+	log.Printf("Invalidated all caches for match %s, innings %s, over %s", matchID, inningsID, overID)
 }
 
 // ShouldCompleteMatch determines if the match should be completed based on cricket rules
