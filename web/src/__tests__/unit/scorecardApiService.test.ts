@@ -78,7 +78,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\?_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\?_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -126,7 +126,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/start\?_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/start\?_t=\d+$/
         ),
         expect.objectContaining({
           method: 'POST',
@@ -189,7 +189,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/ball\?_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/ball\?_t=\d+$/
         ),
         expect.objectContaining({
           method: 'POST',
@@ -383,7 +383,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -415,7 +415,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/ball\?innings=1&_t=\d+$/
         ),
         expect.objectContaining({
           method: 'DELETE',
@@ -513,7 +513,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -534,7 +534,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/current-over\?innings=1&_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -587,7 +587,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\?_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/innings\/1\?_t=\d+$/
         ),
         expect.any(Object)
       );
@@ -667,7 +667,7 @@ describe('ApiService - Scorecard Endpoints', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^http:\/\/localhost:8080\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
+          /^http:\/\/localhost:8080\/api\/v1\/scorecard\/match-1\/innings\/1\/over\/3\?_t=\d+$/
         ),
         expect.any(Object)
       );
