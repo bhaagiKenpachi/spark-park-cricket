@@ -83,7 +83,13 @@ func (cm *CacheManager) Invalidate(key string) error {
 	if !cm.enabled {
 		return nil
 	}
-	return cm.cache.Delete(key)
+
+	err := cm.cache.Delete(key)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // InvalidatePattern removes all keys matching a pattern

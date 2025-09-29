@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
@@ -39,12 +40,12 @@ func (m *MockSeriesService) GetSeries(ctx context.Context, id string) (*models.S
 	return args.Get(0).(*models.Series), args.Error(1)
 }
 
-func (m *MockSeriesService) ListSeries(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+func (m *MockSeriesService) ListSeries(ctx context.Context, filters *models.SeriesFilters) (*interfaces.PaginatedSeriesResult, error) {
 	args := m.Called(ctx, filters)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*models.Series), args.Error(1)
+	return args.Get(0).(*interfaces.PaginatedSeriesResult), args.Error(1)
 }
 
 func (m *MockSeriesService) UpdateSeries(ctx context.Context, id string, req *models.UpdateSeriesRequest) (*models.Series, error) {
@@ -76,9 +77,16 @@ func TestSeriesHandler_ListSeries(t *testing.T) {
 					{ID: "1", Name: "Test Series 1"},
 					{ID: "2", Name: "Test Series 2"},
 				}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 2,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 1,
+				}
 				mockService.On("ListSeries", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
 					return filters.Limit == 20 && filters.Offset == 0
-				})).Return(series, nil)
+				})).Return(result, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedError:  false,
@@ -90,9 +98,16 @@ func TestSeriesHandler_ListSeries(t *testing.T) {
 				series := []*models.Series{
 					{ID: "1", Name: "Test Series 1"},
 				}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 1,
+					Page:       1,
+					PageSize:   10,
+					TotalPages: 1,
+				}
 				mockService.On("ListSeries", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
 					return filters.Limit == 10 && filters.Offset == 5
-				})).Return(series, nil)
+				})).Return(result, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedError:  false,
@@ -111,9 +126,16 @@ func TestSeriesHandler_ListSeries(t *testing.T) {
 			queryParams: "?limit=invalid",
 			mockSetup: func(mockService *MockSeriesService) {
 				series := []*models.Series{}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 0,
+				}
 				mockService.On("ListSeries", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
 					return filters.Limit == 20 && filters.Offset == 0 // Should use defaults
-				})).Return(series, nil)
+				})).Return(result, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedError:  false,
@@ -123,9 +145,16 @@ func TestSeriesHandler_ListSeries(t *testing.T) {
 			queryParams: "?limit=-5",
 			mockSetup: func(mockService *MockSeriesService) {
 				series := []*models.Series{}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 0,
+				}
 				mockService.On("ListSeries", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
 					return filters.Limit == 20 && filters.Offset == 0 // Should use defaults
-				})).Return(series, nil)
+				})).Return(result, nil)
 			},
 			expectedStatus: http.StatusOK,
 			expectedError:  false,

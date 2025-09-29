@@ -30,12 +30,21 @@ func (r *CachedSeriesRepository) Create(ctx context.Context, series *models.Seri
 	}
 
 	// Invalidate series list cache - invalidate all possible cache keys
-	fmt.Printf("DEBUG: CachedSeriesRepository.Create - Invalidating cache keys\n")
-	_ = r.cache.Invalidate("series:list")
-	_ = r.cache.Invalidate("series:list:limit:20")
-	_ = r.cache.Invalidate("series:list:limit:50")
-	_ = r.cache.Invalidate("series:list:limit:100")
-	fmt.Printf("DEBUG: CachedSeriesRepository.Create - Cache invalidation completed\n")
+	keysToInvalidate := []string{
+		"series:list:order:created_at_desc",
+		"series:list:order:created_at_desc:limit:20",
+		"series:list:order:created_at_desc:limit:50",
+		"series:list:order:created_at_desc:limit:100",
+		"series:list:order:created_at_desc:limit:20:offset:0",
+		"series:list:order:created_at_desc:limit:20:offset:20",
+		"series:list:order:created_at_desc:limit:20:offset:40",
+		"series:list:order:created_at_desc:limit:50:offset:0",
+		"series:list:order:created_at_desc:limit:100:offset:0",
+	}
+
+	for _, key := range keysToInvalidate {
+		_ = r.cache.Invalidate(key)
+	}
 
 	// Cache the new series
 	if series.ID != "" {
@@ -63,9 +72,9 @@ func (r *CachedSeriesRepository) GetByID(ctx context.Context, id string) (*model
 }
 
 // GetAll retrieves all series with caching
-func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
+func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) (*interfaces.PaginatedSeriesResult, error) {
 	// Create cache key based on filters
-	cacheKey := "series:list"
+	cacheKey := "series:list:order:created_at_desc"
 	if filters != nil {
 		// Add filter parameters to cache key
 		if filters.Limit > 0 {
@@ -76,23 +85,20 @@ func (r *CachedSeriesRepository) GetAll(ctx context.Context, filters *models.Ser
 		}
 	}
 
-	fmt.Printf("DEBUG: CachedSeriesRepository.GetAll - cacheKey: %s, filters: %+v\n", cacheKey, filters)
-
-	var series []*models.Series
-	err := r.cache.GetOrSet(cacheKey, &series, cache.MatchListTTL, func() (interface{}, error) {
-		fmt.Printf("DEBUG: Cache miss for key %s, calling underlying repo\n", cacheKey)
-		result, err := r.repo.GetAll(ctx, filters)
-		fmt.Printf("DEBUG: Underlying repo returned %d series, error: %v\n", len(result), err)
-		return result, err
+	var result *interfaces.PaginatedSeriesResult
+	err := r.cache.GetOrSet(cacheKey, &result, cache.MatchListTTL, func() (interface{}, error) {
+		paginatedResult, err := r.repo.GetAll(ctx, filters)
+		if err != nil {
+			return nil, err
+		}
+		return paginatedResult, err
 	})
-
-	fmt.Printf("DEBUG: CachedSeriesRepository.GetAll - returning %d series, error: %v\n", len(series), err)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return series, nil
+	return result, nil
 }
 
 // Update updates a series and invalidates cache

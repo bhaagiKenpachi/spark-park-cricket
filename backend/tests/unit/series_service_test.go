@@ -3,6 +3,7 @@ package unit
 import (
 	"context"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
@@ -174,7 +175,14 @@ func TestSeriesService_ListSeries(t *testing.T) {
 					{ID: "1", Name: "Series 1"},
 					{ID: "2", Name: "Series 2"},
 				}
-				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(series, nil)
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 2,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 1,
+				}
+				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(result, nil)
 			},
 			expectError: false,
 			expectedLen: 2,
@@ -189,10 +197,17 @@ func TestSeriesService_ListSeries(t *testing.T) {
 				series := []*models.Series{
 					{ID: "1", Name: "Series 1"},
 				}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 1,
+					Page:       1,
+					PageSize:   100,
+					TotalPages: 1,
+				}
 				// Expect the service to adjust the limit to 100
 				mockRepo.On("GetAll", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
 					return filters.Limit == 100
-				})).Return(series, nil)
+				})).Return(result, nil)
 			},
 			expectError: false,
 			expectedLen: 1,
@@ -202,7 +217,14 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			filters: &models.SeriesFilters{},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				series := []*models.Series{}
-				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(series, nil)
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 0,
+				}
+				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(result, nil)
 			},
 			expectError: false,
 			expectedLen: 0,
@@ -237,7 +259,7 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
-				assert.Len(t, result, tt.expectedLen)
+				assert.Len(t, result.Series, tt.expectedLen)
 			}
 
 			mockRepo.AssertExpectations(t)
