@@ -13,27 +13,25 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 // IntegrationTestSuite tests the complete API integration
 type IntegrationTestSuite struct {
-	router   http.Handler
-	dbClient *database.Client
-	cfg      *config.Config
-	seriesID string
-	matchID  string
+	router           http.Handler
+	dbClient         *database.Client
+	cfg              *config.Config
+	seriesID         string
+	matchID          string
+	authCookie       string
+	serviceContainer *services.Container
 }
 
 // SetupIntegrationTest sets up the integration test environment
 func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
-	// Create test configuration
-	testCfg := &config.TestConfig{
-		Config: &config.Config{
-			SupabaseURL:    "http://localhost:54321",
-			SupabaseAPIKey: "test-key",
-		},
-		TestSchema: "testing_db",
-	}
+	// Load test configuration
+	testCfg := config.LoadTestConfig()
 
 	// Initialize test database
 	dbClient, err := database.NewTestClient(testCfg)
@@ -41,8 +39,25 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 		t.Fatalf("Failed to create test database client: %v", err)
 	}
 
-	// Setup routes
-	router := handlers.SetupRoutes(dbClient, testCfg.Config)
+	// Setup test schema
+	err = database.SetupTestSchema(testCfg)
+	if err != nil {
+		t.Fatalf("Failed to setup test schema: %v", err)
+	}
+
+	// Create service container
+	serviceContainer := services.NewContainer(dbClient, testCfg.Config)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Setup routes with proper authentication
+	router := SetupTestRoutes(serviceContainer, seriesHandler, matchHandler, scorecardHandler, testCfg.Config)
+
+	// Create authenticated test user
+	_, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
 
 	// Create test data
 	seriesID, matchID, err := createTestDataForIntegration(dbClient)
@@ -51,11 +66,13 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 	}
 
 	return &IntegrationTestSuite{
-		router:   router,
-		dbClient: dbClient,
-		cfg:      testCfg.Config,
-		seriesID: seriesID,
-		matchID:  matchID,
+		router:           router,
+		dbClient:         dbClient,
+		cfg:              testCfg.Config,
+		seriesID:         seriesID,
+		matchID:          matchID,
+		authCookie:       authCookie,
+		serviceContainer: serviceContainer,
 	}
 }
 
@@ -102,7 +119,7 @@ func TestAddBallAPIIntegration(t *testing.T) {
 				// Create HTTP request
 				req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 				req.Header.Set("Content-Type", "application/json")
-				req.Header.Set("Authorization", "Bearer test-token")
+				req.Header.Set("Cookie", suite.authCookie)
 
 				// Record response time
 				start := time.Now()
@@ -146,7 +163,7 @@ func TestGetScorecardAPIIntegration(t *testing.T) {
 
 	// Test Get Scorecard API
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s", suite.matchID), nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	start := time.Now()
 	w := httptest.NewRecorder()
@@ -211,7 +228,7 @@ func TestCacheIntegration(t *testing.T) {
 		t.Run(fmt.Sprintf("CacheTest_%d", i), func(t *testing.T) {
 			// Make first request (cache miss)
 			httpReq := httptest.NewRequest(req.method, req.endpoint, bytes.NewBuffer(req.body))
-			httpReq.Header.Set("Authorization", "Bearer test-token")
+			httpReq.Header.Set("Cookie", suite.authCookie)
 
 			start := time.Now()
 			w1 := httptest.NewRecorder()
@@ -220,7 +237,7 @@ func TestCacheIntegration(t *testing.T) {
 
 			// Make second request (cache hit)
 			httpReq2 := httptest.NewRequest(req.method, req.endpoint, bytes.NewBuffer(req.body))
-			httpReq2.Header.Set("Authorization", "Bearer test-token")
+			httpReq2.Header.Set("Cookie", suite.authCookie)
 
 			start = time.Now()
 			w2 := httptest.NewRecorder()
@@ -284,7 +301,7 @@ func TestDatabaseIntegration(t *testing.T) {
 		// Add ball
 		req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer test-token")
+		req.Header.Set("Cookie", suite.authCookie)
 
 		w := httptest.NewRecorder()
 		suite.router.ServeHTTP(w, req)
@@ -295,7 +312,7 @@ func TestDatabaseIntegration(t *testing.T) {
 
 		// Verify ball was added by getting scorecard
 		req2 := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s", suite.matchID), nil)
-		req2.Header.Set("Authorization", "Bearer test-token")
+		req2.Header.Set("Cookie", suite.authCookie)
 
 		w2 := httptest.NewRecorder()
 		suite.router.ServeHTTP(w2, req2)
@@ -346,7 +363,7 @@ func TestErrorHandlingIntegration(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer test-token")
+		req.Header.Set("Cookie", suite.authCookie)
 
 		w := httptest.NewRecorder()
 		suite.router.ServeHTTP(w, req)
@@ -375,7 +392,7 @@ func TestErrorHandlingIntegration(t *testing.T) {
 
 		req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer test-token")
+		req.Header.Set("Cookie", suite.authCookie)
 
 		w := httptest.NewRecorder()
 		suite.router.ServeHTTP(w, req)

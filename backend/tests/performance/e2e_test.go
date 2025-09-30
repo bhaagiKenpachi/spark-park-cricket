@@ -13,27 +13,25 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 // E2ETestSuite tests the complete end-to-end workflow
 type E2ETestSuite struct {
-	router   http.Handler
-	dbClient *database.Client
-	cfg      *config.Config
-	seriesID string
-	matchID  string
+	router           http.Handler
+	dbClient         *database.Client
+	cfg              *config.Config
+	seriesID         string
+	matchID          string
+	authCookie       string
+	serviceContainer *services.Container
 }
 
 // SetupE2ETest sets up the end-to-end test environment
 func SetupE2ETest(t *testing.T) *E2ETestSuite {
-	// Create test configuration
-	testCfg := &config.TestConfig{
-		Config: &config.Config{
-			SupabaseURL:    "http://localhost:54321",
-			SupabaseAPIKey: "test-key",
-		},
-		TestSchema: "testing_db",
-	}
+	// Load test configuration
+	testCfg := config.LoadTestConfig()
 
 	// Initialize test database
 	dbClient, err := database.NewTestClient(testCfg)
@@ -41,8 +39,25 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 		t.Fatalf("Failed to create test database client: %v", err)
 	}
 
-	// Setup routes
-	router := handlers.SetupRoutes(dbClient, testCfg.Config)
+	// Setup test schema
+	err = database.SetupTestSchema(testCfg)
+	if err != nil {
+		t.Fatalf("Failed to setup test schema: %v", err)
+	}
+
+	// Create service container
+	serviceContainer := services.NewContainer(dbClient, testCfg.Config)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Setup routes with proper authentication
+	router := SetupTestRoutes(serviceContainer, seriesHandler, matchHandler, scorecardHandler, testCfg.Config)
+
+	// Create authenticated test user
+	_, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
 
 	// Create test data
 	seriesID, matchID, err := createTestDataForE2E(dbClient)
@@ -51,11 +66,13 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 	}
 
 	return &E2ETestSuite{
-		router:   router,
-		dbClient: dbClient,
-		cfg:      testCfg.Config,
-		seriesID: seriesID,
-		matchID:  matchID,
+		router:           router,
+		dbClient:         dbClient,
+		cfg:              testCfg.Config,
+		seriesID:         seriesID,
+		matchID:          matchID,
+		authCookie:       authCookie,
+		serviceContainer: serviceContainer,
 	}
 }
 
@@ -147,7 +164,8 @@ func (suite *E2ETestSuite) startMatch() error {
 // beginScoring begins scoring for the match
 func (suite *E2ETestSuite) beginScoring() error {
 	req := httptest.NewRequest("POST", "/api/v1/scorecard/start", nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
@@ -188,7 +206,7 @@ func (suite *E2ETestSuite) addBallsToCompleteOver() error {
 func (suite *E2ETestSuite) verifyOverCompletion() error {
 	// Get current over
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s/current-over", suite.matchID), nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
@@ -243,7 +261,7 @@ func (suite *E2ETestSuite) addBallsToCompleteInnings() error {
 func (suite *E2ETestSuite) verifyInningsCompletion() error {
 	// Get innings
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s/innings/1", suite.matchID), nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
@@ -304,7 +322,7 @@ func (suite *E2ETestSuite) completeSecondInnings() error {
 func (suite *E2ETestSuite) verifyMatchCompletion() error {
 	// Get match
 	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/matches/%s", suite.matchID), nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
@@ -336,7 +354,7 @@ func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 
 	req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Cookie", suite.authCookie)
 
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)

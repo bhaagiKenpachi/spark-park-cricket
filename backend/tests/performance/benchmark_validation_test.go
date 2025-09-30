@@ -2,6 +2,7 @@ package performance
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,25 +14,23 @@ import (
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 // BenchmarkValidationTest validates the performance improvements
 type BenchmarkValidationTest struct {
-	router   http.Handler
-	matchID  string
-	seriesID string
+	router           http.Handler
+	matchID          string
+	seriesID         string
+	authCookie       string
+	serviceContainer *services.Container
 }
 
 // SetupBenchmarkTest sets up the benchmark test environment
 func SetupBenchmarkTest(t *testing.B) *BenchmarkValidationTest {
-	// Create test configuration
-	testCfg := &config.TestConfig{
-		Config: &config.Config{
-			SupabaseURL:    "http://localhost:54321",
-			SupabaseAPIKey: "test-key",
-		},
-		TestSchema: "testing_db",
-	}
+	// Load test configuration
+	testCfg := config.LoadTestConfig()
 
 	// Initialize test database
 	dbClient, err := database.NewTestClient(testCfg)
@@ -39,25 +38,45 @@ func SetupBenchmarkTest(t *testing.B) *BenchmarkValidationTest {
 		t.Fatalf("Failed to create test database client: %v", err)
 	}
 
-	// Setup routes
-	router := handlers.SetupRoutes(dbClient, testCfg.Config)
+	// Setup test schema
+	err = database.SetupTestSchema(testCfg)
+	if err != nil {
+		t.Fatalf("Failed to setup test schema: %v", err)
+	}
+
+	// Create service container
+	serviceContainer := services.NewContainer(dbClient, testCfg.Config)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Setup routes with proper authentication
+	router := SetupTestRoutes(serviceContainer, seriesHandler, matchHandler, scorecardHandler, testCfg.Config)
+
+	// Create authenticated test user
+	mockT := &testing.T{}
+	user, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(mockT, dbClient, serviceContainer.SessionService)
 
 	// Create test data
-	seriesID, matchID, err := createTestDataForBenchmark(dbClient)
+	seriesID, matchID, err := createTestDataForBenchmark(dbClient, user.ID)
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}
 
 	// Start the match
-	err = startMatchForBenchmark(router, matchID)
+	err = startMatchForBenchmark(router, matchID, authCookie)
 	if err != nil {
 		t.Fatalf("Failed to start match: %v", err)
 	}
 
 	return &BenchmarkValidationTest{
-		router:   router,
-		matchID:  matchID,
-		seriesID: seriesID,
+		router:           router,
+		matchID:          matchID,
+		seriesID:         seriesID,
+		authCookie:       authCookie,
+		serviceContainer: serviceContainer,
 	}
 }
 
@@ -91,7 +110,7 @@ func BenchmarkAddBallOptimized(b *testing.B) {
 			// Create HTTP request
 			req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", "Bearer test-token")
+			req.Header.Set("Cookie", test.authCookie)
 
 			// Record response time
 			start := time.Now()
@@ -146,7 +165,7 @@ func BenchmarkAddBallLegacy(b *testing.B) {
 			// Create HTTP request to legacy endpoint
 			req := httptest.NewRequest("POST", "/api/v1/scorecard/ball/legacy", bytes.NewBuffer(reqBody))
 			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", "Bearer test-token")
+			req.Header.Set("Cookie", test.authCookie)
 
 			// Record response time
 			start := time.Now()
@@ -174,7 +193,7 @@ func BenchmarkGetScorecard(b *testing.B) {
 		for pb.Next() {
 			// Create HTTP request
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s", test.matchID), nil)
-			req.Header.Set("Authorization", "Bearer test-token")
+			req.Header.Set("Cookie", test.authCookie)
 
 			// Record response time
 			start := time.Now()
@@ -233,7 +252,7 @@ func BenchmarkConcurrentAddBall(b *testing.B) {
 
 					req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 					req.Header.Set("Content-Type", "application/json")
-					req.Header.Set("Authorization", "Bearer test-token")
+					req.Header.Set("Cookie", test.authCookie)
 
 					start := time.Now()
 					w := httptest.NewRecorder()
@@ -252,16 +271,70 @@ func BenchmarkConcurrentAddBall(b *testing.B) {
 }
 
 // createTestDataForBenchmark creates test data for benchmarking
-func createTestDataForBenchmark(dbClient *database.Client) (string, string, error) {
-	// This would create test series, match, teams, and players
-	// For now, return mock IDs
-	return "benchmark-series-id", "benchmark-match-id", nil
+func createTestDataForBenchmark(dbClient *database.Client, userID string) (string, string, error) {
+	ctx := context.Background()
+
+	// Create test series
+	series := &models.Series{
+		Name:      fmt.Sprintf("Benchmark Test Series %d", time.Now().Unix()),
+		StartDate: time.Now(),
+		EndDate:   time.Now().Add(24 * time.Hour),
+		CreatedBy: userID,
+	}
+	err := dbClient.Repositories.Series.Create(ctx, series)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test series: %v", err)
+	}
+
+	// Create test match
+	match := &models.Match{
+		SeriesID:         series.ID,
+		MatchNumber:      1,
+		Date:             time.Now(),
+		Status:           models.MatchStatusLive,
+		TeamAPlayerCount: 11,
+		TeamBPlayerCount: 11,
+		TotalOvers:       20,
+		TossWinner:       models.TeamTypeA,
+		TossType:         models.TossTypeHeads,
+		BattingTeam:      models.TeamTypeA,
+		CreatedBy:        userID,
+	}
+	err = dbClient.Repositories.Match.Create(ctx, match)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test match: %v", err)
+	}
+
+	return series.ID, match.ID, nil
 }
 
 // startMatchForBenchmark starts a match for benchmarking
-func startMatchForBenchmark(router http.Handler, matchID string) error {
-	// This would start the match and begin scoring
-	// For now, return nil (mock implementation)
+func startMatchForBenchmark(router http.Handler, matchID string, authCookie string) error {
+	// Start scoring for the match
+	startReq := models.ScorecardRequest{
+		MatchID: matchID,
+	}
+
+	reqBody, err := json.Marshal(startReq)
+	if err != nil {
+		return fmt.Errorf("failed to marshal start request: %v", err)
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    authCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		return fmt.Errorf("failed to start match: status %d, body: %s", w.Code, w.Body.String())
+	}
+
 	return nil
 }
 
@@ -290,7 +363,12 @@ func TestPerformanceTargets(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    test.authCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	start := time.Now()
 	w := httptest.NewRecorder()
@@ -308,7 +386,12 @@ func TestPerformanceTargets(t *testing.T) {
 
 	// Test Get Scorecard API performance
 	req = httptest.NewRequest("GET", fmt.Sprintf("/api/v1/scorecard/%s", test.matchID), nil)
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    test.authCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	start = time.Now()
 	w = httptest.NewRecorder()
