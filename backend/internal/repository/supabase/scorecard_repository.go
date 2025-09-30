@@ -6,6 +6,7 @@ import (
 	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
+	"strings"
 	"time"
 
 	"github.com/supabase-community/postgrest-go"
@@ -751,15 +752,42 @@ func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Contex
 	// Get current over data
 	over, err := r.GetCurrentOver(ctx, innings.ID)
 	if err != nil {
-		// No current over exists, create default values
-		over = &models.ScorecardOver{
-			ID:           "",
+		// No current over exists, try to create the first over
+		log.Printf("No current over found, creating first over for innings %s", innings.ID)
+
+		// Get all overs for this innings to determine the next over number
+		allOvers, err := r.GetOversByInnings(ctx, innings.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get overs for innings: %w", err)
+		}
+
+		overNumber := len(allOvers) + 1
+		newOver := &models.ScorecardOver{
 			InningsID:    innings.ID,
-			OverNumber:   0,
+			OverNumber:   overNumber,
 			TotalRuns:    0,
 			TotalBalls:   0,
 			TotalWickets: 0,
 			Status:       string(models.OverStatusInProgress),
+		}
+
+		// Try to create the over in the database
+		err = r.CreateOver(ctx, newOver)
+		if err != nil {
+			// If creation failed due to duplicate key (race condition), try to get the existing over
+			if strings.Contains(err.Error(), "duplicate key") {
+				log.Printf("Over creation failed due to race condition, attempting to get existing over")
+				over, err = r.GetCurrentOver(ctx, innings.ID)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get existing over after race condition: %w", err)
+				}
+				log.Printf("Successfully retrieved existing over %d for innings %s", over.OverNumber, innings.ID)
+			} else {
+				return nil, fmt.Errorf("failed to create first over: %w", err)
+			}
+		} else {
+			log.Printf("Successfully created first over %d for innings %s", overNumber, innings.ID)
+			over = newOver
 		}
 	}
 

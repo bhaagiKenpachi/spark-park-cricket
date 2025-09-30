@@ -929,6 +929,11 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 
 // invalidateMatchCaches invalidates all caches related to a match after ball addition
 func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
 	// Invalidate scorecard cache for the match
 	scorecardKey := fmt.Sprintf("scorecard:%s", matchID)
 	_ = s.cache.Invalidate(scorecardKey)
