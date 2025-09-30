@@ -288,14 +288,20 @@ func BenchmarkMemoryUsage(b *testing.B) {
 		data := make([]byte, 1024) // Simulate some memory allocation
 		_ = data
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"success": true}`))
+		if _, err := w.Write([]byte(`{"success": true}`)); err != nil {
+			// Log error but continue - this is a test handler
+			fmt.Printf("Error writing response: %v\n", err)
+		}
 	})
 
 	router.HandleFunc("/api/v1/scorecard/", func(w http.ResponseWriter, r *http.Request) {
 		// Simulate scorecard response
 		time.Sleep(3 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"scorecard": "mock data"}`))
+		if _, err := w.Write([]byte(`{"scorecard": "mock data"}`)); err != nil {
+			// Log error but continue - this is a test handler
+			fmt.Printf("Error writing response: %v\n", err)
+		}
 	})
 
 	// Use mock match ID for testing
