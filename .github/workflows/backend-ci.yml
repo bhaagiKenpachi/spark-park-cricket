@@ -492,6 +492,7 @@ jobs:
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'performance')) }}
+    environment: ${{ inputs.environment || 'dev' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
