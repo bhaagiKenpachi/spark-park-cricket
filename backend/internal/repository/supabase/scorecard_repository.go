@@ -359,9 +359,8 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
 		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
-	// Add timeout to prevent hanging queries (optimized for simple INSERT)
-	_, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+	// Note: Supabase client doesn't directly support context timeouts
+	// Timeout is handled at the HTTP client level
 
 	data := map[string]interface{}{
 		"over_id":     ball.OverID,

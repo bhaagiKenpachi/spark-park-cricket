@@ -147,7 +147,7 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 
 		err = scorecardService.AddBall(ctx, ballEvent)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "innings not found")
+		assert.Contains(t, err.Error(), "first innings is not complete, cannot start second innings")
 	})
 
 	t.Run("Cannot add ball to wrong team in first innings", func(t *testing.T) {
@@ -256,7 +256,7 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 
 		err = scorecardService.AddBall(ctx, ballEvent2)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "innings not found")
+		assert.Contains(t, err.Error(), "first innings is not complete, cannot start second innings")
 	})
 
 	t.Run("Second innings must be played by non-toss-winning team", func(t *testing.T) {
