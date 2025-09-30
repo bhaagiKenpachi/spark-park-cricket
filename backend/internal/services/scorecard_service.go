@@ -811,54 +811,6 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	return nil
 }
 
-// getCurrentOver gets the current in-progress over or creates a new one
-func (s *ScorecardService) getCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
-	// Try to get current over
-	over, err := s.scorecardRepo.GetCurrentOver(ctx, inningsID)
-	if err == nil && over != nil {
-		return over, nil
-	}
-
-	// Get all overs for this innings to determine next over number
-	overs, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
-	if err != nil {
-		log.Printf("Error getting overs: %v", err)
-		return nil, fmt.Errorf("failed to get overs: %w", err)
-	}
-
-	// Calculate next over number
-	nextOverNumber := 1
-	if len(overs) > 0 {
-		// Find the highest over number and add 1
-		maxOverNumber := 0
-		for _, o := range overs {
-			if o.OverNumber > maxOverNumber {
-				maxOverNumber = o.OverNumber
-			}
-		}
-		nextOverNumber = maxOverNumber + 1
-	}
-
-	// Create new over
-	newOver := &models.ScorecardOver{
-		InningsID:    inningsID,
-		OverNumber:   nextOverNumber,
-		TotalRuns:    0,
-		TotalBalls:   0,
-		TotalWickets: 0,
-		Status:       string(models.OverStatusInProgress),
-	}
-
-	err = s.scorecardRepo.CreateOver(ctx, newOver)
-	if err != nil {
-		log.Printf("Error creating over: %v", err)
-		return nil, fmt.Errorf("failed to create over: %w", err)
-	}
-
-	log.Printf("Created new over %d for innings %s", nextOverNumber, inningsID)
-	return newOver, nil
-}
-
 // getCurrentOverWithOvers gets the current over and all overs for the innings in one call
 // This avoids duplicate GetOversByInnings calls
 func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsID string) (*models.ScorecardOver, []*models.ScorecardOver, error) {

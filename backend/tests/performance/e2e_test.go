@@ -399,7 +399,7 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 	if len(responseTimes) > 0 {
 		var totalDuration time.Duration
 		var maxDuration time.Duration
-		var minDuration time.Duration = responseTimes[0]
+		var minDuration = responseTimes[0]
 
 		for _, duration := range responseTimes {
 			totalDuration += duration
