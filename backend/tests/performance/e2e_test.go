@@ -2,6 +2,7 @@ package performance
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -57,10 +58,10 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 	router := SetupTestRoutes(serviceContainer, seriesHandler, matchHandler, scorecardHandler, testCfg.Config)
 
 	// Create authenticated test user
-	_, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
+	user, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
 
 	// Create test data
-	seriesID, matchID, err := createTestDataForE2E(dbClient)
+	seriesID, matchID, err := createTestDataForE2E(dbClient, user.ID)
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}
@@ -448,8 +449,39 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 }
 
 // createTestDataForE2E creates test data for end-to-end testing
-func createTestDataForE2E(dbClient *database.Client) (string, string, error) {
-	// This would create test series, match, teams, and players
-	// For now, return mock IDs
-	return "e2e-test-series-id", "e2e-test-match-id", nil
+func createTestDataForE2E(dbClient *database.Client, userID string) (string, string, error) {
+	ctx := context.Background()
+
+	// Create test series
+	series := &models.Series{
+		Name:      fmt.Sprintf("E2E Test Series %d", time.Now().Unix()),
+		StartDate: time.Now(),
+		EndDate:   time.Now().Add(24 * time.Hour),
+		CreatedBy: userID,
+	}
+	err := dbClient.Repositories.Series.Create(ctx, series)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test series: %v", err)
+	}
+
+	// Create test match
+	match := &models.Match{
+		SeriesID:         series.ID,
+		MatchNumber:      1,
+		Date:             time.Now(),
+		Status:           models.MatchStatusLive,
+		TeamAPlayerCount: 11,
+		TeamBPlayerCount: 11,
+		TotalOvers:       20,
+		TossWinner:       models.TeamTypeA,
+		TossType:         models.TossTypeHeads,
+		BattingTeam:      models.TeamTypeA,
+		CreatedBy:        userID,
+	}
+	err = dbClient.Repositories.Match.Create(ctx, match)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test match: %v", err)
+	}
+
+	return series.ID, match.ID, nil
 }
