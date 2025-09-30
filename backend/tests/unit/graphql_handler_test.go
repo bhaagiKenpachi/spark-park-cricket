@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/pkg/websocket"
 	"spark-park-cricket-backend/tests/unit/mocks"
 	"testing"
 
@@ -18,10 +17,10 @@ import (
 func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 	// Create mock services
 	mockScorecardService := &mocks.MockScorecardService{}
-	mockHub := websocket.NewHub()
+	// WebSocket functionality removed
 
 	// Create GraphQL handler
-	handler := graphql.NewGraphQLHandler(mockScorecardService, mockHub)
+	handler := graphql.NewGraphQLHandler(mockScorecardService)
 
 	// Test data
 	matchID := "test-match-id"
@@ -150,10 +149,10 @@ func TestGraphQLHandler_ServeHTTP(t *testing.T) {
 func TestGraphQLHandler_InvalidQuery(t *testing.T) {
 	// Create mock services
 	mockScorecardService := &mocks.MockScorecardService{}
-	mockHub := websocket.NewHub()
+	// WebSocket functionality removed
 
 	// Create GraphQL handler
-	handler := graphql.NewGraphQLHandler(mockScorecardService, mockHub)
+	handler := graphql.NewGraphQLHandler(mockScorecardService)
 
 	// Invalid query
 	query := `
@@ -195,10 +194,10 @@ func TestGraphQLHandler_InvalidQuery(t *testing.T) {
 func TestGraphQLHandler_OPTIONS(t *testing.T) {
 	// Create mock services
 	mockScorecardService := &mocks.MockScorecardService{}
-	mockHub := websocket.NewHub()
+	// WebSocket functionality removed
 
 	// Create GraphQL handler
-	handler := graphql.NewGraphQLHandler(mockScorecardService, mockHub)
+	handler := graphql.NewGraphQLHandler(mockScorecardService)
 
 	// Create OPTIONS request
 	req := httptest.NewRequest("OPTIONS", "/graphql", nil)
@@ -217,10 +216,10 @@ func TestGraphQLHandler_OPTIONS(t *testing.T) {
 func TestGraphQLHandler_InvalidMethod(t *testing.T) {
 	// Create mock services
 	mockScorecardService := &mocks.MockScorecardService{}
-	mockHub := websocket.NewHub()
+	// WebSocket functionality removed
 
 	// Create GraphQL handler
-	handler := graphql.NewGraphQLHandler(mockScorecardService, mockHub)
+	handler := graphql.NewGraphQLHandler(mockScorecardService)
 
 	// Create GET request (should be rejected)
 	req := httptest.NewRequest("GET", "/graphql", nil)

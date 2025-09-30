@@ -36,7 +36,6 @@ type Metrics struct {
 	CacheOperationsTotal   *prometheus.CounterVec
 	CacheOperationDuration *prometheus.HistogramVec
 
-
 	// System metrics
 	MemoryUsage     *prometheus.GaugeVec
 	CPUUsage        *prometheus.GaugeVec
@@ -190,7 +189,6 @@ func NewMetrics() *Metrics {
 				[]string{"operation", "cache_type"},
 			),
 
-
 			// System metrics
 			MemoryUsage: promauto.NewGaugeVec(
 				prometheus.GaugeOpts{
@@ -279,7 +277,6 @@ func (m *Metrics) RecordCacheOperation(operation, cacheType string, duration tim
 	m.CacheOperationsTotal.WithLabelValues(operation, cacheType).Inc()
 	m.CacheOperationDuration.WithLabelValues(operation, cacheType).Observe(duration.Seconds())
 }
-
 
 // UpdateSystemMetrics updates system metrics
 func (m *Metrics) UpdateSystemMetrics() {

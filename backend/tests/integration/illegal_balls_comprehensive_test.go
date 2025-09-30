@@ -23,6 +23,7 @@ import (
 func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Setup
 	cfg := config.LoadTestConfig()
+	var server *httptest.Server
 
 	db, err := database.NewTestClient(cfg)
 	require.NoError(t, err)
@@ -35,7 +36,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Use the standard router setup that includes authentication middleware
 	router := handlers.SetupRoutes(db, cfg.Config)
 
-	server := httptest.NewServer(router)
+	server = httptest.NewServer(router)
 	defer server.Close()
 
 	// Create test user first
@@ -52,7 +53,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
 
 	// Create user session for authentication
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)
@@ -97,6 +98,19 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	}
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)
+
+	// Start scoring for the match
+	startScoringReq := map[string]interface{}{
+		"match_id": match.ID,
+	}
+	startScoringBody, _ := json.Marshal(startScoringReq)
+	startScoringHTTPReq := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(startScoringBody))
+	startScoringHTTPReq.Header.Set("Content-Type", "application/json")
+	startScoringHTTPReq.AddCookie(sessionCookie)
+	startScoringResp := httptest.NewRecorder()
+
+	router.ServeHTTP(startScoringResp, startScoringHTTPReq)
+	require.Equal(t, http.StatusOK, startScoringResp.Code, "Should start scoring successfully")
 
 	// Test scenario: Over with illegal balls
 	// Expected: 1 no_ball + 1 wide + 6 good balls = 8 total balls, but only 6 legal balls
@@ -313,6 +327,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	// Setup
 	cfg := config.LoadTestConfig()
+	var server *httptest.Server
 
 	db, err := database.NewTestClient(cfg)
 	require.NoError(t, err)
@@ -325,7 +340,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	// Use the standard router setup that includes authentication middleware
 	router := handlers.SetupRoutes(db, cfg.Config)
 
-	server := httptest.NewServer(router)
+	server = httptest.NewServer(router)
 	defer server.Close()
 
 	// Create test user first
@@ -342,7 +357,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
 
 	// Create user session for authentication
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)
@@ -387,6 +402,19 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	}
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)
+
+	// Start scoring for the match
+	startScoringReq := map[string]interface{}{
+		"match_id": match.ID,
+	}
+	startScoringBody, _ := json.Marshal(startScoringReq)
+	startScoringHTTPReq := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(startScoringBody))
+	startScoringHTTPReq.Header.Set("Content-Type", "application/json")
+	startScoringHTTPReq.AddCookie(sessionCookie)
+	startScoringResp := httptest.NewRecorder()
+
+	router.ServeHTTP(startScoringResp, startScoringHTTPReq)
+	require.Equal(t, http.StatusOK, startScoringResp.Code, "Should start scoring successfully")
 
 	// Test scenario: 5 legal balls + 3 illegal balls = 8 total balls, but over should not be complete
 	overCompletionBalls := []models.BallEventRequest{

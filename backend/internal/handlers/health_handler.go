@@ -63,7 +63,6 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	// Check database health
 	dbHealth := h.checkDatabaseHealth(ctx)
 
-
 	// Check Redis health
 	redisHealth := h.checkRedisHealth(ctx)
 
@@ -108,7 +107,6 @@ func (h *HealthHandler) DatabaseHealth(w http.ResponseWriter, r *http.Request) {
 
 	utils.WriteJSONResponse(w, statusCode, dbHealth)
 }
-
 
 // SystemHealth handles GET /health/system
 func (h *HealthHandler) SystemHealth(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +186,6 @@ func (h *HealthHandler) checkDatabaseHealth(ctx context.Context) ServiceHealth {
 	}
 }
 
-
 // getSystemInfo gets system information
 func (h *HealthHandler) getSystemInfo() SystemInfo {
 	var m runtime.MemStats
@@ -215,7 +212,6 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 
 	// Get system metrics
 	systemInfo := h.getSystemInfo()
-
 
 	// Get Redis metrics
 	redisHealth := h.checkRedisHealth(ctx)

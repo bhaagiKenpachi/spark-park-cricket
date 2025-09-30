@@ -94,6 +94,25 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	matchID := matchResponse.Data.ID
 	require.NotEmpty(t, matchID)
 
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
+
 	// Step 3: Complete First Innings (12 balls = 2 overs)
 	firstInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
@@ -320,6 +339,25 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 
 	matchID := matchResponse.Data.ID
 
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
+
 	// Step 3: Complete First Innings with 10 runs
 	firstInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
@@ -493,6 +531,25 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 	resp.Body.Close()
 
 	matchID := matchResponse.Data.ID
+
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
 
 	// Step 3: Complete First Innings with 5 runs (so target is 6, won't be reached with 12 balls of 1 run each)
 	firstInningsBalls := []models.BallEventRequest{

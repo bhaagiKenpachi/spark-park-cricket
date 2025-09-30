@@ -446,7 +446,7 @@ func TestScorecardInningsValidation_E2E(t *testing.T) {
 		var errorResp map[string]interface{}
 		err = json.NewDecoder(ballResp.Body).Decode(&errorResp)
 		require.NoError(t, err)
-		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "first innings is complete, cannot add more balls to first innings")
+		assert.Contains(t, errorResp["error"].(map[string]interface{})["message"], "innings is not in progress, cannot add ball")
 	})
 
 	t.Run("API allows adding ball to correct innings", func(t *testing.T) {

@@ -104,7 +104,6 @@ func LogHTTPRequest(method, path, userAgent string, statusCode int, duration tim
 	GetLogger().WithFields(fields).Info("HTTP request")
 }
 
-
 // LogDatabaseOperation logs database operations
 func LogDatabaseOperation(operation, table string, duration time.Duration, fields logrus.Fields) {
 	if fields == nil {

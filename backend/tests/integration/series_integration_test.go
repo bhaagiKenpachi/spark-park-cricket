@@ -69,7 +69,7 @@ func TestSeriesIntegration(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
 
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
@@ -512,7 +512,7 @@ func TestSeriesConcurrentOperations(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
 
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
@@ -601,7 +601,7 @@ func TestSeriesDataIntegrity(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
 
 	// Setup routes
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)

@@ -55,7 +55,7 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").Insert(data, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From(r.getTableName("innings")).Insert(data, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		log.Printf("Error creating innings: %v", err)
 		return fmt.Errorf("failed to create innings: %w", err)
@@ -78,7 +78,7 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 	defer cancel()
 
 	var innings []*models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Select("*", "", false).
 		Eq("match_id", matchID).
 		ExecuteTo(&innings)
@@ -101,7 +101,7 @@ func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, ma
 	defer cancel()
 
 	var innings []*models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Select("*", "", false).
 		Eq("match_id", matchID).
 		Eq("innings_number", fmt.Sprintf("%d", inningsNumber)).
@@ -138,7 +138,7 @@ func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Update(data, "", "").
 		Eq("id", innings.ID).
 		ExecuteTo(&result)
@@ -166,7 +166,7 @@ func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID str
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Update(data, "", "").
 		Eq("id", inningsID).
 		ExecuteTo(&result)
@@ -563,7 +563,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 
 	// Get match details
 	var matches []*models.Match
-	_, err := r.client.From("matches").
+	_, err := r.client.From(r.getTableName("matches")).
 		Select("*, series(name)", "", false).
 		Eq("id", matchID).
 		ExecuteTo(&matches)
@@ -692,7 +692,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 	seriesName := "Unknown Series"
 	if match.SeriesID != "" {
 		var series []*models.Series
-		_, err := r.client.From("series").
+		_, err := r.client.From(r.getTableName("series")).
 			Select("name", "", false).
 			Eq("id", match.SeriesID).
 			ExecuteTo(&series)

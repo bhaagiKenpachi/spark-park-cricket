@@ -128,8 +128,12 @@ func (r *matchRepository) Update(ctx context.Context, id string, match *models.M
 		"toss_winner":         match.TossWinner,
 		"toss_type":           match.TossType,
 		"batting_team":        match.BattingTeam,
-		"created_by":          match.CreatedBy,
 		"updated_at":          match.UpdatedAt,
+	}
+
+	// Only include created_by if it's not empty
+	if match.CreatedBy != "" {
+		matchData["created_by"] = match.CreatedBy
 	}
 
 	var result []models.Match

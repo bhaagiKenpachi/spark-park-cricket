@@ -59,7 +59,7 @@ func createTestMatch(t *testing.T, db *database.Client) (string, string, *http.C
 
 	// Create user session for authentication
 	cfg := config.LoadTestConfig()
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)

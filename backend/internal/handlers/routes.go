@@ -37,7 +37,6 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Use(services.RateLimitMiddleware(100))                       // 100 requests per minute
 	r.Use(corsMiddleware(cfg))
 
-
 	// Initialize health handler
 	healthHandler := NewHealthHandler(dbClient)
 
@@ -144,7 +143,6 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
-
 
 		// GraphQL routes
 		r.Route("/graphql", func(r chi.Router) {

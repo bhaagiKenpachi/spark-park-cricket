@@ -10,6 +10,7 @@ import (
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"strings"
 	"time"
 )
 
@@ -109,6 +110,20 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 	data, err := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
 	if err != nil {
 		log.Printf("Error getting optimized match data: %v", err)
+
+		// Check if the error is due to non-existent innings
+		if strings.Contains(err.Error(), "innings not found") {
+			// Check if this is trying to add to second innings before first is complete
+			if req.InningsNumber == 2 {
+				// Check if first innings exists and is not complete
+				firstInnings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, req.MatchID, 1)
+				if err == nil && firstInnings.Status != string(models.InningsStatusCompleted) {
+					return fmt.Errorf("first innings is not complete, cannot start second innings")
+				}
+			}
+			return fmt.Errorf("innings not found")
+		}
+
 		return fmt.Errorf("failed to get match data: %w", err)
 	}
 
@@ -303,11 +318,15 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 			}
 
 			// Complete the match
-			match := &models.Match{
-				ID:     req.MatchID,
-				Status: models.MatchStatusCompleted,
+			// Fetch the complete match data to ensure all fields are populated
+			completeMatch, err := s.matchRepo.GetByID(ctx, req.MatchID)
+			if err != nil {
+				log.Printf("Error fetching match data for completion: %v", err)
+				return fmt.Errorf("failed to fetch match data: %w", err)
 			}
-			err = s.matchRepo.Update(ctx, req.MatchID, match)
+
+			completeMatch.Status = models.MatchStatusCompleted
+			err = s.matchRepo.Update(ctx, req.MatchID, completeMatch)
 			if err != nil {
 				return fmt.Errorf("failed to complete match: %w", err)
 			}
@@ -1032,9 +1051,16 @@ func (s *ScorecardService) ShouldCompleteMatch(ctx context.Context, matchID stri
 func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID string, match *models.Match) error {
 	log.Printf("Starting second innings for match %s", matchID)
 
+	// Fetch the complete match data to ensure all fields are populated
+	completeMatch, err := s.matchRepo.GetByID(ctx, matchID)
+	if err != nil {
+		log.Printf("Error fetching match data: %v", err)
+		return fmt.Errorf("failed to fetch match data: %w", err)
+	}
+
 	// Determine batting team for second innings (opposite of first innings)
 	var battingTeam models.TeamType
-	if match.BattingTeam == models.TeamTypeA {
+	if completeMatch.BattingTeam == models.TeamTypeA {
 		battingTeam = models.TeamTypeB
 	} else {
 		battingTeam = models.TeamTypeA
@@ -1052,15 +1078,15 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 		Status:        string(models.InningsStatusInProgress),
 	}
 
-	err := s.scorecardRepo.CreateInnings(ctx, secondInnings)
+	err = s.scorecardRepo.CreateInnings(ctx, secondInnings)
 	if err != nil {
 		log.Printf("Error creating second innings: %v", err)
 		return fmt.Errorf("failed to start second innings: %w", err)
 	}
 
 	// Update match batting team
-	match.BattingTeam = battingTeam
-	err = s.matchRepo.Update(ctx, matchID, match)
+	completeMatch.BattingTeam = battingTeam
+	err = s.matchRepo.Update(ctx, matchID, completeMatch)
 	if err != nil {
 		log.Printf("Error updating match batting team: %v", err)
 		return fmt.Errorf("failed to update match batting team: %w", err)

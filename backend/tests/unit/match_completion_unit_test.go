@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"spark-park-cricket-backend/internal/cache"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
@@ -101,6 +102,21 @@ func (m *MockScorecardRepository) StartScoring(ctx context.Context, matchID stri
 func (m *MockScorecardRepository) DeleteBall(ctx context.Context, ballID string) error {
 	args := m.Called(ctx, ballID)
 	return args.Error(0)
+}
+
+func (m *MockScorecardRepository) GetBallCountByOver(ctx context.Context, overID string) (int, error) {
+	args := m.Called(ctx, overID)
+	return args.Get(0).(int), args.Error(1)
+}
+
+func (m *MockScorecardRepository) GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	args := m.Called(ctx, overID)
+	return args.Get(0).([]*models.ScorecardBall), args.Error(1)
+}
+
+func (m *MockScorecardRepository) GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	args := m.Called(ctx, matchID, inningsNumber)
+	return args.Get(0).(*models.MatchInningsOverData), args.Error(1)
 }
 
 // MockMatchRepository for testing
@@ -207,7 +223,7 @@ func TestShouldCompleteMatch_TargetReached(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -257,7 +273,7 @@ func TestShouldCompleteMatch_AllWicketsLost(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -307,7 +323,7 @@ func TestShouldCompleteMatch_AllOversCompleted(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -357,7 +373,7 @@ func TestShouldCompleteMatch_MatchContinues(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -406,7 +422,7 @@ func TestShouldCompleteMatch_ErrorGettingFirstInnings(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -445,7 +461,7 @@ func TestShouldCompleteMatch_EdgeCase_ExactTarget(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"
@@ -495,7 +511,7 @@ func TestShouldCompleteMatch_EdgeCase_ExactWickets(t *testing.T) {
 	// Setup
 	mockScorecardRepo := &MockScorecardRepository{}
 	mockMatchRepo := &MockMatchRepository{}
-	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics())
+	service := services.NewScorecardService(mockScorecardRepo, mockMatchRepo, monitoring.NewMetrics(), &cache.CacheManager{})
 
 	ctx := context.Background()
 	matchID := "test-match-id"

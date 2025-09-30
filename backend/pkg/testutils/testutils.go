@@ -27,7 +27,7 @@ func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server 
 	cfg := config.LoadTestConfig()
 
 	// Create service container
-	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(testDB, cfg.Config)
 
 	// Create handlers
 	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
@@ -102,7 +102,7 @@ func SetupE2ETestServerWithDB(t *testing.T) (*httptest.Server, *database.Client)
 	require.NoError(t, err)
 
 	// Create service container
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 
 	// Create handlers
 	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
@@ -565,7 +565,7 @@ func SetupAuthenticatedE2ETestServer(t *testing.T, testDB *database.Client) (*ht
 	cfg := config.LoadTestConfig()
 
 	// Create service container
-	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(testDB, cfg.Config)
 
 	// Create a test user and session
 	user, sessionCookie := CreateAuthenticatedTestUserWithSessionService(t, testDB, serviceContainer.SessionService)
@@ -633,7 +633,7 @@ func SetupAuthenticatedE2ETestServerWithDB(t *testing.T) (*httptest.Server, *dat
 	require.NoError(t, err)
 
 	// Create service container
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 
 	// Create a test user and session
 	user, sessionCookie := CreateAuthenticatedTestUserWithSessionService(t, db, serviceContainer.SessionService)

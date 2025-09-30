@@ -27,7 +27,6 @@ func NewMatchHandler(service services.MatchServiceInterface) *MatchHandler {
 
 // ListMatches handles GET /api/v1/matches
 func (h *MatchHandler) ListMatches(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: ListMatches handler called")
 
 	// Parse query parameters
 	limitStr := r.URL.Query().Get("limit")
@@ -66,12 +65,9 @@ func (h *MatchHandler) ListMatches(w http.ResponseWriter, r *http.Request) {
 		filters.Status = &matchStatus
 	}
 
-	log.Printf("DEBUG: Created filters: %+v", filters)
-
 	// Get matches from service
 	matches, err := h.service.ListMatches(r.Context(), filters)
 	if err != nil {
-		log.Printf("DEBUG: service.ListMatches failed: %v", err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
