@@ -113,7 +113,7 @@ func TestMemoryUsage(t *testing.T) {
 		MaxMemoryMB:     100,
 	}
 
-	result, err := RunMemoryTest(config)
+	result, err := RunMemoryTest(t, config)
 	if err != nil {
 		t.Fatalf("Memory test failed: %v", err)
 	}
@@ -142,18 +142,18 @@ func TestMemoryUsage(t *testing.T) {
 }
 
 // RunMemoryTest runs a comprehensive memory test
-func RunMemoryTest(config MemoryTestConfig) (*MemoryTestResult, error) {
+func RunMemoryTest(t *testing.T, config MemoryTestConfig) (*MemoryTestResult, error) {
 	// Setup test server with database and authentication
-	server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(&testing.T{})
+	server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 	defer server.Close()
-	defer testutils.CleanupAllTestData(&testing.T{}, db)
+	defer testutils.CleanupAllTestData(t, db)
 
 	log.Printf("🔗 Test server URL: %s", server.URL)
 
 	// Create test data
-	seriesID := testutils.CreateAuthenticatedTestSeriesForWorkflow(&testing.T{}, server.Config.Handler, sessionCookie)
-	matchID := testutils.CreateAuthenticatedTestMatchForWorkflow(&testing.T{}, server.Config.Handler, seriesID, sessionCookie)
-	testutils.UpdateAuthenticatedMatchToLiveForWorkflow(&testing.T{}, server.Config.Handler, matchID, sessionCookie)
+	seriesID := testutils.CreateAuthenticatedTestSeriesForWorkflow(t, server.Config.Handler, sessionCookie)
+	matchID := testutils.CreateAuthenticatedTestMatchForWorkflow(t, server.Config.Handler, seriesID, sessionCookie)
+	testutils.UpdateAuthenticatedMatchToLiveForWorkflow(t, server.Config.Handler, matchID, sessionCookie)
 
 	// Start scoring to initialize innings
 	startScoringReq := map[string]interface{}{
