@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/pkg/testutils"
 )
@@ -214,12 +215,42 @@ func RunMemoryTest(t *testing.T, config MemoryTestConfig) (*MemoryTestResult, er
 	log.Printf("   Total GCs: %d", result.TotalGCs)
 	log.Printf("   Memory Leak: %v", result.MemoryLeakDetected)
 
-	// Clean up test data at the end
-	log.Printf("🧹 Cleaning up test data...")
-	testutils.CleanupAllTestData(t, db)
+	// Clean up specific test data
+	log.Printf("🧹 Cleaning up test data for match: %s, series: %s", matchID, seriesID)
+	cleanupMemoryTestData(t, db, matchID, seriesID)
 	log.Printf("✅ Test data cleanup completed")
 
 	return &result, nil
+}
+
+// cleanupMemoryTestData cleans up specific memory test data
+func cleanupMemoryTestData(t *testing.T, dbClient *database.Client, matchID, seriesID string) {
+	// Get innings IDs for this match
+	var innings []struct {
+		ID string `json:"id"`
+	}
+	dbClient.Supabase.From("innings").Select("id", "exact", false).Eq("match_id", matchID).ExecuteTo(&innings)
+	
+	for _, ing := range innings {
+		// Get over IDs
+		var overs []struct {
+			ID string `json:"id"`
+		}
+		dbClient.Supabase.From("overs").Select("id", "exact", false).Eq("innings_id", ing.ID).ExecuteTo(&overs)
+		
+		// Clean up balls for each over
+		for _, over := range overs {
+			dbClient.Supabase.From("balls").Delete("", "").Eq("over_id", over.ID).ExecuteTo(nil)
+		}
+		
+		// Clean up overs
+		dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
+	}
+
+	// Clean up innings, match, and series
+	dbClient.Supabase.From("innings").Delete("", "").Eq("match_id", matchID).ExecuteTo(nil)
+	dbClient.Supabase.From("matches").Delete("", "").Eq("id", matchID).ExecuteTo(nil)
+	dbClient.Supabase.From("series").Delete("", "").Eq("id", seriesID).ExecuteTo(nil)
 }
 
 // runMemoryTestOperations runs various operations to test memory usage
