@@ -17,13 +17,13 @@ import (
 func TestCompleteScorecardWorkflow(t *testing.T) {
 	t.Run("CompleteMatchWorkflow", func(t *testing.T) {
 		// Setup with authentication
-		server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
+		server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 		defer server.Close()
 		defer db.Close()
 
 		// Clean up before test
 		t.Logf("DEBUG: Starting CompleteMatchWorkflow test")
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 
 		// Create a test series via API
 		seriesReq := &models.CreateSeriesRequest{
@@ -103,14 +103,14 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
-		
+
 		// Log response details for debugging
 		if startResp.StatusCode != http.StatusOK {
 			t.Logf("DEBUG: Start scoring failed with status %d", startResp.StatusCode)
 			body, _ := io.ReadAll(startResp.Body)
 			t.Logf("DEBUG: Response body: %s", string(body))
 		}
-		
+
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
 		// Add balls to complete the match
@@ -162,17 +162,17 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Contains(t, scorecard, "innings")
 
 		// Clean up after test
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 	})
 
 	t.Run("MultipleOversWorkflow", func(t *testing.T) {
 		// Setup with authentication
-		server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
+		server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 		defer server.Close()
 		defer db.Close()
 
 		// Clean up before test
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 
 		// Create a test series via API
 		seriesReq := &models.CreateSeriesRequest{
@@ -252,14 +252,14 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
-		
+
 		// Log response details for debugging
 		if startResp.StatusCode != http.StatusOK {
 			t.Logf("DEBUG: Start scoring failed with status %d", startResp.StatusCode)
 			body, _ := io.ReadAll(startResp.Body)
 			t.Logf("DEBUG: Response body: %s", string(body))
 		}
-		
+
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
 		// Add balls across multiple overs
@@ -313,17 +313,17 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Contains(t, scorecard, "innings")
 
 		// Clean up after test
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 	})
 
 	t.Run("WideAndNoBallWorkflow", func(t *testing.T) {
 		// Setup with authentication
-		server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
+		server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 		defer server.Close()
 		defer db.Close()
 
 		// Clean up before test
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 
 		// Create a test series via API
 		seriesReq := &models.CreateSeriesRequest{
@@ -403,14 +403,14 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 
 		startResp, err := http.DefaultClient.Do(startHTTPReq)
 		require.NoError(t, err)
-		
+
 		// Log response details for debugging
 		if startResp.StatusCode != http.StatusOK {
 			t.Logf("DEBUG: Start scoring failed with status %d", startResp.StatusCode)
 			body, _ := io.ReadAll(startResp.Body)
 			t.Logf("DEBUG: Response body: %s", string(body))
 		}
-		
+
 		require.Equal(t, http.StatusOK, startResp.StatusCode)
 
 		// Add various types of balls
@@ -474,6 +474,6 @@ func TestCompleteScorecardWorkflow(t *testing.T) {
 		assert.Contains(t, scorecard, "innings")
 
 		// Clean up after test
-		testutils.CleanupAllTestData(t, db)
+		testutils.CleanupTestDataForUser(t, db, user.ID)
 	})
 }
