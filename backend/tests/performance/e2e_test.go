@@ -424,46 +424,6 @@ func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 	return nil
 }
 
-// createTestDataDirectly creates innings and overs directly in the database
-func (suite *E2ETestSuite) createTestDataDirectly() error {
-	fmt.Printf("🔧 DEBUG: Creating test data directly for match %s\n", suite.matchID)
-
-	ctx := context.Background()
-
-	// Create first innings
-	innings := &models.Innings{
-		MatchID:       suite.matchID,
-		InningsNumber: 1,
-		BattingTeam:   models.TeamTypeA,
-		TotalRuns:     0,
-		TotalWickets:  0,
-		TotalOvers:    0,
-		TotalBalls:    0,
-		Status:        string(models.InningsStatusInProgress),
-	}
-	err := suite.dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
-	if err != nil {
-		return fmt.Errorf("failed to create test innings: %v", err)
-	}
-
-	// Create first over
-	over := &models.ScorecardOver{
-		InningsID:    innings.ID,
-		OverNumber:   1,
-		TotalRuns:    0,
-		TotalBalls:   0,
-		TotalWickets: 0,
-		Status:       string(models.OverStatusInProgress),
-	}
-	err = suite.dbClient.Repositories.Scorecard.CreateOver(ctx, over)
-	if err != nil {
-		return fmt.Errorf("failed to create test over: %v", err)
-	}
-
-	fmt.Printf("✅ DEBUG: Test data created successfully - Innings: %s, Over: %s\n", innings.ID, over.ID)
-	return nil
-}
-
 // TestPerformanceDuringE2EWorkflow tests performance during the complete workflow
 func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 	suite := SetupE2ETest(t)
