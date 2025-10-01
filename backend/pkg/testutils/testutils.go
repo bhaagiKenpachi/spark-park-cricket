@@ -569,9 +569,10 @@ func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *datab
 	// Add a small delay to avoid overwhelming the database with rapid user creation
 	// This prevents rate limiting issues in CI/CD when many tests run in sequence
 	time.Sleep(50 * time.Millisecond)
-	
+
 	// Generate unique IDs to avoid duplicate key constraints
-	randomID := rand.Intn(1000000)
+	// Use timestamp + random to ensure uniqueness even in rapid succession
+	randomID := int(time.Now().UnixNano()%1000000) + rand.Intn(1000)
 
 	// Create a test user
 	user := &models.User{
