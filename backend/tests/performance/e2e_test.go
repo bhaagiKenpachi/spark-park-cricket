@@ -130,8 +130,57 @@ func TestCompleteBallAdditionWorkflow(t *testing.T) {
 		}
 	})
 
-	// Clean up test data at the end
-	testutils.CleanupAllTestData(t, suite.dbClient)
+	// Clean up test data at the end - clean only this test's specific data
+	cleanupTestMatch(t, suite.dbClient, suite.matchID, suite.seriesID)
+}
+
+// cleanupTestMatch cleans up specific test match data to avoid affecting other concurrent tests
+func cleanupTestMatch(t *testing.T, dbClient *database.Client, matchID, seriesID string) {
+	t.Logf("DEBUG: Cleaning up specific test data for match: %s, series: %s", matchID, seriesID)
+
+	// Clean up in reverse order of dependencies
+	// Balls -> Overs -> Innings -> Match -> Series
+
+	// Clean up balls for this match
+	_, err := dbClient.Supabase.From("balls").Delete("", "").Eq("match_id", matchID).ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup balls for match %s: %v", matchID, err)
+	}
+
+	// Clean up overs for this match (via innings)
+	// First get innings IDs for this match
+	var innings []struct {
+		ID string `json:"id"`
+	}
+	_, err = dbClient.Supabase.From("innings").Select("id", "exact", false).Eq("match_id", matchID).ExecuteTo(&innings)
+	if err == nil && len(innings) > 0 {
+		for _, ing := range innings {
+			_, err2 := dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
+			if err2 != nil {
+				t.Logf("Warning: Failed to cleanup overs for innings %s: %v", ing.ID, err2)
+			}
+		}
+	}
+
+	// Clean up innings for this match
+	_, err = dbClient.Supabase.From("innings").Delete("", "").Eq("match_id", matchID).ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup innings for match %s: %v", matchID, err)
+	}
+
+	// Clean up the match
+	_, err = dbClient.Supabase.From("matches").Delete("", "").Eq("id", matchID).ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup match %s: %v", matchID, err)
+	}
+
+	// Clean up the series
+	_, err = dbClient.Supabase.From("series").Delete("", "").Eq("id", seriesID).ExecuteTo(nil)
+	if err != nil {
+		t.Logf("Warning: Failed to cleanup series %s: %v", seriesID, err)
+	}
+
+	t.Logf("DEBUG: Completed cleanup for match %s", matchID)
 }
 
 // startMatch starts the match
@@ -488,8 +537,8 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 		}
 	}
 
-	// Clean up test data at the end
-	testutils.CleanupAllTestData(t, suite.dbClient)
+	// Clean up test data at the end - clean only this test's specific data
+	cleanupTestMatch(t, suite.dbClient, suite.matchID, suite.seriesID)
 }
 
 // createTestDataForE2E creates test data for end-to-end testing
