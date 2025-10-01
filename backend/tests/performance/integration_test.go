@@ -99,12 +99,6 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 
 // TestAddBallAPIIntegration tests the Add Ball API integration
 func TestAddBallAPIIntegration(t *testing.T) {
-	suite := SetupIntegrationTest(t)
-	defer suite.dbClient.Close()
-
-	// Skip start scoring since we're creating test data directly with innings and overs
-	// This avoids the "scoring already started" error
-
 	// Test various ball types
 	ballTypes := []models.BallType{
 		models.BallTypeGood,
@@ -125,6 +119,9 @@ func TestAddBallAPIIntegration(t *testing.T) {
 	for _, ballType := range ballTypes {
 		for _, runType := range runTypes {
 			t.Run(fmt.Sprintf("BallType_%s_RunType_%s", ballType, runType), func(t *testing.T) {
+				// Create fresh test suite for each combination to avoid "over complete" errors
+				suite := SetupIntegrationTest(t)
+				defer suite.dbClient.Close()
 				// Create ball event request
 				ballReq := models.BallEventRequest{
 					MatchID:       suite.matchID,
