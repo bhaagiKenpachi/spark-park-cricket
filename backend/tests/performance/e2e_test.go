@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,9 @@ import (
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 )
+
+// e2eTestDataMutex ensures atomic test data creation to prevent race conditions in concurrent E2E tests
+var e2eTestDataMutex sync.Mutex
 
 // E2ETestSuite tests the complete end-to-end workflow
 type E2ETestSuite struct {
@@ -90,13 +94,8 @@ func TestCompleteBallAdditionWorkflow(t *testing.T) {
 		}
 	})
 
-	// Step 2: Create test data directly
-	t.Run("CreateTestData", func(t *testing.T) {
-		err := suite.createTestDataDirectly()
-		if err != nil {
-			t.Fatalf("Failed to create test data: %v", err)
-		}
-	})
+	// Step 2: Test data is already created in SetupE2ETest
+	// No need to create additional data
 
 	// Step 3: Add balls to complete an over
 	t.Run("AddBallsToCompleteOver", func(t *testing.T) {
@@ -476,11 +475,8 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 		t.Fatalf("Failed to start match: %v", err)
 	}
 
-	// Create innings and overs directly instead of using beginScoring API
-	err = suite.createTestDataDirectly()
-	if err != nil {
-		t.Fatalf("Failed to create test data directly: %v", err)
-	}
+	// Test data is already created in SetupE2ETest
+	// No need to create additional data
 
 	// Measure performance during ball addition
 	responseTimes := make([]time.Duration, 0, 100)
@@ -554,7 +550,15 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 }
 
 // createTestDataForE2E creates test data for end-to-end testing
+// Uses a mutex to ensure atomic creation and prevent race conditions
 func createTestDataForE2E(dbClient *database.Client, userID string) (string, string, error) {
+	// Lock to prevent concurrent test data creation issues
+	e2eTestDataMutex.Lock()
+	defer e2eTestDataMutex.Unlock()
+
+	// Add small delay to prevent overwhelming database
+	time.Sleep(100 * time.Millisecond)
+
 	ctx := context.Background()
 
 	// Create test series
@@ -586,6 +590,37 @@ func createTestDataForE2E(dbClient *database.Client, userID string) (string, str
 	err = dbClient.Repositories.Match.Create(ctx, match)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create test match: %v", err)
+	}
+
+	// Create first innings
+	innings := &models.Innings{
+		MatchID:       match.ID,
+		InningsNumber: 1,
+		BattingTeam:   models.TeamTypeA,
+		TotalRuns:     0,
+		TotalWickets:  0,
+		TotalOvers:    0,
+		TotalBalls:    0,
+		Status:        string(models.InningsStatusInProgress),
+		CreatedAt:     time.Now(),
+	}
+	err = dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test innings: %v", err)
+	}
+
+	// Create first over using scorecard repository
+	over := &models.ScorecardOver{
+		InningsID:    innings.ID,
+		OverNumber:   1,
+		TotalRuns:    0,
+		TotalBalls:   0,
+		TotalWickets: 0,
+		Status:       string(models.OverStatusInProgress),
+	}
+	err = dbClient.Repositories.Scorecard.CreateOver(ctx, over)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create test over: %v", err)
 	}
 
 	return series.ID, match.ID, nil

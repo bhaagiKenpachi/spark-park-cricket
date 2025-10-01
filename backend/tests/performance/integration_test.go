@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,9 @@ import (
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/pkg/testutils"
 )
+
+// testDataMutex ensures atomic test data creation to prevent race conditions in concurrent tests
+var testDataMutex sync.Mutex
 
 // shouldBallCombinationSucceed determines if a ball combination should succeed based on cricket rules
 func shouldBallCombinationSucceed(ballType models.BallType, runType models.RunType) bool {
@@ -514,7 +518,15 @@ func TestErrorHandlingIntegration(t *testing.T) {
 }
 
 // createTestDataForIntegration creates test data for integration testing
+// Uses a mutex to ensure atomic creation and prevent race conditions
 func createTestDataForIntegration(dbClient *database.Client, userID string) (string, string, error) {
+	// Lock to prevent concurrent test data creation issues
+	testDataMutex.Lock()
+	defer testDataMutex.Unlock()
+
+	// Add small delay to prevent overwhelming database
+	time.Sleep(100 * time.Millisecond)
+
 	ctx := context.Background()
 
 	// Create test series

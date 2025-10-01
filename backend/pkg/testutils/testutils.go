@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
 	"spark-park-cricket-backend/internal/handlers"
@@ -20,6 +21,18 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/require"
 )
+
+// generateUniqueTestID creates a highly unique identifier for test users
+// Combines multiple entropy sources to prevent collisions in concurrent environments
+func generateUniqueTestID() string {
+	now := time.Now()
+	nanos := now.UnixNano()
+	random := rand.Intn(999999)
+	pid := os.Getpid()
+
+	// Create a highly unique identifier combining multiple entropy sources
+	return fmt.Sprintf("%d-%d-%d-%d", nanos, random, pid, now.Nanosecond()%1000)
+}
 
 // SetupE2ETestServer creates a test server for e2e tests with authentication
 func SetupE2ETestServer(t *testing.T, testDB *database.Client) *httptest.Server {
@@ -538,10 +551,13 @@ func CleanupAllTestData(t *testing.T, dbClient *database.Client) {
 
 // CreateAuthenticatedTestUser creates a test user and session for integration tests
 func CreateAuthenticatedTestUser(t *testing.T, dbClient *database.Client) (*models.User, *models.UserSession) {
+	// Generate unique IDs to avoid duplicate key constraints
+	uniqueID := generateUniqueTestID()
+
 	// Create a test user
 	user := &models.User{
-		GoogleID:      "test-google-id-123",
-		Email:         "test@example.com",
+		GoogleID:      fmt.Sprintf("test-google-id-%s", uniqueID),
+		Email:         fmt.Sprintf("test%s@example.com", uniqueID),
 		Name:          "Test User",
 		Picture:       "https://example.com/picture.jpg",
 		EmailVerified: true,
@@ -571,13 +587,12 @@ func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *datab
 	time.Sleep(50 * time.Millisecond)
 
 	// Generate unique IDs to avoid duplicate key constraints
-	// Use timestamp + random to ensure uniqueness even in rapid succession
-	randomID := int(time.Now().UnixNano()%1000000) + rand.Intn(1000)
+	uniqueID := generateUniqueTestID()
 
 	// Create a test user
 	user := &models.User{
-		GoogleID:      fmt.Sprintf("test-google-id-%d", randomID),
-		Email:         fmt.Sprintf("test%d@example.com", randomID),
+		GoogleID:      fmt.Sprintf("test-google-id-%s", uniqueID),
+		Email:         fmt.Sprintf("test%s@example.com", uniqueID),
 		Name:          "Test User",
 		Picture:       "https://example.com/picture.jpg",
 		EmailVerified: true,
