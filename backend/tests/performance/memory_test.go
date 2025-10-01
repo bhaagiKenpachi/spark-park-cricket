@@ -229,28 +229,28 @@ func cleanupMemoryTestData(t *testing.T, dbClient *database.Client, matchID, ser
 	var innings []struct {
 		ID string `json:"id"`
 	}
-	dbClient.Supabase.From("innings").Select("id", "exact", false).Eq("match_id", matchID).ExecuteTo(&innings)
+	_, _ = dbClient.Supabase.From("innings").Select("id", "exact", false).Eq("match_id", matchID).ExecuteTo(&innings)
 
 	for _, ing := range innings {
 		// Get over IDs
 		var overs []struct {
 			ID string `json:"id"`
 		}
-		dbClient.Supabase.From("overs").Select("id", "exact", false).Eq("innings_id", ing.ID).ExecuteTo(&overs)
+		_, _ = dbClient.Supabase.From("overs").Select("id", "exact", false).Eq("innings_id", ing.ID).ExecuteTo(&overs)
 
 		// Clean up balls for each over
 		for _, over := range overs {
-			dbClient.Supabase.From("balls").Delete("", "").Eq("over_id", over.ID).ExecuteTo(nil)
+			_, _ = dbClient.Supabase.From("balls").Delete("", "").Eq("over_id", over.ID).ExecuteTo(nil)
 		}
 
 		// Clean up overs
-		dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
+		_, _ = dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
 	}
 
 	// Clean up innings, match, and series
-	dbClient.Supabase.From("innings").Delete("", "").Eq("match_id", matchID).ExecuteTo(nil)
-	dbClient.Supabase.From("matches").Delete("", "").Eq("id", matchID).ExecuteTo(nil)
-	dbClient.Supabase.From("series").Delete("", "").Eq("id", seriesID).ExecuteTo(nil)
+	_, _ = dbClient.Supabase.From("innings").Delete("", "").Eq("match_id", matchID).ExecuteTo(nil)
+	_, _ = dbClient.Supabase.From("matches").Delete("", "").Eq("id", matchID).ExecuteTo(nil)
+	_, _ = dbClient.Supabase.From("series").Delete("", "").Eq("id", seriesID).ExecuteTo(nil)
 }
 
 // runMemoryTestOperations runs various operations to test memory usage
