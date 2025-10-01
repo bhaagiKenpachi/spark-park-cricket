@@ -566,6 +566,10 @@ func CreateAuthenticatedTestUser(t *testing.T, dbClient *database.Client) (*mode
 
 // CreateAuthenticatedTestUserWithSessionService creates a test user and proper session using session service
 func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *database.Client, sessionService *services.SessionService) (*models.User, string) {
+	// Add a small delay to avoid overwhelming the database with rapid user creation
+	// This prevents rate limiting issues in CI/CD when many tests run in sequence
+	time.Sleep(50 * time.Millisecond)
+	
 	// Generate unique IDs to avoid duplicate key constraints
 	randomID := rand.Intn(1000000)
 
