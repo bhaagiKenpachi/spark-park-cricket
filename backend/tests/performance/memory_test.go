@@ -143,19 +143,32 @@ func TestMemoryUsage(t *testing.T) {
 
 // RunMemoryTest runs a comprehensive memory test
 func RunMemoryTest(t *testing.T, config MemoryTestConfig) (*MemoryTestResult, error) {
+	log.Printf("🧠 Starting memory test with duration: %v", config.TestDuration)
+
 	// Setup test server with database and authentication
+	log.Printf("🔧 Setting up test server for memory test...")
 	server, db, _, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 	defer server.Close()
 	defer testutils.CleanupAllTestData(t, db)
 
 	log.Printf("🔗 Test server URL: %s", server.URL)
+	log.Printf("🍪 Session cookie length: %d", len(sessionCookie))
 
 	// Create test data
+	log.Printf("📝 Creating test series for memory test...")
 	seriesID := testutils.CreateAuthenticatedTestSeriesForWorkflow(t, server.Config.Handler, sessionCookie)
+	log.Printf("✅ Series created: %s", seriesID)
+
+	log.Printf("📝 Creating test match for memory test...")
 	matchID := testutils.CreateAuthenticatedTestMatchForWorkflow(t, server.Config.Handler, seriesID, sessionCookie)
+	log.Printf("✅ Match created: %s", matchID)
+
+	log.Printf("📝 Updating match to live status...")
 	testutils.UpdateAuthenticatedMatchToLiveForWorkflow(t, server.Config.Handler, matchID, sessionCookie)
+	log.Printf("✅ Match updated to live")
 
 	// Start scoring to initialize innings
+	log.Printf("📝 Starting scoring for memory test...")
 	startScoringReq := map[string]interface{}{
 		"match_id": matchID,
 	}
@@ -164,25 +177,41 @@ func RunMemoryTest(t *testing.T, config MemoryTestConfig) (*MemoryTestResult, er
 	startScoringW := httptest.NewRecorder()
 	server.Config.Handler.ServeHTTP(startScoringW, startScoringRequest)
 	if startScoringW.Code != http.StatusOK {
+		log.Printf("❌ Failed to start scoring: %d - %s", startScoringW.Code, startScoringW.Body.String())
 		return nil, fmt.Errorf("failed to start scoring: %s", startScoringW.Body.String())
 	}
+	log.Printf("✅ Scoring started successfully")
 
 	log.Printf("📝 Created test data - Series: %s, Match: %s, Scoring started", seriesID, matchID)
 
 	// Start memory monitoring
+	log.Printf("📊 Starting memory monitoring...")
 	monitor := NewMemoryMonitor()
 	monitor.StartMonitoring()
+	log.Printf("✅ Memory monitoring started")
 
 	// Run memory test
+	log.Printf("🔄 Running memory test operations...")
 	err := runMemoryTestOperations(server.Config.Handler, matchID, sessionCookie, config)
 	if err != nil {
+		log.Printf("❌ Memory test operations failed: %v", err)
 		monitor.StopMonitoring()
 		return nil, fmt.Errorf("memory test operations failed: %w", err)
 	}
+	log.Printf("✅ Memory test operations completed")
 
 	// Stop monitoring and get results
+	log.Printf("📊 Stopping memory monitoring and calculating results...")
 	monitor.StopMonitoring()
 	result := monitor.GetResult()
+
+	log.Printf("📊 Memory test results:")
+	log.Printf("   Initial Memory: %.2f MB", result.InitialMemoryMB)
+	log.Printf("   Peak Memory: %.2f MB", result.PeakMemoryMB)
+	log.Printf("   Final Memory: %.2f MB", result.FinalMemoryMB)
+	log.Printf("   Memory Growth: %.2f MB", result.MemoryGrowthMB)
+	log.Printf("   Total GCs: %d", result.TotalGCs)
+	log.Printf("   Memory Leak: %v", result.MemoryLeakDetected)
 
 	return &result, nil
 }

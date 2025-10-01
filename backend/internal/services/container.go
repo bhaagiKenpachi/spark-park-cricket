@@ -9,6 +9,7 @@ import (
 
 // Container holds all service instances
 type Container struct {
+	DBClient  *database.Client
 	Series    *SeriesService
 	Match     *MatchService
 	Scorecard interfaces.ScorecardServiceInterface
@@ -33,6 +34,7 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 
 	// Create container
 	container := &Container{
+		DBClient:  dbClient,
 		Series:    NewSeriesService(dbClient.Repositories.Series),
 		Match:     NewMatchService(dbClient.Repositories.Match, dbClient.Repositories.Series),
 		Scorecard: scorecardService,

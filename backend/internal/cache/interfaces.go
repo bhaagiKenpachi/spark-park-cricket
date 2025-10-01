@@ -65,14 +65,17 @@ func (cm *CacheManager) GetOrSet(key string, dest interface{}, ttl time.Duration
 		return nil
 	}
 
-	// Cache miss, get from database
+	// Cache miss or error, get from database
 	value, err := dbFunc()
 	if err != nil {
 		return err
 	}
 
-	// Set in cache for next time
-	_ = cm.cache.Set(key, value, ttl)
+	// Set in cache for next time (ignore cache errors)
+	if cacheErr := cm.cache.Set(key, value, ttl); cacheErr != nil {
+		// Log cache error but don't fail the operation
+		fmt.Printf("⚠️  Cache SET failed for key %s: %v (continuing without cache)\n", key, cacheErr)
+	}
 
 	// Copy value to destination
 	return copyValue(value, dest)
@@ -86,7 +89,9 @@ func (cm *CacheManager) Invalidate(key string) error {
 
 	err := cm.cache.Delete(key)
 	if err != nil {
-		return err
+		// Log cache error but don't fail the operation
+		fmt.Printf("⚠️  Cache DELETE failed for key %s: %v (continuing without cache)\n", key, err)
+		return nil
 	}
 
 	return nil

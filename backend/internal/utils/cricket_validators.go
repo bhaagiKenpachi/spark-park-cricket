@@ -191,26 +191,51 @@ func (v *CricketValidator) IsInningsComplete(wickets int, overs float64, maxOver
 
 // ValidateBallEventRequest validates a ball event request for scorecard
 func ValidateBallEventRequest(req *models.BallEventRequest) error {
+	// Validate basic fields
+	if req == nil {
+		return fmt.Errorf("ball event request cannot be nil")
+	}
+
+	if req.MatchID == "" {
+		return fmt.Errorf("match ID is required")
+	}
+
 	// Validate innings number
 	if req.InningsNumber < 1 || req.InningsNumber > 2 {
-		return fmt.Errorf("innings number must be 1 or 2")
+		return fmt.Errorf("innings number must be 1 or 2, got: %d", req.InningsNumber)
 	}
 
 	// Validate ball type
+	if req.BallType == "" {
+		return fmt.Errorf("ball type is required")
+	}
 	if !IsValidBallType(string(req.BallType)) {
 		return fmt.Errorf("invalid ball type: %s", req.BallType)
 	}
 
 	// Validate run type
+	if req.RunType == "" {
+		return fmt.Errorf("run type is required")
+	}
 	if !req.RunType.IsValidRun() {
 		return fmt.Errorf("invalid run type: %s", req.RunType)
 	}
 
 	// Validate byes (0-6)
 	if req.Byes < 0 || req.Byes > 6 {
-		return fmt.Errorf("byes must be between 0 and 6")
+		return fmt.Errorf("byes must be between 0 and 6, got: %d", req.Byes)
 	}
 
+	// Validate cricket-specific rules
+	if err := validateCricketRules(req); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateCricketRules validates cricket-specific business rules
+func validateCricketRules(req *models.BallEventRequest) error {
 	// Validate wicket logic
 	if req.IsWicket {
 		if req.BallType == models.BallTypeWide || req.BallType == models.BallTypeNoBall {
@@ -235,6 +260,26 @@ func ValidateBallEventRequest(req *models.BallEventRequest) error {
 		}
 		if !isValid {
 			return fmt.Errorf("invalid wicket type: %s", req.WicketType)
+		}
+	}
+
+	// Validate ball type specific rules
+	switch req.BallType {
+	case models.BallTypeGood:
+		if req.RunType == "5" {
+			return fmt.Errorf("5 runs is not possible in cricket")
+		}
+	case models.BallTypeWide:
+		if req.RunType != models.RunTypeWD && req.RunType.GetRunValue() < 1 {
+			return fmt.Errorf("wide balls must have at least 1 run")
+		}
+	case models.BallTypeNoBall:
+		if req.RunType != models.RunTypeNB && req.RunType.GetRunValue() < 1 {
+			return fmt.Errorf("no balls must have at least 1 run")
+		}
+	case models.BallTypeDeadBall:
+		if req.RunType.GetRunValue() != 0 {
+			return fmt.Errorf("dead balls cannot have runs")
 		}
 	}
 

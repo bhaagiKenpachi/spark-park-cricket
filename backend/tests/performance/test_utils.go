@@ -29,7 +29,7 @@ func SetupTestRoutes(serviceContainer *services.Container, seriesHandler *handle
 	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg)
 
 	// Health check routes
-	router.Get("/health/database", handlers.NewHealthHandler(nil).DatabaseHealth)
+	router.Get("/health/database", handlers.NewHealthHandler(serviceContainer.DBClient).DatabaseHealth)
 
 	// API routes
 	router.Route("/api/v1", func(r chi.Router) {

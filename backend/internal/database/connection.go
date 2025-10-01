@@ -9,6 +9,7 @@ import (
 	cacherepo "spark-park-cricket-backend/internal/repository/cache"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/repository/supabase"
+	"time"
 
 	supabaseclient "github.com/supabase-community/supabase-go"
 )
@@ -55,7 +56,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 	log.Printf("✅ Supabase client created successfully")
 
-	// Initialize cache manager
+	// Initialize cache manager with graceful fallback
 	var cacheManager *cache.CacheManager
 	if cfg.CacheEnabled {
 		log.Printf("Initializing Redis cache...")
@@ -64,12 +65,14 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			// Log warning but continue without cache
 			log.Printf("⚠️  Warning: Failed to initialize Redis cache: %v", err)
 			log.Printf("Continuing without cache...")
+			cacheManager = cache.NewCacheManager(nil, false)
 		} else {
 			cacheManager = cache.NewCacheManager(redisClient, true)
 			log.Printf("✅ Redis cache initialized successfully")
 		}
 	} else {
 		log.Printf("Cache disabled by configuration")
+		cacheManager = cache.NewCacheManager(nil, false)
 	}
 
 	// Initialize base repositories
@@ -126,31 +129,44 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	}, nil
 }
 
-// HealthCheck performs a simple health check on the database
+// HealthCheck performs a comprehensive health check on the database
 func (c *Client) HealthCheck() error {
 	log.Printf("=== PERFORMING DATABASE HEALTH CHECK ===")
 	log.Printf("Database Type: Supabase (PostgreSQL)")
 	log.Printf("Database Schema: %s", c.Schema)
+
+	// Test database connection with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_ = ctx // Use context for potential future timeout implementation
 
 	// Simple health check by attempting to connect to a known table
 	log.Printf("Testing connection to 'series' table...")
 	_, _, err := c.Supabase.From("series").Select("id", "exact", false).Limit(1, "").Execute()
 	if err != nil {
 		log.Printf("⚠️  Warning: Could not query 'series' table: %v", err)
-		log.Printf("This might be normal if the table doesn't exist yet")
-		// If the table doesn't exist, that's okay for health check
-		log.Printf("✅ Database connection appears to be working")
-		return nil
+
+		// Try alternative health check with a simpler query
+		log.Printf("Trying alternative health check...")
+		_, _, altErr := c.Supabase.From("series").Select("*", "exact", false).Limit(0, "").Execute()
+		if altErr != nil {
+			log.Printf("❌ Database health check failed: %v", altErr)
+			return fmt.Errorf("database health check failed: %w", altErr)
+		}
+
+		log.Printf("✅ Database connection appears to be working (alternative check)")
+	} else {
+		log.Printf("✅ Database health check successful")
+		log.Printf("✅ Successfully queried 'series' table")
 	}
 
-	log.Printf("✅ Database health check successful")
-	log.Printf("✅ Successfully queried 'series' table")
-
 	// Test cache if available
-	if c.CacheManager != nil {
-		log.Printf("Testing cache connection...")
-		// You could add a cache ping test here if needed
-		log.Printf("✅ Cache layer is available")
+	if c.CacheManager != nil && c.CacheManager.HealthCheck() == nil {
+		log.Printf("✅ Cache layer is available and healthy")
+	} else if c.CacheManager != nil {
+		log.Printf("⚠️  Cache layer is available but unhealthy")
+	} else {
+		log.Printf("ℹ️  Cache layer is disabled")
 	}
 
 	log.Printf("=========================================")

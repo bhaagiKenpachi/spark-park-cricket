@@ -152,8 +152,12 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		return fmt.Errorf("over is complete, cannot add more balls")
 	}
 
-	// Calculate next ball number
-	nextBallNumber := data.MaxBallNumber + 1
+	// Calculate next ball number - use fresh calculation to avoid stale data
+	nextBallNumber, err := s.getNextBallNumber(ctx, data.OverID)
+	if err != nil {
+		log.Printf("Error getting next ball number: %v", err)
+		return fmt.Errorf("failed to get next ball number: %w", err)
+	}
 
 	// Calculate runs from run type and byes
 	runs := req.RunType.GetRunValue()
@@ -177,12 +181,49 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		WicketType: req.WicketType,
 	}
 
-	// Record ball addition metrics
+	// Record ball addition metrics with retry logic for constraint violations
 	start := time.Now()
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "INSERT", "balls", req.MatchID,
 		func(ctx context.Context) error {
-			return s.scorecardRepo.CreateBall(ctx, ball)
+			// Retry logic for constraint violations
+			maxRetries := 5
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				err := s.scorecardRepo.CreateBall(ctx, ball)
+				if err == nil {
+					return nil
+				}
+
+				// Check if it's a constraint violation
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with new ball number", attempt, maxRetries)
+
+					// Get fresh ball number directly from the repository with exponential backoff
+					freshBallNumber, err := s.getNextBallNumber(ctx, ball.OverID)
+					if err != nil {
+						log.Printf("Failed to get fresh ball number on attempt %d: %v", attempt, err)
+						if attempt == maxRetries {
+							return fmt.Errorf("failed to get fresh ball number after %d attempts: %w", maxRetries, err)
+						}
+						// Continue to retry
+						time.Sleep(time.Millisecond * time.Duration(attempt*10))
+						continue
+					}
+					ball.BallNumber = freshBallNumber
+
+					if attempt == maxRetries {
+						return fmt.Errorf("failed to create ball after %d attempts due to constraint violations", maxRetries)
+					}
+
+					// Exponential backoff delay before retry
+					time.Sleep(time.Millisecond * time.Duration(attempt*10))
+					continue
+				}
+
+				// If it's not a constraint violation, return the error immediately
+				return err
+			}
+			return fmt.Errorf("failed to create ball after %d attempts", maxRetries)
 		},
 	)
 	duration := time.Since(start)
@@ -478,12 +519,49 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		WicketType: req.WicketType,
 	}
 
-	// Record ball addition metrics
+	// Record ball addition metrics with retry logic for constraint violations
 	start := time.Now()
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "INSERT", "balls", req.MatchID,
 		func(ctx context.Context) error {
-			return s.scorecardRepo.CreateBall(ctx, ball)
+			// Retry logic for constraint violations
+			maxRetries := 5
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				err := s.scorecardRepo.CreateBall(ctx, ball)
+				if err == nil {
+					return nil
+				}
+
+				// Check if it's a constraint violation
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with new ball number", attempt, maxRetries)
+
+					// Get fresh ball number with exponential backoff
+					freshBallNumber, err := s.getNextBallNumber(ctx, over.ID)
+					if err != nil {
+						log.Printf("Failed to get fresh ball number on attempt %d: %v", attempt, err)
+						if attempt == maxRetries {
+							return fmt.Errorf("failed to get fresh ball number after %d attempts: %w", maxRetries, err)
+						}
+						// Continue to retry
+						time.Sleep(time.Millisecond * time.Duration(attempt*10))
+						continue
+					}
+					ball.BallNumber = freshBallNumber
+
+					if attempt == maxRetries {
+						return fmt.Errorf("failed to create ball after %d attempts due to constraint violations", maxRetries)
+					}
+
+					// Exponential backoff delay before retry
+					time.Sleep(time.Millisecond * time.Duration(attempt*10))
+					continue
+				}
+
+				// If it's not a constraint violation, return the error immediately
+				return err
+			}
+			return fmt.Errorf("failed to create ball after %d attempts", maxRetries)
 		},
 	)
 	duration := time.Since(start)
@@ -845,7 +923,7 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 		nextOverNumber = maxOverNumber + 1
 	}
 
-	// Create new over
+	// Create new over with retry logic for constraint violations
 	newOver := &models.ScorecardOver{
 		InningsID:    inningsID,
 		OverNumber:   nextOverNumber,
@@ -855,8 +933,53 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 		Status:       string(models.OverStatusInProgress),
 	}
 
-	err = s.scorecardRepo.CreateOver(ctx, newOver)
-	if err != nil {
+	// Retry logic for constraint violations
+	maxRetries := 5
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err = s.scorecardRepo.CreateOver(ctx, newOver)
+		if err == nil {
+			break
+		}
+
+		// Check if it's a constraint violation
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			log.Printf("Over creation failed due to constraint violation (attempt %d/%d), retrying with new over number", attempt, maxRetries)
+
+			// Get fresh overs to recalculate over number
+			freshOvers, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+			if err != nil {
+				log.Printf("Error getting fresh overs on attempt %d: %v", attempt, err)
+				if attempt == maxRetries {
+					return nil, nil, fmt.Errorf("failed to get fresh overs after %d attempts: %w", maxRetries, err)
+				}
+				// Continue to retry
+				time.Sleep(time.Millisecond * time.Duration(attempt*10))
+				continue
+			}
+
+			// Recalculate next over number with fresh data
+			nextOverNumber = 1
+			if len(freshOvers) > 0 {
+				maxOverNumber := 0
+				for _, o := range freshOvers {
+					if o.OverNumber > maxOverNumber {
+						maxOverNumber = o.OverNumber
+					}
+				}
+				nextOverNumber = maxOverNumber + 1
+			}
+			newOver.OverNumber = nextOverNumber
+
+			if attempt == maxRetries {
+				return nil, nil, fmt.Errorf("failed to create over after %d attempts due to constraint violations", maxRetries)
+			}
+
+			// Exponential backoff delay before retry
+			time.Sleep(time.Millisecond * time.Duration(attempt*10))
+			continue
+		}
+
+		// If it's not a constraint violation, return the error immediately
 		log.Printf("Error creating over: %v", err)
 		return nil, nil, fmt.Errorf("failed to create over: %w", err)
 	}
