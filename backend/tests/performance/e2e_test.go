@@ -171,43 +171,6 @@ func (suite *E2ETestSuite) startMatch() error {
 	return nil
 }
 
-// beginScoring begins scoring for the match
-func (suite *E2ETestSuite) beginScoring() error {
-	fmt.Printf("🔧 DEBUG: Beginning scoring for match %s\n", suite.matchID)
-
-	startReq := models.ScorecardRequest{
-		MatchID: suite.matchID,
-	}
-
-	reqBody, err := json.Marshal(startReq)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(reqBody))
-	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{
-		Name:     "user_session",
-		Value:    suite.authCookie,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	w := httptest.NewRecorder()
-	suite.router.ServeHTTP(w, req)
-
-	fmt.Printf("🔧 DEBUG: Start scoring response: %d - %s\n", w.Code, w.Body.String())
-
-	if w.Code != http.StatusOK {
-		return fmt.Errorf("begin scoring failed with status %d: %s", w.Code, w.Body.String())
-	}
-
-	fmt.Printf("✅ DEBUG: Scoring started successfully\n")
-	return nil
-}
-
 // addBallsToCompleteOver adds balls to complete an over
 func (suite *E2ETestSuite) addBallsToCompleteOver() error {
 	fmt.Printf("🔧 DEBUG: Adding 6 balls to complete over for match %s\n", suite.matchID)
