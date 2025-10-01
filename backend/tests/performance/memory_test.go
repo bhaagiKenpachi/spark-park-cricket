@@ -230,19 +230,19 @@ func cleanupMemoryTestData(t *testing.T, dbClient *database.Client, matchID, ser
 		ID string `json:"id"`
 	}
 	dbClient.Supabase.From("innings").Select("id", "exact", false).Eq("match_id", matchID).ExecuteTo(&innings)
-	
+
 	for _, ing := range innings {
 		// Get over IDs
 		var overs []struct {
 			ID string `json:"id"`
 		}
 		dbClient.Supabase.From("overs").Select("id", "exact", false).Eq("innings_id", ing.ID).ExecuteTo(&overs)
-		
+
 		// Clean up balls for each over
 		for _, over := range overs {
 			dbClient.Supabase.From("balls").Delete("", "").Eq("over_id", over.ID).ExecuteTo(nil)
 		}
-		
+
 		// Clean up overs
 		dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
 	}
