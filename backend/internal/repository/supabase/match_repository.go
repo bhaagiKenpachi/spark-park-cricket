@@ -49,6 +49,21 @@ func (r *matchRepository) Create(ctx context.Context, match *models.Match) error
 
 	if len(result) > 0 {
 		*match = result[0]
+	} else {
+		// If no result returned, try to get the match by series_id and match_number to get the ID
+		// This is a fallback for cases where Supabase doesn't return the created record
+		allMatches, err := r.GetAll(ctx, &models.MatchFilters{Limit: 1000, Offset: 0})
+		if err != nil {
+			return fmt.Errorf("failed to get created match: %w", err)
+		}
+
+		// Find the match by series_id and match_number
+		for _, m := range allMatches {
+			if m.SeriesID == match.SeriesID && m.MatchNumber == match.MatchNumber {
+				*match = *m
+				break
+			}
+		}
 	}
 
 	return nil

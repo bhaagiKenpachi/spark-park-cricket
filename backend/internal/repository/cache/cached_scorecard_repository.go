@@ -29,10 +29,19 @@ func (r *CachedScorecardRepository) CreateInnings(ctx context.Context, innings *
 		return err
 	}
 
-	// Invalidate scorecard cache for this match
+	// Invalidate caches for this match
 	if innings.MatchID != "" {
+		// Invalidate scorecard cache
 		scorecardKey := r.cache.GetScorecardKey(innings.MatchID)
 		_ = r.cache.Invalidate(scorecardKey)
+
+		// Invalidate innings cache
+		inningsKey := fmt.Sprintf("innings:match:%s", innings.MatchID)
+		_ = r.cache.Invalidate(inningsKey)
+
+		// Invalidate specific innings cache
+		specificInningsKey := fmt.Sprintf("innings:match:%s:number:%d", innings.MatchID, innings.InningsNumber)
+		_ = r.cache.Invalidate(specificInningsKey)
 	}
 
 	return nil
@@ -111,6 +120,14 @@ func (r *CachedScorecardRepository) CreateOver(ctx context.Context, over *models
 	if err != nil {
 		return err
 	}
+
+	// Invalidate current over cache for this innings
+	currentOverKey := fmt.Sprintf("over:current:innings:%s", over.InningsID)
+	_ = r.cache.Invalidate(currentOverKey)
+
+	// Invalidate overs list cache for this innings
+	oversKey := fmt.Sprintf("overs:innings:%s", over.InningsID)
+	_ = r.cache.Invalidate(oversKey)
 
 	// Note: We would need to get matchID from innings to invalidate scorecard cache
 	// For now, we'll handle this at the service level

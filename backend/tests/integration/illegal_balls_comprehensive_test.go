@@ -127,8 +127,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		// Ball 6: Good ball - 4 runs
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		// Ball 7: Good ball - 5 runs
-		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		// Ball 7: Good ball - 1 run (changed from 5 runs which is invalid in cricket)
+		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		// Ball 8: Good ball - 6 runs
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 	}
@@ -193,8 +193,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	require.NotEmpty(t, scorecardResponse.Data.Innings, "Innings should not be empty")
 	firstInnings := scorecardResponse.Data.Innings[0]
 
-	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+5+6 (good balls) + 5 (byes) = 28
-	assert.Equal(t, 28, firstInnings.TotalRuns)
+	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+1+6 (good balls) + 5 (byes) = 24
+	assert.Equal(t, 24, firstInnings.TotalRuns)
 
 	// Verify total overs: 1.0 (1 completed over, no second over created yet)
 	assert.Equal(t, 1.0, firstInnings.TotalOvers)
@@ -211,7 +211,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Verify over data - first over should be completed with 6 legal balls
 	firstOver := firstInnings.Overs[0]
 	assert.Equal(t, 1, firstOver.OverNumber)
-	assert.Equal(t, 28, firstOver.TotalRuns) // 6+1+1+2+3+4+5+6 = 28 runs from all balls in first over
+	assert.Equal(t, 24, firstOver.TotalRuns) // 1+1+1+2+3+4+1+6+5 = 24 runs from all balls in first over
 	assert.Equal(t, 6, firstOver.TotalBalls) // All 6 legal balls in first over
 	assert.Equal(t, "completed", firstOver.Status)
 
@@ -261,11 +261,11 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, "4", firstOver.Balls[5].RunType)
 	assert.Equal(t, 4, firstOver.Balls[5].Runs)
 
-	// Ball 7: Good ball - 5 runs
+	// Ball 7: Good ball - 1 run
 	assert.Equal(t, 7, firstOver.Balls[6].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[6].BallType)
-	assert.Equal(t, "5", firstOver.Balls[6].RunType)
-	assert.Equal(t, 5, firstOver.Balls[6].Runs)
+	assert.Equal(t, "1", firstOver.Balls[6].RunType)
+	assert.Equal(t, 1, firstOver.Balls[6].Runs)
 	assert.Equal(t, 0, firstOver.Balls[6].Byes)
 	assert.False(t, firstOver.Balls[6].IsWicket)
 
@@ -453,6 +453,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 
 	var scorecardResponse struct {
 		Data struct {
+			MatchID string `json:"match_id"`
 			Innings []struct {
 				TotalOvers float64 `json:"total_overs"`
 				Overs      []struct {
@@ -463,6 +464,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 			} `json:"innings"`
 		} `json:"data"`
 	}
+
 	err = json.NewDecoder(resp.Body).Decode(&scorecardResponse)
 	require.NoError(t, err)
 	resp.Body.Close()

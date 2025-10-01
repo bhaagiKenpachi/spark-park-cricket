@@ -63,6 +63,17 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 
 	if len(result) > 0 {
 		*innings = result[0]
+		log.Printf("Successfully created innings with ID: %s", innings.ID)
+	} else {
+		log.Printf("Warning: No result returned from innings creation, but no error occurred")
+		// Try to get the innings by match_id and innings_number to get the ID
+		createdInnings, err := r.GetInningsByMatchAndNumber(ctx, innings.MatchID, innings.InningsNumber)
+		if err != nil {
+			log.Printf("Error getting created innings: %v", err)
+			return fmt.Errorf("failed to get created innings: %w", err)
+		}
+		*innings = *createdInnings
+		log.Printf("Retrieved created innings with ID: %s", innings.ID)
 	}
 
 	log.Printf("Successfully created innings with ID: %s", innings.ID)
@@ -208,6 +219,17 @@ func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.Score
 
 	if len(result) > 0 {
 		*over = result[0]
+		log.Printf("Successfully created over with ID: %s", over.ID)
+	} else {
+		log.Printf("Warning: No result returned from over creation, but no error occurred")
+		// Try to get the over by innings_id and over_number to get the ID
+		createdOver, err := r.GetOverByInningsAndNumber(ctx, over.InningsID, over.OverNumber)
+		if err != nil {
+			log.Printf("Error getting created over: %v", err)
+			return fmt.Errorf("failed to get created over: %w", err)
+		}
+		*over = *createdOver
+		log.Printf("Retrieved created over with ID: %s", over.ID)
 	}
 
 	log.Printf("Successfully created over with ID: %s", over.ID)
@@ -387,6 +409,17 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 
 	if len(result) > 0 {
 		*ball = result[0]
+		log.Printf("Successfully created ball with ID: %s", ball.ID)
+	} else {
+		log.Printf("Warning: No result returned from ball creation, but no error occurred")
+		// Try to get the ball by over_id and ball_number to get the ID
+		createdBall, err := r.GetBallByOverAndNumber(ctx, ball.OverID, ball.BallNumber)
+		if err != nil {
+			log.Printf("Error getting created ball: %v", err)
+			return fmt.Errorf("failed to get created ball: %w", err)
+		}
+		*ball = *createdBall
+		log.Printf("Retrieved created ball with ID: %s", ball.ID)
 	}
 
 	log.Printf("Successfully created ball with ID: %s", ball.ID)
@@ -470,6 +503,34 @@ func (r *scorecardRepository) GetBallsForNextNumber(ctx context.Context, overID 
 
 	log.Printf("Found %d balls for next number calculation for over %s", len(balls), overID)
 	return balls, nil
+}
+
+// GetBallByOverAndNumber gets a specific ball by over ID and ball number
+func (r *scorecardRepository) GetBallByOverAndNumber(ctx context.Context, overID string, ballNumber int) (*models.ScorecardBall, error) {
+	log.Printf("Getting ball %d for over %s", ballNumber, overID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("*", "", false).
+		Eq("over_id", overID).
+		Eq("ball_number", fmt.Sprintf("%d", ballNumber)).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting ball: %v", err)
+		return nil, fmt.Errorf("failed to get ball: %w", err)
+	}
+
+	if len(balls) == 0 {
+		return nil, fmt.Errorf("ball not found")
+	}
+
+	log.Printf("Found ball %d for over %s", ballNumber, overID)
+	return balls[0], nil
 }
 
 // GetLastBall gets the last ball of an over

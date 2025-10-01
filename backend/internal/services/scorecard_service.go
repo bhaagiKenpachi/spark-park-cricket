@@ -195,17 +195,29 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 				}
 
 				// Check if it's a constraint violation
-				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with new ball number", attempt, maxRetries)
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") ||
+					strings.Contains(err.Error(), "violates foreign key constraint") {
+					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with fresh data", attempt, maxRetries)
 
-					// Get fresh ball number directly from the repository with exponential backoff
+					// Get fresh match data to ensure we have the latest over information
+					freshData, err := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
+					if err != nil {
+						log.Printf("Failed to get fresh match data on attempt %d: %v", attempt, err)
+						if attempt == maxRetries {
+							return fmt.Errorf("failed to get fresh match data after %d attempts: %w", maxRetries, err)
+						}
+						time.Sleep(time.Millisecond * time.Duration(attempt*10))
+						continue
+					}
+
+					// Update ball with fresh over ID and get fresh ball number
+					ball.OverID = freshData.OverID
 					freshBallNumber, err := s.getNextBallNumber(ctx, ball.OverID)
 					if err != nil {
 						log.Printf("Failed to get fresh ball number on attempt %d: %v", attempt, err)
 						if attempt == maxRetries {
 							return fmt.Errorf("failed to get fresh ball number after %d attempts: %w", maxRetries, err)
 						}
-						// Continue to retry
 						time.Sleep(time.Millisecond * time.Duration(attempt*10))
 						continue
 					}
@@ -1133,12 +1145,12 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 		return fmt.Errorf("failed to fetch match data: %w", err)
 	}
 
-	// Determine batting team for second innings (opposite of first innings)
+	// Determine batting team for second innings (non-toss-winning team)
 	var battingTeam models.TeamType
-	if completeMatch.BattingTeam == models.TeamTypeA {
-		battingTeam = models.TeamTypeB
+	if completeMatch.TossWinner == models.TeamTypeA {
+		battingTeam = models.TeamTypeB // Second innings should be played by non-toss winner
 	} else {
-		battingTeam = models.TeamTypeA
+		battingTeam = models.TeamTypeA // Second innings should be played by non-toss winner
 	}
 
 	// Create second innings

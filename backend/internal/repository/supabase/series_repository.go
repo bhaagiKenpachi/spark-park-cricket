@@ -33,6 +33,21 @@ func (r *seriesRepository) Create(ctx context.Context, series *models.Series) er
 	if len(result) > 0 {
 		// Copy the result back to the original series
 		*series = result[0]
+	} else {
+		// If no result returned, try to get the series by name to get the ID
+		// This is a fallback for cases where Supabase doesn't return the created record
+		allSeries, err := r.GetAll(ctx, &models.SeriesFilters{Limit: 1000, Offset: 0})
+		if err != nil {
+			return fmt.Errorf("failed to get created series: %w", err)
+		}
+
+		// Find the series by name (assuming unique names)
+		for _, s := range allSeries.Series {
+			if s.Name == series.Name {
+				*series = *s
+				break
+			}
+		}
 	}
 
 	return nil
