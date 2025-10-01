@@ -347,8 +347,8 @@ jobs:
       - name: Set up test database schema
         run: |
           echo "🔧 Setting up test database schema..."
-          chmod +x scripts/setup-test-db.sh
-          ./scripts/setup-test-db.sh
+          chmod +x scripts/auto-setup-test-db.sh
+          ./scripts/auto-setup-test-db.sh || echo "Auto-setup failed, manual setup required"
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -356,9 +356,29 @@ jobs:
       - name: Verify test database schema
         run: |
           echo "🔍 Verifying test database schema..."
-          # Test if we can connect to the testing_db schema
-          # This is a basic connectivity test to ensure the schema exists
-          echo "✅ Test database schema verification completed"
+          chmod +x scripts/verify-test-db.sh
+          ./scripts/verify-test-db.sh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+
+      - name: Show schema setup instructions (if verification fails)
+        if: failure()
+        run: |
+          echo "🚨 Test database schema verification failed!"
+          echo ""
+          echo "📋 To fix this issue:"
+          echo "1. Go to Supabase Dashboard: ${{ secrets.SUPABASE_URL }}/project/default/sql"
+          echo "2. Execute the SQL from the file below:"
+          echo ""
+          echo "📁 Schema file: internal/database/migrations/complete_schema_testing_db.sql"
+          echo ""
+          echo "📄 First 50 lines of the schema file:"
+          echo "=========================================="
+          head -50 internal/database/migrations/complete_schema_testing_db.sql || echo "Schema file not found"
+          echo "=========================================="
+          echo ""
+          echo "⚠️ Integration tests cannot run without proper schema setup!"
 
       - name: Run integration tests
         run: |
