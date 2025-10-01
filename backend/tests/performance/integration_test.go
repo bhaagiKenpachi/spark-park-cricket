@@ -103,6 +103,7 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 
 // TestAddBallAPIIntegration tests the Add Ball API integration
 func TestAddBallAPIIntegration(t *testing.T) {
+
 	// Test various ball types
 	ballTypes := []models.BallType{
 		models.BallTypeGood,
@@ -525,71 +526,96 @@ func createTestDataForIntegration(dbClient *database.Client, userID string) (str
 	defer testDataMutex.Unlock()
 
 	// Add small delay to prevent overwhelming database
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	ctx := context.Background()
 
-	// Create test series
-	series := &models.Series{
-		Name:      fmt.Sprintf("Integration Test Series %d", time.Now().Unix()),
-		StartDate: time.Now(),
-		EndDate:   time.Now().Add(24 * time.Hour),
-		CreatedBy: userID,
-	}
-	err := dbClient.Repositories.Series.Create(ctx, series)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create test series: %v", err)
+	// Retry logic for database operations
+	maxRetries := 3
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*100) * time.Millisecond)
+		}
+
+		// Create test series with highly unique identifier
+		uniqueID := fmt.Sprintf("%d-%d-%d", time.Now().UnixNano(), time.Now().Unix(), attempt)
+		series := &models.Series{
+			Name:      fmt.Sprintf("Integration Test Series %s", uniqueID),
+			StartDate: time.Now(),
+			EndDate:   time.Now().Add(24 * time.Hour),
+			CreatedBy: userID,
+		}
+		err := dbClient.Repositories.Series.Create(ctx, series)
+		if err != nil {
+			if attempt == maxRetries {
+				return "", "", fmt.Errorf("failed to create test series after %d attempts: %v", maxRetries, err)
+			}
+			continue
+		}
+
+		// Create test match
+		match := &models.Match{
+			SeriesID:         series.ID,
+			MatchNumber:      1,
+			Date:             time.Now(),
+			Status:           models.MatchStatusLive,
+			TeamAPlayerCount: 11,
+			TeamBPlayerCount: 11,
+			TotalOvers:       20,
+			TossWinner:       models.TeamTypeA,
+			TossType:         models.TossTypeHeads,
+			BattingTeam:      models.TeamTypeA,
+			CreatedBy:        userID,
+		}
+		err = dbClient.Repositories.Match.Create(ctx, match)
+		if err != nil {
+			if attempt == maxRetries {
+				return "", "", fmt.Errorf("failed to create test match after %d attempts: %v", maxRetries, err)
+			}
+			continue
+		}
+
+		// Create first innings
+		innings := &models.Innings{
+			MatchID:       match.ID,
+			InningsNumber: 1,
+			BattingTeam:   models.TeamTypeA,
+			TotalRuns:     0,
+			TotalWickets:  0,
+			TotalOvers:    0,
+			TotalBalls:    0,
+			Status:        string(models.InningsStatusInProgress),
+			CreatedAt:     time.Now(),
+		}
+		err = dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
+		if err != nil {
+			if attempt == maxRetries {
+				return "", "", fmt.Errorf("failed to create test innings after %d attempts: %v", maxRetries, err)
+			}
+			continue
+		}
+
+		// Create first over using scorecard repository
+		over := &models.ScorecardOver{
+			InningsID:    innings.ID,
+			OverNumber:   1,
+			TotalRuns:    0,
+			TotalBalls:   0,
+			TotalWickets: 0,
+			Status:       string(models.OverStatusInProgress),
+		}
+		err = dbClient.Repositories.Scorecard.CreateOver(ctx, over)
+		if err != nil {
+			if attempt == maxRetries {
+				return "", "", fmt.Errorf("failed to create test over after %d attempts: %v", maxRetries, err)
+			}
+			continue
+		}
+
+		// Success - return the IDs
+		return series.ID, match.ID, nil
 	}
 
-	// Create test match
-	match := &models.Match{
-		SeriesID:         series.ID,
-		MatchNumber:      1,
-		Date:             time.Now(),
-		Status:           models.MatchStatusLive,
-		TeamAPlayerCount: 11,
-		TeamBPlayerCount: 11,
-		TotalOvers:       20,
-		TossWinner:       models.TeamTypeA,
-		TossType:         models.TossTypeHeads,
-		BattingTeam:      models.TeamTypeA,
-		CreatedBy:        userID,
-	}
-	err = dbClient.Repositories.Match.Create(ctx, match)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create test match: %v", err)
-	}
-
-	// Create first innings
-	innings := &models.Innings{
-		MatchID:       match.ID,
-		InningsNumber: 1,
-		BattingTeam:   models.TeamTypeA,
-		TotalRuns:     0,
-		TotalWickets:  0,
-		TotalOvers:    0,
-		TotalBalls:    0,
-		Status:        string(models.InningsStatusInProgress),
-		CreatedAt:     time.Now(),
-	}
-	err = dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create test innings: %v", err)
-	}
-
-	// Create first over using scorecard repository
-	over := &models.ScorecardOver{
-		InningsID:    innings.ID,
-		OverNumber:   1,
-		TotalRuns:    0,
-		TotalBalls:   0,
-		TotalWickets: 0,
-		Status:       string(models.OverStatusInProgress),
-	}
-	err = dbClient.Repositories.Scorecard.CreateOver(ctx, over)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create test over: %v", err)
-	}
-
-	return series.ID, match.ID, nil
+	// This should never be reached due to the retry logic above
+	return "", "", fmt.Errorf("unexpected error in createTestDataForIntegration")
 }

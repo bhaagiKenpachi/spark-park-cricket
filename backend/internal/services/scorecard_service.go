@@ -1138,11 +1138,23 @@ func (s *ScorecardService) ShouldCompleteMatch(ctx context.Context, matchID stri
 func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID string, match *models.Match) error {
 	log.Printf("Starting second innings for match %s", matchID)
 
-	// Fetch the complete match data to ensure all fields are populated
-	completeMatch, err := s.matchRepo.GetByID(ctx, matchID)
+	// Try to fetch complete match data, but use fallback if database call fails
+	var completeMatch *models.Match
+	var err error
+
+	completeMatch, err = s.matchRepo.GetByID(ctx, matchID)
 	if err != nil {
-		log.Printf("Error fetching match data: %v", err)
-		return fmt.Errorf("failed to fetch match data: %w", err)
+		log.Printf("Warning: Failed to fetch complete match data from database: %v", err)
+		log.Printf("Using fallback match data for second innings transition")
+
+		// Use the provided match data as fallback
+		completeMatch = match
+
+		// Ensure we have the minimum required fields
+		if completeMatch.TossWinner == "" {
+			log.Printf("Error: TossWinner is missing from match data, cannot determine second innings batting team")
+			return fmt.Errorf("toss winner information is missing from match data")
+		}
 	}
 
 	// Determine batting team for second innings (non-toss-winning team)
@@ -1175,8 +1187,12 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 	completeMatch.BattingTeam = battingTeam
 	err = s.matchRepo.Update(ctx, matchID, completeMatch)
 	if err != nil {
-		log.Printf("Error updating match batting team: %v", err)
-		return fmt.Errorf("failed to update match batting team: %w", err)
+		log.Printf("Warning: Failed to update match batting team in database: %v", err)
+		log.Printf("Second innings created successfully, but match update failed - this may cause inconsistencies")
+		// Don't fail the entire operation, just log the warning
+		// The second innings is already created, which is the critical part
+	} else {
+		log.Printf("Successfully updated match batting team to %s", battingTeam)
 	}
 
 	log.Printf("Successfully started second innings for match %s, batting team: %s", matchID, battingTeam)

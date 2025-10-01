@@ -521,9 +521,10 @@ func createTestDataForE2E(dbClient *database.Client, userID string) (string, str
 
 	ctx := context.Background()
 
-	// Create test series
+	// Create test series with highly unique identifier
+	uniqueID := fmt.Sprintf("%d-%d", time.Now().UnixNano(), time.Now().Unix())
 	series := &models.Series{
-		Name:      fmt.Sprintf("E2E Test Series %d", time.Now().Unix()),
+		Name:      fmt.Sprintf("E2E Test Series %s", uniqueID),
 		StartDate: time.Now(),
 		EndDate:   time.Now().Add(24 * time.Hour),
 		CreatedBy: userID,
