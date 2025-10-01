@@ -162,7 +162,7 @@ func cleanupTestMatch(t *testing.T, dbClient *database.Client, matchID, seriesID
 					}
 				}
 			}
-			
+
 			// Clean up overs for this innings
 			_, err2 = dbClient.Supabase.From("overs").Delete("", "").Eq("innings_id", ing.ID).ExecuteTo(nil)
 			if err2 != nil {

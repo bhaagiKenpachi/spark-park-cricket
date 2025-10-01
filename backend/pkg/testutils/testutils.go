@@ -408,40 +408,40 @@ func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
 // CleanupTestDataForUser cleans up test data for a specific user to avoid interfering with other concurrent tests
 func CleanupTestDataForUser(t *testing.T, dbClient *database.Client, userID string) {
 	t.Logf("DEBUG: Starting cleanup of test data for user %s", userID)
-	
+
 	// Clean up in reverse dependency order - use simple approach with user-based filtering
 	// Balls -> Overs -> Innings -> Matches -> Series (for this user only)
-	
+
 	// Clean up balls (this will cascade through foreign keys)
 	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup balls: %v", err)
 	}
-	
+
 	// Clean up overs
 	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup overs: %v", err)
 	}
-	
+
 	// Clean up innings
 	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup innings: %v", err)
 	}
-	
+
 	// Clean up matches created by this user
 	_, err = dbClient.Supabase.From("matches").Delete("", "").Eq("created_by", userID).ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup matches for user: %v", err)
 	}
-	
+
 	// Clean up series created by this user
 	_, err = dbClient.Supabase.From("series").Delete("", "").Eq("created_by", userID).ExecuteTo(nil)
 	if err != nil {
 		t.Logf("Warning: Failed to cleanup series for user: %v", err)
 	}
-	
+
 	t.Logf("DEBUG: Completed cleanup of test data for user %s", userID)
 }
 
@@ -586,7 +586,7 @@ func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *datab
 		if err == nil {
 			break
 		}
-		
+
 		// If we hit rate limits or connection issues, wait and retry
 		if attempt < maxRetries {
 			time.Sleep(time.Duration(attempt*100) * time.Millisecond)
