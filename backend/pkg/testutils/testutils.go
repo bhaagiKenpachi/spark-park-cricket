@@ -578,19 +578,20 @@ func CreateAuthenticatedTestUserWithSessionService(t *testing.T, dbClient *datab
 		EmailVerified: true,
 	}
 
-	// Create user in database with retry logic for rate limiting
+	// Create user in database with retry logic for rate limiting and connection issues
 	var err error
-	maxRetries := 3
+	maxRetries := 5 // Increased retries for CI/CD environments
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		err = dbClient.Repositories.User.CreateUser(context.Background(), user)
 		if err == nil {
 			break
 		}
 
-		// If we hit rate limits or connection issues, wait and retry
+		// If we hit rate limits or connection issues, wait with exponential backoff
 		if attempt < maxRetries {
-			time.Sleep(time.Duration(attempt*100) * time.Millisecond)
-			t.Logf("Retrying user creation (attempt %d/%d) due to: %v", attempt+1, maxRetries, err)
+			backoffDelay := time.Duration(attempt*attempt*100) * time.Millisecond // Exponential: 100ms, 400ms, 900ms, 1600ms
+			t.Logf("Retrying user creation (attempt %d/%d) after %v due to: %v", attempt+1, maxRetries, backoffDelay, err)
+			time.Sleep(backoffDelay)
 		}
 	}
 	require.NoError(t, err, "Failed to create test user after %d attempts", maxRetries)

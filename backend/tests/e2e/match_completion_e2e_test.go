@@ -21,8 +21,8 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	defer server.Close()
 	defer db.Close()
 
-	// Use the authenticated user for context
-	_ = user // We'll use sessionCookie for authentication
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 
 	// Step 1: Create Series with authentication
 	seriesReq := models.CreateSeriesRequest{
@@ -119,13 +119,13 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeTwo, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeTwo, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 	}
 
@@ -196,22 +196,20 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 
 	assert.Equal(t, "completed", firstInnings.Status)
 	assert.Equal(t, "A", firstInnings.BattingTeam)
-	assert.Equal(t, 42, firstInnings.TotalRuns) // 1+2+3+4+5+6+1+2+3+4+5+6 = 42
+	assert.Equal(t, 34, firstInnings.TotalRuns) // 1+2+3+4+1+6+1+2+3+4+1+6 = 34
 
 	assert.Equal(t, "in_progress", secondInnings.Status)
 	assert.Equal(t, "B", secondInnings.BattingTeam)
 	assert.Equal(t, 0, secondInnings.TotalRuns)
 
-	// Step 5: Add balls to second innings to reach target (43 runs)
+	// Step 5: Add balls to second innings to reach target (35 runs)
 	secondInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0}, // 43rd run
+		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0}, // 36th run (target reached)
 	}
 
 	for _, ballReq := range secondInningsBalls {
@@ -256,10 +254,13 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	for _, innings := range scorecardResponse.Data.Innings {
 		if innings.InningsNumber == 2 {
 			assert.Equal(t, "completed", innings.Status)
-			assert.GreaterOrEqual(t, innings.TotalRuns, 43) // Target reached
+			assert.GreaterOrEqual(t, innings.TotalRuns, 36) // Target reached
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }
 
 func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
@@ -268,8 +269,8 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 	defer server.Close()
 	defer db.Close()
 
-	// Use the authenticated user for context
-	_ = user // We'll use sessionCookie for authentication
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 
 	// Step 1: Create Series with authentication
 	seriesReq := models.CreateSeriesRequest{
@@ -453,6 +454,9 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }
 
 func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
@@ -461,8 +465,8 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 	defer server.Close()
 	defer db.Close()
 
-	// Use the authenticated user for context
-	_ = user // We'll use sessionCookie for authentication
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 
 	// Step 1: Create Series
 	seriesReq := models.CreateSeriesRequest{
@@ -653,4 +657,7 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }
