@@ -70,6 +70,9 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 		t.Fatalf("Failed to setup test schema: %v", err)
 	}
 
+	// Verify database state before proceeding
+	testutils.VerifyDatabaseState(t, dbClient)
+
 	// Create service container
 	serviceContainer := services.NewContainer(dbClient, testCfg.Config)
 
@@ -126,7 +129,11 @@ func TestAddBallAPIIntegration(t *testing.T) {
 			t.Run(fmt.Sprintf("BallType_%s_RunType_%s", ballType, runType), func(t *testing.T) {
 				// Create fresh test suite for each combination to avoid "over complete" errors
 				suite := SetupIntegrationTest(t)
-				defer suite.dbClient.Close()
+				defer func() {
+					// Enhanced cleanup after each test
+					testutils.CleanupScorecardTestData(t, suite.dbClient)
+					suite.dbClient.Close()
+				}()
 				// Create ball event request
 				ballReq := models.BallEventRequest{
 					MatchID:       suite.matchID,

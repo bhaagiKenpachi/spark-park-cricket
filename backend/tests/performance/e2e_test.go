@@ -50,6 +50,9 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 		t.Fatalf("Failed to setup test schema: %v", err)
 	}
 
+	// Verify database state before proceeding
+	testutils.VerifyDatabaseState(t, dbClient)
+
 	// Create service container
 	serviceContainer := services.NewContainer(dbClient, testCfg.Config)
 
@@ -84,7 +87,11 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 // TestCompleteBallAdditionWorkflow tests the complete ball addition workflow
 func TestCompleteBallAdditionWorkflow(t *testing.T) {
 	suite := SetupE2ETest(t)
-	defer suite.dbClient.Close()
+	defer func() {
+		// Enhanced cleanup after test
+		testutils.CleanupScorecardTestData(t, suite.dbClient)
+		suite.dbClient.Close()
+	}()
 
 	// Step 1: Start the match
 	t.Run("StartMatch", func(t *testing.T) {
@@ -427,7 +434,11 @@ func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 // TestPerformanceDuringE2EWorkflow tests performance during the complete workflow
 func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 	suite := SetupE2ETest(t)
-	defer suite.dbClient.Close()
+	defer func() {
+		// Enhanced cleanup after test
+		testutils.CleanupScorecardTestData(t, suite.dbClient)
+		suite.dbClient.Close()
+	}()
 
 	// Start the match and create test data directly (like integration test)
 	err := suite.startMatch()

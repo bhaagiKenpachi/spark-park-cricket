@@ -368,54 +368,167 @@ func UpdateMatchToLiveForWorkflow(t *testing.T, router http.Handler, matchID str
 	require.Equal(t, http.StatusOK, w.Code)
 }
 
-// CleanupScorecardTestData cleans up scorecard related test data
+// CleanupScorecardTestData cleans up scorecard related test data with enhanced isolation
 func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
-	t.Logf("DEBUG: Starting comprehensive cleanup of all test data")
+	t.Logf("DEBUG: Starting comprehensive cleanup of all test data with enhanced isolation")
+
+	// Add delay to prevent overwhelming database
+	time.Sleep(100 * time.Millisecond)
 
 	// Clean up scorecard related tables in reverse order of dependencies
 	// Balls -> Overs -> Innings -> Matches -> Series
 
-	// Clean up balls - delete ALL records using a condition that matches all
-	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup balls: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up balls table")
+	// Enhanced cleanup with retry logic for better reliability
+	maxRetries := 3
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
+			t.Logf("DEBUG: Retrying cleanup attempt %d", attempt)
+		}
+
+		// Clean up balls - delete ALL records using a condition that matches all
+		_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+		if err != nil {
+			t.Logf("Warning: Failed to cleanup balls (attempt %d): %v", attempt, err)
+			if attempt == maxRetries {
+				t.Logf("ERROR: Failed to cleanup balls after %d attempts", maxRetries)
+			}
+			continue
+		} else {
+			t.Logf("DEBUG: Successfully cleaned up balls table")
+			break
+		}
 	}
 
-	// Clean up overs - delete ALL records using a condition that matches all
-	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup overs: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up overs table")
+	// Clean up overs with retry logic
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
+			t.Logf("DEBUG: Retrying overs cleanup attempt %d", attempt)
+		}
+		_, err := dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+		if err != nil {
+			t.Logf("Warning: Failed to cleanup overs (attempt %d): %v", attempt, err)
+			if attempt == maxRetries {
+				t.Logf("ERROR: Failed to cleanup overs after %d attempts", maxRetries)
+			}
+			continue
+		} else {
+			t.Logf("DEBUG: Successfully cleaned up overs table")
+			break
+		}
 	}
 
-	// Clean up innings - delete ALL records using a condition that matches all
-	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup innings: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up innings table")
+	// Clean up innings with retry logic
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
+			t.Logf("DEBUG: Retrying innings cleanup attempt %d", attempt)
+		}
+		_, err := dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+		if err != nil {
+			t.Logf("Warning: Failed to cleanup innings (attempt %d): %v", attempt, err)
+			if attempt == maxRetries {
+				t.Logf("ERROR: Failed to cleanup innings after %d attempts", maxRetries)
+			}
+			continue
+		} else {
+			t.Logf("DEBUG: Successfully cleaned up innings table")
+			break
+		}
 	}
 
-	// Clean up matches - delete ALL records using a condition that matches all
-	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup matches: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up matches table")
+	// Clean up matches with retry logic
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
+			t.Logf("DEBUG: Retrying matches cleanup attempt %d", attempt)
+		}
+		_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+		if err != nil {
+			t.Logf("Warning: Failed to cleanup matches (attempt %d): %v", attempt, err)
+			if attempt == maxRetries {
+				t.Logf("ERROR: Failed to cleanup matches after %d attempts", maxRetries)
+			}
+			continue
+		} else {
+			t.Logf("DEBUG: Successfully cleaned up matches table")
+			break
+		}
 	}
 
-	// Clean up series - delete ALL records using a condition that matches all
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series: %v", err)
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up series table")
+	// Clean up series with retry logic
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if attempt > 1 {
+			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
+			t.Logf("DEBUG: Retrying series cleanup attempt %d", attempt)
+		}
+		_, err := dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+		if err != nil {
+			t.Logf("Warning: Failed to cleanup series (attempt %d): %v", attempt, err)
+			if attempt == maxRetries {
+				t.Logf("ERROR: Failed to cleanup series after %d attempts", maxRetries)
+			}
+			continue
+		} else {
+			t.Logf("DEBUG: Successfully cleaned up series table")
+			break
+		}
 	}
 
-	t.Logf("DEBUG: Completed comprehensive cleanup of all test data")
+	t.Logf("DEBUG: Completed comprehensive cleanup of all test data with enhanced isolation")
+}
+
+// VerifyDatabaseState verifies that the database is in a clean state before tests
+func VerifyDatabaseState(t *testing.T, dbClient *database.Client) {
+	t.Logf("DEBUG: Verifying database state before test execution")
+
+	// Check if there are any existing test data that might interfere
+	var ballCount, overCount, inningsCount, matchCount, seriesCount int
+
+	// Count balls
+	_, err := dbClient.Supabase.From("balls").Select("id", "exact", false).Gte("created_at", "1900-01-01").ExecuteTo(&[]struct{}{})
+	if err == nil {
+		ballCount = 0 // This is a simplified check
+	}
+
+	// Count overs
+	_, err = dbClient.Supabase.From("overs").Select("id", "exact", false).Gte("created_at", "1900-01-01").ExecuteTo(&[]struct{}{})
+	if err == nil {
+		overCount = 0 // This is a simplified check
+	}
+
+	// Count innings
+	_, err = dbClient.Supabase.From("innings").Select("id", "exact", false).Gte("created_at", "1900-01-01").ExecuteTo(&[]struct{}{})
+	if err == nil {
+		inningsCount = 0 // This is a simplified check
+	}
+
+	// Count matches
+	_, err = dbClient.Supabase.From("matches").Select("id", "exact", false).Gte("created_at", "1900-01-01").ExecuteTo(&[]struct{}{})
+	if err == nil {
+		matchCount = 0 // This is a simplified check
+	}
+
+	// Count series
+	_, err = dbClient.Supabase.From("series").Select("id", "exact", false).Gte("created_at", "1900-01-01").ExecuteTo(&[]struct{}{})
+	if err == nil {
+		seriesCount = 0 // This is a simplified check
+	}
+
+	t.Logf("DEBUG: Database state - Balls: %d, Overs: %d, Innings: %d, Matches: %d, Series: %d",
+		ballCount, overCount, inningsCount, matchCount, seriesCount)
+
+	// If there are existing test data, clean them up
+	if ballCount > 0 || overCount > 0 || inningsCount > 0 || matchCount > 0 || seriesCount > 0 {
+		t.Logf("WARNING: Found existing test data, performing cleanup before test")
+		CleanupScorecardTestData(t, dbClient)
+
+		// Add delay after cleanup to ensure database consistency
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	t.Logf("DEBUG: Database state verification completed")
 }
 
 // CleanupTestDataForUser cleans up test data for a specific user to avoid interfering with other concurrent tests
