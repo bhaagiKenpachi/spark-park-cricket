@@ -373,15 +373,15 @@ func TestPerformanceTargets(t *testing.T) {
 	start := time.Now()
 	w := httptest.NewRecorder()
 	test.router.ServeHTTP(w, req)
-	duration := time.Since(start)
+	addBallDuration := time.Since(start)
 
 	// Validate performance targets
 	if w.Code != http.StatusOK {
 		t.Errorf("Request failed with status %d: %s", w.Code, w.Body.String())
 	}
 
-	if duration > 1500*time.Millisecond {
-		t.Errorf("Add Ball API response time exceeds target: %v > 1500ms", duration)
+	if addBallDuration > 1500*time.Millisecond {
+		t.Errorf("Add Ball API response time exceeds target: %v > 1500ms", addBallDuration)
 	}
 
 	// Test Get Scorecard API performance
@@ -396,17 +396,17 @@ func TestPerformanceTargets(t *testing.T) {
 	start = time.Now()
 	w = httptest.NewRecorder()
 	test.router.ServeHTTP(w, req)
-	duration = time.Since(start)
+	getScorecardDuration := time.Since(start)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("Get Scorecard request failed with status %d: %s", w.Code, w.Body.String())
 	}
 
-	if duration > 1000*time.Millisecond {
-		t.Errorf("Get Scorecard API response time exceeds target: %v > 1000ms", duration)
+	if getScorecardDuration > 1000*time.Millisecond {
+		t.Errorf("Get Scorecard API response time exceeds target: %v > 1000ms", getScorecardDuration)
 	}
 
 	t.Logf("✅ Performance targets validated successfully")
-	t.Logf("   Add Ball API: %v (target: <1500ms)", duration)
-	t.Logf("   Get Scorecard API: %v (target: <1000ms)", duration)
+	t.Logf("   Add Ball API: %v (target: <1500ms)", addBallDuration)
+	t.Logf("   Get Scorecard API: %v (target: <1000ms)", getScorecardDuration)
 }
