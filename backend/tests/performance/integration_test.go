@@ -17,7 +17,6 @@ import (
 	"spark-park-cricket-backend/pkg/testutils"
 )
 
-
 // shouldBallCombinationSucceed determines if a ball combination should succeed based on cricket rules
 func shouldBallCombinationSucceed(ballType models.BallType, runType models.RunType) bool {
 	switch ballType {
@@ -520,5 +519,3 @@ func TestErrorHandlingIntegration(t *testing.T) {
 		}
 	})
 }
-
-

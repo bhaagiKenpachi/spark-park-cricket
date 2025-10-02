@@ -17,7 +17,6 @@ import (
 	"spark-park-cricket-backend/pkg/testutils"
 )
 
-
 // E2ETestSuite tests the complete end-to-end workflow
 type E2ETestSuite struct {
 	router           http.Handler
@@ -515,4 +514,3 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 	// Clean up test data at the end - clean only this test's specific data
 	cleanupTestMatch(t, suite.dbClient, suite.matchID, suite.seriesID)
 }
-
