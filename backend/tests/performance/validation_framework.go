@@ -238,6 +238,26 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 			continue
 		}
 
+		// Ensure database persistence before proceeding
+		log.Printf("🔧 DEBUG: Ensuring database persistence for all created entities")
+		if err := ensureDatabasePersistence(dbClient, series.ID, match.ID, innings.ID, over.ID, 5*time.Second); err != nil {
+			log.Printf("❌ DEBUG: Database persistence validation failed: %v", err)
+			if attempt == config.MaxRetries {
+				return "", "", fmt.Errorf("failed to ensure database persistence after %d attempts: %v", config.MaxRetries, err)
+			}
+			continue
+		}
+
+		// Validate database connection health
+		log.Printf("🔧 DEBUG: Validating database connection health")
+		if err := validateDatabaseConnection(dbClient); err != nil {
+			log.Printf("❌ DEBUG: Database connection validation failed: %v", err)
+			if attempt == config.MaxRetries {
+				return "", "", fmt.Errorf("database connection validation failed after %d attempts: %v", config.MaxRetries, err)
+			}
+			continue
+		}
+
 		// Success - return the IDs
 		log.Printf("✅ DEBUG: Test data creation completed successfully")
 		log.Printf("✅ DEBUG: Series ID: %s", series.ID)
@@ -346,5 +366,141 @@ func validateTestDataIntegrityWithLevel(dbClient *database.Client, seriesID, mat
 	}
 
 	log.Printf("✅ DEBUG: All data integrity validations passed")
+	return nil
+}
+
+// ensureDatabasePersistence waits for database operations to complete and validates persistence
+func ensureDatabasePersistence(dbClient *database.Client, seriesID, matchID, inningsID, overID string, maxWaitTime time.Duration) error {
+	log.Printf("🔧 DEBUG: Ensuring database persistence for created entities")
+	log.Printf("🔧 DEBUG: Waiting for database operations to complete...")
+
+	startTime := time.Now()
+
+	// Wait for database operations to complete
+	time.Sleep(500 * time.Millisecond) // Initial wait for database consistency
+
+	for time.Since(startTime) < maxWaitTime {
+		log.Printf("🔧 DEBUG: Validating database persistence (elapsed: %v)", time.Since(startTime))
+
+		// Check if all entities exist in database
+		allExist := true
+
+		// Check series existence
+		var series models.Series
+		_, err := dbClient.Supabase.From("series").Select("*", "exact", false).Eq("id", seriesID).Single().ExecuteTo(&series)
+		if err != nil {
+			log.Printf("🔧 DEBUG: Series not yet persistent: %v", err)
+			allExist = false
+		}
+
+		// Check match existence
+		var match models.Match
+		_, err = dbClient.Supabase.From("matches").Select("*", "exact", false).Eq("id", matchID).Single().ExecuteTo(&match)
+		if err != nil {
+			log.Printf("🔧 DEBUG: Match not yet persistent: %v", err)
+			allExist = false
+		}
+
+		// Check innings existence
+		var innings models.Innings
+		_, err = dbClient.Supabase.From("innings").Select("*", "exact", false).Eq("id", inningsID).Single().ExecuteTo(&innings)
+		if err != nil {
+			log.Printf("🔧 DEBUG: Innings not yet persistent: %v", err)
+			allExist = false
+		}
+
+		// Check over existence
+		var over models.ScorecardOver
+		_, err = dbClient.Supabase.From("overs").Select("*", "exact", false).Eq("id", overID).Single().ExecuteTo(&over)
+		if err != nil {
+			log.Printf("🔧 DEBUG: Over not yet persistent: %v", err)
+			allExist = false
+		}
+
+		if allExist {
+			log.Printf("✅ DEBUG: All entities are now persistent in database")
+			return nil
+		}
+
+		// Wait before next check
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return fmt.Errorf("database persistence validation timed out after %v", maxWaitTime)
+}
+
+// validateDatabaseConnection checks if database connection is healthy
+func validateDatabaseConnection(dbClient *database.Client) error {
+	log.Printf("🔧 DEBUG: Validating database connection health")
+
+	// Test basic database connectivity
+	var result []map[string]interface{}
+	_, err := dbClient.Supabase.From("series").Select("id", "exact", false).Limit(1, "").ExecuteTo(&result)
+	if err != nil {
+		log.Printf("❌ DEBUG: Database connection validation failed: %v", err)
+		return fmt.Errorf("database connection validation failed: %v", err)
+	}
+
+	log.Printf("✅ DEBUG: Database connection is healthy")
+	return nil
+}
+
+// preflightDataValidation performs comprehensive pre-flight checks before critical operations
+func preflightDataValidation(dbClient *database.Client, matchID string, inningsNumber int) error {
+	log.Printf("🔧 DEBUG: Performing pre-flight data validation for match %s, innings %d", matchID, inningsNumber)
+
+	// Validate match exists and is in correct state
+	log.Printf("🔧 DEBUG: Validating match existence and state")
+	var match models.Match
+	_, err := dbClient.Supabase.From("matches").Select("*", "exact", false).Eq("id", matchID).Single().ExecuteTo(&match)
+	if err != nil {
+		log.Printf("❌ DEBUG: Match not found in pre-flight check: %v", err)
+		return fmt.Errorf("match not found in pre-flight check: %v", err)
+	}
+
+	if match.Status != models.MatchStatusLive {
+		log.Printf("❌ DEBUG: Match is not in live state: %s", match.Status)
+		return fmt.Errorf("match is not in live state: %s", match.Status)
+	}
+
+	log.Printf("✅ DEBUG: Match validation passed - ID: %s, Status: %s", match.ID, match.Status)
+
+	// Validate innings exists and is accessible
+	log.Printf("🔧 DEBUG: Validating innings existence and accessibility")
+	var innings models.Innings
+	_, err = dbClient.Supabase.From("innings").Select("*", "exact", false).Eq("match_id", matchID).Eq("innings_number", fmt.Sprintf("%d", inningsNumber)).Single().ExecuteTo(&innings)
+	if err != nil {
+		log.Printf("❌ DEBUG: Innings not found in pre-flight check: %v", err)
+		return fmt.Errorf("innings not found in pre-flight check: %v", err)
+	}
+
+	if innings.Status != string(models.InningsStatusInProgress) {
+		log.Printf("❌ DEBUG: Innings is not in progress state: %s", innings.Status)
+		return fmt.Errorf("innings is not in progress state: %s", innings.Status)
+	}
+
+	log.Printf("✅ DEBUG: Innings validation passed - ID: %s, Status: %s", innings.ID, innings.Status)
+
+	// Validate current over exists and is accessible
+	log.Printf("🔧 DEBUG: Validating current over existence and accessibility")
+	var over models.ScorecardOver
+	_, err = dbClient.Supabase.From("overs").Select("*", "exact", false).Eq("innings_id", innings.ID).Eq("status", string(models.OverStatusInProgress)).Single().ExecuteTo(&over)
+	if err != nil {
+		log.Printf("❌ DEBUG: Current over not found in pre-flight check: %v", err)
+		return fmt.Errorf("current over not found in pre-flight check: %v", err)
+	}
+
+	if over.Status != string(models.OverStatusInProgress) {
+		log.Printf("❌ DEBUG: Over is not in progress state: %s", over.Status)
+		return fmt.Errorf("over is not in progress state: %s", over.Status)
+	}
+
+	log.Printf("✅ DEBUG: Over validation passed - ID: %s, Status: %s", over.ID, over.Status)
+
+	// Additional wait to ensure database consistency
+	log.Printf("🔧 DEBUG: Additional wait for database consistency")
+	time.Sleep(300 * time.Millisecond)
+
+	log.Printf("✅ DEBUG: All pre-flight validations passed")
 	return nil
 }

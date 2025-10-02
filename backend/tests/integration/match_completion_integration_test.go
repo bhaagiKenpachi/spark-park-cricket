@@ -114,7 +114,9 @@ func TestMatchCompletion_TargetReached_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -241,7 +243,9 @@ func TestMatchCompletion_AllWicketsLost_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -368,7 +372,9 @@ func TestMatchCompletion_AllOversCompleted_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -499,7 +505,9 @@ func TestMatchCompletion_MatchContinues_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()

@@ -415,6 +415,14 @@ func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 	fmt.Printf("🔧 DEBUG: Ball request details: %+v\n", ballReq)
 	fmt.Printf("🔧 DEBUG: Auth cookie length: %d\n", len(suite.authCookie))
 
+	// Pre-flight validation: Ensure data exists before proceeding
+	fmt.Printf("🔧 DEBUG: Performing pre-flight data validation before addBall operation")
+	if err := preflightDataValidation(suite.dbClient, ballReq.MatchID, ballReq.InningsNumber); err != nil {
+		fmt.Printf("❌ DEBUG: Pre-flight validation failed: %v\n", err)
+		return fmt.Errorf("pre-flight validation failed: %w", err)
+	}
+	fmt.Printf("✅ DEBUG: Pre-flight validation passed")
+
 	reqBody, err := json.Marshal(ballReq)
 	if err != nil {
 		fmt.Printf("❌ DEBUG: Failed to marshal ball request: %v\n", err)

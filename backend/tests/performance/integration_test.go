@@ -144,6 +144,13 @@ func TestAddBallAPIIntegration(t *testing.T) {
 					t.Fatalf("Failed to marshal request: %v", err)
 				}
 
+				// Pre-flight validation: Ensure data exists before proceeding
+				fmt.Printf("🔧 DEBUG: Performing pre-flight data validation before addBall operation")
+				if err := preflightDataValidation(suite.dbClient, suite.matchID, 1); err != nil {
+					t.Fatalf("Pre-flight validation failed: %v", err)
+				}
+				fmt.Printf("✅ DEBUG: Pre-flight validation passed")
+
 				// Create HTTP request
 				req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 				req.Header.Set("Content-Type", "application/json")
