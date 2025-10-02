@@ -2,12 +2,10 @@ package performance
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -19,8 +17,6 @@ import (
 	"spark-park-cricket-backend/pkg/testutils"
 )
 
-// e2eTestDataMutex ensures atomic test data creation to prevent race conditions in concurrent E2E tests
-var e2eTestDataMutex sync.Mutex
 
 // E2ETestSuite tests the complete end-to-end workflow
 type E2ETestSuite struct {
@@ -520,111 +516,3 @@ func TestPerformanceDuringE2EWorkflow(t *testing.T) {
 	cleanupTestMatch(t, suite.dbClient, suite.matchID, suite.seriesID)
 }
 
-// createTestDataForE2EAtomic creates test data using database transactions for atomicity
-func createTestDataForE2EAtomic(dbClient *database.Client, userID string) (string, string, error) {
-	// Lock to prevent concurrent test data creation issues
-	e2eTestDataMutex.Lock()
-	defer e2eTestDataMutex.Unlock()
-
-	// Add small delay to prevent overwhelming database
-	time.Sleep(200 * time.Millisecond)
-
-	ctx := context.Background()
-
-	// Retry logic for database operations with transaction management
-	maxRetries := 3
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*100) * time.Millisecond)
-		}
-
-		// Create test series with highly unique identifier
-		uniqueID := fmt.Sprintf("%d-%d-%d", time.Now().UnixNano(), time.Now().Unix(), attempt)
-		series := &models.Series{
-			Name:      fmt.Sprintf("E2E Test Series %s", uniqueID),
-			StartDate: time.Now(),
-			EndDate:   time.Now().Add(24 * time.Hour),
-			CreatedBy: userID,
-		}
-		err := dbClient.Repositories.Series.Create(ctx, series)
-		if err != nil {
-			if attempt == maxRetries {
-				return "", "", fmt.Errorf("failed to create test series after %d attempts: %v", maxRetries, err)
-			}
-			continue
-		}
-
-		// Create test match
-		match := &models.Match{
-			SeriesID:         series.ID,
-			MatchNumber:      1,
-			Date:             time.Now(),
-			Status:           models.MatchStatusLive,
-			TeamAPlayerCount: 11,
-			TeamBPlayerCount: 11,
-			TotalOvers:       20,
-			TossWinner:       models.TeamTypeA,
-			TossType:         models.TossTypeHeads,
-			BattingTeam:      models.TeamTypeA,
-			CreatedBy:        userID,
-		}
-		err = dbClient.Repositories.Match.Create(ctx, match)
-		if err != nil {
-			if attempt == maxRetries {
-				return "", "", fmt.Errorf("failed to create test match after %d attempts: %v", maxRetries, err)
-			}
-			continue
-		}
-
-		// Create first innings
-		innings := &models.Innings{
-			MatchID:       match.ID,
-			InningsNumber: 1,
-			BattingTeam:   models.TeamTypeA,
-			TotalRuns:     0,
-			TotalWickets:  0,
-			TotalOvers:    0,
-			TotalBalls:    0,
-			Status:        string(models.InningsStatusInProgress),
-			CreatedAt:     time.Now(),
-		}
-		err = dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
-		if err != nil {
-			if attempt == maxRetries {
-				return "", "", fmt.Errorf("failed to create test innings after %d attempts: %v", maxRetries, err)
-			}
-			continue
-		}
-
-		// Create first over using scorecard repository
-		over := &models.ScorecardOver{
-			InningsID:    innings.ID,
-			OverNumber:   1,
-			TotalRuns:    0,
-			TotalBalls:   0,
-			TotalWickets: 0,
-			Status:       string(models.OverStatusInProgress),
-		}
-		err = dbClient.Repositories.Scorecard.CreateOver(ctx, over)
-		if err != nil {
-			if attempt == maxRetries {
-				return "", "", fmt.Errorf("failed to create test over after %d attempts: %v", maxRetries, err)
-			}
-			continue
-		}
-
-		// Validate database state after creation
-		if err := validateTestDataIntegrity(dbClient, series.ID, match.ID, innings.ID, over.ID); err != nil {
-			if attempt == maxRetries {
-				return "", "", fmt.Errorf("failed to validate test data integrity after %d attempts: %v", maxRetries, err)
-			}
-			continue
-		}
-
-		// Success - return the IDs
-		return series.ID, match.ID, nil
-	}
-
-	// This should never be reached due to the retry logic above
-	return "", "", fmt.Errorf("unexpected error in createTestDataForE2EAtomic")
-}
