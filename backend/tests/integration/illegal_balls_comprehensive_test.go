@@ -18,6 +18,7 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
@@ -351,6 +352,9 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
+
 	// Use the standard router setup that includes authentication middleware
 	router := handlers.SetupRoutes(db, cfg.Config)
 
@@ -484,10 +488,17 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	resp.Body.Close()
 
 	// Verify over is not complete (only 5 legal balls)
+	require.NotEmpty(t, scorecardResponse.Data.Innings, "Scorecard should have innings data")
+	require.Len(t, scorecardResponse.Data.Innings, 1, "Should have exactly one innings")
+	require.NotNil(t, scorecardResponse.Data.Innings[0], "First innings should not be nil")
 	firstInnings := scorecardResponse.Data.Innings[0]
-	assert.Equal(t, 0.5, firstInnings.TotalOvers) // 5 legal balls = 0.5 overs
 
+	require.NotEmpty(t, firstInnings.Overs, "First innings should have overs")
+	require.Len(t, firstInnings.Overs, 1, "Should have exactly one over")
+	require.NotNil(t, firstInnings.Overs[0], "First over should not be nil")
 	firstOver := firstInnings.Overs[0]
+
+	assert.Equal(t, 0.5, firstInnings.TotalOvers)    // 5 legal balls = 0.5 overs
 	assert.Equal(t, 5, firstOver.TotalBalls)         // Only legal balls count
 	assert.Equal(t, "in_progress", firstOver.Status) // Over not complete
 
