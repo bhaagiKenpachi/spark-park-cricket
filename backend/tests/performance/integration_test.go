@@ -87,8 +87,8 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestSuite {
 	// Create authenticated test user
 	user, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
 
-	// Create test data with atomic operations and validation
-	seriesID, matchID, err := createTestDataForIntegrationAtomic(dbClient, user.ID)
+	// Create test data with full validation for integration tests
+	seriesID, matchID, err := createTestDataWithValidation(dbClient, user.ID, FullValidation, "Integration")
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}

@@ -67,8 +67,8 @@ func SetupE2ETest(t *testing.T) *E2ETestSuite {
 	// Create authenticated test user
 	user, authCookie := testutils.CreateAuthenticatedTestUserWithSessionService(t, dbClient, serviceContainer.SessionService)
 
-	// Create test data with atomic operations and validation
-	seriesID, matchID, err := createTestDataForE2EAtomic(dbClient, user.ID)
+	// Create test data with basic validation for E2E tests
+	seriesID, matchID, err := createTestDataWithValidation(dbClient, user.ID, BasicValidation, "E2E")
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}

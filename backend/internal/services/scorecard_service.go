@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"spark-park-cricket-backend/internal/cache"
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
@@ -11,6 +12,7 @@ import (
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,6 +21,8 @@ type ScorecardService struct {
 	matchRepo     interfaces.MatchRepository
 	metrics       *monitoring.Metrics
 	cache         *cache.CacheManager
+	// Distributed mutex for ball addition to prevent race conditions
+	ballMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
 }
 
 // NewScorecardService creates a new scorecard service
@@ -28,7 +32,59 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 		matchRepo:     matchRepo,
 		metrics:       metrics,
 		cache:         cache,
+		ballMutexes:   sync.Map{},
 	}
+}
+
+// getBallAdditionMutex returns a mutex for the specific match and innings combination
+// This prevents race conditions when multiple requests try to add balls to the same innings
+func (s *ScorecardService) getBallAdditionMutex(matchID string, inningsNumber int) *sync.Mutex {
+	key := fmt.Sprintf("ball_addition_%s_%d", matchID, inningsNumber)
+
+	mutex, _ := s.ballMutexes.LoadOrStore(key, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// isRetryableError checks if an error is retryable based on common retryable error patterns
+func (s *ScorecardService) isRetryableError(err error) bool {
+	errStr := err.Error()
+	return strings.Contains(errStr, "duplicate key value violates unique constraint") ||
+		strings.Contains(errStr, "violates foreign key constraint") ||
+		strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "timeout") ||
+		strings.Contains(errStr, "temporary failure") ||
+		strings.Contains(errStr, "deadlock detected")
+}
+
+// retryWithExponentialBackoff executes an operation with exponential backoff and jitter
+func (s *ScorecardService) retryWithExponentialBackoff(ctx context.Context, operation func() error) error {
+	maxRetries := 5
+	baseDelay := 10 * time.Millisecond
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+
+		// Only retry on specific errors
+		if !s.isRetryableError(err) {
+			return err
+		}
+
+		if attempt == maxRetries {
+			return fmt.Errorf("failed after %d attempts: %w", maxRetries, err)
+		}
+
+		// Exponential backoff with jitter
+		delay := baseDelay * time.Duration(1<<uint(attempt-1))
+		jitter := time.Duration(rand.Intn(10)) * time.Millisecond
+
+		log.Printf("Retryable error on attempt %d/%d, retrying in %v: %v", attempt, maxRetries, delay+jitter, err)
+		time.Sleep(delay + jitter)
+	}
+
+	return fmt.Errorf("unexpected retry logic error")
 }
 
 // StartScoring starts scoring for a match
@@ -86,8 +142,13 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 	return nil
 }
 
-// AddBall adds a ball to the scorecard (optimized version)
+// AddBall adds a ball to the scorecard with distributed mutex to prevent race conditions
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
+	// Get distributed mutex for this match and innings combination
+	mutex := s.getBallAdditionMutex(req.MatchID, req.InningsNumber)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	// Use optimized method for better performance
 	return s.AddBallOptimized(ctx, req)
 }
@@ -181,61 +242,49 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		WicketType: req.WicketType,
 	}
 
+	// Invalidate caches BEFORE database operations to prevent stale reads
+	s.invalidateMatchCachesBeforeWrite(ctx, req.MatchID, data.InningsID, data.OverID)
+
 	// Record ball addition metrics with retry logic for constraint violations
 	start := time.Now()
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "INSERT", "balls", req.MatchID,
 		func(ctx context.Context) error {
-			// Retry logic for constraint violations
-			maxRetries := 5
-			for attempt := 1; attempt <= maxRetries; attempt++ {
+			// Use improved retry logic with exponential backoff and jitter
+			return s.retryWithExponentialBackoff(ctx, func() error {
 				err := s.scorecardRepo.CreateBall(ctx, ball)
 				if err == nil {
 					return nil
 				}
 
-				// Check if it's a constraint violation
+				// If it's a constraint violation, try to get fresh data and retry
 				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") ||
 					strings.Contains(err.Error(), "violates foreign key constraint") {
-					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with fresh data", attempt, maxRetries)
+					log.Printf("Ball creation failed due to constraint violation, retrying with fresh data: %v", err)
 
 					// Get fresh match data to ensure we have the latest over information
-					freshData, err := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
-					if err != nil {
-						log.Printf("Failed to get fresh match data on attempt %d: %v", attempt, err)
-						if attempt == maxRetries {
-							return fmt.Errorf("failed to get fresh match data after %d attempts: %w", maxRetries, err)
-						}
-						time.Sleep(time.Millisecond * time.Duration(attempt*10))
-						continue
+					freshData, freshErr := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
+					if freshErr != nil {
+						log.Printf("Failed to get fresh match data: %v", freshErr)
+						return fmt.Errorf("failed to get fresh match data: %w", freshErr)
 					}
 
 					// Update ball with fresh over ID and get fresh ball number
 					ball.OverID = freshData.OverID
-					freshBallNumber, err := s.getNextBallNumber(ctx, ball.OverID)
-					if err != nil {
-						log.Printf("Failed to get fresh ball number on attempt %d: %v", attempt, err)
-						if attempt == maxRetries {
-							return fmt.Errorf("failed to get fresh ball number after %d attempts: %w", maxRetries, err)
-						}
-						time.Sleep(time.Millisecond * time.Duration(attempt*10))
-						continue
+					freshBallNumber, freshErr := s.getNextBallNumber(ctx, ball.OverID)
+					if freshErr != nil {
+						log.Printf("Failed to get fresh ball number: %v", freshErr)
+						return fmt.Errorf("failed to get fresh ball number: %w", freshErr)
 					}
 					ball.BallNumber = freshBallNumber
 
-					if attempt == maxRetries {
-						return fmt.Errorf("failed to create ball after %d attempts due to constraint violations", maxRetries)
-					}
-
-					// Exponential backoff delay before retry
-					time.Sleep(time.Millisecond * time.Duration(attempt*10))
-					continue
+					// Return the original error to trigger retry
+					return err
 				}
 
 				// If it's not a constraint violation, return the error immediately
 				return err
-			}
-			return fmt.Errorf("failed to create ball after %d attempts", maxRetries)
+			})
 		},
 	)
 	duration := time.Since(start)
@@ -1031,6 +1080,34 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 	nextBallNumber := maxBallNumber + 1
 
 	return nextBallNumber, nil
+}
+
+// invalidateMatchCachesBeforeWrite invalidates caches BEFORE write operations to prevent stale reads
+func (s *ScorecardService) invalidateMatchCachesBeforeWrite(ctx context.Context, matchID, inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating caches BEFORE write for match %s, innings %s, over %s", matchID, inningsID, overID)
+
+	// Invalidate all related caches to prevent stale data reads during concurrent operations
+	cacheKeys := []string{
+		fmt.Sprintf("scorecard:%s", matchID),
+		fmt.Sprintf("innings:match:%s", matchID),
+		fmt.Sprintf("overs:innings:%s", inningsID),
+		fmt.Sprintf("over:current:innings:%s", inningsID),
+		fmt.Sprintf("match_innings_over:%s:%d", matchID, 1), // First innings
+		fmt.Sprintf("match_innings_over:%s:%d", matchID, 2), // Second innings
+		fmt.Sprintf("balls:over:%s", overID),
+		fmt.Sprintf("last_ball:over:%s", overID),
+	}
+
+	for _, key := range cacheKeys {
+		_ = s.cache.Invalidate(key)
+	}
+
+	log.Printf("Pre-write cache invalidation completed for match %s", matchID)
 }
 
 // invalidateMatchCaches invalidates all caches related to a match after ball addition

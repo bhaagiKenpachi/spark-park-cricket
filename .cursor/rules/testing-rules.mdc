@@ -5,3 +5,8 @@ alwaysApply: false
 **Use project folder** - use stack respective project folder like ~/backend/temp/integration/logs/ for backend stack project. ~/web/temp/e2e/logs.
 **Integration tests** - always run integration tests with temporary logs to read for failure tests. 
 **e2e tests** - always run e2e tests with temporary logs to read for failure tests.
+
+**fixlogs** - maintain fixlogs for fix. example: tests/performance/fixlog/, tests/integration/ tests/e2e/, tests/unit/vX.X.X. Follow semantic versioning. Format of fix logs should be breif. 
+- Issue name
+    - brief description
+    - fix applied.
