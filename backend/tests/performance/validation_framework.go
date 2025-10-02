@@ -77,15 +77,16 @@ func GetValidationConfig(level ValidationLevel) ValidationConfig {
 	}
 }
 
+var globalTestDataMutex sync.Mutex // Global mutex for test data creation
+
 // createTestDataWithValidation creates test data with configurable validation level
 func createTestDataWithValidation(dbClient *database.Client, userID string, level ValidationLevel, testType string) (string, string, error) {
 	config := GetValidationConfig(level)
 
 	// Apply mutex protection if configured
-	var testDataMutex sync.Mutex
 	if config.MutexProtection {
-		testDataMutex.Lock()
-		defer testDataMutex.Unlock()
+		globalTestDataMutex.Lock()
+		defer globalTestDataMutex.Unlock()
 		time.Sleep(config.RetryDelay)
 	}
 
@@ -97,8 +98,8 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 			time.Sleep(time.Duration(attempt) * config.RetryDelay)
 		}
 
-		// Create test series with unique identifier
-		uniqueID := fmt.Sprintf("%d-%d-%d-%s", time.Now().UnixNano(), time.Now().Unix(), attempt, testType)
+		// Create test series with highly unique identifier to prevent interference
+		uniqueID := fmt.Sprintf("%d-%d-%d-%d-%s", time.Now().UnixNano(), time.Now().Unix(), attempt, len(userID), testType)
 		series := &models.Series{
 			Name:      fmt.Sprintf("%s Test Series %s", testType, uniqueID),
 			StartDate: time.Now(),
@@ -172,6 +173,14 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 		if err != nil {
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create test over after %d attempts: %v", config.MaxRetries, err)
+			}
+			continue
+		}
+
+		// Validate over ID is not empty before proceeding
+		if over.ID == "" {
+			if attempt == config.MaxRetries {
+				return "", "", fmt.Errorf("over ID is empty after creation")
 			}
 			continue
 		}

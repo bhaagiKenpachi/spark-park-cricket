@@ -167,9 +167,6 @@ func TestScorecardIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer dbClient.Close()
 
-	// Clean up any existing test data
-	testutils.CleanupScorecardTestData(t, dbClient)
-
 	// Initialize services
 	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
 
@@ -183,6 +180,9 @@ func TestScorecardIntegration(t *testing.T) {
 	defer func() {
 		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
 	}()
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, dbClient)
 
 	// Create test series
 	seriesID := createTestSeriesForScorecard(t, router, sessionCookie)
