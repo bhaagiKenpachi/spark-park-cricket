@@ -23,6 +23,8 @@ type ScorecardService struct {
 	cache         *cache.CacheManager
 	// Distributed mutex for ball addition to prevent race conditions
 	ballMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
+	// Distributed mutex for over creation to prevent race conditions
+	overMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
 }
 
 // NewScorecardService creates a new scorecard service
@@ -33,6 +35,7 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 		metrics:       metrics,
 		cache:         cache,
 		ballMutexes:   sync.Map{},
+		overMutexes:   sync.Map{},
 	}
 }
 
@@ -42,6 +45,15 @@ func (s *ScorecardService) getBallAdditionMutex(matchID string, inningsNumber in
 	key := fmt.Sprintf("ball_addition_%s_%d", matchID, inningsNumber)
 
 	mutex, _ := s.ballMutexes.LoadOrStore(key, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// getOverCreationMutex returns a mutex for the specific match and innings combination
+// This prevents race conditions when multiple requests try to create overs for the same innings
+func (s *ScorecardService) getOverCreationMutex(matchID string, inningsNumber int) *sync.Mutex {
+	key := fmt.Sprintf("over_creation_%s_%d", matchID, inningsNumber)
+
+	mutex, _ := s.overMutexes.LoadOrStore(key, &sync.Mutex{})
 	return mutex.(*sync.Mutex)
 }
 
@@ -529,10 +541,16 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		return fmt.Errorf("innings is not in progress, cannot add ball")
 	}
 
-	// Get current over or create new one with monitoring
+	// Get current over or create new one with monitoring and mutex protection
 	// Also get all overs for this innings to avoid duplicate query later
 	var over *models.ScorecardOver
 	var allOvers []*models.ScorecardOver
+
+	// Use distributed mutex for over creation to prevent race conditions
+	overMutex := s.getOverCreationMutex(req.MatchID, req.InningsNumber)
+	overMutex.Lock()
+	defer overMutex.Unlock()
+
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "SELECT", "overs", req.MatchID,
 		func(ctx context.Context) error {
@@ -830,7 +848,7 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	var lastBall *models.ScorecardBall
 	maxBallNumber := 0
 	for _, ball := range balls {
-		if ball.BallNumber > maxBallNumber {
+		if ball != nil && ball.BallNumber > maxBallNumber {
 			maxBallNumber = ball.BallNumber
 			lastBall = ball
 		}
@@ -971,13 +989,13 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 		return nil, nil, fmt.Errorf("failed to get overs: %w", err)
 	}
 
-	// Calculate next over number
+	// Calculate next over number with defensive checks
 	nextOverNumber := 1
 	if len(overs) > 0 {
 		// Find the highest over number and add 1
 		maxOverNumber := 0
 		for _, o := range overs {
-			if o.OverNumber > maxOverNumber {
+			if o != nil && o.OverNumber > maxOverNumber {
 				maxOverNumber = o.OverNumber
 			}
 		}
@@ -994,36 +1012,31 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 		Status:       string(models.OverStatusInProgress),
 	}
 
-	// Retry logic for constraint violations
-	maxRetries := 5
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		err = s.scorecardRepo.CreateOver(ctx, newOver)
+	// Use improved retry logic with exponential backoff and jitter
+	err = s.retryWithExponentialBackoff(ctx, func() error {
+		err := s.scorecardRepo.CreateOver(ctx, newOver)
 		if err == nil {
-			break
+			return nil
 		}
 
-		// Check if it's a constraint violation
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-			log.Printf("Over creation failed due to constraint violation (attempt %d/%d), retrying with new over number", attempt, maxRetries)
+		// If it's a constraint violation, try to get fresh data and retry
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") ||
+			strings.Contains(err.Error(), "violates foreign key constraint") {
+			log.Printf("Over creation failed due to constraint violation, retrying with fresh data: %v", err)
 
 			// Get fresh overs to recalculate over number
-			freshOvers, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
-			if err != nil {
-				log.Printf("Error getting fresh overs on attempt %d: %v", attempt, err)
-				if attempt == maxRetries {
-					return nil, nil, fmt.Errorf("failed to get fresh overs after %d attempts: %w", maxRetries, err)
-				}
-				// Continue to retry
-				time.Sleep(time.Millisecond * time.Duration(attempt*10))
-				continue
+			freshOvers, freshErr := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+			if freshErr != nil {
+				log.Printf("Failed to get fresh overs: %v", freshErr)
+				return fmt.Errorf("failed to get fresh overs: %w", freshErr)
 			}
 
-			// Recalculate next over number with fresh data
+			// Recalculate next over number with fresh data and defensive checks
 			nextOverNumber = 1
 			if len(freshOvers) > 0 {
 				maxOverNumber := 0
 				for _, o := range freshOvers {
-					if o.OverNumber > maxOverNumber {
+					if o != nil && o.OverNumber > maxOverNumber {
 						maxOverNumber = o.OverNumber
 					}
 				}
@@ -1031,16 +1044,15 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 			}
 			newOver.OverNumber = nextOverNumber
 
-			if attempt == maxRetries {
-				return nil, nil, fmt.Errorf("failed to create over after %d attempts due to constraint violations", maxRetries)
-			}
-
-			// Exponential backoff delay before retry
-			time.Sleep(time.Millisecond * time.Duration(attempt*10))
-			continue
+			// Return the original error to trigger retry
+			return err
 		}
 
 		// If it's not a constraint violation, return the error immediately
+		return err
+	})
+
+	if err != nil {
 		log.Printf("Error creating over: %v", err)
 		return nil, nil, fmt.Errorf("failed to create over: %w", err)
 	}
@@ -1062,11 +1074,11 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 	maxBallNumber := 0
 
 	for _, ball := range balls {
-		if ball.BallNumber > maxBallNumber {
+		if ball != nil && ball.BallNumber > maxBallNumber {
 			maxBallNumber = ball.BallNumber
 		}
 		// Only count good balls as legal deliveries for over completion
-		if ball.BallType == models.BallTypeGood {
+		if ball != nil && ball.BallType == models.BallTypeGood {
 			legalBalls++
 		}
 	}

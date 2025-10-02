@@ -343,6 +343,7 @@ func TestScorecardIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, matchID, response.Data.MatchID)
 		assert.Len(t, response.Data.Innings, 1)
+		require.NotNil(t, response.Data.Innings[0], "First innings should not be nil")
 		assert.Equal(t, 1, response.Data.Innings[0].InningsNumber)
 		assert.Equal(t, 4, response.Data.Innings[0].TotalRuns)
 	})

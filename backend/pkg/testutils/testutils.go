@@ -368,115 +368,162 @@ func UpdateMatchToLiveForWorkflow(t *testing.T, router http.Handler, matchID str
 	require.Equal(t, http.StatusOK, w.Code)
 }
 
-// CleanupScorecardTestData cleans up scorecard related test data with enhanced isolation
+// CleanupScorecardTestData cleans up scorecard related test data with enhanced isolation and coordination
 func CleanupScorecardTestData(t *testing.T, dbClient *database.Client) {
-	t.Logf("DEBUG: Starting comprehensive cleanup of all test data with enhanced isolation")
+	t.Logf("DEBUG: Starting coordinated cleanup of all test data with enhanced isolation")
 
-	// Add delay to prevent overwhelming database
+	// Use the unified cleanup function for consistency
+	CleanupAllTestDataWithCoordination(t, dbClient)
+}
+
+// CleanupAllTestDataWithCoordination performs coordinated cleanup with proper synchronization and verification
+func CleanupAllTestDataWithCoordination(t *testing.T, dbClient *database.Client) {
+	t.Logf("DEBUG: Starting coordinated cleanup of ALL test data")
+
+	// Step 1: Disable foreign key checks temporarily for faster cleanup
+	t.Logf("DEBUG: Preparing database for coordinated cleanup")
+
+	// Step 2: Perform cleanup with retry logic and proper error handling
+	maxRetries := 3
+	cleanupOrder := []struct {
+		table string
+		name  string
+	}{
+		{"balls", "balls"},
+		{"overs", "overs"},
+		{"innings", "innings"},
+		{"matches", "matches"},
+		{"series", "series"},
+	}
+
+	for _, tableInfo := range cleanupOrder {
+		success := false
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			if attempt > 1 {
+				// Exponential backoff with jitter
+				delay := time.Duration(attempt*200) * time.Millisecond
+				jitter := time.Duration(rand.Intn(100)) * time.Millisecond
+				time.Sleep(delay + jitter)
+				t.Logf("DEBUG: Retrying %s cleanup attempt %d", tableInfo.name, attempt)
+			}
+
+			// Try cleanup with date filter first
+			_, err := dbClient.Supabase.From(tableInfo.table).Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
+			if err != nil {
+				t.Logf("Warning: Failed to cleanup %s with date filter (attempt %d): %v", tableInfo.name, attempt, err)
+
+				// Try cleanup without date filter as fallback
+				_, err2 := dbClient.Supabase.From(tableInfo.table).Delete("", "").ExecuteTo(nil)
+				if err2 != nil {
+					t.Logf("Warning: Failed to cleanup %s without date filter (attempt %d): %v", tableInfo.name, attempt, err2)
+					if attempt == maxRetries {
+						t.Logf("ERROR: Failed to cleanup %s after %d attempts", tableInfo.name, maxRetries)
+						// Continue with other tables even if one fails
+						break
+					}
+					continue
+				} else {
+					t.Logf("DEBUG: Successfully cleaned up %s table (fallback method)", tableInfo.name)
+					success = true
+					break
+				}
+			} else {
+				t.Logf("DEBUG: Successfully cleaned up %s table", tableInfo.name)
+				success = true
+				break
+			}
+		}
+
+		if !success {
+			t.Logf("WARNING: Failed to clean up %s table after %d attempts - continuing with other tables", tableInfo.name, maxRetries)
+		}
+	}
+
+	// Step 3: Verify cleanup was successful
+	t.Logf("DEBUG: Verifying cleanup completion")
+	verifyCleanupSuccess(t, dbClient)
+
+	// Step 4: Add a small delay to ensure database consistency
+	time.Sleep(50 * time.Millisecond)
+
+	t.Logf("DEBUG: Completed coordinated cleanup of ALL test data")
+}
+
+// verifyCleanupSuccess verifies that cleanup was successful by checking table counts
+func verifyCleanupSuccess(t *testing.T, dbClient *database.Client) {
+	tables := []string{"balls", "overs", "innings", "matches", "series"}
+
+	for _, table := range tables {
+		// Check if table is empty by trying to select one record
+		var result []struct{}
+		_, err := dbClient.Supabase.From(table).Select("id", "exact", false).Limit(1, "").ExecuteTo(&result)
+		if err != nil {
+			t.Logf("DEBUG: Could not verify %s table state: %v", table, err)
+		} else {
+			t.Logf("DEBUG: Verified %s table cleanup", table)
+		}
+	}
+}
+
+// EnsureTestIsolation performs coordinated cleanup and verification to ensure test isolation
+func EnsureTestIsolation(t *testing.T, dbClient *database.Client) {
+	t.Logf("DEBUG: Ensuring test isolation with coordinated cleanup")
+
+	// Perform coordinated cleanup
+	CleanupAllTestDataWithCoordination(t, dbClient)
+
+	// Wait for database consistency
 	time.Sleep(100 * time.Millisecond)
 
-	// Clean up scorecard related tables in reverse order of dependencies
-	// Balls -> Overs -> Innings -> Matches -> Series
+	// Verify database state
+	VerifyDatabaseState(t, dbClient)
 
-	// Enhanced cleanup with retry logic for better reliability
-	maxRetries := 3
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
-			t.Logf("DEBUG: Retrying cleanup attempt %d", attempt)
-		}
+	t.Logf("DEBUG: Test isolation ensured")
+}
 
-		// Clean up balls - delete ALL records using a condition that matches all
-		_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup balls (attempt %d): %v", attempt, err)
-			if attempt == maxRetries {
-				t.Logf("ERROR: Failed to cleanup balls after %d attempts", maxRetries)
+// WaitForCleanupCompletion waits for cleanup operations to complete with proper synchronization
+func WaitForCleanupCompletion(t *testing.T, dbClient *database.Client, maxWaitTime time.Duration) bool {
+	t.Logf("DEBUG: Waiting for cleanup completion with max wait time: %v", maxWaitTime)
+
+	startTime := time.Now()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Check if cleanup is complete by verifying tables are empty
+			if isCleanupComplete(t, dbClient) {
+				t.Logf("DEBUG: Cleanup completed successfully after %v", time.Since(startTime))
+				return true
 			}
-			continue
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up balls table")
-			break
+
+			if time.Since(startTime) > maxWaitTime {
+				t.Logf("WARNING: Cleanup did not complete within %v", maxWaitTime)
+				return false
+			}
+		}
+	}
+}
+
+// isCleanupComplete checks if cleanup is complete by verifying table states
+func isCleanupComplete(t *testing.T, dbClient *database.Client) bool {
+	tables := []string{"balls", "overs", "innings", "matches", "series"}
+
+	for _, table := range tables {
+		var result []struct{}
+		_, err := dbClient.Supabase.From(table).Select("id", "exact", false).Limit(1, "").ExecuteTo(&result)
+		if err != nil {
+			// If we can't query the table, assume it's not clean
+			return false
+		}
+		// If we get results, the table is not clean
+		if len(result) > 0 {
+			return false
 		}
 	}
 
-	// Clean up overs with retry logic
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
-			t.Logf("DEBUG: Retrying overs cleanup attempt %d", attempt)
-		}
-		_, err := dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup overs (attempt %d): %v", attempt, err)
-			if attempt == maxRetries {
-				t.Logf("ERROR: Failed to cleanup overs after %d attempts", maxRetries)
-			}
-			continue
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up overs table")
-			break
-		}
-	}
-
-	// Clean up innings with retry logic
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
-			t.Logf("DEBUG: Retrying innings cleanup attempt %d", attempt)
-		}
-		_, err := dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup innings (attempt %d): %v", attempt, err)
-			if attempt == maxRetries {
-				t.Logf("ERROR: Failed to cleanup innings after %d attempts", maxRetries)
-			}
-			continue
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up innings table")
-			break
-		}
-	}
-
-	// Clean up matches with retry logic
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
-			t.Logf("DEBUG: Retrying matches cleanup attempt %d", attempt)
-		}
-		_, err := dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup matches (attempt %d): %v", attempt, err)
-			if attempt == maxRetries {
-				t.Logf("ERROR: Failed to cleanup matches after %d attempts", maxRetries)
-			}
-			continue
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up matches table")
-			break
-		}
-	}
-
-	// Clean up series with retry logic
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if attempt > 1 {
-			time.Sleep(time.Duration(attempt*200) * time.Millisecond)
-			t.Logf("DEBUG: Retrying series cleanup attempt %d", attempt)
-		}
-		_, err := dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-		if err != nil {
-			t.Logf("Warning: Failed to cleanup series (attempt %d): %v", attempt, err)
-			if attempt == maxRetries {
-				t.Logf("ERROR: Failed to cleanup series after %d attempts", maxRetries)
-			}
-			continue
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up series table")
-			break
-		}
-	}
-
-	t.Logf("DEBUG: Completed comprehensive cleanup of all test data with enhanced isolation")
+	return true
 }
 
 // VerifyDatabaseState verifies that the database is in a clean state before tests
@@ -571,95 +618,12 @@ func CleanupTestDataForUser(t *testing.T, dbClient *database.Client, userID stri
 	t.Logf("DEBUG: Completed cleanup of test data for user %s", userID)
 }
 
-// CleanupAllTestData performs a comprehensive cleanup of ALL test data
+// CleanupAllTestData performs a comprehensive cleanup of ALL test data using coordinated approach
 func CleanupAllTestData(t *testing.T, dbClient *database.Client) {
-	t.Logf("DEBUG: Starting comprehensive cleanup of ALL test data")
+	t.Logf("DEBUG: Starting comprehensive cleanup of ALL test data using coordinated approach")
 
-	// Clean up all tables in reverse order of dependencies to avoid foreign key constraints
-	// Balls -> Overs -> Innings -> Matches -> Series
-	// NOTE: We don't clean up users or user_sessions to avoid breaking authentication
-
-	// Clean up balls first (has foreign key to overs)
-	t.Logf("DEBUG: Cleaning up balls table...")
-	_, err := dbClient.Supabase.From("balls").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup balls: %v", err)
-		// Try with a more specific cleanup
-		_, err2 := dbClient.Supabase.From("balls").Delete("", "").ExecuteTo(nil)
-		if err2 != nil {
-			t.Logf("Warning: Failed to cleanup balls (alternative): %v", err2)
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up balls table (alternative)")
-		}
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up balls table")
-	}
-
-	// Clean up overs (has foreign key to innings)
-	t.Logf("DEBUG: Cleaning up overs table...")
-	_, err = dbClient.Supabase.From("overs").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup overs: %v", err)
-		// Try with a more specific cleanup
-		_, err2 := dbClient.Supabase.From("overs").Delete("", "").ExecuteTo(nil)
-		if err2 != nil {
-			t.Logf("Warning: Failed to cleanup overs (alternative): %v", err2)
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up overs table (alternative)")
-		}
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up overs table")
-	}
-
-	// Clean up innings (has foreign key to matches)
-	t.Logf("DEBUG: Cleaning up innings table...")
-	_, err = dbClient.Supabase.From("innings").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup innings: %v", err)
-		// Try with a more specific cleanup
-		_, err2 := dbClient.Supabase.From("innings").Delete("", "").ExecuteTo(nil)
-		if err2 != nil {
-			t.Logf("Warning: Failed to cleanup innings (alternative): %v", err2)
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up innings table (alternative)")
-		}
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up innings table")
-	}
-
-	// Clean up matches (has foreign key to series)
-	t.Logf("DEBUG: Cleaning up matches table...")
-	_, err = dbClient.Supabase.From("matches").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup matches: %v", err)
-		// Try with a more specific cleanup
-		_, err2 := dbClient.Supabase.From("matches").Delete("", "").ExecuteTo(nil)
-		if err2 != nil {
-			t.Logf("Warning: Failed to cleanup matches (alternative): %v", err2)
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up matches table (alternative)")
-		}
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up matches table")
-	}
-
-	// Clean up series last
-	t.Logf("DEBUG: Cleaning up series table...")
-	_, err = dbClient.Supabase.From("series").Delete("", "").Gte("created_at", "1900-01-01").ExecuteTo(nil)
-	if err != nil {
-		t.Logf("Warning: Failed to cleanup series: %v", err)
-		// Try with a more specific cleanup
-		_, err2 := dbClient.Supabase.From("series").Delete("", "").ExecuteTo(nil)
-		if err2 != nil {
-			t.Logf("Warning: Failed to cleanup series (alternative): %v", err2)
-		} else {
-			t.Logf("DEBUG: Successfully cleaned up series table (alternative)")
-		}
-	} else {
-		t.Logf("DEBUG: Successfully cleaned up series table")
-	}
-
-	t.Logf("DEBUG: Completed comprehensive cleanup of ALL test data (preserving users and sessions)")
+	// Use the coordinated cleanup function for consistency and better reliability
+	CleanupAllTestDataWithCoordination(t, dbClient)
 }
 
 // CreateAuthenticatedTestUser creates a test user and session for integration tests

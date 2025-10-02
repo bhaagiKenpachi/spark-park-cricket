@@ -300,13 +300,21 @@ func (suite *E2ETestSuite) verifyOverCompletion() error {
 		return fmt.Errorf("no innings found")
 	}
 
+	// Defensive check: ensure we have at least one innings before accessing
 	innings := response.Data.Innings[0]
+	if innings.InningsNumber == 0 {
+		return fmt.Errorf("first innings has invalid innings number")
+	}
+
 	if len(innings.Overs) == 0 {
 		return fmt.Errorf("no overs found in innings")
 	}
 
-	// Check if the first over has 6 balls (completed)
+	// Defensive check: ensure we have at least one over before accessing
 	firstOver := innings.Overs[0]
+	if firstOver.OverNumber == 0 {
+		return fmt.Errorf("first over has invalid over number")
+	}
 	if len(firstOver.Balls) < 6 {
 		return fmt.Errorf("first over is not completed, balls: %d", len(firstOver.Balls))
 	}

@@ -281,6 +281,8 @@ func TestUndoBallIntegration(t *testing.T) {
 		err = json.Unmarshal(getW.Body.Bytes(), &responseBefore)
 		require.NoError(t, err)
 		require.NotEmpty(t, responseBefore.Data.Innings, "Scorecard should have innings data")
+		require.Len(t, responseBefore.Data.Innings, 1, "Should have exactly one innings")
+		require.NotNil(t, responseBefore.Data.Innings[0], "First innings should not be nil")
 		assert.Equal(t, 3, responseBefore.Data.Innings[0].TotalRuns)  // 1 + 2 = 3 runs
 		assert.Equal(t, 2, responseBefore.Data.Innings[0].TotalBalls) // 2 legal balls
 
@@ -318,7 +320,11 @@ func TestUndoBallIntegration(t *testing.T) {
 		err = json.Unmarshal(getW2.Body.Bytes(), &responseAfter)
 		require.NoError(t, err)
 		require.NotEmpty(t, responseAfter.Data.Innings, "Scorecard should have innings data after undo")
+		require.Len(t, responseAfter.Data.Innings, 1, "Should have exactly one innings after undo")
+		require.NotNil(t, responseAfter.Data.Innings[0], "First innings should not be nil after undo")
 		require.NotEmpty(t, responseAfter.Data.Innings[0].Overs, "Innings should have overs data after undo")
+		require.Len(t, responseAfter.Data.Innings[0].Overs, 1, "Should have exactly one over after undo")
+		require.NotNil(t, responseAfter.Data.Innings[0].Overs[0], "First over should not be nil after undo")
 		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalRuns)           // Only 1 run left
 		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalBalls)          // Only 1 legal ball left
 		assert.Equal(t, 1, len(responseAfter.Data.Innings[0].Overs[0].Balls)) // Only 1 ball in over

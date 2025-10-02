@@ -191,6 +191,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 
 	// Verify first innings data
 	require.NotEmpty(t, scorecardResponse.Data.Innings, "Innings should not be empty")
+	require.Len(t, scorecardResponse.Data.Innings, 1, "Should have exactly one innings")
+	require.NotNil(t, scorecardResponse.Data.Innings[0], "First innings should not be nil")
 	firstInnings := scorecardResponse.Data.Innings[0]
 
 	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+1+6 (good balls) + 5 (byes) = 24
@@ -209,6 +211,9 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, 7, firstInnings.Extras.Total)   // 5 + 1 + 1
 
 	// Verify over data - first over should be completed with 6 legal balls
+	require.NotEmpty(t, firstInnings.Overs, "First innings should have overs")
+	require.Len(t, firstInnings.Overs, 1, "Should have exactly one over")
+	require.NotNil(t, firstInnings.Overs[0], "First over should not be nil")
 	firstOver := firstInnings.Overs[0]
 	assert.Equal(t, 1, firstOver.OverNumber)
 	assert.Equal(t, 24, firstOver.TotalRuns) // 1+1+1+2+3+4+1+6+5 = 24 runs from all balls in first over
@@ -219,6 +224,15 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Len(t, firstOver.Balls, 8, "First over should have 8 balls (2 illegal + 6 legal)")
 
 	// First over should contain all 8 balls (2 illegal + 6 legal)
+	require.NotEmpty(t, firstOver.Balls, "First over should have balls")
+	require.Len(t, firstOver.Balls, 8, "First over should have exactly 8 balls")
+
+	// Defensive checks for ball access
+	require.NotNil(t, firstOver.Balls[0], "Ball 1 should not be nil")
+	require.NotNil(t, firstOver.Balls[1], "Ball 2 should not be nil")
+	require.NotNil(t, firstOver.Balls[2], "Ball 3 should not be nil")
+	require.NotNil(t, firstOver.Balls[3], "Ball 4 should not be nil")
+
 	// Ball 1: No ball with byes
 	assert.Equal(t, 1, firstOver.Balls[0].BallNumber)
 	assert.Equal(t, "no_ball", firstOver.Balls[0].BallType)

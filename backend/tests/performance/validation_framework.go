@@ -45,12 +45,12 @@ func GetValidationConfig(level ValidationLevel) ValidationConfig {
 	case BasicValidation:
 		return ValidationConfig{
 			Level:                 BasicValidation,
-			MaxRetries:            1,
-			RetryDelay:            50 * time.Millisecond,
+			MaxRetries:            3,
+			RetryDelay:            100 * time.Millisecond,
 			ValidateRelationships: false,
-			ValidateDataIntegrity: false,
+			ValidateDataIntegrity: true,
 			AtomicOperations:      false,
-			MutexProtection:       false,
+			MutexProtection:       true,
 		}
 	case IntermediateValidation:
 		return ValidationConfig{
@@ -184,6 +184,14 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 				}
 				continue
 			}
+		}
+
+		// Always validate basic data creation for all levels
+		if series.ID == "" || match.ID == "" || innings.ID == "" || over.ID == "" {
+			if attempt == config.MaxRetries {
+				return "", "", fmt.Errorf("failed to create complete test data hierarchy after %d attempts", config.MaxRetries)
+			}
+			continue
 		}
 
 		// Success - return the IDs
