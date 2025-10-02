@@ -93,6 +93,9 @@ func createTestSeriesForUndoBall(t *testing.T, router http.Handler, sessionCooki
 
 // Helper function to create a test match for undo ball tests
 func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID string, sessionCookie string) string {
+	t.Logf("DEBUG: createTestMatchForUndoBall - Creating match for seriesID: %s", seriesID)
+	t.Logf("DEBUG: createTestMatchForUndoBall - Using session cookie: %s", sessionCookie)
+
 	matchReq := map[string]interface{}{
 		"series_id":           seriesID,
 		"match_number":        1,
@@ -122,6 +125,10 @@ func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID stri
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
+
+	t.Logf("DEBUG: createTestMatchForUndoBall - Response status: %d", w.Code)
+	t.Logf("DEBUG: createTestMatchForUndoBall - Response body: %s", w.Body.String())
+
 	require.Equal(t, http.StatusCreated, w.Code)
 
 	var response struct {
@@ -130,6 +137,7 @@ func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID stri
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
+	t.Logf("DEBUG: createTestMatchForUndoBall - Created match with ID: %s", response.Data.ID)
 	return response.Data.ID
 }
 
@@ -173,7 +181,7 @@ func TestUndoBallIntegration(t *testing.T) {
 	defer testutils.CleanupScorecardTestData(t, testDB)
 
 	// Setup service container and handlers
-	serviceContainer := services.NewContainer(testDB.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(testDB, cfg.Config)
 
 	// Setup router with authentication
 	router := handlers.SetupRoutes(testDB, cfg.Config)
@@ -281,10 +289,15 @@ func TestUndoBallIntegration(t *testing.T) {
 		err = json.Unmarshal(getW.Body.Bytes(), &responseBefore)
 		require.NoError(t, err)
 		require.NotEmpty(t, responseBefore.Data.Innings, "Scorecard should have innings data")
+		require.Len(t, responseBefore.Data.Innings, 1, "Should have exactly one innings")
+		require.NotNil(t, responseBefore.Data.Innings[0], "First innings should not be nil")
 		assert.Equal(t, 3, responseBefore.Data.Innings[0].TotalRuns)  // 1 + 2 = 3 runs
 		assert.Equal(t, 2, responseBefore.Data.Innings[0].TotalBalls) // 2 legal balls
 
 		// Undo last ball
+		t.Logf("DEBUG: successful_undo_ball test - About to undo ball for matchID: %s", matchID)
+		t.Logf("DEBUG: successful_undo_ball test - Session cookie: %s", sessionCookie)
+
 		undoReq := httptest.NewRequest("DELETE", "/api/v1/scorecard/"+matchID+"/ball?innings=1", nil)
 		undoReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
@@ -296,6 +309,9 @@ func TestUndoBallIntegration(t *testing.T) {
 		})
 		undoW := httptest.NewRecorder()
 		router.ServeHTTP(undoW, undoReq)
+
+		t.Logf("DEBUG: successful_undo_ball test - Undo response status: %d", undoW.Code)
+		t.Logf("DEBUG: successful_undo_ball test - Undo response body: %s", undoW.Body.String())
 		assert.Equal(t, http.StatusOK, undoW.Code)
 
 		// Get scorecard after undo
@@ -318,7 +334,11 @@ func TestUndoBallIntegration(t *testing.T) {
 		err = json.Unmarshal(getW2.Body.Bytes(), &responseAfter)
 		require.NoError(t, err)
 		require.NotEmpty(t, responseAfter.Data.Innings, "Scorecard should have innings data after undo")
+		require.Len(t, responseAfter.Data.Innings, 1, "Should have exactly one innings after undo")
+		require.NotNil(t, responseAfter.Data.Innings[0], "First innings should not be nil after undo")
 		require.NotEmpty(t, responseAfter.Data.Innings[0].Overs, "Innings should have overs data after undo")
+		require.Len(t, responseAfter.Data.Innings[0].Overs, 1, "Should have exactly one over after undo")
+		require.NotNil(t, responseAfter.Data.Innings[0].Overs[0], "First over should not be nil after undo")
 		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalRuns)           // Only 1 run left
 		assert.Equal(t, 1, responseAfter.Data.Innings[0].TotalBalls)          // Only 1 legal ball left
 		assert.Equal(t, 1, len(responseAfter.Data.Innings[0].Overs[0].Balls)) // Only 1 ball in over

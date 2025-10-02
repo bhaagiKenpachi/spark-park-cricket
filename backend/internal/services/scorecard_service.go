@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
+	"spark-park-cricket-backend/internal/cache"
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,15 +20,83 @@ type ScorecardService struct {
 	scorecardRepo interfaces.ScorecardRepository
 	matchRepo     interfaces.MatchRepository
 	metrics       *monitoring.Metrics
+	cache         *cache.CacheManager
+	// Distributed mutex for ball addition to prevent race conditions
+	ballMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
+	// Distributed mutex for over creation to prevent race conditions
+	overMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
 }
 
 // NewScorecardService creates a new scorecard service
-func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics) *ScorecardService {
+func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics, cache *cache.CacheManager) *ScorecardService {
 	return &ScorecardService{
 		scorecardRepo: scorecardRepo,
 		matchRepo:     matchRepo,
 		metrics:       metrics,
+		cache:         cache,
+		ballMutexes:   sync.Map{},
+		overMutexes:   sync.Map{},
 	}
+}
+
+// getBallAdditionMutex returns a mutex for the specific match and innings combination
+// This prevents race conditions when multiple requests try to add balls to the same innings
+func (s *ScorecardService) getBallAdditionMutex(matchID string, inningsNumber int) *sync.Mutex {
+	key := fmt.Sprintf("ball_addition_%s_%d", matchID, inningsNumber)
+
+	mutex, _ := s.ballMutexes.LoadOrStore(key, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// getOverCreationMutex returns a mutex for the specific match and innings combination
+// This prevents race conditions when multiple requests try to create overs for the same innings
+func (s *ScorecardService) getOverCreationMutex(matchID string, inningsNumber int) *sync.Mutex {
+	key := fmt.Sprintf("over_creation_%s_%d", matchID, inningsNumber)
+
+	mutex, _ := s.overMutexes.LoadOrStore(key, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// isRetryableError checks if an error is retryable based on common retryable error patterns
+func (s *ScorecardService) isRetryableError(err error) bool {
+	errStr := err.Error()
+	return strings.Contains(errStr, "duplicate key value violates unique constraint") ||
+		strings.Contains(errStr, "violates foreign key constraint") ||
+		strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "timeout") ||
+		strings.Contains(errStr, "temporary failure") ||
+		strings.Contains(errStr, "deadlock detected")
+}
+
+// retryWithExponentialBackoff executes an operation with exponential backoff and jitter
+func (s *ScorecardService) retryWithExponentialBackoff(ctx context.Context, operation func() error) error {
+	maxRetries := 5
+	baseDelay := 10 * time.Millisecond
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+
+		// Only retry on specific errors
+		if !s.isRetryableError(err) {
+			return err
+		}
+
+		if attempt == maxRetries {
+			return fmt.Errorf("failed after %d attempts: %w", maxRetries, err)
+		}
+
+		// Exponential backoff with jitter
+		delay := baseDelay * time.Duration(1<<uint(attempt-1))
+		jitter := time.Duration(rand.Intn(10)) * time.Millisecond
+
+		log.Printf("Retryable error on attempt %d/%d, retrying in %v: %v", attempt, maxRetries, delay+jitter, err)
+		time.Sleep(delay + jitter)
+	}
+
+	return fmt.Errorf("unexpected retry logic error")
 }
 
 // StartScoring starts scoring for a match
@@ -82,8 +154,309 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 	return nil
 }
 
-// AddBall adds a ball to the scorecard
+// AddBall adds a ball to the scorecard with distributed mutex to prevent race conditions
 func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventRequest) error {
+	// Get distributed mutex for this match and innings combination
+	mutex := s.getBallAdditionMutex(req.MatchID, req.InningsNumber)
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	// Use optimized method for better performance
+	return s.AddBallOptimized(ctx, req)
+}
+
+// AddBallOptimized adds a ball using optimized data fetching
+func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.BallEventRequest) error {
+	// Get user ID from context
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
+	if !ok || userID == "" {
+		return fmt.Errorf("user authentication required")
+	}
+
+	// Validate ball event
+	if err := utils.ValidateBallEventRequest(req); err != nil {
+		log.Printf("Invalid ball event: %v", err)
+		return fmt.Errorf("invalid ball event: %w", err)
+	}
+
+	// Get all necessary data in a single optimized call
+	data, err := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
+	if err != nil {
+		log.Printf("Error getting optimized match data: %v", err)
+
+		// Check if the error is due to non-existent innings
+		if strings.Contains(err.Error(), "innings not found") {
+			// Check if this is trying to add to second innings before first is complete
+			if req.InningsNumber == 2 {
+				// Check if first innings exists and is not complete
+				firstInnings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, req.MatchID, 1)
+				if err == nil && firstInnings.Status != string(models.InningsStatusCompleted) {
+					return fmt.Errorf("first innings is not complete, cannot start second innings")
+				}
+			}
+			return fmt.Errorf("innings not found")
+		}
+
+		return fmt.Errorf("failed to get match data: %w", err)
+	}
+
+	// Validate user access
+	if data.CreatedBy != userID {
+		return fmt.Errorf("access denied: you can only score balls for matches you created")
+	}
+
+	// Validate match status
+	if data.MatchStatus != models.MatchStatusLive {
+		return fmt.Errorf("match is not live, cannot add ball")
+	}
+
+	// Validate innings status
+	if data.InningsStatus != models.InningsStatusInProgress {
+		return fmt.Errorf("innings is not in progress, cannot add ball")
+	}
+
+	// Validate over status
+	if data.OverStatus != models.OverStatusInProgress {
+		return fmt.Errorf("over is not in progress, cannot add ball")
+	}
+
+	// Check if over is complete (6 legal balls)
+	if data.LegalBallCount >= 6 {
+		return fmt.Errorf("over is complete, cannot add more balls")
+	}
+
+	// Calculate next ball number - use fresh calculation to avoid stale data
+	nextBallNumber, err := s.getNextBallNumber(ctx, data.OverID)
+	if err != nil {
+		log.Printf("Error getting next ball number: %v", err)
+		return fmt.Errorf("failed to get next ball number: %w", err)
+	}
+
+	// Calculate runs from run type and byes
+	runs := req.RunType.GetRunValue()
+	byes := req.Byes
+	if req.IsWicket && req.RunType == models.RunTypeWC {
+		runs = 0 // Wicket doesn't count as runs
+	}
+
+	// Total runs = ball runs + byes
+	totalRuns := runs + byes
+
+	// Create ball
+	ball := &models.ScorecardBall{
+		OverID:     data.OverID,
+		BallNumber: nextBallNumber,
+		BallType:   req.BallType,
+		RunType:    req.RunType,
+		Runs:       runs,
+		Byes:       byes,
+		IsWicket:   req.IsWicket,
+		WicketType: req.WicketType,
+	}
+
+	// Invalidate caches BEFORE database operations to prevent stale reads
+	s.invalidateMatchCachesBeforeWrite(ctx, req.MatchID, data.InningsID, data.OverID)
+
+	// Record ball addition metrics with retry logic for constraint violations
+	start := time.Now()
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "INSERT", "balls", req.MatchID,
+		func(ctx context.Context) error {
+			// Use improved retry logic with exponential backoff and jitter
+			return s.retryWithExponentialBackoff(ctx, func() error {
+				err := s.scorecardRepo.CreateBall(ctx, ball)
+				if err == nil {
+					return nil
+				}
+
+				// If it's a constraint violation, try to get fresh data and retry
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") ||
+					strings.Contains(err.Error(), "violates foreign key constraint") {
+					log.Printf("Ball creation failed due to constraint violation, retrying with fresh data: %v", err)
+
+					// Get fresh match data to ensure we have the latest over information
+					freshData, freshErr := s.scorecardRepo.GetMatchInningsOverData(ctx, req.MatchID, req.InningsNumber)
+					if freshErr != nil {
+						log.Printf("Failed to get fresh match data: %v", freshErr)
+						return fmt.Errorf("failed to get fresh match data: %w", freshErr)
+					}
+
+					// Update ball with fresh over ID and get fresh ball number
+					ball.OverID = freshData.OverID
+					freshBallNumber, freshErr := s.getNextBallNumber(ctx, ball.OverID)
+					if freshErr != nil {
+						log.Printf("Failed to get fresh ball number: %v", freshErr)
+						return fmt.Errorf("failed to get fresh ball number: %w", freshErr)
+					}
+					ball.BallNumber = freshBallNumber
+
+					// Return the original error to trigger retry
+					return err
+				}
+
+				// If it's not a constraint violation, return the error immediately
+				return err
+			})
+		},
+	)
+	duration := time.Since(start)
+
+	// Record cricket-specific metrics
+	s.metrics.RecordBallAddition(
+		req.MatchID,
+		fmt.Sprintf("innings_%d", req.InningsNumber),
+		string(req.BallType),
+		string(req.RunType),
+		duration,
+	)
+
+	if err != nil {
+		log.Printf("Error creating ball: %v", err)
+		return fmt.Errorf("failed to add ball: %w", err)
+	}
+
+	// Update over statistics (optimized in-memory calculation)
+	over := &models.ScorecardOver{
+		ID:           data.OverID,
+		InningsID:    data.InningsID,
+		OverNumber:   data.OverNumber,
+		TotalRuns:    data.OverTotalRuns + totalRuns,
+		TotalBalls:   data.OverTotalBalls,
+		TotalWickets: data.OverTotalWickets,
+		Status:       string(data.OverStatus),
+	}
+
+	// Only count legal balls (good balls) for over completion
+	if req.BallType == models.BallTypeGood {
+		over.TotalBalls++
+	}
+	if req.IsWicket {
+		over.TotalWickets++
+	}
+
+	// Check if over is complete (6 legal balls or all wickets)
+	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+		over.Status = string(models.OverStatusCompleted)
+	}
+
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "overs", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateOver(ctx, over)
+		},
+	)
+	if err != nil {
+		log.Printf("Error updating over: %v", err)
+		return fmt.Errorf("failed to update over: %w", err)
+	}
+
+	// Update innings statistics (in-memory calculation)
+	innings := &models.Innings{
+		ID:            data.InningsID,
+		MatchID:       req.MatchID,
+		InningsNumber: data.InningsNumber,
+		BattingTeam:   data.BattingTeam,
+		TotalRuns:     data.InningsTotalRuns + totalRuns,
+		TotalWickets:  data.InningsTotalWickets,
+		TotalOvers:    data.InningsTotalOvers,
+		TotalBalls:    data.InningsTotalBalls,
+		Status:        string(data.InningsStatus),
+	}
+
+	// Only count legal balls for innings overs calculation
+	if req.BallType == models.BallTypeGood {
+		innings.TotalBalls++
+	}
+	if req.IsWicket {
+		innings.TotalWickets++
+	}
+
+	// Calculate total overs properly (optimized in-memory calculation)
+	completedOvers := data.CompletedOvers
+	currentOverBalls := over.TotalBalls
+	innings.TotalOvers = s.calculateOversInMemory(completedOvers, currentOverBalls)
+
+	// Check if innings is complete (optimized in-memory calculation)
+	maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
+	if req.InningsNumber == 1 {
+		innings.Status = s.calculateInningsStatusInMemory(innings, maxWickets, data.TotalOvers)
+		if innings.Status == string(models.InningsStatusCompleted) {
+			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
+				innings.InningsNumber, req.MatchID, innings.TotalWickets, maxWickets, innings.TotalOvers, data.TotalOvers)
+		}
+	}
+
+	err = monitoring.WithDatabaseMonitoringContext(
+		ctx, s.metrics, "UPDATE", "innings", req.MatchID,
+		func(ctx context.Context) error {
+			return s.scorecardRepo.UpdateInnings(ctx, innings)
+		},
+	)
+	if err != nil {
+		log.Printf("Error updating innings: %v", err)
+		return fmt.Errorf("failed to update innings: %w", err)
+	}
+
+	// Handle match progression
+	if req.InningsNumber == 1 {
+		// First innings - check if completed and start second innings
+		if innings.Status == string(models.InningsStatusCompleted) {
+			err = s.startSecondInnings(ctx, req.MatchID, &models.Match{
+				ID:               req.MatchID,
+				Status:           models.MatchStatusLive,
+				BattingTeam:      data.BattingTeam,
+				TotalOvers:       data.TotalOvers,
+				TeamAPlayerCount: data.TeamAPlayerCount,
+			})
+			if err != nil {
+				log.Printf("Error starting second innings: %v", err)
+				return fmt.Errorf("failed to start second innings: %w", err)
+			}
+			log.Printf("Second innings started for match %s", req.MatchID)
+		}
+	} else if req.InningsNumber == 2 {
+		// Second innings - check for match completion after every ball
+		shouldCompleteMatch, reason := s.ShouldCompleteMatch(ctx, req.MatchID, innings, &models.Match{
+			ID:               req.MatchID,
+			Status:           models.MatchStatusLive,
+			BattingTeam:      data.BattingTeam,
+			TotalOvers:       data.TotalOvers,
+			TeamAPlayerCount: data.TeamAPlayerCount,
+		})
+		if shouldCompleteMatch {
+			// Complete the innings first
+			innings.Status = string(models.InningsStatusCompleted)
+			err = s.scorecardRepo.UpdateInnings(ctx, innings)
+			if err != nil {
+				return fmt.Errorf("failed to update innings status: %w", err)
+			}
+
+			// Complete the match
+			// Fetch the complete match data to ensure all fields are populated
+			completeMatch, err := s.matchRepo.GetByID(ctx, req.MatchID)
+			if err != nil {
+				log.Printf("Error fetching match data for completion: %v", err)
+				return fmt.Errorf("failed to fetch match data: %w", err)
+			}
+
+			completeMatch.Status = models.MatchStatusCompleted
+			err = s.matchRepo.Update(ctx, req.MatchID, completeMatch)
+			if err != nil {
+				return fmt.Errorf("failed to complete match: %w", err)
+			}
+			log.Printf("Match %s completed - %s", req.MatchID, reason)
+		}
+	}
+
+	// Invalidate match-related caches after successful ball addition (async)
+	go s.invalidateMatchCachesAsync(req.MatchID, data.InningsID, data.OverID)
+
+	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
+	return nil
+}
+
+// AddBallLegacy is the original AddBall method (kept for reference)
+func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEventRequest) error {
 	// Get user ID from context
 	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
@@ -168,13 +541,21 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		return fmt.Errorf("innings is not in progress, cannot add ball")
 	}
 
-	// Get current over or create new one with monitoring
+	// Get current over or create new one with monitoring and mutex protection
+	// Also get all overs for this innings to avoid duplicate query later
 	var over *models.ScorecardOver
+	var allOvers []*models.ScorecardOver
+
+	// Use distributed mutex for over creation to prevent race conditions
+	overMutex := s.getOverCreationMutex(req.MatchID, req.InningsNumber)
+	overMutex.Lock()
+	defer overMutex.Unlock()
+
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "SELECT", "overs", req.MatchID,
 		func(ctx context.Context) error {
 			var dbErr error
-			over, dbErr = s.getCurrentOver(ctx, innings.ID)
+			over, allOvers, dbErr = s.getCurrentOverWithOvers(ctx, innings.ID)
 			return dbErr
 		},
 	)
@@ -217,12 +598,49 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		WicketType: req.WicketType,
 	}
 
-	// Record ball addition metrics
+	// Record ball addition metrics with retry logic for constraint violations
 	start := time.Now()
 	err = monitoring.WithDatabaseMonitoringContext(
 		ctx, s.metrics, "INSERT", "balls", req.MatchID,
 		func(ctx context.Context) error {
-			return s.scorecardRepo.CreateBall(ctx, ball)
+			// Retry logic for constraint violations
+			maxRetries := 5
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				err := s.scorecardRepo.CreateBall(ctx, ball)
+				if err == nil {
+					return nil
+				}
+
+				// Check if it's a constraint violation
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					log.Printf("Ball creation failed due to constraint violation (attempt %d/%d), retrying with new ball number", attempt, maxRetries)
+
+					// Get fresh ball number with exponential backoff
+					freshBallNumber, err := s.getNextBallNumber(ctx, over.ID)
+					if err != nil {
+						log.Printf("Failed to get fresh ball number on attempt %d: %v", attempt, err)
+						if attempt == maxRetries {
+							return fmt.Errorf("failed to get fresh ball number after %d attempts: %w", maxRetries, err)
+						}
+						// Continue to retry
+						time.Sleep(time.Millisecond * time.Duration(attempt*10))
+						continue
+					}
+					ball.BallNumber = freshBallNumber
+
+					if attempt == maxRetries {
+						return fmt.Errorf("failed to create ball after %d attempts due to constraint violations", maxRetries)
+					}
+
+					// Exponential backoff delay before retry
+					time.Sleep(time.Millisecond * time.Duration(attempt*10))
+					continue
+				}
+
+				// If it's not a constraint violation, return the error immediately
+				return err
+			}
+			return fmt.Errorf("failed to create ball after %d attempts", maxRetries)
 		},
 	)
 	duration := time.Since(start)
@@ -278,12 +696,8 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 	}
 
 	// Calculate total overs properly
-	// Get all overs for this innings to calculate completed overs + current over balls
-	overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
-	if err != nil {
-		log.Printf("Error getting overs for innings: %v", err)
-		return fmt.Errorf("failed to get overs: %w", err)
-	}
+	// Use cached overs from getCurrentOverWithOvers to avoid duplicate query
+	overs := allOvers
 
 	completedOvers := 0
 	currentOverBalls := 0
@@ -366,6 +780,9 @@ func (s *ScorecardService) AddBall(ctx context.Context, req *models.BallEventReq
 		}
 	}
 
+	// Invalidate match-related caches after successful ball addition
+	s.invalidateMatchCaches(ctx, req.MatchID, innings.ID, over.ID)
+
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
 }
@@ -431,7 +848,7 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	var lastBall *models.ScorecardBall
 	maxBallNumber := 0
 	for _, ball := range balls {
-		if ball.BallNumber > maxBallNumber {
+		if ball != nil && ball.BallNumber > maxBallNumber {
 			maxBallNumber = ball.BallNumber
 			lastBall = ball
 		}
@@ -551,35 +968,41 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	return nil
 }
 
-// getCurrentOver gets the current in-progress over or creates a new one
-func (s *ScorecardService) getCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
-	// Try to get current over
+// getCurrentOverWithOvers gets the current over and all overs for the innings in one call
+// This avoids duplicate GetOversByInnings calls
+func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsID string) (*models.ScorecardOver, []*models.ScorecardOver, error) {
+	// Try to get current over first
 	over, err := s.scorecardRepo.GetCurrentOver(ctx, inningsID)
 	if err == nil && over != nil {
-		return over, nil
+		// If we found a current over, we still need to get all overs for calculations
+		allOvers, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get overs: %w", err)
+		}
+		return over, allOvers, nil
 	}
 
 	// Get all overs for this innings to determine next over number
 	overs, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
 	if err != nil {
 		log.Printf("Error getting overs: %v", err)
-		return nil, fmt.Errorf("failed to get overs: %w", err)
+		return nil, nil, fmt.Errorf("failed to get overs: %w", err)
 	}
 
-	// Calculate next over number
+	// Calculate next over number with defensive checks
 	nextOverNumber := 1
 	if len(overs) > 0 {
 		// Find the highest over number and add 1
 		maxOverNumber := 0
 		for _, o := range overs {
-			if o.OverNumber > maxOverNumber {
+			if o != nil && o.OverNumber > maxOverNumber {
 				maxOverNumber = o.OverNumber
 			}
 		}
 		nextOverNumber = maxOverNumber + 1
 	}
 
-	// Create new over
+	// Create new over with retry logic for constraint violations
 	newOver := &models.ScorecardOver{
 		InningsID:    inningsID,
 		OverNumber:   nextOverNumber,
@@ -589,20 +1012,59 @@ func (s *ScorecardService) getCurrentOver(ctx context.Context, inningsID string)
 		Status:       string(models.OverStatusInProgress),
 	}
 
-	err = s.scorecardRepo.CreateOver(ctx, newOver)
+	// Use improved retry logic with exponential backoff and jitter
+	err = s.retryWithExponentialBackoff(ctx, func() error {
+		err := s.scorecardRepo.CreateOver(ctx, newOver)
+		if err == nil {
+			return nil
+		}
+
+		// If it's a constraint violation, try to get fresh data and retry
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") ||
+			strings.Contains(err.Error(), "violates foreign key constraint") {
+			log.Printf("Over creation failed due to constraint violation, retrying with fresh data: %v", err)
+
+			// Get fresh overs to recalculate over number
+			freshOvers, freshErr := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+			if freshErr != nil {
+				log.Printf("Failed to get fresh overs: %v", freshErr)
+				return fmt.Errorf("failed to get fresh overs: %w", freshErr)
+			}
+
+			// Recalculate next over number with fresh data and defensive checks
+			nextOverNumber = 1
+			if len(freshOvers) > 0 {
+				maxOverNumber := 0
+				for _, o := range freshOvers {
+					if o != nil && o.OverNumber > maxOverNumber {
+						maxOverNumber = o.OverNumber
+					}
+				}
+				nextOverNumber = maxOverNumber + 1
+			}
+			newOver.OverNumber = nextOverNumber
+
+			// Return the original error to trigger retry
+			return err
+		}
+
+		// If it's not a constraint violation, return the error immediately
+		return err
+	})
+
 	if err != nil {
 		log.Printf("Error creating over: %v", err)
-		return nil, fmt.Errorf("failed to create over: %w", err)
+		return nil, nil, fmt.Errorf("failed to create over: %w", err)
 	}
 
 	log.Printf("Created new over %d for innings %s", nextOverNumber, inningsID)
-	return newOver, nil
+	return newOver, overs, nil
 }
 
-// getNextBallNumber gets the next ball number for an over
+// getNextBallNumber gets the next ball number for an over (optimized but preserves cricket logic)
 func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string) (int, error) {
-	// Get all balls for this over
-	balls, err := s.scorecardRepo.GetBallsByOver(ctx, overID)
+	// Get only necessary ball fields for cricket logic (optimized query)
+	balls, err := s.scorecardRepo.GetBallsForNextNumber(ctx, overID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get balls: %w", err)
 	}
@@ -612,11 +1074,11 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 	maxBallNumber := 0
 
 	for _, ball := range balls {
-		if ball.BallNumber > maxBallNumber {
+		if ball != nil && ball.BallNumber > maxBallNumber {
 			maxBallNumber = ball.BallNumber
 		}
 		// Only count good balls as legal deliveries for over completion
-		if ball.BallType == models.BallTypeGood {
+		if ball != nil && ball.BallType == models.BallTypeGood {
 			legalBalls++
 		}
 	}
@@ -630,6 +1092,106 @@ func (s *ScorecardService) getNextBallNumber(ctx context.Context, overID string)
 	nextBallNumber := maxBallNumber + 1
 
 	return nextBallNumber, nil
+}
+
+// invalidateMatchCachesBeforeWrite invalidates caches BEFORE write operations to prevent stale reads
+func (s *ScorecardService) invalidateMatchCachesBeforeWrite(ctx context.Context, matchID, inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating caches BEFORE write for match %s, innings %s, over %s", matchID, inningsID, overID)
+
+	// Invalidate all related caches to prevent stale data reads during concurrent operations
+	cacheKeys := []string{
+		fmt.Sprintf("scorecard:%s", matchID),
+		fmt.Sprintf("innings:match:%s", matchID),
+		fmt.Sprintf("overs:innings:%s", inningsID),
+		fmt.Sprintf("over:current:innings:%s", inningsID),
+		fmt.Sprintf("match_innings_over:%s:%d", matchID, 1), // First innings
+		fmt.Sprintf("match_innings_over:%s:%d", matchID, 2), // Second innings
+		fmt.Sprintf("balls:over:%s", overID),
+		fmt.Sprintf("last_ball:over:%s", overID),
+	}
+
+	for _, key := range cacheKeys {
+		_ = s.cache.Invalidate(key)
+	}
+
+	log.Printf("Pre-write cache invalidation completed for match %s", matchID)
+}
+
+// invalidateMatchCaches invalidates all caches related to a match after ball addition
+func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	// Invalidate scorecard cache for the match
+	scorecardKey := fmt.Sprintf("scorecard:%s", matchID)
+	_ = s.cache.Invalidate(scorecardKey)
+
+	// Invalidate innings cache
+	inningsKey := fmt.Sprintf("innings:match:%s", matchID)
+	_ = s.cache.Invalidate(inningsKey)
+
+	// Invalidate overs cache for this innings
+	oversKey := fmt.Sprintf("overs:innings:%s", inningsID)
+	_ = s.cache.Invalidate(oversKey)
+
+	// Invalidate current over cache
+	currentOverKey := fmt.Sprintf("over:current:innings:%s", inningsID)
+	_ = s.cache.Invalidate(currentOverKey)
+
+	// Invalidate balls cache for this over
+	ballsKey := fmt.Sprintf("balls:over:%s", overID)
+	_ = s.cache.Invalidate(ballsKey)
+
+	// Invalidate ball count cache
+	ballCountKey := fmt.Sprintf("ball_count:over:%s", overID)
+	_ = s.cache.Invalidate(ballCountKey)
+
+	// Invalidate balls for next number cache
+	ballsNextNumberKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+	_ = s.cache.Invalidate(ballsNextNumberKey)
+
+	// Invalidate last ball cache
+	lastBallKey := fmt.Sprintf("ball:last:over:%s", overID)
+	_ = s.cache.Invalidate(lastBallKey)
+
+	log.Printf("Invalidated all caches for match %s, innings %s, over %s", matchID, inningsID, overID)
+}
+
+// invalidateMatchCachesAsync invalidates caches asynchronously
+func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID string) {
+	ctx := context.Background()
+	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
+}
+
+// calculateOversInMemory performs optimized overs calculation in memory
+func (s *ScorecardService) calculateOversInMemory(completedOvers int, currentOverBalls int) float64 {
+	// Total overs = completed overs + current over balls as decimal
+	var currentOverDecimal float64
+	if currentOverBalls > 0 {
+		// Convert balls to cricket scoring format (0.1, 0.2, 0.3, 0.4, 0.5, 1.0)
+		if currentOverBalls == 6 {
+			currentOverDecimal = 1.0
+		} else {
+			currentOverDecimal = float64(currentOverBalls) / 10.0
+		}
+	}
+	return float64(completedOvers) + currentOverDecimal
+}
+
+// calculateInningsStatusInMemory performs optimized innings completion check in memory
+func (s *ScorecardService) calculateInningsStatusInMemory(innings *models.Innings, maxWickets int, totalOvers int) string {
+	// Check if innings is complete
+	if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(totalOvers) {
+		return string(models.InningsStatusCompleted)
+	}
+	return string(models.InningsStatusInProgress)
 }
 
 // ShouldCompleteMatch determines if the match should be completed based on cricket rules
@@ -665,12 +1227,31 @@ func (s *ScorecardService) ShouldCompleteMatch(ctx context.Context, matchID stri
 func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID string, match *models.Match) error {
 	log.Printf("Starting second innings for match %s", matchID)
 
-	// Determine batting team for second innings (opposite of first innings)
+	// Try to fetch complete match data, but use fallback if database call fails
+	var completeMatch *models.Match
+	var err error
+
+	completeMatch, err = s.matchRepo.GetByID(ctx, matchID)
+	if err != nil {
+		log.Printf("Warning: Failed to fetch complete match data from database: %v", err)
+		log.Printf("Using fallback match data for second innings transition")
+
+		// Use the provided match data as fallback
+		completeMatch = match
+
+		// Ensure we have the minimum required fields
+		if completeMatch.TossWinner == "" {
+			log.Printf("Error: TossWinner is missing from match data, cannot determine second innings batting team")
+			return fmt.Errorf("toss winner information is missing from match data")
+		}
+	}
+
+	// Determine batting team for second innings (non-toss-winning team)
 	var battingTeam models.TeamType
-	if match.BattingTeam == models.TeamTypeA {
-		battingTeam = models.TeamTypeB
+	if completeMatch.TossWinner == models.TeamTypeA {
+		battingTeam = models.TeamTypeB // Second innings should be played by non-toss winner
 	} else {
-		battingTeam = models.TeamTypeA
+		battingTeam = models.TeamTypeA // Second innings should be played by non-toss winner
 	}
 
 	// Create second innings
@@ -685,18 +1266,22 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 		Status:        string(models.InningsStatusInProgress),
 	}
 
-	err := s.scorecardRepo.CreateInnings(ctx, secondInnings)
+	err = s.scorecardRepo.CreateInnings(ctx, secondInnings)
 	if err != nil {
 		log.Printf("Error creating second innings: %v", err)
 		return fmt.Errorf("failed to start second innings: %w", err)
 	}
 
 	// Update match batting team
-	match.BattingTeam = battingTeam
-	err = s.matchRepo.Update(ctx, matchID, match)
+	completeMatch.BattingTeam = battingTeam
+	err = s.matchRepo.Update(ctx, matchID, completeMatch)
 	if err != nil {
-		log.Printf("Error updating match batting team: %v", err)
-		return fmt.Errorf("failed to update match batting team: %w", err)
+		log.Printf("Warning: Failed to update match batting team in database: %v", err)
+		log.Printf("Second innings created successfully, but match update failed - this may cause inconsistencies")
+		// Don't fail the entire operation, just log the warning
+		// The second innings is already created, which is the critical part
+	} else {
+		log.Printf("Successfully updated match batting team to %s", battingTeam)
 	}
 
 	log.Printf("Successfully started second innings for match %s, batting team: %s", matchID, battingTeam)

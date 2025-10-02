@@ -34,7 +34,7 @@ func TestAuthSessionJSONMarshaling(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 
 	// Create test user
 	testUser := &models.User{
@@ -147,7 +147,7 @@ func TestSessionValuesJSONMarshaling(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 
 	// Create test user
 	testUser := &models.User{

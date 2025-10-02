@@ -2,7 +2,10 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"spark-park-cricket-backend/internal/cache"
 	"spark-park-cricket-backend/internal/config"
+	cacherepo "spark-park-cricket-backend/internal/repository/cache"
 	"spark-park-cricket-backend/internal/repository/supabase"
 
 	supabaseclient "github.com/supabase-community/supabase-go"
@@ -24,21 +27,38 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		return nil, fmt.Errorf("failed to create supabase client: %w", err)
 	}
 
-	// Initialize repositories
-	repositories := &Repositories{
+	// Initialize cache manager for tests (in-memory cache)
+	cacheManager := cache.NewCacheManager(nil, false) // No Redis for tests, use in-memory
+	log.Printf("Initialized in-memory cache for tests")
+
+	// Initialize base repositories
+	matchRepo := supabase.NewMatchRepository(client)
+	baseRepositories := &Repositories{
 		Series:     supabase.NewSeriesRepository(client),
-		Match:      supabase.NewMatchRepository(client),
+		Match:      matchRepo,
 		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client, "testing_db"),
+		Scorecard:  supabase.NewScorecardRepository(client, "testing_db", matchRepo),
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),
+	}
+
+	// Wrap repositories with caching (same as production)
+	repositories := &Repositories{
+		Series:     cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
+		Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
+		Scoreboard: baseRepositories.Scoreboard, // Not cached yet
+		Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
+		Over:       baseRepositories.Over, // Not cached yet
+		Ball:       baseRepositories.Ball, // Not cached yet
+		User:       baseRepositories.User, // Not cached yet
 	}
 
 	return &Client{
 		Supabase:     client,
 		Repositories: repositories,
 		Schema:       cfg.TestSchema,
+		CacheManager: cacheManager,
 	}, nil
 }
 

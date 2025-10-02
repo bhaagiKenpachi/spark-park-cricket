@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
+	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
@@ -21,7 +22,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg)
+	serviceContainer := services.NewContainer(dbClient, cfg)
 
 	// Middleware
 	r.Use(services.RecoveryMiddleware)
@@ -36,12 +37,6 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Use(services.RateLimitMiddleware(100))                       // 100 requests per minute
 	r.Use(corsMiddleware(cfg))
 
-	// Start WebSocket hub
-	go serviceContainer.Hub.Run()
-
-	// Initialize WebSocket handler
-	wsHandler := NewWebSocketHandler(serviceContainer.Hub, serviceContainer)
-
 	// Initialize health handler
 	healthHandler := NewHealthHandler(dbClient)
 
@@ -52,7 +47,6 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 	r.Get("/", homeHandler)
 	r.Get("/health", healthHandler.Health)
 	r.Get("/health/database", healthHandler.DatabaseHealth)
-	r.Get("/health/websocket", healthHandler.WebSocketHealth)
 	r.Get("/health/system", healthHandler.SystemHealth)
 	r.Get("/health/ready", healthHandler.Readiness)
 	r.Get("/health/live", healthHandler.Liveness)
@@ -150,18 +144,10 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
 
-		// WebSocket routes
-		r.Route("/ws", func(r chi.Router) {
-			r.Get("/match/{match_id}", wsHandler.ServeWS)
-			r.Get("/stats", wsHandler.GetConnectionStats)
-			r.Get("/stats/{match_id}", wsHandler.GetRoomStats)
-			r.Post("/test/{match_id}", wsHandler.TestBroadcast)
-		})
-
 		// GraphQL routes
 		r.Route("/graphql", func(r chi.Router) {
-			// Use GraphQL handler from the service
-			graphqlHandler := serviceContainer.GraphQLWebSocket.GetGraphQLHandler()
+			// Create GraphQL handler
+			graphqlHandler := graphql.NewGraphQLHandler(serviceContainer.Scorecard)
 			r.Post("/", graphqlHandler.ServeHTTP)
 			r.Get("/playground", graphqlHandler.GetPlaygroundHandler().ServeHTTP)
 		})

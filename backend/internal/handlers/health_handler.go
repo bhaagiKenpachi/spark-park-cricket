@@ -63,9 +63,6 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	// Check database health
 	dbHealth := h.checkDatabaseHealth(ctx)
 
-	// Check WebSocket hub health
-	wsHealth := h.checkWebSocketHealth()
-
 	// Check Redis health
 	redisHealth := h.checkRedisHealth(ctx)
 
@@ -74,7 +71,7 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 
 	// Determine overall status
 	overallStatus := "healthy"
-	if dbHealth.Status != "healthy" || wsHealth.Status != "healthy" || redisHealth.Status != "healthy" {
+	if dbHealth.Status != "healthy" || redisHealth.Status != "healthy" {
 		overallStatus = "unhealthy"
 	}
 
@@ -84,9 +81,8 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 		Version:   "1.0.0",
 		Uptime:    time.Since(startTime).String(),
 		Services: map[string]ServiceHealth{
-			"database":  dbHealth,
-			"websocket": wsHealth,
-			"redis":     redisHealth,
+			"database": dbHealth,
+			"redis":    redisHealth,
 		},
 		System: systemInfo,
 	}
@@ -110,18 +106,6 @@ func (h *HealthHandler) DatabaseHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSONResponse(w, statusCode, dbHealth)
-}
-
-// WebSocketHealth handles GET /health/websocket
-func (h *HealthHandler) WebSocketHealth(w http.ResponseWriter, r *http.Request) {
-	wsHealth := h.checkWebSocketHealth()
-
-	statusCode := http.StatusOK
-	if wsHealth.Status != "healthy" {
-		statusCode = http.StatusServiceUnavailable
-	}
-
-	utils.WriteJSONResponse(w, statusCode, wsHealth)
 }
 
 // SystemHealth handles GET /health/system
@@ -202,23 +186,6 @@ func (h *HealthHandler) checkDatabaseHealth(ctx context.Context) ServiceHealth {
 	}
 }
 
-// checkWebSocketHealth checks the health of the WebSocket hub
-func (h *HealthHandler) checkWebSocketHealth() ServiceHealth {
-	start := time.Now()
-
-	// For now, we'll assume WebSocket is healthy if the hub exists
-	// In a real implementation, you might want to check actual connections
-	responseTime := time.Since(start)
-
-	return ServiceHealth{
-		Status:       "healthy",
-		ResponseTime: responseTime,
-		Details: map[string]interface{}{
-			"hub_initialized": true,
-		},
-	}
-}
-
 // getSystemInfo gets system information
 func (h *HealthHandler) getSystemInfo() SystemInfo {
 	var m runtime.MemStats
@@ -246,9 +213,6 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 	// Get system metrics
 	systemInfo := h.getSystemInfo()
 
-	// Get WebSocket metrics (if available)
-	wsHealth := h.checkWebSocketHealth()
-
 	// Get Redis metrics
 	redisHealth := h.checkRedisHealth(ctx)
 
@@ -257,10 +221,6 @@ func (h *HealthHandler) Metrics(w http.ResponseWriter, r *http.Request) {
 		"database": map[string]interface{}{
 			"status":        dbHealth.Status,
 			"response_time": dbHealth.ResponseTime.Milliseconds(),
-		},
-		"websocket": map[string]interface{}{
-			"status":        wsHealth.Status,
-			"response_time": wsHealth.ResponseTime.Milliseconds(),
 		},
 		"redis": map[string]interface{}{
 			"status":        redisHealth.Status,

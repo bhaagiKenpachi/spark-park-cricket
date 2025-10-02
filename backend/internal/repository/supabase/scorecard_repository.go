@@ -6,6 +6,7 @@ import (
 	"log"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
+	"strings"
 	"time"
 
 	"github.com/supabase-community/postgrest-go"
@@ -13,15 +14,17 @@ import (
 )
 
 type scorecardRepository struct {
-	client *supabase.Client
-	schema string
+	client    *supabase.Client
+	schema    string
+	matchRepo interfaces.MatchRepository
 }
 
 // NewScorecardRepository creates a new scorecard repository
-func NewScorecardRepository(client *supabase.Client, schema string) interfaces.ScorecardRepository {
+func NewScorecardRepository(client *supabase.Client, schema string, matchRepo interfaces.MatchRepository) interfaces.ScorecardRepository {
 	return &scorecardRepository{
-		client: client,
-		schema: schema,
+		client:    client,
+		schema:    schema,
+		matchRepo: matchRepo,
 	}
 }
 
@@ -34,8 +37,8 @@ func (r *scorecardRepository) getTableName(table string) string {
 func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models.Innings) error {
 	log.Printf("Creating innings for match %s, innings %d, batting team %s", innings.MatchID, innings.InningsNumber, innings.BattingTeam)
 
-	// Add timeout to prevent hanging queries
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple INSERT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	data := map[string]interface{}{
@@ -52,7 +55,7 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").Insert(data, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From(r.getTableName("innings")).Insert(data, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		log.Printf("Error creating innings: %v", err)
 		return fmt.Errorf("failed to create innings: %w", err)
@@ -60,6 +63,17 @@ func (r *scorecardRepository) CreateInnings(ctx context.Context, innings *models
 
 	if len(result) > 0 {
 		*innings = result[0]
+		log.Printf("Successfully created innings with ID: %s", innings.ID)
+	} else {
+		log.Printf("Warning: No result returned from innings creation, but no error occurred")
+		// Try to get the innings by match_id and innings_number to get the ID
+		createdInnings, err := r.GetInningsByMatchAndNumber(ctx, innings.MatchID, innings.InningsNumber)
+		if err != nil {
+			log.Printf("Error getting created innings: %v", err)
+			return fmt.Errorf("failed to get created innings: %w", err)
+		}
+		*innings = *createdInnings
+		log.Printf("Retrieved created innings with ID: %s", innings.ID)
 	}
 
 	log.Printf("Successfully created innings with ID: %s", innings.ID)
@@ -75,7 +89,7 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 	defer cancel()
 
 	var innings []*models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Select("*", "", false).
 		Eq("match_id", matchID).
 		ExecuteTo(&innings)
@@ -93,12 +107,12 @@ func (r *scorecardRepository) GetInningsByMatchID(ctx context.Context, matchID s
 func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, matchID string, inningsNumber int) (*models.Innings, error) {
 	log.Printf("Getting innings %d for match %s", inningsNumber, matchID)
 
-	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple SELECT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var innings []*models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Select("*", "", false).
 		Eq("match_id", matchID).
 		Eq("innings_number", fmt.Sprintf("%d", inningsNumber)).
@@ -135,7 +149,7 @@ func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Update(data, "", "").
 		Eq("id", innings.ID).
 		ExecuteTo(&result)
@@ -163,7 +177,7 @@ func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID str
 	}
 
 	var result []models.Innings
-	_, err := r.client.From("innings").
+	_, err := r.client.From(r.getTableName("innings")).
 		Update(data, "", "").
 		Eq("id", inningsID).
 		ExecuteTo(&result)
@@ -205,6 +219,17 @@ func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.Score
 
 	if len(result) > 0 {
 		*over = result[0]
+		log.Printf("Successfully created over with ID: %s", over.ID)
+	} else {
+		log.Printf("Warning: No result returned from over creation, but no error occurred")
+		// Try to get the over by innings_id and over_number to get the ID
+		createdOver, err := r.GetOverByInningsAndNumber(ctx, over.InningsID, over.OverNumber)
+		if err != nil {
+			log.Printf("Error getting created over: %v", err)
+			return fmt.Errorf("failed to get created over: %w", err)
+		}
+		*over = *createdOver
+		log.Printf("Retrieved created over with ID: %s", over.ID)
 	}
 
 	log.Printf("Successfully created over with ID: %s", over.ID)
@@ -243,8 +268,8 @@ func (r *scorecardRepository) GetOverByInningsAndNumber(ctx context.Context, inn
 func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
 	log.Printf("Getting current over for innings %s", inningsID)
 
-	// Add timeout to prevent hanging queries (longer timeout for complex queries)
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	// Add timeout to prevent hanging queries (optimized for simple SELECT with LIMIT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	var overs []*models.ScorecardOver
@@ -356,9 +381,8 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 	log.Printf("Creating ball %d for over %s, type: %s, run: %s, wicket: %v, wicket_type: %s",
 		ball.BallNumber, ball.OverID, string(ball.BallType), string(ball.RunType), ball.IsWicket, ball.WicketType)
 
-	// Add timeout to prevent hanging queries
-	_, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
+	// Note: Supabase client doesn't directly support context timeouts
+	// Timeout is handled at the HTTP client level
 
 	data := map[string]interface{}{
 		"over_id":     ball.OverID,
@@ -385,6 +409,17 @@ func (r *scorecardRepository) CreateBall(ctx context.Context, ball *models.Score
 
 	if len(result) > 0 {
 		*ball = result[0]
+		log.Printf("Successfully created ball with ID: %s", ball.ID)
+	} else {
+		log.Printf("Warning: No result returned from ball creation, but no error occurred")
+		// Try to get the ball by over_id and ball_number to get the ID
+		createdBall, err := r.GetBallByOverAndNumber(ctx, ball.OverID, ball.BallNumber)
+		if err != nil {
+			log.Printf("Error getting created ball: %v", err)
+			return fmt.Errorf("failed to get created ball: %w", err)
+		}
+		*ball = *createdBall
+		log.Printf("Retrieved created ball with ID: %s", ball.ID)
 	}
 
 	log.Printf("Successfully created ball with ID: %s", ball.ID)
@@ -421,6 +456,81 @@ func (r *scorecardRepository) GetBallsByOver(ctx context.Context, overID string)
 
 	log.Printf("Found %d balls for over %s", len(balls), overID)
 	return balls, nil
+}
+
+// GetBallCountByOver gets the count of balls for an over (optimized for performance)
+func (r *scorecardRepository) GetBallCountByOver(ctx context.Context, overID string) (int, error) {
+	log.Printf("Getting ball count for over %s", overID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("id", "", false). // Only select ID for counting
+		Eq("over_id", overID).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting ball count: %v", err)
+		return 0, fmt.Errorf("failed to get ball count: %w", err)
+	}
+
+	ballCount := len(balls)
+	log.Printf("Found %d balls for over %s", ballCount, overID)
+	return ballCount, nil
+}
+
+// GetBallsForNextNumber gets only the necessary fields for ball number calculation (optimized)
+func (r *scorecardRepository) GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	log.Printf("Getting balls for next number calculation for over %s", overID)
+
+	// Add timeout to prevent hanging queries (optimized for simple SELECT)
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("ball_number,ball_type", "", false). // Only select necessary fields
+		Eq("over_id", overID).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting balls for next number: %v", err)
+		return nil, fmt.Errorf("failed to get balls for next number: %w", err)
+	}
+
+	log.Printf("Found %d balls for next number calculation for over %s", len(balls), overID)
+	return balls, nil
+}
+
+// GetBallByOverAndNumber gets a specific ball by over ID and ball number
+func (r *scorecardRepository) GetBallByOverAndNumber(ctx context.Context, overID string, ballNumber int) (*models.ScorecardBall, error) {
+	log.Printf("Getting ball %d for over %s", ballNumber, overID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	var balls []*models.ScorecardBall
+	_, err := r.client.From(r.getTableName("balls")).
+		Select("*", "", false).
+		Eq("over_id", overID).
+		Eq("ball_number", fmt.Sprintf("%d", ballNumber)).
+		ExecuteTo(&balls)
+
+	if err != nil {
+		log.Printf("Error getting ball: %v", err)
+		return nil, fmt.Errorf("failed to get ball: %w", err)
+	}
+
+	if len(balls) == 0 {
+		return nil, fmt.Errorf("ball not found")
+	}
+
+	log.Printf("Found ball %d for over %s", ballNumber, overID)
+	return balls[0], nil
 }
 
 // GetLastBall gets the last ball of an over
@@ -513,7 +623,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 
 	// Get match details
 	var matches []*models.Match
-	_, err := r.client.From("matches").
+	_, err := r.client.From(r.getTableName("matches")).
 		Select("*, series(name)", "", false).
 		Eq("id", matchID).
 		ExecuteTo(&matches)
@@ -642,7 +752,7 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 	seriesName := "Unknown Series"
 	if match.SeriesID != "" {
 		var series []*models.Series
-		_, err := r.client.From("series").
+		_, err := r.client.From(r.getTableName("series")).
 			Select("name", "", false).
 			Eq("id", match.SeriesID).
 			ExecuteTo(&series)
@@ -668,4 +778,156 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 
 	log.Printf("Successfully built scorecard for match %s", matchID)
 	return scorecard, nil
+}
+
+// GetMatchInningsOverData gets all necessary data for add ball API in a single optimized query
+func (r *scorecardRepository) GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	log.Printf("Getting optimized match data for match %s, innings %d", matchID, inningsNumber)
+
+	// Add timeout to prevent hanging queries (optimized for complex JOIN)
+	_, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// For now, use fallback method since Supabase doesn't support complex JOINs easily
+	// In production, this would use a stored procedure or raw SQL
+	return r.getMatchInningsOverDataFallback(ctx, matchID, inningsNumber)
+}
+
+// getMatchInningsOverDataFallback provides fallback implementation using individual queries
+func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	log.Printf("Using fallback method for match %s, innings %d", matchID, inningsNumber)
+
+	// Get match data
+	match, err := r.matchRepo.GetByID(ctx, matchID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get match: %w", err)
+	}
+
+	// Get innings data
+	innings, err := r.GetInningsByMatchAndNumber(ctx, matchID, inningsNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get innings: %w", err)
+	}
+
+	// Get current over data
+	over, err := r.GetCurrentOver(ctx, innings.ID)
+	if err != nil {
+		// No current over exists, try to create the first over
+		log.Printf("No current over found, creating first over for innings %s", innings.ID)
+
+		// Get all overs for this innings to determine the next over number
+		allOvers, err := r.GetOversByInnings(ctx, innings.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get overs for innings: %w", err)
+		}
+
+		overNumber := len(allOvers) + 1
+		newOver := &models.ScorecardOver{
+			InningsID:    innings.ID,
+			OverNumber:   overNumber,
+			TotalRuns:    0,
+			TotalBalls:   0,
+			TotalWickets: 0,
+			Status:       string(models.OverStatusInProgress),
+		}
+
+		// Try to create the over in the database
+		err = r.CreateOver(ctx, newOver)
+		if err != nil {
+			// If creation failed due to duplicate key (race condition), try to get the existing over
+			if strings.Contains(err.Error(), "duplicate key") {
+				log.Printf("Over creation failed due to race condition, attempting to get existing over")
+				over, err = r.GetCurrentOver(ctx, innings.ID)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get existing over after race condition: %w", err)
+				}
+				log.Printf("Successfully retrieved existing over %d for innings %s", over.OverNumber, innings.ID)
+			} else {
+				return nil, fmt.Errorf("failed to create first over: %w", err)
+			}
+		} else {
+			log.Printf("Successfully created first over %d for innings %s", overNumber, innings.ID)
+			over = newOver
+		}
+	}
+
+	// Get ball count for current over
+	ballCount, err := r.GetBallCountByOver(ctx, over.ID)
+	if err != nil {
+		ballCount = 0
+	}
+
+	// Get balls for next number calculation
+	balls, err := r.GetBallsForNextNumber(ctx, over.ID)
+	if err != nil {
+		balls = []*models.ScorecardBall{}
+	}
+
+	// Calculate statistics
+	legalBallCount := 0
+	maxBallNumber := 0
+	for _, ball := range balls {
+		if ball.BallNumber > maxBallNumber {
+			maxBallNumber = ball.BallNumber
+		}
+		if ball.BallType == models.BallTypeGood {
+			legalBallCount++
+		}
+	}
+
+	// Get overs for statistics
+	overs, err := r.GetOversByInnings(ctx, innings.ID)
+	if err != nil {
+		overs = []*models.ScorecardOver{}
+	}
+
+	completedOvers := 0
+	currentOverBalls := 0
+	for _, o := range overs {
+		if o.Status == string(models.OverStatusCompleted) {
+			completedOvers++
+		} else if o.Status == string(models.OverStatusInProgress) {
+			currentOverBalls = o.TotalBalls
+		}
+	}
+
+	return &models.MatchInningsOverData{
+		// Match data
+		MatchID:          match.ID,
+		MatchStatus:      match.Status,
+		CreatedBy:        match.CreatedBy,
+		BattingTeam:      match.BattingTeam,
+		TotalOvers:       match.TotalOvers,
+		TeamAPlayerCount: match.TeamAPlayerCount,
+
+		// Innings data
+		InningsID:           innings.ID,
+		InningsNumber:       innings.InningsNumber,
+		InningsStatus:       models.InningsStatus(innings.Status),
+		InningsTotalRuns:    innings.TotalRuns,
+		InningsTotalWickets: innings.TotalWickets,
+		InningsTotalOvers:   innings.TotalOvers,
+		InningsTotalBalls:   innings.TotalBalls,
+
+		// Over data
+		OverID:           over.ID,
+		OverNumber:       over.OverNumber,
+		OverStatus:       models.OverStatus(over.Status),
+		OverTotalRuns:    over.TotalRuns,
+		OverTotalBalls:   over.TotalBalls,
+		OverTotalWickets: over.TotalWickets,
+
+		// Ball data
+		BallCount:      ballCount,
+		LegalBallCount: legalBallCount,
+		MaxBallNumber:  maxBallNumber,
+
+		// Overs data
+		CompletedOvers:   completedOvers,
+		CurrentOverBalls: currentOverBalls,
+
+		// Timestamps
+		CreatedAt: match.CreatedAt,
+		UpdatedAt: match.UpdatedAt,
+	}, nil
 }

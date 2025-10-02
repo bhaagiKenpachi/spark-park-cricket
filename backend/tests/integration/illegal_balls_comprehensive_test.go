@@ -18,11 +18,13 @@ import (
 	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 )
 
 func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Setup
 	cfg := config.LoadTestConfig()
+	var server *httptest.Server
 
 	db, err := database.NewTestClient(cfg)
 	require.NoError(t, err)
@@ -35,7 +37,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	// Use the standard router setup that includes authentication middleware
 	router := handlers.SetupRoutes(db, cfg.Config)
 
-	server := httptest.NewServer(router)
+	server = httptest.NewServer(router)
 	defer server.Close()
 
 	// Create test user first
@@ -52,7 +54,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
 
 	// Create user session for authentication
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)
@@ -98,6 +100,19 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)
 
+	// Start scoring for the match
+	startScoringReq := map[string]interface{}{
+		"match_id": match.ID,
+	}
+	startScoringBody, _ := json.Marshal(startScoringReq)
+	startScoringHTTPReq := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(startScoringBody))
+	startScoringHTTPReq.Header.Set("Content-Type", "application/json")
+	startScoringHTTPReq.AddCookie(sessionCookie)
+	startScoringResp := httptest.NewRecorder()
+
+	router.ServeHTTP(startScoringResp, startScoringHTTPReq)
+	require.Equal(t, http.StatusOK, startScoringResp.Code, "Should start scoring successfully")
+
 	// Test scenario: Over with illegal balls
 	// Expected: 1 no_ball + 1 wide + 6 good balls = 8 total balls, but only 6 legal balls
 	illegalBallsScenario := []models.BallEventRequest{
@@ -113,8 +128,8 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		// Ball 6: Good ball - 4 runs
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		// Ball 7: Good ball - 5 runs
-		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		// Ball 7: Good ball - 1 run (changed from 5 runs which is invalid in cricket)
+		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		// Ball 8: Good ball - 6 runs
 		{MatchID: match.ID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 	}
@@ -177,10 +192,12 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 
 	// Verify first innings data
 	require.NotEmpty(t, scorecardResponse.Data.Innings, "Innings should not be empty")
+	require.Len(t, scorecardResponse.Data.Innings, 1, "Should have exactly one innings")
+	require.NotNil(t, scorecardResponse.Data.Innings[0], "First innings should not be nil")
 	firstInnings := scorecardResponse.Data.Innings[0]
 
-	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+5+6 (good balls) + 5 (byes) = 28
-	assert.Equal(t, 28, firstInnings.TotalRuns)
+	// Verify total runs: 1 (no_ball) + 1 (wide) + 1+2+3+4+1+6 (good balls) + 5 (byes) = 24
+	assert.Equal(t, 24, firstInnings.TotalRuns)
 
 	// Verify total overs: 1.0 (1 completed over, no second over created yet)
 	assert.Equal(t, 1.0, firstInnings.TotalOvers)
@@ -195,9 +212,12 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, 7, firstInnings.Extras.Total)   // 5 + 1 + 1
 
 	// Verify over data - first over should be completed with 6 legal balls
+	require.NotEmpty(t, firstInnings.Overs, "First innings should have overs")
+	require.Len(t, firstInnings.Overs, 1, "Should have exactly one over")
+	require.NotNil(t, firstInnings.Overs[0], "First over should not be nil")
 	firstOver := firstInnings.Overs[0]
 	assert.Equal(t, 1, firstOver.OverNumber)
-	assert.Equal(t, 28, firstOver.TotalRuns) // 6+1+1+2+3+4+5+6 = 28 runs from all balls in first over
+	assert.Equal(t, 24, firstOver.TotalRuns) // 1+1+1+2+3+4+1+6+5 = 24 runs from all balls in first over
 	assert.Equal(t, 6, firstOver.TotalBalls) // All 6 legal balls in first over
 	assert.Equal(t, "completed", firstOver.Status)
 
@@ -205,6 +225,15 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Len(t, firstOver.Balls, 8, "First over should have 8 balls (2 illegal + 6 legal)")
 
 	// First over should contain all 8 balls (2 illegal + 6 legal)
+	require.NotEmpty(t, firstOver.Balls, "First over should have balls")
+	require.Len(t, firstOver.Balls, 8, "First over should have exactly 8 balls")
+
+	// Defensive checks for ball access
+	require.NotNil(t, firstOver.Balls[0], "Ball 1 should not be nil")
+	require.NotNil(t, firstOver.Balls[1], "Ball 2 should not be nil")
+	require.NotNil(t, firstOver.Balls[2], "Ball 3 should not be nil")
+	require.NotNil(t, firstOver.Balls[3], "Ball 4 should not be nil")
+
 	// Ball 1: No ball with byes
 	assert.Equal(t, 1, firstOver.Balls[0].BallNumber)
 	assert.Equal(t, "no_ball", firstOver.Balls[0].BallType)
@@ -247,11 +276,11 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 	assert.Equal(t, "4", firstOver.Balls[5].RunType)
 	assert.Equal(t, 4, firstOver.Balls[5].Runs)
 
-	// Ball 7: Good ball - 5 runs
+	// Ball 7: Good ball - 1 run
 	assert.Equal(t, 7, firstOver.Balls[6].BallNumber)
 	assert.Equal(t, "good", firstOver.Balls[6].BallType)
-	assert.Equal(t, "5", firstOver.Balls[6].RunType)
-	assert.Equal(t, 5, firstOver.Balls[6].Runs)
+	assert.Equal(t, "1", firstOver.Balls[6].RunType)
+	assert.Equal(t, 1, firstOver.Balls[6].Runs)
 	assert.Equal(t, 0, firstOver.Balls[6].Byes)
 	assert.False(t, firstOver.Balls[6].IsWicket)
 
@@ -313,6 +342,7 @@ func TestIllegalBalls_Comprehensive_Scenario(t *testing.T) {
 func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	// Setup
 	cfg := config.LoadTestConfig()
+	var server *httptest.Server
 
 	db, err := database.NewTestClient(cfg)
 	require.NoError(t, err)
@@ -322,10 +352,13 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	err = database.SetupTestSchema(cfg)
 	require.NoError(t, err)
 
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
+
 	// Use the standard router setup that includes authentication middleware
 	router := handlers.SetupRoutes(db, cfg.Config)
 
-	server := httptest.NewServer(router)
+	server = httptest.NewServer(router)
 	defer server.Close()
 
 	// Create test user first
@@ -342,7 +375,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	defer func() { _ = db.Repositories.User.DeleteUser(ctx, testUser.ID) }()
 
 	// Create user session for authentication
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)
@@ -388,6 +421,19 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 	err = db.Repositories.Match.Create(ctx, match)
 	require.NoError(t, err)
 
+	// Start scoring for the match
+	startScoringReq := map[string]interface{}{
+		"match_id": match.ID,
+	}
+	startScoringBody, _ := json.Marshal(startScoringReq)
+	startScoringHTTPReq := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(startScoringBody))
+	startScoringHTTPReq.Header.Set("Content-Type", "application/json")
+	startScoringHTTPReq.AddCookie(sessionCookie)
+	startScoringResp := httptest.NewRecorder()
+
+	router.ServeHTTP(startScoringResp, startScoringHTTPReq)
+	require.Equal(t, http.StatusOK, startScoringResp.Code, "Should start scoring successfully")
+
 	// Test scenario: 5 legal balls + 3 illegal balls = 8 total balls, but over should not be complete
 	overCompletionBalls := []models.BallEventRequest{
 		// 5 legal balls
@@ -425,6 +471,7 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 
 	var scorecardResponse struct {
 		Data struct {
+			MatchID string `json:"match_id"`
 			Innings []struct {
 				TotalOvers float64 `json:"total_overs"`
 				Overs      []struct {
@@ -435,15 +482,23 @@ func TestIllegalBalls_OverCompletion_Logic(t *testing.T) {
 			} `json:"innings"`
 		} `json:"data"`
 	}
+
 	err = json.NewDecoder(resp.Body).Decode(&scorecardResponse)
 	require.NoError(t, err)
 	resp.Body.Close()
 
 	// Verify over is not complete (only 5 legal balls)
+	require.NotEmpty(t, scorecardResponse.Data.Innings, "Scorecard should have innings data")
+	require.Len(t, scorecardResponse.Data.Innings, 1, "Should have exactly one innings")
+	require.NotNil(t, scorecardResponse.Data.Innings[0], "First innings should not be nil")
 	firstInnings := scorecardResponse.Data.Innings[0]
-	assert.Equal(t, 0.5, firstInnings.TotalOvers) // 5 legal balls = 0.5 overs
 
+	require.NotEmpty(t, firstInnings.Overs, "First innings should have overs")
+	require.Len(t, firstInnings.Overs, 1, "Should have exactly one over")
+	require.NotNil(t, firstInnings.Overs[0], "First over should not be nil")
 	firstOver := firstInnings.Overs[0]
+
+	assert.Equal(t, 0.5, firstInnings.TotalOvers)    // 5 legal balls = 0.5 overs
 	assert.Equal(t, 5, firstOver.TotalBalls)         // Only legal balls count
 	assert.Equal(t, "in_progress", firstOver.Status) // Over not complete
 

@@ -2,12 +2,12 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [ main, develop, feat/*, fix/* ]
+    branches: [ '*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ '*' ]
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
@@ -224,7 +224,7 @@ jobs:
           export GOPROXY="https://proxy.golang.org,direct"
           
           echo "🧪 Running Unit Tests..."
-          go test ./tests/unit/... -v -race -coverprofile=coverage.out
+          go test ./tests/unit/... -v -race -count=1 -coverprofile=coverage.out
         env:
           REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || '' }}
           REDIS_PASSWORD: ""
@@ -347,9 +347,38 @@ jobs:
       - name: Set up test database schema
         run: |
           echo "🔧 Setting up test database schema..."
-          # Note: This would typically run the setup_test_db.sql script
-          # For now, we'll skip this step as it requires direct database access
-          echo "⚠️ Test database schema setup skipped - requires direct database access"
+          chmod +x scripts/auto-setup-test-db.sh
+          ./scripts/auto-setup-test-db.sh || echo "Auto-setup failed, manual setup required"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+
+      - name: Verify test database schema
+        run: |
+          echo "🔍 Verifying test database schema..."
+          chmod +x scripts/verify-test-db.sh
+          ./scripts/verify-test-db.sh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+
+      - name: Show schema setup instructions (if verification fails)
+        if: failure()
+        run: |
+          echo "🚨 Test database schema verification failed!"
+          echo ""
+          echo "📋 To fix this issue:"
+          echo "1. Go to Supabase Dashboard: ${{ secrets.SUPABASE_URL }}/project/default/sql"
+          echo "2. Execute the SQL from the file below:"
+          echo ""
+          echo "📁 Schema file: internal/database/migrations/complete_schema_testing_db.sql"
+          echo ""
+          echo "📄 First 50 lines of the schema file:"
+          echo "=========================================="
+          head -50 internal/database/migrations/complete_schema_testing_db.sql || echo "Schema file not found"
+          echo "=========================================="
+          echo ""
+          echo "⚠️ Integration tests cannot run without proper schema setup!"
 
       - name: Run integration tests
         run: |
@@ -359,12 +388,32 @@ jobs:
           export GOPROXY="https://proxy.golang.org,direct"
           
           echo "🔗 Running Integration Tests..."
+          echo "=========================================="
+          echo "Environment Details:"
+          echo "Go Version: $(go version)"
+          echo "Go Path: $(go env GOPATH)"
+          echo "Go Root: $(go env GOROOT)"
+          echo "Working Directory: $(pwd)"
           echo "SUPABASE_URL: $SUPABASE_URL"
           echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
           echo "TEST_SCHEMA: $TEST_SCHEMA"
           echo "REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || 'not available' }}"
           echo "CACHE_ENABLED: $CACHE_ENABLED"
-          go test ./tests/integration/... -v -timeout=15m
+          echo "=========================================="
+          
+          # Run tests with detailed output and capture exit code
+          set +e  # Don't exit on first error
+          go test ./tests/integration/... -v -race -timeout=15m -count=1
+          TEST_EXIT_CODE=$?
+          set -e  # Re-enable exit on error
+          
+          # Show test summary
+          echo "=========================================="
+          echo "Integration Tests Exit Code: $TEST_EXIT_CODE"
+          echo "=========================================="
+          
+          # Exit with the test exit code
+          exit $TEST_EXIT_CODE
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -476,7 +525,7 @@ jobs:
           echo "TEST_SCHEMA: $TEST_SCHEMA"
           echo "REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || 'not available' }}"
           echo "CACHE_ENABLED: $CACHE_ENABLED"
-          go test ./tests/e2e/... -v -timeout=15m
+          go test ./tests/e2e/... -v -race -timeout=15m -count=1
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -492,6 +541,7 @@ jobs:
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [code-quality, unit-tests]
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.run_tests == true && (inputs.test_type == 'all' || inputs.test_type == 'performance')) }}
+    environment: ${{ inputs.environment || 'dev' }}
     defaults:
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -550,6 +600,36 @@ jobs:
             echo "⚠️ Skipping Redis connection test - Redis not available"
           fi
 
+      - name: Run database migrations for performance tests
+        run: |
+          # Set up Go environment explicitly
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
+          echo "🗄️ Running database migrations for performance tests..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          
+          # Check if secrets are available
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "❌ ERROR: SUPABASE_URL secret is not set in GitHub repository"
+            echo "Please configure SUPABASE_URL in repository settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          
+          if [ -z "$SUPABASE_API_KEY" ]; then
+            echo "❌ ERROR: SUPABASE_API_KEY secret is not set in GitHub repository"
+            echo "Please configure SUPABASE_API_KEY in repository settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          
+          # Run the migration script
+          go run cmd/migrate/main.go
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+
       - name: Run cache performance tests
         run: |
           # Set up Go environment explicitly
@@ -558,10 +638,16 @@ jobs:
           export GOPROXY="https://proxy.golang.org,direct"
           
           echo "⚡ Running Cache Performance Tests..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          echo "TEST_SCHEMA: $TEST_SCHEMA"
           echo "REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || 'not available' }}"
           echo "CACHE_ENABLED: $CACHE_ENABLED"
           go test -bench=BenchmarkCacheOperations -benchmem -v ./tests/performance/
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          TEST_SCHEMA: testing_db
           REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || '' }}
           REDIS_PASSWORD: ""
           REDIS_DB: 0
@@ -575,8 +661,39 @@ jobs:
           export GOPROXY="https://proxy.golang.org,direct"
           
           echo "📊 Running Cache vs Database Comparison..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          echo "TEST_SCHEMA: $TEST_SCHEMA"
+          echo "REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || 'not available' }}"
+          echo "CACHE_ENABLED: $CACHE_ENABLED"
           go test -bench=BenchmarkCacheVsDatabase -benchmem -v ./tests/performance/
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          TEST_SCHEMA: testing_db
+          REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || '' }}
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          CACHE_ENABLED: ${{ env.REDIS_AVAILABLE == 'true' }}
+
+      - name: Run performance target validation tests
+        run: |
+          # Set up Go environment explicitly
+          export PATH="/bin:/usr/bin:/usr/local/bin:/usr/local/go/bin:/home/github-runner/go/bin:$PATH"
+          export GOSUMDB="sum.golang.org"
+          export GOPROXY="https://proxy.golang.org,direct"
+          
+          echo "🎯 Running Performance Target Validation Tests..."
+          echo "SUPABASE_URL: $SUPABASE_URL"
+          echo "SUPABASE_API_KEY: $SUPABASE_API_KEY"
+          echo "TEST_SCHEMA: $TEST_SCHEMA"
+          echo "REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || 'not available' }}"
+          echo "CACHE_ENABLED: $CACHE_ENABLED"
+          go test -v ./tests/performance/ -run TestPerformanceTargets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          TEST_SCHEMA: testing_db
           REDIS_URL: ${{ env.REDIS_AVAILABLE == 'true' && 'localhost:6379' || '' }}
           REDIS_PASSWORD: ""
           REDIS_DB: 0

@@ -39,7 +39,7 @@ func createAuthenticatedUser(t *testing.T, dbClient *database.Client) (*models.U
 
 	// Create session
 	cfg := config.LoadTestConfig()
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)

@@ -59,7 +59,7 @@ func createTestMatch(t *testing.T, db *database.Client) (string, string, *http.C
 
 	// Create user session for authentication
 	cfg := config.LoadTestConfig()
-	serviceContainer := services.NewContainer(db.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(db, cfg.Config)
 	sessionService := serviceContainer.SessionService
 
 	mockReq := httptest.NewRequest("GET", "/", nil)
@@ -114,7 +114,9 @@ func TestMatchCompletion_TargetReached_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -176,7 +178,8 @@ func TestMatchCompletion_TargetReached_Integration(t *testing.T) {
 	// Add balls to reach target (11 runs)
 	ballRequests := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 	}
 
 	for _, ballReq := range ballRequests {
@@ -240,7 +243,9 @@ func TestMatchCompletion_AllWicketsLost_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -286,6 +291,18 @@ func TestMatchCompletion_AllWicketsLost_Integration(t *testing.T) {
 		Status:        string(models.InningsStatusInProgress),
 	}
 	err = db.Repositories.Scorecard.CreateInnings(ctx, secondInnings)
+	require.NoError(t, err)
+
+	// Create first over for second innings
+	secondInningsOver := &models.ScorecardOver{
+		InningsID:    secondInnings.ID,
+		OverNumber:   1,
+		TotalRuns:    0,
+		TotalBalls:   0,
+		TotalWickets: 0,
+		Status:       string(models.OverStatusInProgress),
+	}
+	err = db.Repositories.Scorecard.CreateOver(ctx, secondInningsOver)
 	require.NoError(t, err)
 
 	// Add balls to lose all wickets (2 wickets for 3 players)
@@ -355,7 +372,9 @@ func TestMatchCompletion_AllOversCompleted_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()
@@ -486,7 +505,9 @@ func TestMatchCompletion_MatchContinues_Integration(t *testing.T) {
 	server, db := setupTestServer(t)
 	defer server.Close()
 	defer db.Close()
-	defer testutils.CleanupScorecardTestData(t, db)
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, db)
 
 	_, matchID, sessionCookie, userID := createTestMatch(t, db)
 	defer func() { _ = db.Repositories.User.DeleteUser(context.Background(), userID) }()

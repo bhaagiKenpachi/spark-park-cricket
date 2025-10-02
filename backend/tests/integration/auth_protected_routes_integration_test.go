@@ -40,7 +40,7 @@ func TestAuthProtectedRoutesIntegration_SeriesRoutes(t *testing.T) {
 	testutils.CleanupTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 	_ = serviceContainer // Use serviceContainer to avoid unused variable warning
 
 	// Setup routes
@@ -250,7 +250,7 @@ func TestAuthProtectedRoutesIntegration_MatchRoutes(t *testing.T) {
 	testutils.CleanupTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 	_ = serviceContainer // Use serviceContainer to avoid unused variable warning
 
 	// Setup routes
@@ -557,7 +557,7 @@ func TestAuthProtectedRoutesIntegration_ContextValues(t *testing.T) {
 	testutils.CleanupTestData(t, dbClient)
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 	_ = serviceContainer // Use serviceContainer to avoid unused variable warning
 
 	// Setup routes

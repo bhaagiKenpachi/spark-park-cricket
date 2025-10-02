@@ -14,6 +14,7 @@
 
 # production
 /build
+/temp
 
 # misc
 .DS_Store
@@ -53,6 +54,7 @@ backend/internal/database/schema_v1_prod.sql
 backend/api/
 backend/bin/*
 backend/server
+backend/temp/*
 
 # OAuth client secrets
 client_secret_*.json

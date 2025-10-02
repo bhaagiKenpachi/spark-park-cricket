@@ -3,21 +3,16 @@ package services
 import (
 	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/database"
-	"spark-park-cricket-backend/internal/graphql"
 	"spark-park-cricket-backend/internal/interfaces"
 	"spark-park-cricket-backend/internal/monitoring"
-	"spark-park-cricket-backend/pkg/events"
-	"spark-park-cricket-backend/pkg/websocket"
 )
 
 // Container holds all service instances
 type Container struct {
-	Series           *SeriesService
-	Match            *MatchService
-	Scorecard        interfaces.ScorecardServiceInterface
-	Hub              *websocket.Hub
-	Broadcaster      *events.EventBroadcaster
-	GraphQLWebSocket *graphql.GraphQLWebSocketService
+	DBClient  *database.Client
+	Series    *SeriesService
+	Match     *MatchService
+	Scorecard interfaces.ScorecardServiceInterface
 	// Authentication services
 	AuthService    *AuthService
 	SessionService *SessionService
@@ -26,36 +21,23 @@ type Container struct {
 }
 
 // NewContainer creates a new service container with all services
-func NewContainer(repos *database.Repositories, cfg *config.Config) *Container {
+func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 	// Initialize Prometheus metrics
 	metrics := monitoring.NewMetrics()
-	// Create WebSocket hub
-	hub := websocket.NewHub()
-
-	// Create event broadcaster
-	broadcaster := events.NewEventBroadcaster(hub)
 
 	// Create base scorecard service
-	baseScorecardService := NewScorecardService(repos.Scorecard, repos.Match, metrics)
-
-	// Create GraphQL WebSocket service
-	graphqlWebSocketService := graphql.NewGraphQLWebSocketService(baseScorecardService, hub)
-
-	// Create GraphQL-integrated scorecard service
-	scorecardServiceWithGraphQL := NewScorecardServiceWithGraphQL(repos.Scorecard, repos.Match, hub, metrics)
+	scorecardService := NewScorecardService(dbClient.Repositories.Scorecard, dbClient.Repositories.Match, metrics, dbClient.CacheManager)
 
 	// Create authentication services
-	sessionService := NewSessionService(repos.User, cfg)
-	authService := NewAuthService(cfg, repos.User, sessionService)
+	sessionService := NewSessionService(dbClient.Repositories.User, cfg)
+	authService := NewAuthService(cfg, dbClient.Repositories.User, sessionService)
 
 	// Create container
 	container := &Container{
-		Series:           NewSeriesService(repos.Series),
-		Match:            NewMatchService(repos.Match, repos.Series),
-		Scorecard:        scorecardServiceWithGraphQL,
-		Hub:              hub,
-		Broadcaster:      broadcaster,
-		GraphQLWebSocket: graphqlWebSocketService,
+		DBClient:  dbClient,
+		Series:    NewSeriesService(dbClient.Repositories.Series),
+		Match:     NewMatchService(dbClient.Repositories.Match, dbClient.Repositories.Series),
+		Scorecard: scorecardService,
 		// Authentication services
 		AuthService:    authService,
 		SessionService: sessionService,

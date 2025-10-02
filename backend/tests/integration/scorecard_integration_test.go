@@ -167,11 +167,8 @@ func TestScorecardIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer dbClient.Close()
 
-	// Clean up any existing test data
-	testutils.CleanupScorecardTestData(t, dbClient)
-
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
+	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
 
 	// Setup router with authentication
 	router := handlers.SetupRoutes(dbClient, testConfig.Config)
@@ -183,6 +180,9 @@ func TestScorecardIntegration(t *testing.T) {
 	defer func() {
 		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
 	}()
+
+	// Clean up any existing test data BEFORE creating new test data
+	testutils.CleanupScorecardTestData(t, dbClient)
 
 	// Create test series
 	seriesID := createTestSeriesForScorecard(t, router, sessionCookie)
@@ -343,6 +343,7 @@ func TestScorecardIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, matchID, response.Data.MatchID)
 		assert.Len(t, response.Data.Innings, 1)
+		require.NotNil(t, response.Data.Innings[0], "First innings should not be nil")
 		assert.Equal(t, 1, response.Data.Innings[0].InningsNumber)
 		assert.Equal(t, 4, response.Data.Innings[0].TotalRuns)
 	})
@@ -471,6 +472,9 @@ func TestScorecardIntegration(t *testing.T) {
 	})
 
 	t.Run("GetOver_NotFound", func(t *testing.T) {
+		t.Logf("DEBUG: GetOver_NotFound test - Using matchID: %s", matchID)
+		t.Logf("DEBUG: GetOver_NotFound test - Session cookie: %s", sessionCookie)
+
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1/over/2", nil)
 		reqHTTP.AddCookie(&http.Cookie{
 			Name:     "user_session",
@@ -483,6 +487,10 @@ func TestScorecardIntegration(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
+
+		t.Logf("DEBUG: GetOver_NotFound test - Response status: %d", w.Code)
+		t.Logf("DEBUG: GetOver_NotFound test - Response body: %s", w.Body.String())
+
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 

@@ -32,7 +32,7 @@ func TestAuthIntegration_UserFlow(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 
 	// Create auth handler
 	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg.Config)
