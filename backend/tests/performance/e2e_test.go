@@ -196,6 +196,7 @@ func cleanupTestMatch(t *testing.T, dbClient *database.Client, matchID, seriesID
 // startMatch starts the match
 func (suite *E2ETestSuite) startMatch() error {
 	fmt.Printf("🔧 DEBUG: Starting match %s\n", suite.matchID)
+	fmt.Printf("🔧 DEBUG: Auth cookie length: %d\n", len(suite.authCookie))
 
 	// Update match to live status
 	status := models.MatchStatusLive
@@ -203,10 +204,13 @@ func (suite *E2ETestSuite) startMatch() error {
 		Status: &status,
 	}
 
+	fmt.Printf("🔧 DEBUG: Marshaling update request: %+v\n", updateReq)
 	reqBody, err := json.Marshal(updateReq)
 	if err != nil {
+		fmt.Printf("❌ DEBUG: Failed to marshal update request: %v\n", err)
 		return fmt.Errorf("failed to marshal update request: %w", err)
 	}
+	fmt.Printf("🔧 DEBUG: Request body: %s\n", string(reqBody))
 
 	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/matches/%s", suite.matchID), bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -217,12 +221,14 @@ func (suite *E2ETestSuite) startMatch() error {
 		HttpOnly: true,
 	})
 
+	fmt.Printf("🔧 DEBUG: Making PUT request to /api/v1/matches/%s\n", suite.matchID)
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
 	fmt.Printf("🔧 DEBUG: Match update response: %d - %s\n", w.Code, w.Body.String())
 
 	if w.Code != http.StatusOK {
+		fmt.Printf("❌ DEBUG: Match update failed with status %d\n", w.Code)
 		return fmt.Errorf("failed to update match status: %d - %s", w.Code, w.Body.String())
 	}
 
@@ -233,6 +239,7 @@ func (suite *E2ETestSuite) startMatch() error {
 // addBallsToCompleteOver adds balls to complete an over
 func (suite *E2ETestSuite) addBallsToCompleteOver() error {
 	fmt.Printf("🔧 DEBUG: Adding 6 balls to complete over for match %s\n", suite.matchID)
+	fmt.Printf("🔧 DEBUG: Auth cookie length: %d\n", len(suite.authCookie))
 
 	// Add 6 legal balls to complete an over
 	for i := 0; i < 6; i++ {
@@ -247,6 +254,7 @@ func (suite *E2ETestSuite) addBallsToCompleteOver() error {
 			Byes:          0,
 		}
 
+		fmt.Printf("🔧 DEBUG: Ball request: %+v\n", ballReq)
 		err := suite.addBall(ballReq)
 		if err != nil {
 			fmt.Printf("❌ DEBUG: Failed to add ball %d: %v\n", i+1, err)
@@ -404,11 +412,15 @@ func (suite *E2ETestSuite) verifyScorecardPerformance() error {
 func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 	fmt.Printf("🔧 DEBUG: Adding ball - Match: %s, Innings: %d, Type: %s, Run: %s\n",
 		ballReq.MatchID, ballReq.InningsNumber, ballReq.BallType, ballReq.RunType)
+	fmt.Printf("🔧 DEBUG: Ball request details: %+v\n", ballReq)
+	fmt.Printf("🔧 DEBUG: Auth cookie length: %d\n", len(suite.authCookie))
 
 	reqBody, err := json.Marshal(ballReq)
 	if err != nil {
+		fmt.Printf("❌ DEBUG: Failed to marshal ball request: %v\n", err)
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
+	fmt.Printf("🔧 DEBUG: Request body: %s\n", string(reqBody))
 
 	req := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -421,12 +433,14 @@ func (suite *E2ETestSuite) addBall(ballReq models.BallEventRequest) error {
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	fmt.Printf("🔧 DEBUG: Making POST request to /api/v1/scorecard/ball\n")
 	w := httptest.NewRecorder()
 	suite.router.ServeHTTP(w, req)
 
 	fmt.Printf("🔧 DEBUG: Add ball response: %d - %s\n", w.Code, w.Body.String())
 
 	if w.Code != http.StatusOK {
+		fmt.Printf("❌ DEBUG: Add ball failed with status %d\n", w.Code)
 		return fmt.Errorf("add ball failed with status %d: %s", w.Code, w.Body.String())
 	}
 

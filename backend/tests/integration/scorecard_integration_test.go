@@ -472,6 +472,9 @@ func TestScorecardIntegration(t *testing.T) {
 	})
 
 	t.Run("GetOver_NotFound", func(t *testing.T) {
+		t.Logf("DEBUG: GetOver_NotFound test - Using matchID: %s", matchID)
+		t.Logf("DEBUG: GetOver_NotFound test - Session cookie: %s", sessionCookie)
+
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1/over/2", nil)
 		reqHTTP.AddCookie(&http.Cookie{
 			Name:     "user_session",
@@ -484,6 +487,10 @@ func TestScorecardIntegration(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
+
+		t.Logf("DEBUG: GetOver_NotFound test - Response status: %d", w.Code)
+		t.Logf("DEBUG: GetOver_NotFound test - Response body: %s", w.Body.String())
+
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 

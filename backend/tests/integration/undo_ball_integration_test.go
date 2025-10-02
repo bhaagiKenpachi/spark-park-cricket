@@ -93,6 +93,9 @@ func createTestSeriesForUndoBall(t *testing.T, router http.Handler, sessionCooki
 
 // Helper function to create a test match for undo ball tests
 func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID string, sessionCookie string) string {
+	t.Logf("DEBUG: createTestMatchForUndoBall - Creating match for seriesID: %s", seriesID)
+	t.Logf("DEBUG: createTestMatchForUndoBall - Using session cookie: %s", sessionCookie)
+
 	matchReq := map[string]interface{}{
 		"series_id":           seriesID,
 		"match_number":        1,
@@ -122,6 +125,10 @@ func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID stri
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
+
+	t.Logf("DEBUG: createTestMatchForUndoBall - Response status: %d", w.Code)
+	t.Logf("DEBUG: createTestMatchForUndoBall - Response body: %s", w.Body.String())
+
 	require.Equal(t, http.StatusCreated, w.Code)
 
 	var response struct {
@@ -130,6 +137,7 @@ func createTestMatchForUndoBall(t *testing.T, router http.Handler, seriesID stri
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
 
+	t.Logf("DEBUG: createTestMatchForUndoBall - Created match with ID: %s", response.Data.ID)
 	return response.Data.ID
 }
 
@@ -287,6 +295,9 @@ func TestUndoBallIntegration(t *testing.T) {
 		assert.Equal(t, 2, responseBefore.Data.Innings[0].TotalBalls) // 2 legal balls
 
 		// Undo last ball
+		t.Logf("DEBUG: successful_undo_ball test - About to undo ball for matchID: %s", matchID)
+		t.Logf("DEBUG: successful_undo_ball test - Session cookie: %s", sessionCookie)
+
 		undoReq := httptest.NewRequest("DELETE", "/api/v1/scorecard/"+matchID+"/ball?innings=1", nil)
 		undoReq.AddCookie(&http.Cookie{
 			Name:     "user_session",
@@ -298,6 +309,9 @@ func TestUndoBallIntegration(t *testing.T) {
 		})
 		undoW := httptest.NewRecorder()
 		router.ServeHTTP(undoW, undoReq)
+
+		t.Logf("DEBUG: successful_undo_ball test - Undo response status: %d", undoW.Code)
+		t.Logf("DEBUG: successful_undo_ball test - Undo response body: %s", undoW.Body.String())
 		assert.Equal(t, http.StatusOK, undoW.Code)
 
 		// Get scorecard after undo

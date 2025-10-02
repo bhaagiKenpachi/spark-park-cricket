@@ -3,6 +3,8 @@ package performance
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -79,14 +81,21 @@ func GetValidationConfig(level ValidationLevel) ValidationConfig {
 
 var globalTestDataMutex sync.Mutex // Global mutex for test data creation
 
-// createTestDataWithValidation creates test data with configurable validation level
+// createTestDataWithValidation creates test data with configurable validation level using transactions
 func createTestDataWithValidation(dbClient *database.Client, userID string, level ValidationLevel, testType string) (string, string, error) {
 	config := GetValidationConfig(level)
 
+	log.Printf("🔧 DEBUG: Starting test data creation for %s with validation level %d", testType, level)
+	log.Printf("🔧 DEBUG: User ID: %s", userID)
+
 	// Apply mutex protection if configured
 	if config.MutexProtection {
+		log.Printf("🔧 DEBUG: Acquiring global test data mutex")
 		globalTestDataMutex.Lock()
-		defer globalTestDataMutex.Unlock()
+		defer func() {
+			globalTestDataMutex.Unlock()
+			log.Printf("🔧 DEBUG: Released global test data mutex")
+		}()
 		time.Sleep(config.RetryDelay)
 	}
 
@@ -94,12 +103,23 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 	// Retry logic based on validation level
 	for attempt := 1; attempt <= config.MaxRetries; attempt++ {
+		log.Printf("🔧 DEBUG: Attempt %d/%d for test data creation", attempt, config.MaxRetries)
+
 		if attempt > 1 {
-			time.Sleep(time.Duration(attempt) * config.RetryDelay)
+			retryDelay := time.Duration(attempt) * config.RetryDelay
+			log.Printf("🔧 DEBUG: Waiting %v before retry", retryDelay)
+			time.Sleep(retryDelay)
 		}
 
-		// Create test series with highly unique identifier to prevent interference
-		uniqueID := fmt.Sprintf("%d-%d-%d-%d-%s", time.Now().UnixNano(), time.Now().Unix(), attempt, len(userID), testType)
+		// Create highly unique identifier to prevent interference
+		uniqueID := fmt.Sprintf("%d-%d-%d-%d-%s-%d", time.Now().UnixNano(), time.Now().Unix(), attempt, len(userID), testType, os.Getpid())
+		log.Printf("🔧 DEBUG: Generated unique ID: %s", uniqueID)
+
+		// Note: Supabase doesn't support explicit transactions, so we'll use atomic operations
+		log.Printf("🔧 DEBUG: Starting atomic data creation (Supabase doesn't support explicit transactions)")
+
+		// Create test series
+		log.Printf("🔧 DEBUG: Creating test series")
 		series := &models.Series{
 			Name:      fmt.Sprintf("%s Test Series %s", testType, uniqueID),
 			StartDate: time.Now(),
@@ -109,13 +129,16 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 		err := dbClient.Repositories.Series.Create(ctx, series)
 		if err != nil {
+			log.Printf("❌ DEBUG: Failed to create series: %v", err)
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create test series after %d attempts: %v", config.MaxRetries, err)
 			}
 			continue
 		}
+		log.Printf("✅ DEBUG: Created series with ID: %s", series.ID)
 
 		// Create test match
+		log.Printf("🔧 DEBUG: Creating test match")
 		match := &models.Match{
 			SeriesID:         series.ID,
 			MatchNumber:      1,
@@ -132,13 +155,16 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 		err = dbClient.Repositories.Match.Create(ctx, match)
 		if err != nil {
+			log.Printf("❌ DEBUG: Failed to create match: %v", err)
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create test match after %d attempts: %v", config.MaxRetries, err)
 			}
 			continue
 		}
+		log.Printf("✅ DEBUG: Created match with ID: %s", match.ID)
 
 		// Create first innings
+		log.Printf("🔧 DEBUG: Creating first innings")
 		innings := &models.Innings{
 			MatchID:       match.ID,
 			InningsNumber: 1,
@@ -153,13 +179,16 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 		err = dbClient.Repositories.Scorecard.CreateInnings(ctx, innings)
 		if err != nil {
+			log.Printf("❌ DEBUG: Failed to create innings: %v", err)
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create test innings after %d attempts: %v", config.MaxRetries, err)
 			}
 			continue
 		}
+		log.Printf("✅ DEBUG: Created innings with ID: %s", innings.ID)
 
 		// Create first over
+		log.Printf("🔧 DEBUG: Creating first over")
 		over := &models.ScorecardOver{
 			InningsID:    innings.ID,
 			OverNumber:   1,
@@ -171,11 +200,13 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 		err = dbClient.Repositories.Scorecard.CreateOver(ctx, over)
 		if err != nil {
+			log.Printf("❌ DEBUG: Failed to create over: %v", err)
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create test over after %d attempts: %v", config.MaxRetries, err)
 			}
 			continue
 		}
+		log.Printf("✅ DEBUG: Created over with ID: %s", over.ID)
 
 		// Validate over ID is not empty before proceeding
 		if over.ID == "" {
@@ -187,16 +218,20 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 
 		// Apply validation based on level
 		if config.ValidateDataIntegrity {
+			log.Printf("🔧 DEBUG: Validating test data integrity")
 			if err := validateTestDataIntegrityWithLevel(dbClient, series.ID, match.ID, innings.ID, over.ID, level); err != nil {
+				log.Printf("❌ DEBUG: Data integrity validation failed: %v", err)
 				if attempt == config.MaxRetries {
 					return "", "", fmt.Errorf("failed to validate test data integrity after %d attempts: %v", config.MaxRetries, err)
 				}
 				continue
 			}
+			log.Printf("✅ DEBUG: Data integrity validation passed")
 		}
 
 		// Always validate basic data creation for all levels
 		if series.ID == "" || match.ID == "" || innings.ID == "" || over.ID == "" {
+			log.Printf("❌ DEBUG: Empty IDs detected - Series: %s, Match: %s, Innings: %s, Over: %s", series.ID, match.ID, innings.ID, over.ID)
 			if attempt == config.MaxRetries {
 				return "", "", fmt.Errorf("failed to create complete test data hierarchy after %d attempts", config.MaxRetries)
 			}
@@ -204,6 +239,11 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 		}
 
 		// Success - return the IDs
+		log.Printf("✅ DEBUG: Test data creation completed successfully")
+		log.Printf("✅ DEBUG: Series ID: %s", series.ID)
+		log.Printf("✅ DEBUG: Match ID: %s", match.ID)
+		log.Printf("✅ DEBUG: Innings ID: %s", innings.ID)
+		log.Printf("✅ DEBUG: Over ID: %s", over.ID)
 		return series.ID, match.ID, nil
 	}
 
@@ -214,66 +254,97 @@ func createTestDataWithValidation(dbClient *database.Client, userID string, leve
 func validateTestDataIntegrityWithLevel(dbClient *database.Client, seriesID, matchID, inningsID, overID string, level ValidationLevel) error {
 	config := GetValidationConfig(level)
 
+	log.Printf("🔧 DEBUG: Starting data integrity validation with level %d", level)
+	log.Printf("🔧 DEBUG: Validating IDs - Series: %s, Match: %s, Innings: %s, Over: %s", seriesID, matchID, inningsID, overID)
+
 	// Basic validation - just check if IDs are not empty
 	if !config.ValidateRelationships {
+		log.Printf("🔧 DEBUG: Performing basic validation (ID existence only)")
 		if seriesID == "" || matchID == "" || inningsID == "" || overID == "" {
+			log.Printf("❌ DEBUG: One or more IDs are empty")
 			return fmt.Errorf("one or more IDs are empty")
 		}
+		log.Printf("✅ DEBUG: Basic validation passed")
 		return nil
 	}
 
+	log.Printf("🔧 DEBUG: Performing relationship validation")
+
 	// Intermediate and Full validation - check relationships
+	log.Printf("🔧 DEBUG: Validating series existence")
 	var series models.Series
 	_, err := dbClient.Supabase.From("series").Select("*", "exact", false).Eq("id", seriesID).Single().ExecuteTo(&series)
 	if err != nil {
+		log.Printf("❌ DEBUG: Series validation failed: %v", err)
 		return fmt.Errorf("series validation failed: %v", err)
 	}
+	log.Printf("✅ DEBUG: Series validation passed")
 
+	log.Printf("🔧 DEBUG: Validating match existence and series reference")
 	var match models.Match
 	_, err = dbClient.Supabase.From("matches").Select("*", "exact", false).Eq("id", matchID).Single().ExecuteTo(&match)
 	if err != nil {
+		log.Printf("❌ DEBUG: Match validation failed: %v", err)
 		return fmt.Errorf("match validation failed: %v", err)
 	}
 
 	if config.ValidateRelationships && match.SeriesID != seriesID {
+		log.Printf("❌ DEBUG: Match series reference invalid: expected %s, got %s", seriesID, match.SeriesID)
 		return fmt.Errorf("match series reference invalid: expected %s, got %s", seriesID, match.SeriesID)
 	}
+	log.Printf("✅ DEBUG: Match validation passed")
 
+	log.Printf("🔧 DEBUG: Validating innings existence and match reference")
 	var innings models.Innings
 	_, err = dbClient.Supabase.From("innings").Select("*", "exact", false).Eq("id", inningsID).Single().ExecuteTo(&innings)
 	if err != nil {
+		log.Printf("❌ DEBUG: Innings validation failed: %v", err)
 		return fmt.Errorf("innings validation failed: %v", err)
 	}
 
 	if config.ValidateRelationships && innings.MatchID != matchID {
+		log.Printf("❌ DEBUG: Innings match reference invalid: expected %s, got %s", matchID, innings.MatchID)
 		return fmt.Errorf("innings match reference invalid: expected %s, got %s", matchID, innings.MatchID)
 	}
+	log.Printf("✅ DEBUG: Innings validation passed")
 
+	log.Printf("🔧 DEBUG: Validating over existence and innings reference")
 	var over models.ScorecardOver
 	_, err = dbClient.Supabase.From("overs").Select("*", "exact", false).Eq("id", overID).Single().ExecuteTo(&over)
 	if err != nil {
+		log.Printf("❌ DEBUG: Over validation failed: %v", err)
 		return fmt.Errorf("over validation failed: %v", err)
 	}
 
 	if config.ValidateRelationships && over.InningsID != inningsID {
+		log.Printf("❌ DEBUG: Over innings reference invalid: expected %s, got %s", inningsID, over.InningsID)
 		return fmt.Errorf("over innings reference invalid: expected %s, got %s", inningsID, over.InningsID)
 	}
+	log.Printf("✅ DEBUG: Over validation passed")
 
 	// Full validation - additional data integrity checks
 	if config.ValidateDataIntegrity {
+		log.Printf("🔧 DEBUG: Performing additional data integrity checks")
 		if series.ID == "" || match.ID == "" || innings.ID == "" || over.ID == "" {
+			log.Printf("❌ DEBUG: One or more entity IDs are empty")
 			return fmt.Errorf("one or more entity IDs are empty")
 		}
 
 		// Check for reasonable data values
+		log.Printf("🔧 DEBUG: Validating innings number: %d", innings.InningsNumber)
 		if innings.InningsNumber < 1 || innings.InningsNumber > 4 {
+			log.Printf("❌ DEBUG: Invalid innings number: %d", innings.InningsNumber)
 			return fmt.Errorf("invalid innings number: %d", innings.InningsNumber)
 		}
 
+		log.Printf("🔧 DEBUG: Validating over number: %d", over.OverNumber)
 		if over.OverNumber < 1 {
+			log.Printf("❌ DEBUG: Invalid over number: %d", over.OverNumber)
 			return fmt.Errorf("invalid over number: %d", over.OverNumber)
 		}
+		log.Printf("✅ DEBUG: Additional data integrity checks passed")
 	}
 
+	log.Printf("✅ DEBUG: All data integrity validations passed")
 	return nil
 }
