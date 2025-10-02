@@ -489,21 +489,21 @@ func WaitForCleanupCompletion(t *testing.T, dbClient *database.Client, maxWaitTi
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			// Check if cleanup is complete by verifying tables are empty
-			if isCleanupComplete(t, dbClient) {
-				t.Logf("DEBUG: Cleanup completed successfully after %v", time.Since(startTime))
-				return true
-			}
+	for range ticker.C {
+		// Check if cleanup is complete by verifying tables are empty
+		if isCleanupComplete(t, dbClient) {
+			t.Logf("DEBUG: Cleanup completed successfully after %v", time.Since(startTime))
+			return true
+		}
 
-			if time.Since(startTime) > maxWaitTime {
-				t.Logf("WARNING: Cleanup did not complete within %v", maxWaitTime)
-				return false
-			}
+		if time.Since(startTime) > maxWaitTime {
+			t.Logf("WARNING: Cleanup did not complete within %v", maxWaitTime)
+			return false
 		}
 	}
+
+	// This should never be reached as the ticker should be stopped by defer
+	return false
 }
 
 // isCleanupComplete checks if cleanup is complete by verifying table states
