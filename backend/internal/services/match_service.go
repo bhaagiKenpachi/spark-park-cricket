@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"time"
@@ -25,34 +26,37 @@ func NewMatchService(matchRepo interfaces.MatchRepository, seriesRepo interfaces
 
 // CreateMatch creates a new match
 func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchRequest) (*models.Match, error) {
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Starting creation with request: %+v\n", req)
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
 	}
-	fmt.Printf("DEBUG: MatchService.CreateMatch - User ID from context: %s\n", userID)
 	log.Printf("Creating match for user ID: %s", userID)
 
 	// Validate series exists
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Validating series exists with ID: %s\n", req.SeriesID)
 	_, err := s.seriesRepo.GetByID(ctx, req.SeriesID)
 	if err != nil {
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation failed: %v\n", err)
 		return nil, fmt.Errorf("series not found: %w", err)
 	}
-	fmt.Printf("DEBUG: MatchService.CreateMatch - Series validation successful\n")
+
+	// Validate request fields
+	if req.TeamAPlayerCount <= 0 {
+		return nil, fmt.Errorf("team A player count must be greater than 0")
+	}
+	if req.TeamBPlayerCount <= 0 {
+		return nil, fmt.Errorf("team B player count must be greater than 0")
+	}
+	if req.TotalOvers <= 0 {
+		return nil, fmt.Errorf("total overs must be greater than 0")
+	}
 
 	// Determine match number - use provided number or auto-increment
 	var matchNumber int
 	if req.MatchNumber != nil {
 		matchNumber = *req.MatchNumber
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Using provided match number: %d\n", matchNumber)
 
 		// Validate that the match number doesn't already exist for this series
-		fmt.Printf("DEBUG: MatchService.CreateMatch - Checking match number uniqueness\n")
 		exists, err := s.matchRepo.ExistsBySeriesAndMatchNumber(ctx, req.SeriesID, matchNumber)
 		if err != nil {
 			fmt.Printf("DEBUG: MatchService.CreateMatch - Failed to check match number uniqueness: %v\n", err)
@@ -162,7 +166,7 @@ func (s *MatchService) UpdateMatch(ctx context.Context, id string, req *models.U
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		fmt.Printf("DEBUG: MatchService.UpdateMatch - Authentication failed: no user_id in context\n")
 		return nil, fmt.Errorf("user authentication required")
@@ -225,7 +229,7 @@ func (s *MatchService) DeleteMatch(ctx context.Context, id string) error {
 	}
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		return fmt.Errorf("user authentication required")
 	}

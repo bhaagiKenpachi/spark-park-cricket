@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"spark-park-cricket-backend/internal/config"
@@ -31,10 +32,10 @@ func TestAuthIntegration_UserFlow(t *testing.T) {
 	defer dbClient.Close()
 
 	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, cfg.Config)
+	serviceContainer := services.NewContainer(dbClient, cfg.Config)
 
 	// Create auth handler
-	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService)
+	authHandler := handlers.NewAuthHandler(serviceContainer.AuthService, serviceContainer.SessionService, cfg.Config)
 
 	t.Run("Google Login Redirect", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/auth/google", nil)
@@ -92,8 +93,8 @@ func TestAuthIntegration_SessionManagement(t *testing.T) {
 	t.Run("Create User", func(t *testing.T) {
 		// Create a test user
 		user := &models.User{
-			GoogleID:      "test-google-id-123",
-			Email:         "test@example.com",
+			GoogleID:      fmt.Sprintf("test-google-id-auth-%d", time.Now().UnixNano()),
+			Email:         fmt.Sprintf("test-auth-%d@example.com", time.Now().UnixNano()),
 			Name:          "Test User",
 			Picture:       "https://example.com/picture.jpg",
 			EmailVerified: true,
@@ -104,14 +105,14 @@ func TestAuthIntegration_SessionManagement(t *testing.T) {
 		assert.NotEmpty(t, user.ID)
 
 		// Clean up
-		defer dbClient.Repositories.User.DeleteUser(context.Background(), user.ID)
+		defer func() { _ = dbClient.Repositories.User.DeleteUser(context.Background(), user.ID) }()
 	})
 
 	t.Run("Get User by Google ID", func(t *testing.T) {
 		// Create a test user
 		user := &models.User{
-			GoogleID:      "test-google-id-456",
-			Email:         "test2@example.com",
+			GoogleID:      fmt.Sprintf("test-google-id-lookup-%d", time.Now().UnixNano()),
+			Email:         fmt.Sprintf("test-lookup-%d@example.com", time.Now().UnixNano()),
 			Name:          "Test User 2",
 			Picture:       "https://example.com/picture2.jpg",
 			EmailVerified: true,
@@ -119,7 +120,7 @@ func TestAuthIntegration_SessionManagement(t *testing.T) {
 
 		err := dbClient.Repositories.User.CreateUser(context.Background(), user)
 		require.NoError(t, err)
-		defer dbClient.Repositories.User.DeleteUser(context.Background(), user.ID)
+		defer func() { _ = dbClient.Repositories.User.DeleteUser(context.Background(), user.ID) }()
 
 		// Retrieve user by Google ID
 		retrievedUser, err := dbClient.Repositories.User.GetUserByGoogleID(context.Background(), user.GoogleID)
@@ -132,16 +133,16 @@ func TestAuthIntegration_SessionManagement(t *testing.T) {
 	t.Run("User Session Management", func(t *testing.T) {
 		// Create a test user
 		user := &models.User{
-			GoogleID:      "test-google-id-789",
-			Email:         "test3@example.com",
-			Name:          "Test User 3",
+			GoogleID:      fmt.Sprintf("test-google-id-session-%d", time.Now().UnixNano()),
+			Email:         fmt.Sprintf("test-session-%d@example.com", time.Now().UnixNano()),
+			Name:          "Test User Session",
 			Picture:       "https://example.com/picture3.jpg",
 			EmailVerified: true,
 		}
 
 		err := dbClient.Repositories.User.CreateUser(context.Background(), user)
 		require.NoError(t, err)
-		defer dbClient.Repositories.User.DeleteUser(context.Background(), user.ID)
+		defer func() { _ = dbClient.Repositories.User.DeleteUser(context.Background(), user.ID) }()
 
 		// Create a user session
 		session := &models.UserSession{
@@ -152,7 +153,7 @@ func TestAuthIntegration_SessionManagement(t *testing.T) {
 
 		err = dbClient.Repositories.User.CreateUserSession(context.Background(), session)
 		require.NoError(t, err)
-		defer dbClient.Repositories.User.DeleteUserSession(context.Background(), session.SessionID)
+		defer func() { _ = dbClient.Repositories.User.DeleteUserSession(context.Background(), session.SessionID) }()
 
 		// Retrieve the session
 		retrievedSession, err := dbClient.Repositories.User.GetUserSession(context.Background(), session.SessionID)

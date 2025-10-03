@@ -6,6 +6,7 @@ import (
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 
+	"github.com/supabase-community/postgrest-go"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -46,6 +47,21 @@ func (r *matchRepository) Create(ctx context.Context, match *models.Match) error
 
 	if len(result) > 0 {
 		*match = result[0]
+	} else {
+		// If no result returned, try to get the match by series_id and match_number to get the ID
+		// This is a fallback for cases where Supabase doesn't return the created record
+		allMatches, err := r.GetAll(ctx, &models.MatchFilters{Limit: 1000, Offset: 0})
+		if err != nil {
+			return fmt.Errorf("failed to get created match: %w", err)
+		}
+
+		// Find the match by series_id and match_number
+		for _, m := range allMatches {
+			if m.SeriesID == match.SeriesID && m.MatchNumber == match.MatchNumber {
+				*match = *m
+				break
+			}
+		}
 	}
 
 	return nil
@@ -55,7 +71,9 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*models.Match
 	var result []models.Match
 	_, err := r.client.From("matches").Select("*", "", false).Eq("id", id).ExecuteTo(&result)
 	if err != nil {
-		return nil, err
+		// Log the error for debugging
+		fmt.Printf("DEBUG: Database error in GetByID for match %s: %v\n", id, err)
+		return nil, fmt.Errorf("database error fetching match %s: %w", id, err)
 	}
 	if len(result) == 0 {
 		return nil, fmt.Errorf("match not found")
@@ -74,7 +92,14 @@ func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilte
 		query = query.Eq("status", string(*filters.Status))
 	}
 
-	query = query.Range(filters.Offset, filters.Offset+filters.Limit-1, "")
+	// Add consistent ordering by created_at DESC to ensure predictable results
+	query = query.Order("created_at", &postgrest.OrderOpts{Ascending: false})
+
+	// Note: Offset is not supported by this Supabase client version
+	// Use Limit for basic pagination, but offset functionality is limited
+	if filters.Limit > 0 {
+		query = query.Limit(filters.Limit, "")
+	}
 
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
@@ -91,7 +116,7 @@ func (r *matchRepository) GetAll(ctx context.Context, filters *models.MatchFilte
 
 func (r *matchRepository) GetBySeriesID(ctx context.Context, seriesID string) ([]*models.Match, error) {
 	var result []models.Match
-	_, err := r.client.From("matches").Select("*", "", false).Eq("series_id", seriesID).ExecuteTo(&result)
+	_, err := r.client.From("matches").Select("*", "", false).Eq("series_id", seriesID).Order("created_at", &postgrest.OrderOpts{Ascending: false}).ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +142,12 @@ func (r *matchRepository) Update(ctx context.Context, id string, match *models.M
 		"toss_winner":         match.TossWinner,
 		"toss_type":           match.TossType,
 		"batting_team":        match.BattingTeam,
-		"created_by":          match.CreatedBy,
 		"updated_at":          match.UpdatedAt,
+	}
+
+	// Only include created_by if it's not empty
+	if match.CreatedBy != "" {
+		matchData["created_by"] = match.CreatedBy
 	}
 
 	var result []models.Match

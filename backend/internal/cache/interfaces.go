@@ -49,6 +49,7 @@ func NewCacheManager(cache CacheInterface, enabled bool) *CacheManager {
 func (cm *CacheManager) GetOrSet(key string, dest interface{}, ttl time.Duration, dbFunc func() (interface{}, error)) error {
 	if !cm.enabled {
 		// Cache disabled, call database function directly
+		fmt.Printf("🔍 [CACHE] Cache disabled, calling database directly for key: %s\n", key)
 		value, err := dbFunc()
 		if err != nil {
 			return err
@@ -59,20 +60,30 @@ func (cm *CacheManager) GetOrSet(key string, dest interface{}, ttl time.Duration
 	}
 
 	// Try to get from cache first
+	fmt.Printf("🔍 [CACHE] Attempting to get from cache for key: %s\n", key)
 	err := cm.cache.Get(key, dest)
 	if err == nil {
 		// Cache hit
+		fmt.Printf("✅ [CACHE] Cache HIT for key: %s\n", key)
 		return nil
 	}
 
-	// Cache miss, get from database
+	// Cache miss or error, get from database
+	fmt.Printf("❌ [CACHE] Cache MISS for key: %s, error: %v\n", key, err)
+	fmt.Printf("🔍 [CACHE] Calling database function for key: %s\n", key)
 	value, err := dbFunc()
 	if err != nil {
 		return err
 	}
 
-	// Set in cache for next time
-	_ = cm.cache.Set(key, value, ttl)
+	// Set in cache for next time (ignore cache errors)
+	fmt.Printf("💾 [CACHE] Setting cache for key: %s with TTL: %v\n", key, ttl)
+	if cacheErr := cm.cache.Set(key, value, ttl); cacheErr != nil {
+		// Log cache error but don't fail the operation
+		fmt.Printf("⚠️  [CACHE] Cache SET failed for key %s: %v (continuing without cache)\n", key, cacheErr)
+	} else {
+		fmt.Printf("✅ [CACHE] Cache SET successful for key: %s\n", key)
+	}
 
 	// Copy value to destination
 	return copyValue(value, dest)
@@ -81,9 +92,20 @@ func (cm *CacheManager) GetOrSet(key string, dest interface{}, ttl time.Duration
 // Invalidate removes a key from cache
 func (cm *CacheManager) Invalidate(key string) error {
 	if !cm.enabled {
+		fmt.Printf("🔍 [CACHE] Cache disabled, skipping invalidation for key: %s\n", key)
 		return nil
 	}
-	return cm.cache.Delete(key)
+
+	fmt.Printf("🗑️  [CACHE] Invalidating cache key: %s\n", key)
+	err := cm.cache.Delete(key)
+	if err != nil {
+		// Log cache error but don't fail the operation
+		fmt.Printf("⚠️  [CACHE] Cache DELETE failed for key %s: %v (continuing without cache)\n", key, err)
+		return nil
+	}
+
+	fmt.Printf("✅ [CACHE] Cache invalidation successful for key: %s\n", key)
+	return nil
 }
 
 // InvalidatePattern removes all keys matching a pattern

@@ -3,9 +3,11 @@ package unit
 import (
 	"net/http"
 	"net/http/httptest"
-	"spark-park-cricket-backend/internal/middleware"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
 	"testing"
+
+	contextkeys "spark-park-cricket-backend/internal/context"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,14 +28,14 @@ func TestAuthMiddleware_AuthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create middleware
-	authMiddleware := middleware.AuthMiddleware(mockSessionService)
+	authMiddleware := services.AuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if user is in context
-		user := r.Context().Value("user").(*models.User)
-		userID := r.Context().Value("user_id").(string)
-		userEmail := r.Context().Value("user_email").(string)
+		user := r.Context().Value(contextkeys.UserKey).(*models.User)
+		userID := r.Context().Value(contextkeys.UserIDKey).(string)
+		userEmail := r.Context().Value(contextkeys.UserEmailKey).(string)
 
 		assert.Equal(t, testUser.ID, user.ID)
 		assert.Equal(t, testUser.Email, user.Email)
@@ -41,7 +43,7 @@ func TestAuthMiddleware_AuthenticatedUser(t *testing.T) {
 		assert.Equal(t, testUser.Email, userEmail)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	// Create request
@@ -66,7 +68,7 @@ func TestAuthMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	authMiddleware := middleware.AuthMiddleware(mockSessionService)
+	authMiddleware := services.AuthMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -107,15 +109,15 @@ func TestOptionalAuthMiddleware_AuthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(testUser, nil)
 
 	// Create middleware
-	optionalAuthMiddleware := middleware.OptionalAuthMiddleware(mockSessionService)
+	optionalAuthMiddleware := services.OptionalAuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if user is in context
-		user := r.Context().Value("user").(*models.User)
-		userID := r.Context().Value("user_id").(string)
-		userEmail := r.Context().Value("user_email").(string)
-		authenticated := r.Context().Value("authenticated").(bool)
+		user := r.Context().Value(contextkeys.UserKey).(*models.User)
+		userID := r.Context().Value(contextkeys.UserIDKey).(string)
+		userEmail := r.Context().Value(contextkeys.UserEmailKey).(string)
+		authenticated := r.Context().Value(contextkeys.AuthenticatedKey).(bool)
 
 		assert.Equal(t, testUser.ID, user.ID)
 		assert.Equal(t, testUser.Email, user.Email)
@@ -124,7 +126,7 @@ func TestOptionalAuthMiddleware_AuthenticatedUser(t *testing.T) {
 		assert.True(t, authenticated)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	// Create request
@@ -149,12 +151,12 @@ func TestOptionalAuthMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	optionalAuthMiddleware := middleware.OptionalAuthMiddleware(mockSessionService)
+	optionalAuthMiddleware := services.OptionalAuthMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if authenticated is false in context
-		authenticated := r.Context().Value("authenticated").(bool)
+		authenticated := r.Context().Value(contextkeys.AuthenticatedKey).(bool)
 		assert.False(t, authenticated)
 
 		// User should not be in context
@@ -162,7 +164,7 @@ func TestOptionalAuthMiddleware_UnauthenticatedUser(t *testing.T) {
 		assert.Nil(t, user)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		_, _ = w.Write([]byte("success"))
 	})
 
 	// Create request
@@ -194,15 +196,15 @@ func TestAdminMiddleware_AdminUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(adminUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if user is in context
-		user := r.Context().Value("user").(*models.User)
-		userID := r.Context().Value("user_id").(string)
-		userEmail := r.Context().Value("user_email").(string)
-		isAdmin := r.Context().Value("is_admin").(bool)
+		user := r.Context().Value(contextkeys.UserKey).(*models.User)
+		userID := r.Context().Value(contextkeys.UserIDKey).(string)
+		userEmail := r.Context().Value(contextkeys.UserEmailKey).(string)
+		isAdmin := r.Context().Value(contextkeys.IsAdminKey).(bool)
 
 		assert.Equal(t, adminUser.ID, user.ID)
 		assert.Equal(t, adminUser.Email, user.Email)
@@ -211,7 +213,7 @@ func TestAdminMiddleware_AdminUser(t *testing.T) {
 		assert.True(t, isAdmin)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("admin success"))
+		_, _ = w.Write([]byte("admin success"))
 	})
 
 	// Create request
@@ -243,7 +245,7 @@ func TestAdminMiddleware_NonAdminUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(regularUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -277,7 +279,7 @@ func TestAdminMiddleware_UnauthenticatedUser(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(nil, assert.AnError)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler (should not be called)
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -318,20 +320,20 @@ func TestAdminMiddleware_AlternativeAdminEmail(t *testing.T) {
 	mockSessionService.On("GetSession", mock.AnythingOfType("*http.Request")).Return(adminUser, nil)
 
 	// Create middleware
-	adminMiddleware := middleware.AdminMiddleware(mockSessionService)
+	adminMiddleware := services.AdminMiddleware(mockSessionService)
 
 	// Create test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if user is in context
-		user := r.Context().Value("user").(*models.User)
-		isAdmin := r.Context().Value("is_admin").(bool)
+		user := r.Context().Value(contextkeys.UserKey).(*models.User)
+		isAdmin := r.Context().Value(contextkeys.IsAdminKey).(bool)
 
 		assert.Equal(t, adminUser.ID, user.ID)
 		assert.Equal(t, adminUser.Email, user.Email)
 		assert.True(t, isAdmin)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("alternative admin success"))
+		_, _ = w.Write([]byte("alternative admin success"))
 	})
 
 	// Create request

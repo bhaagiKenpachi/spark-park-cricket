@@ -26,7 +26,6 @@ func NewMatchHandler(service *services.MatchService) *MatchHandler {
 
 // ListMatches handles GET /api/v1/matches
 func (h *MatchHandler) ListMatches(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: ListMatches handler called")
 
 	// Parse query parameters
 	limitStr := r.URL.Query().Get("limit")
@@ -65,12 +64,9 @@ func (h *MatchHandler) ListMatches(w http.ResponseWriter, r *http.Request) {
 		filters.Status = &matchStatus
 	}
 
-	log.Printf("DEBUG: Created filters: %+v", filters)
-
 	// Get matches from service
 	matches, err := h.service.ListMatches(r.Context(), filters)
 	if err != nil {
-		log.Printf("DEBUG: service.ListMatches failed: %v", err)
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
@@ -97,7 +93,16 @@ func (h *MatchHandler) CreateMatch(w http.ResponseWriter, r *http.Request) {
 	match, err := h.service.CreateMatch(r.Context(), &req)
 	if err != nil {
 		log.Printf("DEBUG: service.CreateMatch failed: %v", err)
-		utils.WriteInternalError(w, err.Error())
+
+		// Check if it's a validation error (should return 400) or internal error (500)
+		errorMsg := err.Error()
+		if strings.Contains(errorMsg, "must be greater than 0") ||
+			strings.Contains(errorMsg, "already exists") ||
+			strings.Contains(errorMsg, "series not found") {
+			utils.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", errorMsg, errorMsg)
+		} else {
+			utils.WriteInternalError(w, errorMsg)
+		}
 		return
 	}
 

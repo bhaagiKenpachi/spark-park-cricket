@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'dev'
+    cluster: 'cricket-dev-cluster'
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Dev backend metrics - Direct connection to backend container
+  - job_name: 'cricket-backend-dev'
+    static_configs:
+      - targets: ['15.235.202.148:8081']
+    metrics_path: '/metrics'
+    scheme: 'http'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Dev frontend metrics (if available) - Direct connection to frontend container
+  - job_name: 'cricket-frontend-dev'
+    static_configs:
+      - targets: ['15.235.202.148:3001']
+    metrics_path: '/api/metrics'
+    scheme: 'http'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+# Remote write configuration to send metrics to central Prometheus (optional)
+# remote_write:
+#   - url: "http://central-prometheus:9090/api/v1/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       batch_send_deadline: 5s
+
+# Alerting rules
+rule_files:
+  - "rules/*.yml"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093

@@ -29,10 +29,19 @@ func (r *CachedScorecardRepository) CreateInnings(ctx context.Context, innings *
 		return err
 	}
 
-	// Invalidate scorecard cache for this match
+	// Invalidate caches for this match
 	if innings.MatchID != "" {
+		// Invalidate scorecard cache
 		scorecardKey := r.cache.GetScorecardKey(innings.MatchID)
 		_ = r.cache.Invalidate(scorecardKey)
+
+		// Invalidate innings cache
+		inningsKey := fmt.Sprintf("innings:match:%s", innings.MatchID)
+		_ = r.cache.Invalidate(inningsKey)
+
+		// Invalidate specific innings cache
+		specificInningsKey := fmt.Sprintf("innings:match:%s:number:%d", innings.MatchID, innings.InningsNumber)
+		_ = r.cache.Invalidate(specificInningsKey)
 	}
 
 	return nil
@@ -111,6 +120,14 @@ func (r *CachedScorecardRepository) CreateOver(ctx context.Context, over *models
 	if err != nil {
 		return err
 	}
+
+	// Invalidate current over cache for this innings
+	currentOverKey := fmt.Sprintf("over:current:innings:%s", over.InningsID)
+	_ = r.cache.Invalidate(currentOverKey)
+
+	// Invalidate overs list cache for this innings
+	oversKey := fmt.Sprintf("overs:innings:%s", over.InningsID)
+	_ = r.cache.Invalidate(oversKey)
 
 	// Note: We would need to get matchID from innings to invalidate scorecard cache
 	// For now, we'll handle this at the service level
@@ -209,6 +226,14 @@ func (r *CachedScorecardRepository) CreateBall(ctx context.Context, ball *models
 	lastBallCacheKey := fmt.Sprintf("ball:last:over:%s", ball.OverID)
 	_ = r.cache.Invalidate(lastBallCacheKey)
 
+	// Invalidate ball count cache for this over
+	ballCountCacheKey := fmt.Sprintf("ball_count:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(ballCountCacheKey)
+
+	// Invalidate balls for next number calculation cache
+	ballsNextNumberCacheKey := fmt.Sprintf("balls_next_number:over:%s", ball.OverID)
+	_ = r.cache.Invalidate(ballsNextNumberCacheKey)
+
 	err := r.repo.CreateBall(ctx, ball)
 	if err != nil {
 		return err
@@ -228,6 +253,38 @@ func (r *CachedScorecardRepository) GetBallsByOver(ctx context.Context, overID s
 	var balls []*models.ScorecardBall
 	err := r.cache.GetOrSet(cacheKey, &balls, cache.ScorecardTTL, func() (interface{}, error) {
 		return r.repo.GetBallsByOver(ctx, overID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return balls, nil
+}
+
+// GetBallCountByOver retrieves ball count with caching
+func (r *CachedScorecardRepository) GetBallCountByOver(ctx context.Context, overID string) (int, error) {
+	cacheKey := fmt.Sprintf("ball_count:over:%s", overID)
+
+	var ballCount int
+	err := r.cache.GetOrSet(cacheKey, &ballCount, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetBallCountByOver(ctx, overID)
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return ballCount, nil
+}
+
+// GetBallsForNextNumber retrieves balls for next number calculation with caching
+func (r *CachedScorecardRepository) GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error) {
+	cacheKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+
+	var balls []*models.ScorecardBall
+	err := r.cache.GetOrSet(cacheKey, &balls, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetBallsForNextNumber(ctx, overID)
 	})
 
 	if err != nil {
@@ -309,4 +366,20 @@ func (r *CachedScorecardRepository) StartScoring(ctx context.Context, matchID st
 	_ = r.cache.Invalidate(scorecardKey)
 
 	return nil
+}
+
+// GetMatchInningsOverData retrieves optimized match data with caching
+func (r *CachedScorecardRepository) GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error) {
+	cacheKey := fmt.Sprintf("match_innings_over:%s:%d", matchID, inningsNumber)
+
+	var data models.MatchInningsOverData
+	err := r.cache.GetOrSet(cacheKey, &data, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetMatchInningsOverData(ctx, matchID, inningsNumber)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
 }

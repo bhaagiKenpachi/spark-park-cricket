@@ -5,7 +5,6 @@ import (
 	"log"
 	"spark-park-cricket-backend/internal/interfaces"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/pkg/websocket"
 
 	"github.com/graphql-go/graphql"
 )
@@ -13,7 +12,6 @@ import (
 // ResolverContext holds the services needed for GraphQL resolvers
 type ResolverContext struct {
 	ScorecardService interfaces.ScorecardServiceInterface
-	Hub              *websocket.Hub
 }
 
 // resolveLiveScorecard resolves the live scorecard query
@@ -111,7 +109,7 @@ func resolveScorecardSubscription(p graphql.ResolveParams) (interface{}, error) 
 	}
 
 	// For now, return the current scorecard
-	// In a real implementation, this would set up a subscription to WebSocket updates
+	// Real-time updates are handled through API polling
 	scorecard, err := resolverCtx.ScorecardService.GetScorecard(p.Context, matchID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get scorecard: %w", err)

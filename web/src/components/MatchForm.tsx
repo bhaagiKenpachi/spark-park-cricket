@@ -127,7 +127,10 @@ export function MatchForm({
     }
 
     // Convert date string to RFC3339 format for the API
-    const apiData: Omit<Match, 'id' | 'created_at' | 'updated_at' | 'match_number'> = {
+    const apiData: Omit<
+      Match,
+      'id' | 'created_at' | 'updated_at' | 'match_number'
+    > = {
       series_id: formData.series_id,
       date: `${formData.date}T00:00:00Z`,
       status: 'live' as const,
@@ -295,7 +298,6 @@ export function MatchForm({
                 </SelectContent>
               </Select>
             </div>
-
 
             <div className="flex flex-col space-y-3 pt-4 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-center">
               <Button

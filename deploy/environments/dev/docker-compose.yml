@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: cricket-redis-dev
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cricket-dev-network
+    restart: unless-stopped
+
+  # Go Backend API
+  backend:
+    image: spark-cricket-backend-dev
+    container_name: cricket-backend-dev
+    ports:
+      - "8081:8080"
+    env_file:
+      - .env.backend
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cricket-dev-network
+    restart: unless-stopped
+    # volumes:
+    # Mount source code for hot reload in development
+    # - ../../../backend:/app/src:ro
+
+    # Next.js Frontend
+  web:
+    image: spark-cricket-frontend-dev
+    container_name: cricket-frontend-dev
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.frontend
+    depends_on:
+      - backend
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cricket-dev-network
+    restart: unless-stopped
+    # volumes:
+    # Mount source code for hot reload in development
+    # - ../../../web:/app:ro
+    # - /app/node_modules
+    # - /app/.next
+
+volumes:
+  redis_dev_data:
+    driver: local
+
+networks:
+  cricket-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

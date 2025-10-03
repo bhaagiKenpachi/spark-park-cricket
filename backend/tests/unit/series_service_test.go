@@ -3,9 +3,12 @@ package tests
 import (
 	"context"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
 	"testing"
 	"time"
+
+	contextkeys "spark-park-cricket-backend/internal/context"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -105,7 +108,7 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			result, err := service.CreateSeries(ctx, tt.request)
 
@@ -210,17 +213,56 @@ func TestSeriesService_ListSeries(t *testing.T) {
 					{ID: "1", Name: "Series 1"},
 					{ID: "2", Name: "Series 2"},
 				}
-				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(series, nil)
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 2,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 1,
+				}
+				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(result, nil)
 			},
 			expectError: false,
 			expectedLen: 2,
+		},
+		{
+			name: "filters limit adjustment - too high",
+			filters: &models.SeriesFilters{
+				Limit:  150, // Over the max limit of 100
+				Offset: 0,
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				series := []*models.Series{
+					{ID: "1", Name: "Series 1"},
+				}
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 1,
+					Page:       1,
+					PageSize:   100,
+					TotalPages: 1,
+				}
+				// Expect the service to adjust the limit to 100
+				mockRepo.On("GetAll", mock.Anything, mock.MatchedBy(func(filters *models.SeriesFilters) bool {
+					return filters.Limit == 100
+				})).Return(result, nil)
+			},
+			expectError: false,
+			expectedLen: 1,
 		},
 		{
 			name:    "default filters",
 			filters: &models.SeriesFilters{},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				series := []*models.Series{}
-				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(series, nil)
+				result := &interfaces.PaginatedSeriesResult{
+					Series:     series,
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   20,
+					TotalPages: 0,
+				}
+				mockRepo.On("GetAll", mock.Anything, mock.AnythingOfType("*models.SeriesFilters")).Return(result, nil)
 			},
 			expectError: false,
 			expectedLen: 0,
@@ -255,7 +297,7 @@ func TestSeriesService_ListSeries(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, result)
-				assert.Len(t, result, tt.expectedLen)
+				assert.Len(t, result.Series, tt.expectedLen)
 			}
 
 			mockRepo.AssertExpectations(t)
@@ -357,7 +399,7 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			result, err := service.UpdateSeries(ctx, tt.seriesID, tt.request)
 
@@ -418,7 +460,7 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 
 			service := services.NewSeriesService(mockRepo)
 			// Create context with user_id for authentication
-			ctx := context.WithValue(context.Background(), "user_id", "test-user-123")
+			ctx := context.WithValue(context.Background(), contextkeys.UserIDKey, "test-user-123") // nolint:staticcheck // Test context key
 
 			err := service.DeleteSeries(ctx, tt.seriesID)
 

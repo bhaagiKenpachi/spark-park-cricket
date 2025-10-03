@@ -14,6 +14,7 @@
 
 # production
 /build
+/temp
 
 # misc
 .DS_Store
@@ -27,6 +28,19 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+
+# Security: SSH keys and certificates
+*.key
+*.pem
+*.crt
+*.csr
+ssh-keys/
+certs/
+
+# Security: Configuration files with secrets
+**/config/secrets.yml
+**/config/production.yml
+**/secrets/
 
 # vercel
 .vercel
@@ -53,6 +67,11 @@ backend/internal/database/schema_v1_prod.sql
 backend/api/
 backend/bin/*
 backend/server
+backend/temp/*
 
 # OAuth client secrets
 client_secret_*.json
+
+docker-compose.env
+
+*.env.*

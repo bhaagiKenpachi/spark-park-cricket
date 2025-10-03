@@ -13,11 +13,11 @@ import (
 
 // ScoreboardHandler handles scoreboard-related HTTP requests
 type ScoreboardHandler struct {
-	service *services.RealtimeScoreboardService
+	service *services.ScoreboardService
 }
 
 // NewScoreboardHandler creates a new scoreboard handler
-func NewScoreboardHandler(service *services.RealtimeScoreboardService) *ScoreboardHandler {
+func NewScoreboardHandler(service *services.ScoreboardService) *ScoreboardHandler {
 	return &ScoreboardHandler{
 		service: service,
 	}

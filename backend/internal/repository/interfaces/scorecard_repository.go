@@ -25,10 +25,15 @@ type ScorecardRepository interface {
 	// Ball operations
 	CreateBall(ctx context.Context, ball *models.ScorecardBall) error
 	GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error)
+	GetBallCountByOver(ctx context.Context, overID string) (int, error)
+	GetBallsForNextNumber(ctx context.Context, overID string) ([]*models.ScorecardBall, error)
 	GetLastBall(ctx context.Context, overID string) (*models.ScorecardBall, error)
 	DeleteBall(ctx context.Context, ballID string) error
 
 	// Scorecard operations
 	GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error)
 	StartScoring(ctx context.Context, matchID string) error
+
+	// Optimized operations for add ball API
+	GetMatchInningsOverData(ctx context.Context, matchID string, inningsNumber int) (*models.MatchInningsOverData, error)
 }

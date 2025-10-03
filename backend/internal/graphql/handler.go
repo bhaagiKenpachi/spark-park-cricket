@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/interfaces"
-	"spark-park-cricket-backend/pkg/websocket"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
@@ -22,7 +21,6 @@ const (
 // GraphQLHandler handles GraphQL requests
 type GraphQLHandler struct {
 	schema *graphql.Schema
-	hub    *websocket.Hub
 }
 
 // GraphQLRequest represents a GraphQL request
@@ -54,13 +52,12 @@ type GraphQLErrorLocation struct {
 }
 
 // NewGraphQLHandler creates a new GraphQL handler
-func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface, hub *websocket.Hub) *GraphQLHandler {
+func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface) *GraphQLHandler {
 	log.Printf("DEBUG: Creating new GraphQL handler")
 
 	// Create resolver context
 	resolverCtx := &ResolverContext{
 		ScorecardService: scorecardService,
-		Hub:              hub,
 	}
 	log.Printf("DEBUG: Resolver context created")
 
@@ -73,7 +70,6 @@ func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface, hu
 
 	return &GraphQLHandler{
 		schema: schema,
-		hub:    hub,
 	}
 }
 
@@ -428,16 +424,9 @@ func (h *GraphQLHandler) GetPlaygroundHandler() http.Handler {
 	return playgroundHandler
 }
 
-// BroadcastScorecardUpdate broadcasts a scorecard update to WebSocket clients
+// BroadcastScorecardUpdate broadcasts a scorecard update (WebSocket functionality removed)
 func (h *GraphQLHandler) BroadcastScorecardUpdate(matchID string, scorecard interface{}) {
-	if h.hub != nil {
-		// Create update message
-		updateMessage := map[string]interface{}{
-			"type": "scorecard_update",
-			"data": scorecard,
-		}
-
-		// Broadcast to the match room
-		h.hub.BroadcastToRoom(matchID, updateMessage)
-	}
+	// WebSocket functionality has been removed
+	// This method is kept for compatibility but does nothing
+	log.Printf("Scorecard update for match %s (WebSocket broadcasting disabled)", matchID)
 }

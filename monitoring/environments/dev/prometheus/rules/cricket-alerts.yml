@@ -1,0 +1,42 @@
+groups:
+  - name: cricket-dev-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          environment: dev
+        annotations:
+          summary: "High error rate detected in dev environment"
+          description: "Error rate is {{ $value }} errors per second"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          environment: dev
+        annotations:
+          summary: "High response time in dev environment"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      - alert: DatabaseConnectionIssues
+        expr: up{job="cricket-backend-dev"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          environment: dev
+        annotations:
+          summary: "Database connection issues in dev environment"
+          description: "Backend service is down"
+
+      - alert: HighBallAdditionLatency
+        expr: histogram_quantile(0.95, rate(cricket_ball_addition_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          environment: dev
+        annotations:
+          summary: "High ball addition latency in dev environment"
+          description: "95th percentile ball addition time is {{ $value }} seconds"

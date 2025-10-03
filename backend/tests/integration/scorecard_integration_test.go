@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -18,15 +19,49 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Note: Helper functions are defined in match_completion_unit_test.go
+// Helper function to create an authenticated user and session cookie
+func createAuthenticatedUserForScorecard(t *testing.T, db *database.Client, sessionService *services.SessionService) (*models.User, string) {
+	// Create a unique test user
+	user := &models.User{
+		GoogleID:      "test-google-id-" + time.Now().Format("20060102150405"),
+		Email:         "test-scorecard-" + time.Now().Format("20060102150405") + "@example.com",
+		Name:          "Test Scorecard User",
+		Picture:       "https://example.com/picture.jpg",
+		EmailVerified: true,
+	}
+
+	// Create user in database
+	err := db.Repositories.User.CreateUser(context.Background(), user)
+	require.NoError(t, err, "Failed to create test user")
+
+	// Create a proper session using the session service
+	req := httptest.NewRequest("POST", "/auth/login", nil)
+	w := httptest.NewRecorder()
+
+	err = sessionService.CreateSession(w, req, user)
+	require.NoError(t, err, "Failed to create test session")
+
+	// Extract the session cookie from the response
+	cookies := w.Result().Cookies()
+	var sessionCookie string
+	for _, cookie := range cookies {
+		if cookie.Name == "user_session" {
+			sessionCookie = cookie.Value
+			break
+		}
+	}
+	require.NotEmpty(t, sessionCookie, "Session cookie not found in response")
+
+	return user, sessionCookie
+}
 
 // Helper function to create a test series for scorecard tests
-func createTestSeriesForScorecard(t *testing.T, router http.Handler) string {
+func createTestSeriesForScorecard(t *testing.T, router http.Handler, sessionCookie string) string {
 	seriesReq := map[string]interface{}{
 		"name":        "Test Series " + time.Now().Format("2006-01-02 15:04:05"),
 		"description": "Test series for scorecard integration tests",
-		"start_date":  time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
-		"end_date":    time.Now().AddDate(0, 0, 7).Format(time.RFC3339),
+		"start_date":  time.Now().AddDate(0, 0, 1).Format("2006-01-02T15:04:05Z"),
+		"end_date":    time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z"),
 	}
 
 	body, err := json.Marshal(seriesReq)
@@ -34,6 +69,14 @@ func createTestSeriesForScorecard(t *testing.T, router http.Handler) string {
 
 	req := httptest.NewRequest("POST", "/api/v1/series", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -49,11 +92,11 @@ func createTestSeriesForScorecard(t *testing.T, router http.Handler) string {
 }
 
 // Helper function to create a test match for scorecard tests
-func createTestMatchForScorecard(t *testing.T, router http.Handler, seriesID string) string {
+func createTestMatchForScorecard(t *testing.T, router http.Handler, seriesID string, sessionCookie string) string {
 	matchReq := map[string]interface{}{
 		"series_id":           seriesID,
 		"match_number":        1,
-		"date":                time.Now().AddDate(0, 0, 1).Format(time.RFC3339),
+		"date":                time.Now().AddDate(0, 0, 1).Format("2006-01-02T15:04:05Z"),
 		"venue":               "Test Venue",
 		"team_a_player_count": 11,
 		"team_b_player_count": 11,
@@ -68,6 +111,14 @@ func createTestMatchForScorecard(t *testing.T, router http.Handler, seriesID str
 
 	req := httptest.NewRequest("POST", "/api/v1/matches", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -83,7 +134,7 @@ func createTestMatchForScorecard(t *testing.T, router http.Handler, seriesID str
 }
 
 // Helper function to update match status to live
-func updateMatchToLive(t *testing.T, router http.Handler, matchID string) {
+func updateMatchToLive(t *testing.T, router http.Handler, matchID string, sessionCookie string) {
 	updateReq := map[string]interface{}{
 		"status": "live",
 	}
@@ -93,6 +144,14 @@ func updateMatchToLive(t *testing.T, router http.Handler, matchID string) {
 
 	req := httptest.NewRequest("PUT", "/api/v1/matches/"+matchID, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -108,24 +167,31 @@ func TestScorecardIntegration(t *testing.T) {
 	require.NoError(t, err)
 	defer dbClient.Close()
 
-	// Clean up any existing test data
+	// Initialize services
+	serviceContainer := services.NewContainer(dbClient, testConfig.Config)
+
+	// Setup router with authentication
+	router := handlers.SetupRoutes(dbClient, testConfig.Config)
+
+	// Create authenticated user and session
+	testUser, sessionCookie := createAuthenticatedUserForScorecard(t, dbClient, serviceContainer.SessionService)
+
+	// Clean up test user at the end
+	defer func() {
+		_ = dbClient.Repositories.User.DeleteUser(context.Background(), testUser.ID)
+	}()
+
+	// Clean up any existing test data BEFORE creating new test data
 	testutils.CleanupScorecardTestData(t, dbClient)
 
-	// Initialize services
-	serviceContainer := services.NewContainer(dbClient.Repositories, testConfig.Config)
-	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
-
-	// Setup router
-	router := testutils.SetupScorecardTestRouter(scorecardHandler, serviceContainer)
-
 	// Create test series
-	seriesID := createTestSeriesForScorecard(t, router)
+	seriesID := createTestSeriesForScorecard(t, router, sessionCookie)
 
 	// Create test match
-	matchID := createTestMatchForScorecard(t, router, seriesID)
+	matchID := createTestMatchForScorecard(t, router, seriesID, sessionCookie)
 
 	// Update match to live status
-	updateMatchToLive(t, router, matchID)
+	updateMatchToLive(t, router, matchID, sessionCookie)
 
 	t.Run("StartScoring", func(t *testing.T) {
 		req := map[string]interface{}{
@@ -137,6 +203,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 		reqHTTP := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(body))
 		reqHTTP.Header.Set("Content-Type", "application/json")
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -162,6 +236,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 		reqHTTP := httptest.NewRequest("POST", "/api/v1/scorecard/start", bytes.NewBuffer(body))
 		reqHTTP.Header.Set("Content-Type", "application/json")
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -183,6 +265,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 		reqHTTP := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(body))
 		reqHTTP.Header.Set("Content-Type", "application/json")
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -217,6 +307,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 		reqHTTP := httptest.NewRequest("POST", "/api/v1/scorecard/ball", bytes.NewBuffer(body))
 		reqHTTP.Header.Set("Content-Type", "application/json")
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -225,6 +323,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetScorecard", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID, nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -237,12 +343,21 @@ func TestScorecardIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, matchID, response.Data.MatchID)
 		assert.Len(t, response.Data.Innings, 1)
+		require.NotNil(t, response.Data.Innings[0], "First innings should not be nil")
 		assert.Equal(t, 1, response.Data.Innings[0].InningsNumber)
 		assert.Equal(t, 4, response.Data.Innings[0].TotalRuns)
 	})
 
 	t.Run("GetScorecard_NotFound", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/nonexistent-match", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -251,6 +366,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetCurrentOver", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/current-over?innings=1", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -268,6 +391,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetCurrentOver_InvalidInnings", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/current-over?innings=3", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -276,6 +407,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetInnings", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -293,6 +432,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetInnings_NotFound", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/2", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -301,6 +448,14 @@ func TestScorecardIntegration(t *testing.T) {
 
 	t.Run("GetOver", func(t *testing.T) {
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1/over/1", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
@@ -317,10 +472,25 @@ func TestScorecardIntegration(t *testing.T) {
 	})
 
 	t.Run("GetOver_NotFound", func(t *testing.T) {
+		t.Logf("DEBUG: GetOver_NotFound test - Using matchID: %s", matchID)
+		t.Logf("DEBUG: GetOver_NotFound test - Session cookie: %s", sessionCookie)
+
 		reqHTTP := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID+"/innings/1/over/2", nil)
+		reqHTTP.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, reqHTTP)
+
+		t.Logf("DEBUG: GetOver_NotFound test - Response status: %d", w.Code)
+		t.Logf("DEBUG: GetOver_NotFound test - Response body: %s", w.Body.String())
+
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 

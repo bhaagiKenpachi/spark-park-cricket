@@ -49,17 +49,18 @@ func (h *SeriesHandler) ListSeries(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	}
 
-	series, err := h.service.ListSeries(r.Context(), filters)
+	result, err := h.service.ListSeries(r.Context(), filters)
 	if err != nil {
 		utils.WriteInternalError(w, err.Error())
 		return
 	}
 
-	utils.WriteSuccess(w, series)
+	utils.WriteSuccess(w, result)
 }
 
 // CreateSeries handles POST /api/v1/series
 func (h *SeriesHandler) CreateSeries(w http.ResponseWriter, r *http.Request) {
+
 	var req models.CreateSeriesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteValidationError(w, "Invalid request body", err.Error())

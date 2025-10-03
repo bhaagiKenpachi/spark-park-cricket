@@ -107,12 +107,15 @@ func setupE2ETestServer(t *testing.T) (*httptest.Server, *database.Client) {
 }
 
 func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
-	// Setup
-	server, db := setupE2ETestServer(t)
+	// Setup with authentication
+	server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 	defer server.Close()
 	defer db.Close()
 
-	// Step 1: Create Series
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
+
+	// Step 1: Create Series with authentication
 	seriesReq := models.CreateSeriesRequest{
 		Name:      fmt.Sprintf("E2E Test Series %d", time.Now().Unix()),
 		StartDate: time.Now(),
@@ -121,6 +124,12 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	seriesJSON, _ := json.Marshal(seriesReq)
 	req, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -138,7 +147,7 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	seriesID := seriesResponse.Data.ID
 	require.NotEmpty(t, seriesID)
 
-	// Step 2: Create Match
+	// Step 2: Create Match with authentication
 	matchNumber := 1
 	matchReq := models.CreateMatchRequest{
 		SeriesID:         seriesID,
@@ -153,6 +162,12 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	matchJSON, _ := json.Marshal(matchReq)
 	req, _ = http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -170,19 +185,38 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	matchID := matchResponse.Data.ID
 	require.NotEmpty(t, matchID)
 
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
+
 	// Step 3: Complete First Innings (12 balls = 2 overs)
 	firstInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeTwo, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeTwo, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeThree, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFour, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeFive, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 	}
 
@@ -190,6 +224,12 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -200,6 +240,12 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	// Step 4: Check First Innings Completed and Second Innings Started
 	req, _ = http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
 	req.Header.Set("Accept", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -241,28 +287,32 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 
 	assert.Equal(t, "completed", firstInnings.Status)
 	assert.Equal(t, "A", firstInnings.BattingTeam)
-	assert.Equal(t, 42, firstInnings.TotalRuns) // 1+2+3+4+5+6+1+2+3+4+5+6 = 42
+	assert.Equal(t, 34, firstInnings.TotalRuns) // 1+2+3+4+1+6+1+2+3+4+1+6 = 34
 
 	assert.Equal(t, "in_progress", secondInnings.Status)
 	assert.Equal(t, "B", secondInnings.BattingTeam)
 	assert.Equal(t, 0, secondInnings.TotalRuns)
 
-	// Step 5: Add balls to second innings to reach target (43 runs)
+	// Step 5: Add balls to second innings to reach target (35 runs)
 	secondInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0}, // 43rd run
+		{MatchID: matchID, InningsNumber: 2, BallType: models.BallTypeGood, RunType: models.RunTypeSix, IsWicket: false, Byes: 0}, // 36th run (target reached)
 	}
 
 	for _, ballReq := range secondInningsBalls {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -273,6 +323,12 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	// Step 6: Verify Match Completed
 	req, _ = http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
 	req.Header.Set("Accept", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -289,19 +345,25 @@ func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	for _, innings := range scorecardResponse.Data.Innings {
 		if innings.InningsNumber == 2 {
 			assert.Equal(t, "completed", innings.Status)
-			assert.GreaterOrEqual(t, innings.TotalRuns, 43) // Target reached
+			assert.GreaterOrEqual(t, innings.TotalRuns, 36) // Target reached
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }
 
 func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
-	// Setup
-	server, db := setupE2ETestServer(t)
+	// Setup with authentication
+	server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 	defer server.Close()
 	defer db.Close()
 
-	// Step 1: Create Series
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
+
+	// Step 1: Create Series with authentication
 	seriesReq := models.CreateSeriesRequest{
 		Name:      fmt.Sprintf("E2E Test Series Wickets %d", time.Now().Unix()),
 		StartDate: time.Now(),
@@ -310,6 +372,12 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 	seriesJSON, _ := json.Marshal(seriesReq)
 	req, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -341,6 +409,12 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 	matchJSON, _ := json.Marshal(matchReq)
 	req, _ = http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -356,6 +430,25 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 	resp.Body.Close()
 
 	matchID := matchResponse.Data.ID
+
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
 
 	// Step 3: Complete First Innings with 10 runs
 	firstInningsBalls := []models.BallEventRequest{
@@ -377,6 +470,12 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -394,6 +493,12 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -404,6 +509,12 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 	// Step 5: Verify Match Completed
 	req, _ = http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
 	req.Header.Set("Accept", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -434,13 +545,19 @@ func TestCompleteMatchFlow_AllWicketsLost_E2E(t *testing.T) {
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }
 
 func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
-	// Setup
-	server, db := setupE2ETestServer(t)
+	// Setup with authentication
+	server, db, user, sessionCookie := testutils.SetupAuthenticatedE2ETestServerWithDB(t)
 	defer server.Close()
 	defer db.Close()
+
+	// Clean up before test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 
 	// Step 1: Create Series
 	seriesReq := models.CreateSeriesRequest{
@@ -451,6 +568,12 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 	seriesJSON, _ := json.Marshal(seriesReq)
 	req, _ := http.NewRequest("POST", server.URL+"/api/v1/series", bytes.NewBuffer(seriesJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -482,6 +605,12 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 	matchJSON, _ := json.Marshal(matchReq)
 	req, _ = http.NewRequest("POST", server.URL+"/api/v1/matches", bytes.NewBuffer(matchJSON))
 	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -498,7 +627,26 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 
 	matchID := matchResponse.Data.ID
 
-	// Step 3: Complete First Innings with 10 runs
+	// Step 2.5: Start scoring for the match
+	startReq := map[string]interface{}{
+		"match_id": matchID,
+	}
+	startBody, _ := json.Marshal(startReq)
+	startHTTPReq, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/start", bytes.NewBuffer(startBody))
+	startHTTPReq.Header.Set("Content-Type", "application/json")
+	startHTTPReq.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
+
+	startResp, err := http.DefaultClient.Do(startHTTPReq)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, startResp.StatusCode)
+	startResp.Body.Close()
+
+	// Step 3: Complete First Innings with 5 runs (so target is 6, won't be reached with 12 balls of 1 run each)
 	firstInningsBalls := []models.BallEventRequest{
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
@@ -518,6 +666,12 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -542,6 +696,12 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 		ballJSON, _ := json.Marshal(ballReq)
 		req, _ := http.NewRequest("POST", server.URL+"/api/v1/scorecard/ball", bytes.NewBuffer(ballJSON))
 		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{
+			Name:     "user_session",
+			Value:    sessionCookie,
+			Path:     "/",
+			HttpOnly: true,
+		})
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -552,6 +712,12 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 	// Step 5: Verify Match Completed
 	req, _ = http.NewRequest("GET", server.URL+"/api/v1/scorecard/"+matchID, nil)
 	req.Header.Set("Accept", "application/json")
+	req.AddCookie(&http.Cookie{
+		Name:     "user_session",
+		Value:    sessionCookie,
+		Path:     "/",
+		HttpOnly: true,
+	})
 
 	resp, err = http.DefaultClient.Do(req)
 	require.NoError(t, err)
@@ -582,4 +748,7 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 			break
 		}
 	}
+
+	// Clean up after test
+	testutils.CleanupTestDataForUser(t, db, user.ID)
 }

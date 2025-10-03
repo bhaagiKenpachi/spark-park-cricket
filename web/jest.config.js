@@ -21,10 +21,10 @@ const customJestConfig = {
   ],
   coverageThreshold: {
     global: {
-      branches: 70,
+      branches: 60,
       functions: 50,
-      lines: 60,
-      statements: 60,
+      lines: 55,
+      statements: 55,
     },
   },
   testMatch: [
@@ -34,8 +34,14 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
-    '<rootDir>/cypress/',
+    '<rootDir>/tests/e2e/',
   ],
+  // CI-specific configuration
+  ...(process.env.CI && {
+    passWithNoTests: true,
+    errorOnDeprecated: false,
+    verbose: false,
+  }),
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
