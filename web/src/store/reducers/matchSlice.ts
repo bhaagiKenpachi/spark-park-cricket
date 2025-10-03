@@ -39,6 +39,10 @@ export const matchSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
+    fetchMatchesBySeriesRequest: (state, _action: PayloadAction<string>) => {
+      state.loading = true;
+      state.error = null;
+    },
     fetchMatchesSuccess: (state, action: PayloadAction<Match[]>) => {
       state.loading = false;
       state.matches = action.payload;
@@ -112,6 +116,7 @@ export const matchSlice = createSlice({
 
 export const {
   fetchMatchesRequest,
+  fetchMatchesBySeriesRequest,
   fetchMatchesSuccess,
   fetchMatchesFailure,
   setCurrentMatch,
