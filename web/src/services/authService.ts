@@ -27,7 +27,7 @@ class AuthService {
 
   constructor(
     baseURL: string = process.env.NEXT_PUBLIC_API_URL ||
-      'http://localhost:8080/api/v1'
+      'https://spark-park.dojima.foundation/api/v1'
   ) {
     this.baseURL = baseURL;
   }
