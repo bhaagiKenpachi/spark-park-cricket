@@ -201,8 +201,8 @@ export function SeriesList(): React.JSX.Element {
     setCurrentSeriesCreatedBy(null);
   };
 
-  // Show loading state only when we have no data and are loading
-  if (loading || !series || !Array.isArray(series) || series.length === 0) {
+  // Show loading state only when actually loading
+  if (loading || !series || !Array.isArray(series)) {
     return (
       <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-6 md:max-w-lg md:px-8">
         <div className="flex flex-col items-center justify-center space-y-4">

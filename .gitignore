@@ -73,3 +73,5 @@ backend/temp/*
 client_secret_*.json
 
 docker-compose.env
+
+*.env.*

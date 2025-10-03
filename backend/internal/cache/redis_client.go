@@ -163,8 +163,16 @@ func (r *RedisClient) Close() error {
 
 // HealthCheck performs a health check on Redis
 func (r *RedisClient) HealthCheck() error {
-	_, err := r.client.Ping(r.ctx).Result()
-	return err
+	// Create a new context with timeout for health check
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := r.client.Ping(ctx).Result()
+	if err != nil {
+		return fmt.Errorf("redis health check failed: %w", err)
+	}
+
+	return nil
 }
 
 // GetSeriesKey generates a cache key for series data

@@ -30,6 +30,7 @@ func NewAuthHandler(authService services.AuthServiceInterface, sessionSvc servic
 
 // GoogleLogin initiates Google OAuth login
 func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
+
 	// Generate a random state parameter for security
 	state, err := h.generateState()
 	if err != nil {
@@ -37,6 +38,7 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Failed to initiate login", nil)
 		return
 	}
+
 
 	// Store state in session for validation
 	session, err := h.SessionSvc.GetStore().Get(r, "oauth_state")
@@ -56,27 +58,33 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// For debugging: also store state in a simple cookie as backup
-	http.SetCookie(w, &http.Cookie{
+	backupCookie := &http.Cookie{
 		Name:     "oauth_state_backup",
 		Value:    state,
-		Path:     "/",
-		MaxAge:   600, // 10 minutes
+		Path:     "/api/v1", // Restrict to API paths
+		MaxAge:   600,       // 10 minutes
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true, // Set to true for HTTPS domains
 		SameSite: http.SameSiteLaxMode,
-	})
+	}
+	http.SetCookie(w, backupCookie)
+
 
 	// Get Google OAuth URL and redirect
 	authURL := h.AuthService.GetAuthURL(state)
+
+
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
 
 // GoogleCallback handles Google OAuth callback
 func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
+
 	// Get query parameters
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 	errorParam := r.URL.Query().Get("error")
+
 
 	// Check for OAuth errors
 	if errorParam != "" {
@@ -95,6 +103,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	storedState, ok := session.Values["state"].(string)
 
 	// Check backup cookie if session state is not available
@@ -102,6 +111,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	if !ok || storedState == "" {
 		if cookie, err := r.Cookie("oauth_state_backup"); err == nil {
 			backupState = cookie.Value
+		} else {
 		}
 	}
 
@@ -111,11 +121,13 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		validState = backupState
 	}
 
+
 	if validState == "" || validState != state {
 		utils.LogWarn("Invalid state parameter", map[string]interface{}{
 			"received_state": state,
 			"stored_state":   storedState,
 			"backup_state":   backupState,
+			"valid_state":    validState,
 		})
 		utils.WriteError(w, http.StatusBadRequest, "INVALID_STATE", "Invalid state parameter", nil)
 		return

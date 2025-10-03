@@ -29,10 +29,10 @@ func NewSessionService(userRepo interfaces.UserRepository, cfg *config.Config) *
 
 	// Configure session options for OAuth compatibility
 	store.Options = &sessions.Options{
-		Path:     "/",
+		Path:     "/api/v1", // Restrict cookies to API paths only
 		MaxAge:   cfg.SessionMaxAge,
 		HttpOnly: true,
-		Secure:   false,                // Set to true in production with HTTPS
+		Secure:   true,                 // Set to true for HTTPS domains
 		SameSite: http.SameSiteLaxMode, // Changed from None to Lax for localhost
 		// Don't set Domain to avoid localhost issues
 	}

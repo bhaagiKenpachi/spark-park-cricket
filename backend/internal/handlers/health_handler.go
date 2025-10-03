@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"runtime"
 	"spark-park-cricket-backend/internal/database"
@@ -244,14 +245,23 @@ func (h *HealthHandler) checkRedisHealth(ctx context.Context) ServiceHealth {
 	start := time.Now()
 	responseTime := time.Since(start)
 
-	if h.dbClient == nil || h.dbClient.CacheManager == nil {
+	if h.dbClient == nil {
+		log.Printf("❌ Database client is nil")
+		return ServiceHealth{
+			Status:       "unhealthy",
+			ResponseTime: responseTime,
+			Error:        "database client not initialized",
+		}
+	}
+
+	if h.dbClient.CacheManager == nil {
 		// Cache is disabled, which is a valid configuration
 		return ServiceHealth{
 			Status:       "healthy",
 			ResponseTime: responseTime,
 			Details: map[string]interface{}{
 				"connection": "disabled",
-				"reason":     "cache disabled by configuration",
+				"reason":     "cache manager not initialized",
 			},
 		}
 	}
@@ -261,6 +271,7 @@ func (h *HealthHandler) checkRedisHealth(ctx context.Context) ServiceHealth {
 	responseTime = time.Since(start)
 
 	if err != nil {
+		log.Printf("❌ Redis health check failed: %v", err)
 		return ServiceHealth{
 			Status:       "unhealthy",
 			ResponseTime: responseTime,
@@ -268,6 +279,7 @@ func (h *HealthHandler) checkRedisHealth(ctx context.Context) ServiceHealth {
 		}
 	}
 
+	log.Printf("✅ Redis health check successful")
 	return ServiceHealth{
 		Status:       "healthy",
 		ResponseTime: responseTime,
