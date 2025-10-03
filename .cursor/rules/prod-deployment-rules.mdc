@@ -1,0 +1,9 @@
+---
+alwaysApply: false
+---
+
+**No Database critical operations** - if any operation other than read, should get approval.
+
+**Do not touch other enviroments** - Do not touch other environment configurations, containers, images, volumes, nginx conf.
+
+**Approval for delete operation** - Any deletion need approval.

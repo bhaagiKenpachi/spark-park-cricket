@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  fetchMatchesRequest,
+  fetchMatchesBySeriesRequest,
   deleteMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
@@ -112,9 +112,9 @@ export function SeriesWithMatches({
 
   useEffect(() => {
     if (expanded) {
-      dispatch(fetchMatchesRequest());
+      dispatch(fetchMatchesBySeriesRequest(series.id));
     }
-  }, [dispatch, expanded]);
+  }, [dispatch, expanded, series.id]);
 
   // Fetch scorecard data for completed matches
   useEffect(() => {
@@ -151,7 +151,7 @@ export function SeriesWithMatches({
   const handleMatchFormSuccess = () => {
     setShowMatchForm(false);
     setEditingMatch(undefined);
-    dispatch(fetchMatchesRequest());
+    dispatch(fetchMatchesBySeriesRequest(series.id));
   };
 
   const handleMatchFormCancel = () => {

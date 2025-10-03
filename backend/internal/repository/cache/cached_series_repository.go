@@ -108,10 +108,27 @@ func (r *CachedSeriesRepository) Update(ctx context.Context, id string, series *
 		return err
 	}
 
-	// Invalidate caches
+	// Invalidate series-specific cache
 	key := r.cache.GetSeriesKey(id)
 	_ = r.cache.Invalidate(key)
-	_ = r.cache.Invalidate("series:list")
+
+	// Invalidate all possible series list cache keys
+	keysToInvalidate := []string{
+		"series:list",
+		"series:list:order:created_at_desc",
+		"series:list:order:created_at_desc:limit:20",
+		"series:list:order:created_at_desc:limit:50",
+		"series:list:order:created_at_desc:limit:100",
+		"series:list:order:created_at_desc:limit:20:offset:0",
+		"series:list:order:created_at_desc:limit:20:offset:20",
+		"series:list:order:created_at_desc:limit:20:offset:40",
+		"series:list:order:created_at_desc:limit:50:offset:0",
+		"series:list:order:created_at_desc:limit:100:offset:0",
+	}
+
+	for _, key := range keysToInvalidate {
+		_ = r.cache.Invalidate(key)
+	}
 
 	// Update cache with new data
 	_ = r.cache.Set(key, series, cache.StaticDataTTL)
@@ -126,10 +143,27 @@ func (r *CachedSeriesRepository) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	// Invalidate caches
+	// Invalidate series-specific cache
 	key := r.cache.GetSeriesKey(id)
 	_ = r.cache.Invalidate(key)
-	_ = r.cache.Invalidate("series:list")
+
+	// Invalidate all possible series list cache keys
+	keysToInvalidate := []string{
+		"series:list",
+		"series:list:order:created_at_desc",
+		"series:list:order:created_at_desc:limit:20",
+		"series:list:order:created_at_desc:limit:50",
+		"series:list:order:created_at_desc:limit:100",
+		"series:list:order:created_at_desc:limit:20:offset:0",
+		"series:list:order:created_at_desc:limit:20:offset:20",
+		"series:list:order:created_at_desc:limit:20:offset:40",
+		"series:list:order:created_at_desc:limit:50:offset:0",
+		"series:list:order:created_at_desc:limit:100:offset:0",
+	}
+
+	for _, key := range keysToInvalidate {
+		_ = r.cache.Invalidate(key)
+	}
 
 	return nil
 }

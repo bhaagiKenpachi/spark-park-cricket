@@ -8,7 +8,7 @@ export function LoginButton() {
     // Redirect directly to backend OAuth endpoint
     // The backend will handle the OAuth flow and redirect back
     const apiBaseUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+      process.env.NEXT_PUBLIC_API_URL || 'https://spark-park.dojima.foundation/api/v1';
     const oauthUrl = `${apiBaseUrl}/auth/google`;
 
     window.location.href = oauthUrl;

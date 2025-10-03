@@ -237,6 +237,24 @@ CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_over_id ON prod_v1.balls(over_id);
 CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_run_type ON prod_v1.balls(run_type);
 CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_is_wicket ON prod_v1.balls(is_wicket);
 
+-- Additional performance indexes for balls table (from 006_add_performance_indexes.sql)
+-- Optimizes ball number ordering and max ball number queries
+CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_over_id_ball_number ON prod_v1.balls(over_id, ball_number);
+-- Optimizes complex ball queries with type filtering
+CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_over_type ON prod_v1.balls(over_id, ball_type);
+-- Optimizes legal ball counting queries
+CREATE INDEX IF NOT EXISTS idx_prod_v1_balls_ball_type ON prod_v1.balls(ball_type);
+
+-- Additional performance indexes for overs table
+-- Optimizes GetCurrentOver queries
+CREATE INDEX IF NOT EXISTS idx_prod_v1_overs_innings_status ON prod_v1.overs(innings_id, status);
+-- Optimizes GetOversByInnings ordering
+CREATE INDEX IF NOT EXISTS idx_prod_v1_overs_innings_over_number ON prod_v1.overs(innings_id, over_number);
+
+-- Additional performance indexes for innings table
+-- Optimizes GetInningsByMatchAndNumber queries
+CREATE INDEX IF NOT EXISTS idx_prod_v1_innings_match_number ON prod_v1.innings(match_id, innings_number);
+
 -- ============================================
 -- FUNCTIONS AND TRIGGERS
 -- ============================================
@@ -408,6 +426,9 @@ COMMENT ON COLUMN prod_v1.balls.byes IS 'Additional runs from byes (0-6)';
 COMMENT ON COLUMN prod_v1.balls.is_wicket IS 'Whether this ball resulted in a wicket';
 COMMENT ON COLUMN prod_v1.balls.wicket_type IS 'Type of wicket: bowled, caught, lbw, run_out, stumped, hit_wicket';
 
+-- Note: Additional performance indexes have been added for better query optimization
+-- These indexes optimize specific queries like GetBallsByOver, GetCurrentOver, etc.
+
 -- ============================================
 -- PERMISSIONS SETUP
 -- ============================================
@@ -441,7 +462,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA prod_v1 GRANT ALL ON SEQUENCES TO anon, authe
 -- ============================================
 
 SELECT 'Complete schema created successfully for prod_v1!' as status;
-SELECT 'This migration includes all tables, constraints, indexes, triggers, functions, and permissions' as info;
+SELECT 'This migration includes all tables, constraints, indexes (including performance optimizations), triggers, functions, and permissions' as info;
 
 -- Verify prod_v1 schema tables (including auth tables)
 SELECT 'prod_v1 schema tables created (including auth):' as info;

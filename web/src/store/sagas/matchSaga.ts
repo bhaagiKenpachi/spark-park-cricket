@@ -8,6 +8,7 @@ import {
 } from 'redux-saga/effects';
 import {
   fetchMatchesRequest,
+  fetchMatchesBySeriesRequest,
   fetchMatchesSuccess,
   fetchMatchesFailure,
   createMatchRequest,
@@ -38,6 +39,30 @@ export function* fetchMatchesSaga(): Generator<
   } catch (error) {
     const errorMessage =
       error instanceof ApiError ? error.message : 'Failed to fetch matches';
+    yield put(fetchMatchesFailure(errorMessage));
+  }
+}
+
+export function* fetchMatchesBySeriesSaga(
+  action: ReturnType<typeof fetchMatchesBySeriesRequest>
+): Generator<
+  CallEffect | PutEffect,
+  void,
+  ApiResponse<{ data: Match[] }>
+> {
+  try {
+    const apiService = new ApiService();
+    const response = yield call(
+      apiService.getMatchesBySeries.bind(apiService),
+      action.payload
+    );
+
+    // Extract the actual array from the nested response structure
+    const matchesArray = response.data.data || response.data;
+    yield put(fetchMatchesSuccess(matchesArray));
+  } catch (error) {
+    const errorMessage =
+      error instanceof ApiError ? error.message : 'Failed to fetch matches by series';
     yield put(fetchMatchesFailure(errorMessage));
   }
 }
@@ -94,6 +119,7 @@ export function* deleteMatchSaga(
 
 export function* matchSaga() {
   yield takeLatest(fetchMatchesRequest.type, fetchMatchesSaga);
+  yield takeLatest(fetchMatchesBySeriesRequest.type, fetchMatchesBySeriesSaga);
   yield takeEvery(createMatchRequest.type, createMatchSaga);
   yield takeEvery(updateMatchRequest.type, updateMatchSaga);
   yield takeEvery(deleteMatchRequest.type, deleteMatchSaga);

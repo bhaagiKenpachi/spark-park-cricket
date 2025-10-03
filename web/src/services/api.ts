@@ -19,9 +19,9 @@ import {
 
 // Backend API Configuration
 // Set NEXT_PUBLIC_API_URL in .env.local file or environment variables
-// Default: http://localhost:8080/api/v1
+// Default: https://spark-park.dojima.foundation/api/v1
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+  process.env.NEXT_PUBLIC_API_URL || 'https://spark-park.dojima.foundation/api/v1';
 
 export interface ApiResponse<T> {
   data: T;
