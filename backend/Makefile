@@ -1,7 +1,7 @@
 # Spark Park Cricket Backend - Makefile
 # This Makefile provides commands for running tests and managing the project
 
-.PHONY: help test test-unit test-integration test-e2e test-illegal test-series test-match test-scorecard test-all build run clean setup-test-db clear-db redis-start redis-test redis-stop
+.PHONY: help test test-unit test-integration test-e2e test-illegal test-series test-match test-scorecard test-all build run clean test-db setup test-db verify test-db status test-db auto-setup clear-db redis-start redis-test redis-stop
 
 # Default target
 help:
@@ -24,7 +24,10 @@ help:
 	@echo "  clean            Clean build artifacts"
 	@echo ""
 	@echo "Setup Commands:"
-	@echo "  setup-test-db    Instructions for setting up test database"
+	@echo "  test-db-setup    Setup test database (manual instructions)"
+	@echo "  test-db-auto     Auto-setup test database via API"
+	@echo "  test-db-verify   Verify test database schema"
+	@echo "  test-db-status   Check test database status"
 	@echo "  clear-db         Clear all data from database tables (DANGEROUS!)"
 	@echo ""
 	@echo "Redis Commands:"
@@ -154,28 +157,22 @@ clean:
 	go clean
 	@echo "✅ Clean completed"
 
-# Setup test database instructions
-setup-test-db:
-	@echo "🗄️  Test Database Setup Instructions"
-	@echo "===================================="
-	@echo ""
-	@echo "1. Connect to your Supabase database:"
-	@echo "   psql -h your-supabase-host -U postgres -d postgres"
-	@echo ""
-	@echo "2. Run the test schema setup script:"
-	@echo "   \\i scripts/setup_test_db.sql"
-	@echo ""
-	@echo "   Or from command line:"
-	@echo "   psql -h your-supabase-host -U postgres -d postgres -f scripts/setup_test_db.sql"
-	@echo ""
-	@echo "3. Verify the schema was created:"
-	@echo "   \\dn"
-	@echo "   \\dt testing_db.*"
-	@echo ""
-	@echo "4. Make sure your .env file has:"
-	@echo "   TEST_SCHEMA=testing_db"
-	@echo "   SUPABASE_URL=your_supabase_url"
-	@echo "   SUPABASE_API_KEY=your_supabase_key"
+# Test database management commands
+test-db-setup:
+	@echo "🗄️  Setting up test database..."
+	./scripts/test-db.sh setup
+
+test-db-auto:
+	@echo "🚀 Auto-setting up test database..."
+	./scripts/test-db.sh auto-setup
+
+test-db-verify:
+	@echo "🔍 Verifying test database..."
+	./scripts/test-db.sh verify
+
+test-db-status:
+	@echo "📊 Checking test database status..."
+	./scripts/test-db.sh status
 
 # Clear all database tables (DANGEROUS!)
 clear-db:

@@ -29,6 +29,19 @@ yarn-error.log*
 .env*.local
 .env
 
+# Security: SSH keys and certificates
+*.key
+*.pem
+*.crt
+*.csr
+ssh-keys/
+certs/
+
+# Security: Configuration files with secrets
+**/config/secrets.yml
+**/config/production.yml
+**/secrets/
+
 # vercel
 .vercel
 

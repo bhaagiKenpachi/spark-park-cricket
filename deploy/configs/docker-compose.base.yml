@@ -1,12 +1,12 @@
+version: '3.8'
+
+# Base Docker Compose configuration
+# This file contains common configurations that can be extended by environment-specific files
+
 services:
-  # Redis Cache
+  # Redis Cache - Base Configuration
   redis:
     image: redis:7-alpine
-    container_name: cricket-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
     command: redis-server --appendonly yes
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -15,34 +15,17 @@ services:
       retries: 3
     networks:
       - cricket-network
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
 
-  # Go Backend API
+  # Go Backend API - Base Configuration
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: cricket-backend
-    ports:
-      - "8080:8080"
+      context: ../../
+      dockerfile: backend/Dockerfile
     env_file:
-      - ./backend/.env
-    environment:
-      # Server Configuration
-      - PORT=8080
-      - FRONTEND_URL=http://localhost:3000
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
-
-      # Redis Configuration
-      - REDIS_URL=redis:6379
-      - REDIS_DB=0
-      - REDIS_USE_TLS=false
-      - CACHE_ENABLED=true
-
-      # OAuth Configuration
-      - GOOGLE_REDIRECT_URL=http://localhost:8080/api/v1/auth/google/callback
-
-      # Session Configuration
-      - SESSION_MAX_AGE=86400
+      - .env
     depends_on:
       redis:
         condition: service_healthy
@@ -54,24 +37,21 @@ services:
       start_period: 10s
     networks:
       - cricket-network
+    restart: unless-stopped
+    environment:
+      # Common environment variables
+      - REDIS_URL=redis:6379
+      - REDIS_DB=0
+      - REDIS_USE_TLS=false
+      - CACHE_ENABLED=true
 
-  # Next.js Frontend
+  # Next.js Frontend - Base Configuration
   web:
     build:
-      context: ./web
+      context: ../../web
       dockerfile: Dockerfile
-    container_name: cricket-frontend
-    ports:
-      - "3000:3000"
     env_file:
-      - ./web/.env.local
-    environment:
-      # Next.js Configuration
-      - NODE_ENV=development
-      - PORT=3000
-      # API Configuration - Use localhost for browser access
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
+      - .env
     depends_on:
       - backend
     healthcheck:
@@ -82,27 +62,20 @@ services:
       start_period: 10s
     networks:
       - cricket-network
-    volumes:
-      - ./web:/app
-      - /app/node_modules
-      - /app/.next
+    restart: unless-stopped
 
-  # Prometheus - Metrics Collection
+  # Prometheus - Base Configuration
   prometheus:
     image: prom/prometheus:v2.48.0
-    container_name: cricket-prometheus
-    ports:
-      - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/prometheus/rules:/etc/prometheus/rules
+      - ../../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
       - '--web.enable-admin-api'
     healthcheck:
@@ -112,15 +85,13 @@ services:
       retries: 3
     networks:
       - cricket-network
+    restart: unless-stopped
 
-  # Loki - Log Aggregation
+  # Loki - Base Configuration
   loki:
     image: grafana/loki:2.9.0
-    container_name: cricket-loki
-    ports:
-      - "3100:3100"
     volumes:
-      - ./monitoring/loki/loki.yml:/etc/loki/local-config.yaml
+      - ../../monitoring/loki/loki.yml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     healthcheck:
@@ -130,13 +101,13 @@ services:
       retries: 3
     networks:
       - cricket-network
+    restart: unless-stopped
 
-  # Promtail - Log Collection
+  # Promtail - Base Configuration
   promtail:
     image: grafana/promtail:2.9.0
-    container_name: cricket-promtail
     volumes:
-      - ./monitoring/promtail/promtail.yml:/etc/promtail/config.yml
+      - ../../monitoring/promtail/promtail.yml:/etc/promtail/config.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
@@ -144,22 +115,19 @@ services:
       - loki
     networks:
       - cricket-network
+    restart: unless-stopped
 
-  # Grafana - Metrics Visualization
+  # Grafana - Base Configuration
   grafana:
     image: grafana/grafana:10.2.0
-    container_name: cricket-grafana
-    ports:
-      - "3002:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../../monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
       - loki
@@ -170,6 +138,7 @@ services:
       retries: 3
     networks:
       - cricket-network
+    restart: unless-stopped
 
 volumes:
   redis_data:
