@@ -80,9 +80,9 @@ export function ScorecardView({
     };
   }, [dispatch, matchId]);
 
-  // Auto-show live scoring if match is already live
+  // Auto-show live scoring if match is already live AND innings exist
   useEffect(() => {
-    if (scorecard?.match_status === 'live') {
+    if (scorecard?.match_status === 'live' && scorecard?.innings && scorecard.innings.length > 0) {
       setShowLiveScoring(true);
     }
   }, [scorecard]);
@@ -139,13 +139,17 @@ export function ScorecardView({
       return;
     }
 
-    // If match is already live, just show the interface without calling the API
-    if (scorecardData?.match_status === 'live') {
+    // Check if innings already exist - if not, we need to start scoring
+    const hasInnings = scorecardData?.innings && scorecardData.innings.length > 0;
+
+
+    if (hasInnings) {
+      // Innings already exist, just show the interface
       setShowLiveScoring(true);
       setScoringMessage('Live scoring interface opened!');
       setTimeout(() => setScoringMessage(null), 3000);
     } else {
-      // Only call the API if match is not live yet
+      // No innings exist, need to start scoring to create them
       dispatch(startScoringRequest(matchId));
       setShowLiveScoring(true);
       setScoringMessage('Live scoring started!');
@@ -404,12 +408,11 @@ export function ScorecardView({
     return (
       <div
         key={index}
-        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
-          isWicket
+        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
             ? 'border-red-500 bg-red-100 text-red-700'
             : ball.ball_type === 'WIDE' ||
-                ball.ball_type === 'wide' ||
-                ball.run_type === 'LB'
+              ball.ball_type === 'wide' ||
+              ball.run_type === 'LB'
               ? 'border-slate-400 bg-slate-100 text-slate-700'
               : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
                 ? 'border-gray-500 bg-gray-100 text-gray-700'
@@ -420,7 +423,7 @@ export function ScorecardView({
                     : ball.runs === 0
                       ? 'border-gray-300 bg-gray-100 text-gray-600'
                       : 'border-green-500 bg-green-100 text-green-700'
-        }`}
+          }`}
       >
         {display}
       </div>
@@ -697,8 +700,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-            Array.isArray(scorecardData.innings) &&
-            scorecardData.innings.length > 0 ? (
+              Array.isArray(scorecardData.innings) &&
+              scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'A'
@@ -707,14 +710,14 @@ export function ScorecardView({
                   const inningsKey = `A-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                    Array.isArray(innings.overs) &&
-                    innings.overs.length > 0
+                      Array.isArray(innings.overs) &&
+                      innings.overs.length > 0
                       ? innings.overs.reduce(
-                          (latest: OverSummary, current: OverSummary) =>
-                            current.over_number > latest.over_number
-                              ? current
-                              : latest
-                        )
+                        (latest: OverSummary, current: OverSummary) =>
+                          current.over_number > latest.over_number
+                            ? current
+                            : latest
+                      )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -789,8 +792,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                            Array.isArray(latestOver.balls) &&
-                            latestOver.balls.length > 0 ? (
+                              Array.isArray(latestOver.balls) &&
+                              latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -867,8 +870,8 @@ export function ScorecardView({
           </CardHeader>
           <CardContent>
             {scorecardData.innings &&
-            Array.isArray(scorecardData.innings) &&
-            scorecardData.innings.length > 0 ? (
+              Array.isArray(scorecardData.innings) &&
+              scorecardData.innings.length > 0 ? (
               scorecardData.innings
                 .filter(
                   (innings: InningsSummary) => innings.batting_team === 'B'
@@ -877,14 +880,14 @@ export function ScorecardView({
                   const inningsKey = `B-${innings.innings_number}`;
                   const latestOver =
                     innings.overs &&
-                    Array.isArray(innings.overs) &&
-                    innings.overs.length > 0
+                      Array.isArray(innings.overs) &&
+                      innings.overs.length > 0
                       ? innings.overs.reduce(
-                          (latest: OverSummary, current: OverSummary) =>
-                            current.over_number > latest.over_number
-                              ? current
-                              : latest
-                        )
+                        (latest: OverSummary, current: OverSummary) =>
+                          current.over_number > latest.over_number
+                            ? current
+                            : latest
+                      )
                       : null;
                   const isExpanded = expandedOvers[inningsKey];
 
@@ -999,8 +1002,8 @@ export function ScorecardView({
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {latestOver.balls &&
-                            Array.isArray(latestOver.balls) &&
-                            latestOver.balls.length > 0 ? (
+                              Array.isArray(latestOver.balls) &&
+                              latestOver.balls.length > 0 ? (
                               latestOver.balls.map(
                                 (ball: BallSummary, index: number) =>
                                   renderBallCircle(ball, index)
@@ -1163,13 +1166,12 @@ export function ScorecardView({
                           ? 'secondary'
                           : 'outline'
                     }
-                    className={`h-14 text-lg font-bold transition-all duration-200 ${
-                      runs === 4
+                    className={`h-14 text-lg font-bold transition-all duration-200 ${runs === 4
                         ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                         : runs === 6
                           ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
                           : 'border-2 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
-                    }`}
+                      }`}
                     disabled={scoring}
                   >
                     {scoring ? (
@@ -1268,11 +1270,10 @@ export function ScorecardView({
                       key={byes}
                       onClick={() => handleByesChange(byes)}
                       disabled={scoring}
-                      className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-200 ${
-                        byes === currentByes
+                      className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-200 ${byes === currentByes
                           ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-lg scale-110'
                           : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-400 hover:scale-105'
-                      } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {byes}
                     </button>
@@ -1308,11 +1309,10 @@ export function ScorecardView({
                       onClick={handleUndoBall}
                       variant="outline"
                       size="lg"
-                      className={`h-12 border-2 border-red-500 text-red-700 hover:bg-red-50 hover:border-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl ${
-                        isFirstBallOfInn()
+                      className={`h-12 border-2 border-red-500 text-red-700 hover:bg-red-50 hover:border-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl ${isFirstBallOfInn()
                           ? 'opacity-50 cursor-not-allowed'
                           : ''
-                      }`}
+                        }`}
                       disabled={scoring || isFirstBallOfInn()}
                     >
                       {scoring ? (

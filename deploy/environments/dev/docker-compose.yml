@@ -6,9 +6,9 @@ services:
     image: redis:7-alpine
     container_name: cricket-redis-dev
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
     command: redis-server --appendonly yes
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
@@ -16,41 +16,17 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - cricket-network
+      - cricket-dev-network
     restart: unless-stopped
 
   # Go Backend API
   backend:
-    build:
-      context: ../../..
-      dockerfile: backend/Dockerfile
+    image: spark-cricket-backend-dev
     container_name: cricket-backend-dev
     ports:
-      - "8080:8080"
+      - "8081:8080"
     env_file:
-      - .env
-    environment:
-      # Server Configuration
-      - PORT=8080
-      - ENV=development
-      - FRONTEND_URL=http://localhost:3000
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
-
-      # Redis Configuration
-      - REDIS_URL=redis:6379
-      - REDIS_DB=0
-      - REDIS_USE_TLS=false
-      - CACHE_ENABLED=true
-
-      # OAuth Configuration
-      - GOOGLE_REDIRECT_URL=http://localhost:8080/api/v1/auth/google/callback
-
-      # Session Configuration
-      - SESSION_MAX_AGE=86400
-
-      # Development specific
-      - LOG_LEVEL=debug
-      - DEBUG=true
+      - .env.backend
     depends_on:
       redis:
         condition: service_healthy
@@ -61,29 +37,20 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - cricket-network
+      - cricket-dev-network
     restart: unless-stopped
-    volumes:
-      # Mount source code for hot reload in development
-      - ../../../backend:/app/src:ro
+    # volumes:
+    # Mount source code for hot reload in development
+    # - ../../../backend:/app/src:ro
 
-  # Next.js Frontend
+    # Next.js Frontend
   web:
-    build:
-      context: ../../../web
-      dockerfile: Dockerfile
+    image: spark-cricket-frontend-dev
     container_name: cricket-frontend-dev
     ports:
-      - "3000:3000"
+      - "3001:3000"
     env_file:
-      - .env
-    environment:
-      # Next.js Configuration
-      - NODE_ENV=development
-      - PORT=3000
-      # API Configuration - Use localhost for browser access
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
+      - .env.frontend
     depends_on:
       - backend
     healthcheck:
@@ -93,21 +60,21 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - cricket-network
+      - cricket-dev-network
     restart: unless-stopped
-    volumes:
-      # Mount source code for hot reload in development
-      - ../../../web:/app:ro
-      - /app/node_modules
-      - /app/.next
+    # volumes:
+    # Mount source code for hot reload in development
+    # - ../../../web:/app:ro
+    # - /app/node_modules
+    # - /app/.next
 
 volumes:
-  redis_data:
+  redis_dev_data:
     driver: local
 
 networks:
-  cricket-network:
+  cricket-dev-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.21.0.0/16

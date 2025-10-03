@@ -61,10 +61,10 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 
 	// Test connection with timeout
 	log.Printf("Testing Redis connection...")
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	testCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	_, err := rdb.Ping(ctx).Result()
+	_, err := rdb.Ping(testCtx).Result()
 	if err != nil {
 		log.Printf("❌ Failed to connect to Redis: %v", err)
 		log.Printf("⚠️  Continuing without cache - system will work with database-only mode")

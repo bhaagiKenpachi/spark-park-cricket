@@ -43,14 +43,14 @@ scrape_configs:
       - output:
           source: output
 
-  # Collect logs from local Docker containers (fallback)
-  - job_name: cricket-backend-local
+  # Collect logs from development Docker containers
+  - job_name: cricket-backend-dev
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
         filters:
           - name: name
-            values: ["cricket-backend.*"]
+            values: ["cricket-backend-dev"]
     relabel_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/?(.*)'
@@ -62,7 +62,9 @@ scrape_configs:
       - target_label: 'environment'
         replacement: 'dev'
       - target_label: 'instance'
-        replacement: 'localhost'
+        replacement: '15.235.202.148'
+      - target_label: 'service'
+        replacement: 'backend'
     pipeline_stages:
       - json:
           expressions:
@@ -84,5 +86,52 @@ scrape_configs:
           container_name:
           environment:
           instance:
+          service:
+      - output:
+          source: output
+
+  - job_name: cricket-frontend-dev
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ["cricket-frontend-dev"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: 'container_name'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_id']
+        target_label: 'container_id'
+      - target_label: 'environment'
+        replacement: 'dev'
+      - target_label: 'instance'
+        replacement: '15.235.202.148'
+      - target_label: 'service'
+        replacement: 'frontend'
+    pipeline_stages:
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            attrs:
+      - json:
+          expressions:
+            tag:
+          source: attrs
+      - regex:
+          expression: (?P<container_name>(?:[^|]*))\|
+          source: tag
+      - timestamp:
+          format: RFC3339Nano
+          source: time
+      - labels:
+          stream:
+          container_name:
+          environment:
+          instance:
+          service:
       - output:
           source: output

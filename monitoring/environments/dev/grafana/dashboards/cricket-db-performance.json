@@ -12,7 +12,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -88,7 +88,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "ball_api_database_operations_total",
@@ -104,7 +104,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -180,7 +180,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.50, rate(ball_api_database_duration_seconds_bucket[5m]))",
@@ -192,7 +192,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.95, rate(ball_api_database_duration_seconds_bucket[5m]))",
@@ -209,7 +209,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -285,7 +285,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "rate(ball_api_database_operations_total[5m])",
@@ -301,7 +301,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -377,7 +377,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "rate(http_requests_total[5m])",
@@ -393,7 +393,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -469,7 +469,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
@@ -481,7 +481,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
@@ -498,7 +498,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -574,7 +574,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=\"/health\"}",
@@ -590,7 +590,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -666,7 +666,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=\"/test-db-monitoring\"}",
@@ -682,7 +682,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -758,7 +758,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=\"/metrics\"}",
@@ -774,7 +774,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -850,7 +850,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/.*\"}",
@@ -866,7 +866,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -942,7 +942,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=\"/api/v1/series\"}",
@@ -958,7 +958,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1034,7 +1034,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=\"/api/v1/matches\"}",
@@ -1050,7 +1050,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1126,7 +1126,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}",
@@ -1142,7 +1142,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1218,7 +1218,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m])",
@@ -1234,7 +1234,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1310,7 +1310,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
@@ -1322,7 +1322,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
@@ -1334,7 +1334,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
@@ -1350,7 +1350,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1430,7 +1430,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "avg_over_time(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m])",
@@ -1446,7 +1446,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1522,7 +1522,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}",
@@ -1538,7 +1538,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1614,7 +1614,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\",status=~\"5..\"}[5m]) / rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m]) * 100",
@@ -1630,7 +1630,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1706,7 +1706,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_requests_total{endpoint=~\"/api/v1/.*\"}",
@@ -1722,7 +1722,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1798,7 +1798,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/ws.*\"}",
@@ -1814,7 +1814,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
+                "uid": "prometheus-dev"
             },
             "fieldConfig": {
                 "defaults": {
@@ -1890,7 +1890,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
+                        "uid": "prometheus-dev"
                     },
                     "editorMode": "code",
                     "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/graphql.*\"}",
