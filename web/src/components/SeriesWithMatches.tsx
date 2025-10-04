@@ -7,6 +7,7 @@ import {
   deleteMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
+import { useCompletedMatchesCache } from '@/hooks/useCompletedMatchesCache';
 import { fetchScorecardRequest } from '@/store/reducers/scorecardSlice';
 import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import {
   Calendar,
   Play,
   MoreVertical,
+  RotateCcw,
 } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
@@ -65,6 +67,7 @@ export function SeriesWithMatches({
     error: matchesError,
   } = useAppSelector(state => state.match);
   const { scorecard } = useAppSelector(state => state.scorecard);
+  const { getCachedData, setCachedData, clearExpired, isCached, clearMatch } = useCompletedMatchesCache();
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [expanded, setExpanded] = useState(false);
@@ -86,9 +89,22 @@ export function SeriesWithMatches({
     }
   };
 
-  // Fetch scorecard data for completed matches
+  // Fetch scorecard data for completed matches with caching
   const fetchMatchScorecard = useCallback(
     async (matchId: string) => {
+      // Check if data exists in cache and is not expired
+      const cachedData = getCachedData(matchId);
+      
+      if (cachedData) {
+        // Use cached data
+        setScorecardData(prev => ({
+          ...prev,
+          [matchId]: cachedData,
+        }));
+        return;
+      }
+
+      // Check if data already exists in local state
       if (!scorecardData[matchId]) {
         try {
           dispatch(fetchScorecardRequest(matchId));
@@ -97,7 +113,7 @@ export function SeriesWithMatches({
         }
       }
     },
-    [dispatch, scorecardData]
+    [dispatch, scorecardData, getCachedData]
   );
 
   // Filter matches for this series
@@ -116,26 +132,37 @@ export function SeriesWithMatches({
     }
   }, [dispatch, expanded, series.id]);
 
+  // Clear expired cache entries on component mount
+  useEffect(() => {
+    clearExpired();
+  }, [clearExpired]);
+
   // Fetch scorecard data for completed matches
   useEffect(() => {
     if (seriesMatches.length > 0) {
       seriesMatches.forEach(match => {
-        if (match.status === 'completed' && !scorecardData[match.id]) {
+        if (match.status === 'completed' && !scorecardData[match.id] && !isCached(match.id)) {
           fetchMatchScorecard(match.id);
         }
       });
     }
-  }, [seriesMatches, scorecardData, fetchMatchScorecard]);
+  }, [seriesMatches, scorecardData, fetchMatchScorecard, isCached]);
 
-  // Update scorecard data when scorecard changes
+  // Update scorecard data when scorecard changes and cache it
   useEffect(() => {
     if (scorecard && scorecard.match_id) {
       setScorecardData(prev => ({
         ...prev,
         [scorecard.match_id]: scorecard,
       }));
+
+      // Cache the scorecard data for completed matches
+      const match = seriesMatches.find(m => m.id === scorecard.match_id);
+      if (match && match.status === 'completed') {
+        setCachedData(scorecard.match_id, scorecard, 10 * 60 * 1000); // 10 minutes for completed matches
+      }
     }
-  }, [scorecard]);
+  }, [scorecard, dispatch, seriesMatches, setCachedData]);
 
   const handleDeleteMatch = (id: string) => {
     if (window.confirm('Are you sure you want to delete this match?')) {
@@ -157,6 +184,54 @@ export function SeriesWithMatches({
   const handleMatchFormCancel = () => {
     setShowMatchForm(false);
     setEditingMatch(undefined);
+  };
+
+  // Smart refresh that respects cache
+  const handleSmartRefresh = () => {
+    console.log('🔄 Smart Refresh - Checking cache for completed matches');
+    
+    // Always refresh matches list (this is lightweight)
+    dispatch(fetchMatchesBySeriesRequest(series.id));
+    
+    // Only fetch scorecard data for completed matches that aren't cached
+    if (seriesMatches.length > 0) {
+      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
+      const cachedMatches = completedMatches.filter(match => isCached(match.id));
+      const uncachedMatches = completedMatches.filter(match => !isCached(match.id));
+      
+      console.log(`📊 Cache Status: ${cachedMatches.length} cached, ${uncachedMatches.length} need API call`);
+      
+      uncachedMatches.forEach(match => {
+        console.log(`🌐 API Call needed for match ${match.id} (${match.match_number})`);
+        fetchMatchScorecard(match.id);
+      });
+      
+      if (cachedMatches.length > 0) {
+        console.log(`✅ Using cache for matches: ${cachedMatches.map(m => m.match_number).join(', ')}`);
+      }
+    }
+  };
+
+  // Force refresh that bypasses cache
+  const handleForceRefresh = () => {
+    console.log('🔄 Force Refresh - Bypassing cache for all completed matches');
+    
+    // Always refresh matches list
+    dispatch(fetchMatchesBySeriesRequest(series.id));
+    
+    // Force fetch scorecard data for all completed matches (bypass cache)
+    if (seriesMatches.length > 0) {
+      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
+      console.log(`🌐 Force API calls for ${completedMatches.length} completed matches`);
+      
+      completedMatches.forEach(match => {
+        console.log(`🔄 Force refreshing match ${match.id} (${match.match_number})`);
+        // Clear cache for this match first
+        clearMatch(match.id);
+        // Then fetch fresh data
+        dispatch(fetchScorecardRequest(match.id));
+      });
+    }
   };
 
   if (showMatchForm) {
@@ -198,32 +273,58 @@ export function SeriesWithMatches({
             >
               {expanded ? 'Hide Matches' : 'Show Matches'}
             </Button>
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="hover:bg-gray-100"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEditSeries(series)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Series
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDeleteSeries(series.id)}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Series
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-gray-100"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {/* Series management options - at the top */}
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => onEditSeries(series)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Series
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteSeries(series.id)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Series
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {/* Cache refresh options - at the bottom, only show when matches are expanded */}
+                {expanded && (
+                  <>
+                    <div className="border-t border-gray-200 my-1"></div>
+                    <DropdownMenuItem 
+                      onClick={handleSmartRefresh}
+                      disabled={matchesLoading}
+                      data-cy="refresh-matches-button"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
+                      Smart Refresh (Cache)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={handleForceRefresh}
+                      disabled={matchesLoading}
+                      data-cy="force-refresh-button"
+                      className="text-orange-600 focus:text-orange-600"
+                    >
+                      <RotateCcw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
+                      Force Refresh (No Cache)
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -269,19 +370,6 @@ export function SeriesWithMatches({
                 </p>
               </div>
               <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => dispatch(fetchMatchesRequest())}
-                  disabled={matchesLoading}
-                  data-cy="refresh-matches-button"
-                  title="Refresh"
-                  className="hover:bg-gray-50"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`}
-                  />
-                </Button>
                 {isOwner && (
                   <Button
                     size="sm"
