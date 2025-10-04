@@ -22,6 +22,14 @@ interface MatchState {
   currentMatch: Match | null;
   loading: boolean;
   error: string | null;
+  // Cache for completed matches scorecard data
+  completedMatchesCache: {
+    [matchId: string]: {
+      data: any;
+      timestamp: number;
+      expiresAt: number;
+    };
+  };
 }
 
 const initialState: MatchState = {
@@ -29,6 +37,7 @@ const initialState: MatchState = {
   currentMatch: null,
   loading: false,
   error: null,
+  completedMatchesCache: {},
 };
 
 export const matchSlice = createSlice({
@@ -111,6 +120,37 @@ export const matchSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    // Cache management for completed matches
+    cacheCompletedMatchData: (
+      state,
+      action: PayloadAction<{
+        matchId: string;
+        data: any;
+        cacheDuration?: number; // in milliseconds, default 5 minutes
+      }>
+    ) => {
+      const { matchId, data, cacheDuration = 5 * 60 * 1000 } = action.payload;
+      const now = Date.now();
+      state.completedMatchesCache[matchId] = {
+        data,
+        timestamp: now,
+        expiresAt: now + cacheDuration,
+      };
+    },
+    clearExpiredCache: (state) => {
+      const now = Date.now();
+      Object.keys(state.completedMatchesCache).forEach(matchId => {
+        if (state.completedMatchesCache[matchId].expiresAt < now) {
+          delete state.completedMatchesCache[matchId];
+        }
+      });
+    },
+    clearMatchCache: (state, action: PayloadAction<string>) => {
+      delete state.completedMatchesCache[action.payload];
+    },
+    clearAllCache: (state) => {
+      state.completedMatchesCache = {};
+    },
   },
 });
 
@@ -129,6 +169,10 @@ export const {
   deleteMatchRequest,
   deleteMatchSuccess,
   deleteMatchFailure,
+  cacheCompletedMatchData,
+  clearExpiredCache,
+  clearMatchCache,
+  clearAllCache,
 } = matchSlice.actions;
 
 export default matchSlice.reducer;
