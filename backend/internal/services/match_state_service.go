@@ -74,8 +74,10 @@ func (s *MatchStateService) CompleteMatch(ctx context.Context, matchID string) (
 		return nil, fmt.Errorf("match must be live to complete")
 	}
 
+	now := time.Now()
 	match.Status = models.MatchStatusCompleted
-	match.UpdatedAt = time.Now()
+	match.EndTime = &now
+	match.UpdatedAt = now
 
 	err = s.matchRepo.Update(ctx, matchID, match)
 	if err != nil {

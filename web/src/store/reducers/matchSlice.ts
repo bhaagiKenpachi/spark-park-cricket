@@ -13,6 +13,8 @@ export interface Match {
   toss_winner: 'A' | 'B';
   toss_type: 'H' | 'T';
   batting_team: 'A' | 'B';
+  start_time?: string;
+  end_time?: string;
   created_at: string;
   updated_at: string;
 }
