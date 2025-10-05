@@ -8,9 +8,10 @@ import (
 type MatchStatus string
 
 const (
-	MatchStatusLive      MatchStatus = "live"
-	MatchStatusCompleted MatchStatus = "completed"
-	MatchStatusCancelled MatchStatus = "cancelled"
+	MatchStatusNotStarted MatchStatus = "not_started"
+	MatchStatusLive       MatchStatus = "live"
+	MatchStatusCompleted  MatchStatus = "completed"
+	MatchStatusCancelled  MatchStatus = "cancelled"
 )
 
 // TossType represents the toss result
@@ -63,7 +64,7 @@ type CreateMatchRequest struct {
 type UpdateMatchRequest struct {
 	MatchNumber      *int         `json:"match_number,omitempty" validate:"omitempty,min=1"`
 	Date             *time.Time   `json:"date,omitempty"`
-	Status           *MatchStatus `json:"status,omitempty" validate:"omitempty,oneof=live completed cancelled"`
+	Status           *MatchStatus `json:"status,omitempty" validate:"omitempty,oneof=not_started live completed cancelled"`
 	TeamAPlayerCount *int         `json:"team_a_player_count,omitempty" validate:"omitempty,min=1,max=20"`
 	TeamBPlayerCount *int         `json:"team_b_player_count,omitempty" validate:"omitempty,min=1,max=20"`
 	TotalOvers       *int         `json:"total_overs,omitempty" validate:"omitempty,min=1,max=20"`

@@ -15,18 +15,18 @@ export const useCompletedMatchesCache = () => {
     (matchId: string) => {
       const cachedData = completedMatchesCache[matchId];
       const now = Date.now();
-      
+
       if (cachedData && cachedData.expiresAt > now) {
         return cachedData.data;
       }
-      
+
       return null;
     },
     [completedMatchesCache]
   );
 
   const setCachedData = useCallback(
-    (matchId: string, data: any, cacheDuration = 10 * 60 * 1000) => {
+    (matchId: string, data: unknown, cacheDuration = 10 * 60 * 1000) => {
       dispatch(cacheCompletedMatchData({
         matchId,
         data,

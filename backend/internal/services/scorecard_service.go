@@ -121,9 +121,23 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 		return fmt.Errorf("access denied: you can only start scoring for matches in series you created")
 	}
 
-	// Check if match is live
-	if match.Status != models.MatchStatusLive {
-		return fmt.Errorf("match is not live, cannot start scoring")
+	// Check if match is not_started or live
+	if match.Status != models.MatchStatusNotStarted && match.Status != models.MatchStatusLive {
+		return fmt.Errorf("match must be not started or live to begin scoring")
+	}
+
+	// If match is not_started, transition it to live
+	if match.Status == models.MatchStatusNotStarted {
+		match.Status = models.MatchStatusLive
+		match.UpdatedAt = time.Now()
+
+		err = s.matchRepo.Update(ctx, matchID, match)
+		if err != nil {
+			log.Printf("Error updating match status: %v", err)
+			return fmt.Errorf("failed to start match: %w", err)
+		}
+
+		log.Printf("Match %s status changed from not_started to live", matchID)
 	}
 
 	// Check if scoring is already started
