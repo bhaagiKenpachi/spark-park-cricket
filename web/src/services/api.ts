@@ -267,6 +267,13 @@ class ApiService {
     });
   }
 
+  async startMatch(id: string): Promise<ApiResponse<{ message: string; match_id: string }>> {
+    return this.request<{ message: string; match_id: string }>('/scorecard/start', {
+      method: 'POST',
+      body: JSON.stringify({ match_id: id }),
+    });
+  }
+
   async getMatchesBySeries(seriesId: string): Promise<ApiResponse<Match[]>> {
     return this.request<Match[]>(`/matches/series/${seriesId}`);
   }

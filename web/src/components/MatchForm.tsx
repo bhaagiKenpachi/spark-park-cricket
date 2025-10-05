@@ -133,7 +133,7 @@ export function MatchForm({
     > = {
       series_id: formData.series_id,
       date: `${formData.date}T00:00:00Z`,
-      status: 'live' as const,
+      status: 'not_started' as const,
       team_a_player_count: formData.team_player_count,
       team_b_player_count: formData.team_player_count,
       total_overs: formData.total_overs,

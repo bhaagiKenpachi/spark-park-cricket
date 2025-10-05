@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchMatchesBySeriesRequest,
   deleteMatchRequest,
+  startMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
 import { useCompletedMatchesCache } from '@/hooks/useCompletedMatchesCache';
@@ -94,12 +95,12 @@ export function SeriesWithMatches({
     async (matchId: string) => {
       // Check if data exists in cache and is not expired
       const cachedData = getCachedData(matchId);
-      
+
       if (cachedData) {
-        // Use cached data
+        // Use cached data - cast to ScorecardData since we know it's the right type
         setScorecardData(prev => ({
           ...prev,
-          [matchId]: cachedData,
+          [matchId]: cachedData as ScorecardData,
         }));
         return;
       }
@@ -170,6 +171,12 @@ export function SeriesWithMatches({
     }
   };
 
+  const handleStartMatch = (id: string) => {
+    if (window.confirm('Are you sure you want to start this match?')) {
+      dispatch(startMatchRequest(id));
+    }
+  };
+
   const handleEditMatch = (match: Match) => {
     setEditingMatch(match);
     setShowMatchForm(true);
@@ -189,23 +196,23 @@ export function SeriesWithMatches({
   // Smart refresh that respects cache
   const handleSmartRefresh = () => {
     console.log('🔄 Smart Refresh - Checking cache for completed matches');
-    
+
     // Always refresh matches list (this is lightweight)
     dispatch(fetchMatchesBySeriesRequest(series.id));
-    
+
     // Only fetch scorecard data for completed matches that aren't cached
     if (seriesMatches.length > 0) {
       const completedMatches = seriesMatches.filter(match => match.status === 'completed');
       const cachedMatches = completedMatches.filter(match => isCached(match.id));
       const uncachedMatches = completedMatches.filter(match => !isCached(match.id));
-      
+
       console.log(`📊 Cache Status: ${cachedMatches.length} cached, ${uncachedMatches.length} need API call`);
-      
+
       uncachedMatches.forEach(match => {
         console.log(`🌐 API Call needed for match ${match.id} (${match.match_number})`);
         fetchMatchScorecard(match.id);
       });
-      
+
       if (cachedMatches.length > 0) {
         console.log(`✅ Using cache for matches: ${cachedMatches.map(m => m.match_number).join(', ')}`);
       }
@@ -215,15 +222,15 @@ export function SeriesWithMatches({
   // Force refresh that bypasses cache
   const handleForceRefresh = () => {
     console.log('🔄 Force Refresh - Bypassing cache for all completed matches');
-    
+
     // Always refresh matches list
     dispatch(fetchMatchesBySeriesRequest(series.id));
-    
+
     // Force fetch scorecard data for all completed matches (bypass cache)
     if (seriesMatches.length > 0) {
       const completedMatches = seriesMatches.filter(match => match.status === 'completed');
       console.log(`🌐 Force API calls for ${completedMatches.length} completed matches`);
-      
+
       completedMatches.forEach(match => {
         console.log(`🔄 Force refreshing match ${match.id} (${match.match_number})`);
         // Clear cache for this match first
@@ -304,7 +311,7 @@ export function SeriesWithMatches({
                 {expanded && (
                   <>
                     <div className="border-t border-gray-200 my-1"></div>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleSmartRefresh}
                       disabled={matchesLoading}
                       data-cy="refresh-matches-button"
@@ -312,7 +319,7 @@ export function SeriesWithMatches({
                       <RefreshCw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
                       Smart Refresh (Cache)
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleForceRefresh}
                       disabled={matchesLoading}
                       data-cy="force-refresh-button"
@@ -454,17 +461,21 @@ export function SeriesWithMatches({
                                   ? 'default'
                                   : match.status === 'completed'
                                     ? 'secondary'
-                                    : 'outline'
+                                    : match.status === 'not_started'
+                                      ? 'outline'
+                                      : 'outline'
                               }
                               className={
                                 match.status === 'live'
                                   ? 'bg-green-500 text-white border-green-500 font-semibold'
                                   : match.status === 'completed'
                                     ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold'
-                                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold'
+                                    : match.status === 'not_started'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold'
+                                      : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold'
                               }
                             >
-                              {match.status.toUpperCase()}
+                              {match.status === 'not_started' ? 'NOT STARTED' : match.status.toUpperCase()}
                             </Badge>
                           </div>
 
@@ -624,6 +635,15 @@ export function SeriesWithMatches({
                             </DropdownMenuItem>
                             {isOwner && (
                               <>
+                                {match.status === 'not_started' && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleStartMatch(match.id)}
+                                    className="text-green-600 focus:text-green-600"
+                                  >
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Start Match
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() => handleEditMatch(match)}
                                 >

@@ -6,7 +6,7 @@ export interface Match {
   series_id: string;
   match_number: number;
   date: string;
-  status: 'live' | 'completed' | 'cancelled';
+  status: 'not_started' | 'live' | 'completed' | 'cancelled';
   team_a_player_count: number;
   team_b_player_count: number;
   total_overs: number;
@@ -25,7 +25,7 @@ interface MatchState {
   // Cache for completed matches scorecard data
   completedMatchesCache: {
     [matchId: string]: {
-      data: any;
+      data: unknown;
       timestamp: number;
       expiresAt: number;
     };
@@ -120,12 +120,31 @@ export const matchSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    startMatchRequest: (state, _action: PayloadAction<string>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    startMatchSuccess: (state, action: PayloadAction<Match>) => {
+      state.loading = false;
+      const index = state.matches.findIndex(
+        match => match.id === action.payload.id
+      );
+      if (index !== -1 && state.matches[index]) {
+        // Update only the status and updated_at fields
+        state.matches[index].status = action.payload.status;
+        state.matches[index].updated_at = action.payload.updated_at;
+      }
+    },
+    startMatchFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
     // Cache management for completed matches
     cacheCompletedMatchData: (
       state,
       action: PayloadAction<{
         matchId: string;
-        data: any;
+        data: unknown;
         cacheDuration?: number; // in milliseconds, default 5 minutes
       }>
     ) => {
@@ -140,7 +159,8 @@ export const matchSlice = createSlice({
     clearExpiredCache: (state) => {
       const now = Date.now();
       Object.keys(state.completedMatchesCache).forEach(matchId => {
-        if (state.completedMatchesCache[matchId].expiresAt < now) {
+        const cacheEntry = state.completedMatchesCache[matchId];
+        if (cacheEntry && cacheEntry.expiresAt < now) {
           delete state.completedMatchesCache[matchId];
         }
       });
@@ -169,6 +189,9 @@ export const {
   deleteMatchRequest,
   deleteMatchSuccess,
   deleteMatchFailure,
+  startMatchRequest,
+  startMatchSuccess,
+  startMatchFailure,
   cacheCompletedMatchData,
   clearExpiredCache,
   clearMatchCache,

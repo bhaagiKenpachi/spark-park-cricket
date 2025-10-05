@@ -83,7 +83,7 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 		SeriesID:         req.SeriesID,
 		MatchNumber:      matchNumber,
 		Date:             req.Date,
-		Status:           models.MatchStatusLive, // Always live by default
+		Status:           models.MatchStatusNotStarted, // Not started by default
 		TeamAPlayerCount: req.TeamAPlayerCount,
 		TeamBPlayerCount: req.TeamBPlayerCount,
 		TotalOvers:       req.TotalOvers,
