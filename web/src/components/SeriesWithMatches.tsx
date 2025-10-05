@@ -525,6 +525,45 @@ export function SeriesWithMatches({
                             </p>
                           </div>
 
+                          {/* Match Timing Information */}
+                          {(match.start_time || match.end_time) && (
+                            <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                  Match Timing
+                                </span>
+                              </div>
+                              <div className="space-y-1">
+                                {match.start_time && (
+                                  <p className="text-sm text-green-800">
+                                    <span className="font-medium">Started:</span>{' '}
+                                    {new Date(match.start_time).toLocaleString()}
+                                  </p>
+                                )}
+                                {match.end_time && (
+                                  <p className="text-sm text-green-800">
+                                    <span className="font-medium">Ended:</span>{' '}
+                                    {new Date(match.end_time).toLocaleString()}
+                                  </p>
+                                )}
+                                {match.start_time && match.end_time && (
+                                  <p className="text-sm font-semibold text-green-900">
+                                    <span className="font-medium">Duration:</span>{' '}
+                                    {(() => {
+                                      const start = new Date(match.start_time);
+                                      const end = new Date(match.end_time);
+                                      const duration = end.getTime() - start.getTime();
+                                      const hours = Math.floor(duration / (1000 * 60 * 60));
+                                      const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+                                      return `${hours}h ${minutes}m`;
+                                    })()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Match Completion Summary */}
                           {match.status === 'completed' &&
                             (() => {

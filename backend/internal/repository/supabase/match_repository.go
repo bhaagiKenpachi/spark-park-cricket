@@ -148,6 +148,15 @@ func (r *matchRepository) Update(ctx context.Context, id string, match *models.M
 		"updated_at":          match.UpdatedAt,
 	}
 
+	// Add timing fields if they exist
+	if match.StartTime != nil {
+		matchData["start_time"] = match.StartTime
+	}
+	if match.EndTime != nil {
+		matchData["end_time"] = match.EndTime
+	}
+
+
 	// Only include created_by if it's not empty
 	if match.CreatedBy != "" {
 		matchData["created_by"] = match.CreatedBy
