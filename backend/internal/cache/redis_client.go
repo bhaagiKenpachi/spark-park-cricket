@@ -200,6 +200,26 @@ func (r *RedisClient) GetMatchesBySeriesKey(seriesID string) string {
 	return fmt.Sprintf("matches:series:%s", seriesID)
 }
 
+// DeletePattern removes all keys matching a pattern using SCAN
+func (r *RedisClient) DeletePattern(pattern string) error {
+	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
+	defer cancel()
+
+	iter := r.client.Scan(ctx, 0, pattern, 0).Iterator()
+	for iter.Next(ctx) {
+		key := iter.Val()
+		if err := r.client.Del(ctx, key).Err(); err != nil {
+			log.Printf("⚠️  Failed to delete cache key %s: %v", key, err)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return fmt.Errorf("failed to scan pattern %s: %w", pattern, err)
+	}
+
+	return nil
+}
+
 // Cache TTL constants
 const (
 	// Static data (series, matches) - cache for 24 hours
