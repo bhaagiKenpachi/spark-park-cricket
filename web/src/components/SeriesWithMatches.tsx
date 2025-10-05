@@ -272,7 +272,7 @@ export function SeriesWithMatches({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => dispatch(fetchMatchesRequest())}
+                  onClick={() => dispatch(fetchMatchesBySeriesRequest(series.id))}
                   disabled={matchesLoading}
                   data-cy="refresh-matches-button"
                   title="Refresh"

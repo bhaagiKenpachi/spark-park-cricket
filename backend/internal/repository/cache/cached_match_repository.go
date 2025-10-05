@@ -175,29 +175,8 @@ func (r *CachedMatchRepository) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	// Invalidate caches
-	key := r.cache.GetMatchKey(id)
-	_ = r.cache.Invalidate(key)
-	_ = r.cache.Invalidate("match:list")
-	_ = r.cache.Invalidate("match:count")
-
-	// Invalidate common pagination cache keys
-	_ = r.cache.Invalidate("match:list:limit:20")
-	_ = r.cache.Invalidate("match:list:limit:10")
-	_ = r.cache.Invalidate("match:list:limit:5")
-	_ = r.cache.Invalidate("match:list:limit:3")
-	_ = r.cache.Invalidate("match:list:limit:2")
-
-	_ = r.cache.InvalidatePattern("match:list:*")
-
-	if match.SeriesID != "" {
-		seriesKey := r.cache.GetMatchesBySeriesKey(match.SeriesID)
-		_ = r.cache.Invalidate(seriesKey)
-
-		// Invalidate next match number cache for this series
-		nextNumberKey := fmt.Sprintf("match:next_number:series:%s", match.SeriesID)
-		_ = r.cache.Invalidate(nextNumberKey)
-	}
+	// Use comprehensive cache invalidation for match deletion
+	r.cache.InvalidateAllMatchRelatedCaches(id, match.SeriesID)
 
 	return nil
 }

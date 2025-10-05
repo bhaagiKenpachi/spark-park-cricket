@@ -29,6 +29,9 @@ type CacheInterface interface {
 	GetScorecardKey(matchID string) string
 	GetScorecardVersionKey(matchID string) string
 	GetMatchesBySeriesKey(seriesID string) string
+
+	// Pattern-based operations
+	DeletePattern(pattern string) error
 }
 
 // CacheManager handles cache operations with fallback to database
@@ -111,10 +114,18 @@ func (cm *CacheManager) Invalidate(key string) error {
 // InvalidatePattern removes all keys matching a pattern
 func (cm *CacheManager) InvalidatePattern(pattern string) error {
 	if !cm.enabled {
+		fmt.Printf("🔍 [CACHE] Cache disabled, skipping pattern invalidation for: %s\n", pattern)
 		return nil
 	}
-	// Note: This would require Redis SCAN command implementation
-	// For now, we'll handle this at the service level
+
+	fmt.Printf("🗑️  [CACHE] Invalidating cache pattern: %s\n", pattern)
+	err := cm.cache.DeletePattern(pattern)
+	if err != nil {
+		fmt.Printf("⚠️  [CACHE] Pattern invalidation failed for %s: %v (continuing without cache)\n", pattern, err)
+		return nil
+	}
+
+	fmt.Printf("✅ [CACHE] Pattern invalidation successful for: %s\n", pattern)
 	return nil
 }
 
@@ -164,6 +175,103 @@ func (cm *CacheManager) HealthCheck() error {
 		return nil
 	}
 	return cm.cache.HealthCheck()
+}
+
+// InvalidateAllSeriesRelatedCaches invalidates all caches related to a series
+func (cm *CacheManager) InvalidateAllSeriesRelatedCaches(seriesID string) {
+	if !cm.enabled {
+		return
+	}
+
+	fmt.Printf("🗑️  [CACHE] Invalidating all caches for series: %s\n", seriesID)
+
+	// Invalidate series-specific caches
+	seriesKey := cm.cache.GetSeriesKey(seriesID)
+	_ = cm.Invalidate(seriesKey)
+
+	// Invalidate matches by series cache
+	matchesKey := cm.cache.GetMatchesBySeriesKey(seriesID)
+	_ = cm.Invalidate(matchesKey)
+
+	// Invalidate next match number cache
+	nextNumberKey := fmt.Sprintf("match:next_number:series:%s", seriesID)
+	_ = cm.Invalidate(nextNumberKey)
+
+	// Invalidate all series list caches
+	seriesListKeys := []string{
+		"series:list",
+		"series:list:order:created_at_desc",
+		"series:list:order:created_at_desc:limit:20",
+		"series:list:order:created_at_desc:limit:50",
+		"series:list:order:created_at_desc:limit:100",
+	}
+
+	for _, key := range seriesListKeys {
+		_ = cm.Invalidate(key)
+	}
+
+	// Invalidate all match-related caches that might contain matches from this series
+	_ = cm.InvalidatePattern("match:list:*")
+	_ = cm.InvalidatePattern("match:*")
+	_ = cm.InvalidatePattern("scorecard:*")
+	_ = cm.InvalidatePattern("scoreboard:*")
+
+	// Invalidate match count
+	_ = cm.Invalidate("match:count")
+
+	fmt.Printf("✅ [CACHE] Completed comprehensive cache invalidation for series: %s\n", seriesID)
+}
+
+// InvalidateAllMatchRelatedCaches invalidates all caches related to a match
+func (cm *CacheManager) InvalidateAllMatchRelatedCaches(matchID string, seriesID string) {
+	if !cm.enabled {
+		return
+	}
+
+	fmt.Printf("🗑️  [CACHE] Invalidating all caches for match: %s (series: %s)\n", matchID, seriesID)
+
+	// Invalidate match-specific caches
+	matchKey := cm.cache.GetMatchKey(matchID)
+	_ = cm.Invalidate(matchKey)
+
+	// Invalidate scorecard and scoreboard caches
+	scorecardKey := cm.cache.GetScorecardKey(matchID)
+	_ = cm.Invalidate(scorecardKey)
+	scorecardVersionKey := cm.cache.GetScorecardVersionKey(matchID)
+	_ = cm.Invalidate(scorecardVersionKey)
+
+	// Invalidate match list caches
+	_ = cm.Invalidate("match:list")
+	_ = cm.Invalidate("match:count")
+
+	// Invalidate common pagination cache keys
+	paginationKeys := []string{
+		"match:list:limit:20",
+		"match:list:limit:10",
+		"match:list:limit:5",
+		"match:list:limit:3",
+		"match:list:limit:2",
+	}
+
+	for _, key := range paginationKeys {
+		_ = cm.Invalidate(key)
+	}
+
+	// Use pattern-based invalidation
+	_ = cm.InvalidatePattern("match:list:*")
+	_ = cm.InvalidatePattern("scorecard:*")
+	_ = cm.InvalidatePattern("scoreboard:*")
+
+	// If series ID is provided, invalidate series-related caches
+	if seriesID != "" {
+		seriesKey := cm.cache.GetMatchesBySeriesKey(seriesID)
+		_ = cm.Invalidate(seriesKey)
+
+		nextNumberKey := fmt.Sprintf("match:next_number:series:%s", seriesID)
+		_ = cm.Invalidate(nextNumberKey)
+	}
+
+	fmt.Printf("✅ [CACHE] Completed comprehensive cache invalidation for match: %s\n", matchID)
 }
 
 // GetSeriesKey returns the cache key for a series
