@@ -1136,7 +1136,7 @@
                 "votes"
               ]
             },
-            "description": "Create a new vote poll with multiple options"
+            "description": "Create a new vote poll with multiple options (requires authentication). Creator can later update title/description but not options."
           },
           "response": []
         },
@@ -1165,7 +1165,7 @@
                 "votes"
               ]
             },
-            "description": "Create a multiple choice vote poll"
+            "description": "Create a multiple choice vote poll (requires authentication). Creator can later update title/description but not options."
           },
           "response": []
         },
@@ -1190,7 +1190,7 @@
                 "votes"
               ]
             },
-            "description": "Get all votes with optional filters"
+            "description": "Get all votes with optional filters (public endpoint - no authentication required). Supports filtering by status, type, created_by, with pagination using limit and offset."
           },
           "response": []
         },
@@ -1282,7 +1282,7 @@
                 "{{vote_id}}"
               ]
             },
-            "description": "Get a specific vote with its options"
+            "description": "Get a specific vote with its options (public endpoint - no authentication required)"
           },
           "response": []
         },
@@ -1309,7 +1309,7 @@
                 "results"
               ]
             },
-            "description": "Get vote results with vote counts and user's vote (if authenticated)"
+            "description": "Get vote results with vote counts, voter names per option, and user's vote (if authenticated). Results include: vote details, options, vote counts per option, list of voters with names and timestamps for each option, user's current vote, and total votes."
           },
           "response": []
         },
@@ -1340,7 +1340,7 @@
                 "vote"
               ]
             },
-            "description": "Cast a vote for a single choice poll"
+            "description": "Cast a vote for a single choice poll (requires authentication). If user has already voted, this will update their previous selection. Voting is only allowed when vote status is 'active'."
           },
           "response": []
         },
@@ -1371,7 +1371,7 @@
                 "vote"
               ]
             },
-            "description": "Cast a vote for a multiple choice poll"
+            "description": "Cast a vote for a multiple choice poll (requires authentication). If user has already voted, this will update their previous selections. Voting is only allowed when vote status is 'active'."
           },
           "response": []
         },
@@ -1398,7 +1398,7 @@
                 "my-vote"
               ]
             },
-            "description": "Get the current user's vote for a specific poll"
+            "description": "Get the current user's vote for a specific poll (requires authentication)"
           },
           "response": []
         },
@@ -1425,7 +1425,7 @@
                 "has-voted"
               ]
             },
-            "description": "Check if the current user has voted on a specific poll"
+            "description": "Check if the current user has voted on a specific poll (requires authentication)"
           },
           "response": []
         },
@@ -1455,7 +1455,7 @@
                 "{{vote_id}}"
               ]
             },
-            "description": "Update an existing vote (only by creator)"
+            "description": "Update vote title and description (requires authentication, only by creator). Vote options cannot be modified after creation."
           },
           "response": []
         },
@@ -1477,7 +1477,7 @@
                 "close"
               ]
             },
-            "description": "Close a vote to prevent further voting (only by creator)"
+            "description": "Close a vote to prevent further voting (requires authentication, only by creator)"
           },
           "response": []
         },
@@ -1499,7 +1499,7 @@
                 "cancel"
               ]
             },
-            "description": "Cancel a vote (only by creator)"
+            "description": "Cancel a vote (requires authentication, only by creator)"
           },
           "response": []
         },
@@ -1520,7 +1520,42 @@
                 "{{vote_id}}"
               ]
             },
-            "description": "Delete a vote (only by creator)"
+            "description": "Delete a vote (requires authentication, only by creator)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Update User Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Update the authenticated user's display name (requires authentication)"
           },
           "response": []
         }

@@ -102,6 +102,13 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Authentication routes (public)
 		SetupAuthRoutes(r, authHandler)
 
+		// User routes
+		r.Route("/users", func(r chi.Router) {
+			userHandler := NewUserHandler(serviceContainer.UserService)
+			// Protected routes (require authentication)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/me", userHandler.UpdateUserName)
+		})
+
 		// Series routes
 		r.Route("/series", func(r chi.Router) {
 			seriesHandler := NewSeriesHandler(serviceContainer.Series)
