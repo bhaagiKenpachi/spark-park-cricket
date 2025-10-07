@@ -5,6 +5,7 @@ import { teamSaga } from './teamSaga';
 import { playerSaga } from './playerSaga';
 import { scoreboardSaga } from './scoreboardSaga';
 import { scorecardSaga } from './scorecardSaga';
+import { voteSaga } from './voteSaga';
 
 export function* rootSaga() {
   yield all([
@@ -14,5 +15,6 @@ export function* rootSaga() {
     fork(playerSaga),
     fork(scoreboardSaga),
     fork(scorecardSaga),
+    fork(voteSaga),
   ]);
 }

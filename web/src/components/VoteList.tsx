@@ -1,0 +1,317 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+    fetchVotesRequest,
+    deleteVoteRequest,
+    closeVoteRequest,
+    cancelVoteRequest,
+    setFilters,
+} from '@/store/reducers/voteSlice';
+import { VoteFilters } from '@/types/vote';
+import { Vote, VoteStatus, VoteType } from '@/types/vote';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Trash2,
+    Eye,
+    Edit,
+    Lock,
+    X,
+    Filter,
+    Plus,
+    Users,
+    Calendar,
+    CheckCircle,
+    XCircle
+} from 'lucide-react';
+
+interface VoteListProps {
+    onCreateVote?: () => void;
+    onViewVote?: (voteId: string) => void;
+    onEditVote?: (vote: Vote) => void;
+}
+
+export function VoteList({
+  onCreateVote,
+  onViewVote,
+  onEditVote,
+}: VoteListProps): React.JSX.Element {
+  const dispatch = useAppDispatch();
+  const { votes, loading, error, filters } = useAppSelector(state => state.vote);
+
+  const [localFilters, setLocalFilters] = useState<VoteFilters>(filters);
+
+  // Ensure votes is always an array
+  const votesList = Array.isArray(votes) ? votes : [];
+
+    useEffect(() => {
+        dispatch(fetchVotesRequest(localFilters));
+    }, [dispatch, localFilters]);
+
+    const handleFilterChange = (key: keyof VoteFilters, value: string | undefined) => {
+        const newFilters = { ...localFilters };
+        if (value) {
+            (newFilters as any)[key] = value;
+        } else {
+            delete (newFilters as any)[key];
+        }
+        setLocalFilters(newFilters);
+        dispatch(setFilters(newFilters));
+    };
+
+    const handleDeleteVote = (voteId: string) => {
+        if (window.confirm('Are you sure you want to delete this vote? This action cannot be undone.')) {
+            dispatch(deleteVoteRequest(voteId));
+        }
+    };
+
+    const handleCloseVote = (voteId: string) => {
+        if (window.confirm('Are you sure you want to close this vote? Users will no longer be able to vote.')) {
+            dispatch(closeVoteRequest(voteId));
+        }
+    };
+
+    const handleCancelVote = (voteId: string) => {
+        if (window.confirm('Are you sure you want to cancel this vote? This action cannot be undone.')) {
+            dispatch(cancelVoteRequest(voteId));
+        }
+    };
+
+    const getStatusBadge = (status: VoteStatus) => {
+        switch (status) {
+            case 'active':
+                return <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>;
+            case 'closed':
+                return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Closed</Badge>;
+            case 'cancelled':
+                return <Badge variant="destructive">Cancelled</Badge>;
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
+    const getTypeBadge = (type: VoteType) => {
+        switch (type) {
+            case 'single':
+                return <Badge variant="outline" className="bg-blue-50 text-blue-700">Single Choice</Badge>;
+            case 'multiple':
+                return <Badge variant="outline" className="bg-purple-50 text-purple-700">Multiple Choice</Badge>;
+            default:
+                return <Badge variant="outline">{type}</Badge>;
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading votes...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full max-w-md mx-auto px-4 py-4">
+            <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-xl font-bold text-gray-900">Votes</h1>
+                    {onCreateVote && (
+                        <Button onClick={onCreateVote} size="sm" className="flex items-center gap-1 px-3 py-2">
+                            <Plus className="h-4 w-4" />
+                            <span className="text-sm">Create</span>
+                        </Button>
+                    )}
+                </div>
+                <p className="text-sm text-gray-600">Manage and participate in voting polls</p>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow-sm border mb-4">
+                <div className="p-3 border-b">
+                    <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-700">Filters</span>
+                    </div>
+                </div>
+                <div className="p-3 space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Status
+                        </label>
+                        <Select
+                            value={localFilters.status || 'all'}
+                            onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
+                        >
+                            <SelectTrigger className="w-full h-9">
+                                <SelectValue placeholder="All statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Type
+                        </label>
+                        <Select
+                            value={localFilters.type || 'all'}
+                            onValueChange={(value) => handleFilterChange('type', value === 'all' ? undefined : value)}
+                        >
+                            <SelectTrigger className="w-full h-9">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="single">Single Choice</SelectItem>
+                                <SelectItem value="multiple">Multiple Choice</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+
+            {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    {error}
+                </div>
+            )}
+
+            {votesList.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm border">
+                    <div className="text-center py-12 px-4">
+                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-base font-medium text-gray-900 mb-2">No votes found</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            {Object.keys(localFilters).length > 0
+                                ? 'No votes match your current filters.'
+                                : 'Get started by creating your first vote.'}
+                        </p>
+                        {onCreateVote && (
+                            <Button onClick={onCreateVote} className="flex items-center gap-2">
+                                <Plus className="h-4 w-4" />
+                                Create Vote
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {votesList.map((vote) => (
+                        <div key={vote.id} className="bg-white rounded-lg shadow-sm border">
+                            <div className="p-4">
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-2">
+                                    <h3 className="text-base font-semibold text-gray-900 line-clamp-2 flex-1 pr-2">
+                                        {vote.title}
+                                    </h3>
+                                    <div className="flex flex-col gap-1">
+                                        {getStatusBadge(vote.status)}
+                                        {getTypeBadge(vote.type)}
+                                    </div>
+                                </div>
+
+                                {/* Description */}
+                                {vote.description && (
+                                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                                        {vote.description}
+                                    </p>
+                                )}
+
+                                {/* Date */}
+                                <div className="flex items-center text-xs text-gray-500 mb-3">
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    Created {formatDate(vote.created_at)}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex gap-2">
+                                        {onViewVote && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => onViewVote(vote.id)}
+                                                className="flex items-center gap-1 text-xs px-2 py-1"
+                                            >
+                                                <Eye className="h-3 w-3" />
+                                                View
+                                            </Button>
+                                        )}
+
+                                        {onEditVote && vote.status === 'active' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => onEditVote(vote)}
+                                                className="flex items-center gap-1 text-xs px-2 py-1"
+                                            >
+                                                <Edit className="h-3 w-3" />
+                                                Edit
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex gap-1">
+                                        {vote.status === 'active' && (
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleCloseVote(vote.id)}
+                                                    className="text-green-600 hover:text-green-700 p-1"
+                                                    title="Close vote"
+                                                >
+                                                    <CheckCircle className="h-3 w-3" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleCancelVote(vote.id)}
+                                                    className="text-red-600 hover:text-red-700 p-1"
+                                                    title="Cancel vote"
+                                                >
+                                                    <XCircle className="h-3 w-3" />
+                                                </Button>
+                                            </>
+                                        )}
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDeleteVote(vote.id)}
+                                            className="text-red-600 hover:text-red-700 p-1"
+                                            title="Delete vote"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
