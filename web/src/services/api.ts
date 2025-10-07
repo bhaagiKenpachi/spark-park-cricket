@@ -409,19 +409,23 @@ class ApiService {
   }
 
   // Vote API methods
-  async getVotes(filters?: { status?: string; type?: string; created_by?: string; limit?: number; offset?: number }): Promise<ApiResponse<any[]>> {
+  async getVotes(filters?: { status?: string; type?: string; created_by?: string; limit?: number; offset?: number; page?: number; page_size?: number }): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
 
     if (filters?.status) params.append('status', filters.status);
     if (filters?.type) params.append('type', filters.type);
     if (filters?.created_by) params.append('created_by', filters.created_by);
+
+    // Support both page-based and offset-based pagination
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.page_size) params.append('page_size', filters.page_size.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
     const queryString = params.toString();
     const endpoint = queryString ? `/votes?${queryString}` : '/votes';
 
-    return this.request<any[]>(endpoint);
+    return this.request<any>(endpoint);
   }
 
   async getVoteById(id: string): Promise<ApiResponse<any>> {

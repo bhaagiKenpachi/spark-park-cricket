@@ -26,7 +26,9 @@ import {
     Users,
     Calendar,
     CheckCircle,
-    XCircle
+    XCircle,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 interface VoteListProps {
@@ -36,24 +38,28 @@ interface VoteListProps {
 }
 
 export function VoteList({
-  onCreateVote,
-  onViewVote,
-  onEditVote,
+    onCreateVote,
+    onViewVote,
+    onEditVote,
 }: VoteListProps): React.JSX.Element {
-  const dispatch = useAppDispatch();
-  const { votes, loading, error, filters } = useAppSelector(state => state.vote);
+    const dispatch = useAppDispatch();
+    const { votes, loading, error, filters, pagination } = useAppSelector(state => state.vote);
 
-  const [localFilters, setLocalFilters] = useState<VoteFilters>(filters);
+    const [localFilters, setLocalFilters] = useState<VoteFilters>({
+        ...filters,
+        page: 1,
+        page_size: 20,
+    });
 
-  // Ensure votes is always an array
-  const votesList = Array.isArray(votes) ? votes : [];
+    // Ensure votes is always an array
+    const votesList = Array.isArray(votes) ? votes : [];
 
     useEffect(() => {
         dispatch(fetchVotesRequest(localFilters));
     }, [dispatch, localFilters]);
 
     const handleFilterChange = (key: keyof VoteFilters, value: string | undefined) => {
-        const newFilters = { ...localFilters };
+        const newFilters = { ...localFilters, page: 1 }; // Reset to page 1 when filters change
         if (value) {
             (newFilters as any)[key] = value;
         } else {
@@ -61,6 +67,16 @@ export function VoteList({
         }
         setLocalFilters(newFilters);
         dispatch(setFilters(newFilters));
+    };
+
+    const handlePageChange = (newPage: number) => {
+        const newFilters = { ...localFilters, page: newPage };
+        setLocalFilters(newFilters);
+    };
+
+    const handlePageSizeChange = (newPageSize: number) => {
+        const newFilters = { ...localFilters, page: 1, page_size: newPageSize }; // Reset to page 1 when page size changes
+        setLocalFilters(newFilters);
     };
 
     const handleDeleteVote = (voteId: string) => {
@@ -310,6 +326,59 @@ export function VoteList({
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && votesList.length > 0 && (
+                <div className="mt-4 border-t pt-4">
+                    <div className="flex items-center justify-between text-sm">
+                        <div className="text-gray-600">
+                            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} total)
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage === 1 || loading}
+                                className="h-8 px-2"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-xs text-gray-600 min-w-[60px] text-center">
+                                {pagination.currentPage} / {pagination.totalPages}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage >= pagination.totalPages || loading}
+                                className="h-8 px-2"
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Page Size Selector */}
+                    <div className="mt-3 flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Items per page:</span>
+                        <Select
+                            value={String(localFilters.page_size || 20)}
+                            onValueChange={(value) => handlePageSizeChange(Number(value))}
+                        >
+                            <SelectTrigger className="w-20 h-8 text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                                <SelectItem value="100">100</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             )}
         </div>

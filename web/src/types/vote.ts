@@ -70,6 +70,8 @@ export interface VoteFilters {
     created_by?: string;
     limit?: number;
     offset?: number;
+    page?: number;
+    page_size?: number;
 }
 
 export interface PaginatedVotesResult {

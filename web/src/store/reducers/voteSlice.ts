@@ -51,12 +51,14 @@ export const voteSlice = createSlice({
     },
     fetchVotesSuccess: (
       state,
-      action: PayloadAction<{ votes: Vote[]; totalItems: number }>
+      action: PayloadAction<{ votes: Vote[]; totalItems: number; page?: number; pageSize?: number; totalPages?: number }>
     ) => {
       state.loading = false;
       state.votes = action.payload.votes;
       state.pagination.totalItems = action.payload.totalItems;
-      state.pagination.totalPages = Math.ceil(
+      state.pagination.currentPage = action.payload.page || state.pagination.currentPage;
+      state.pagination.pageSize = action.payload.pageSize || state.pagination.pageSize;
+      state.pagination.totalPages = action.payload.totalPages || Math.ceil(
         action.payload.totalItems / state.pagination.pageSize
       );
     },
@@ -94,7 +96,7 @@ export const voteSlice = createSlice({
     fetchVoteWithResultsSuccess: (state, action: PayloadAction<VoteWithResults>) => {
       state.loading = false;
       state.currentVote = action.payload;
-      
+
       // Update votes array with the vote data
       const existingIndex = state.votes.findIndex(
         vote => vote.id === action.payload.vote.id
@@ -194,7 +196,7 @@ export const voteSlice = createSlice({
       state.loading = false;
       state.userVotes[action.payload.vote_id] = action.payload;
       state.hasVotedStatus[action.payload.vote_id] = true;
-      
+
       // Update current vote results if it's the same vote
       if (state.currentVote && state.currentVote.vote.id === action.payload.vote_id) {
         state.currentVote.user_vote = action.payload;

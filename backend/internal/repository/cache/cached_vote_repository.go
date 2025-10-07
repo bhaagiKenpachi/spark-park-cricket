@@ -29,8 +29,6 @@ func (r *CachedVoteRepository) CreateVote(ctx context.Context, vote *models.Vote
 		return err
 	}
 
-	fmt.Printf("🗑️  [VOTE-CACHE] Invalidating caches after vote creation: %s\n", vote.ID)
-
 	// Invalidate vote list caches
 	r.invalidateVoteListCaches()
 
@@ -38,7 +36,6 @@ func (r *CachedVoteRepository) CreateVote(ctx context.Context, vote *models.Vote
 	if vote.ID != "" {
 		key := fmt.Sprintf("vote:%s", vote.ID)
 		_ = r.cache.Set(key, vote, cache.StaticDataTTL)
-		fmt.Printf("💾 [VOTE-CACHE] Cached new vote: %s\n", vote.ID)
 	}
 
 	return nil
@@ -244,8 +241,6 @@ func (r *CachedVoteRepository) CreateUserVote(ctx context.Context, userVote *mod
 		return err
 	}
 
-	fmt.Printf("🗑️  [VOTE-CACHE] Invalidating caches after user cast vote: vote_id=%s, user_id=%s\n", userVote.VoteID, userVote.UserID)
-
 	// Invalidate results cache for this vote
 	r.invalidateVoteResultsCaches(userVote.VoteID)
 	return nil
@@ -256,8 +251,6 @@ func (r *CachedVoteRepository) UpdateUserVote(ctx context.Context, userVote *mod
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("🗑️  [VOTE-CACHE] Invalidating caches after user updated vote: vote_id=%s, user_id=%s\n", userVote.VoteID, userVote.UserID)
 
 	// Invalidate results cache for this vote
 	r.invalidateVoteResultsCaches(userVote.VoteID)
@@ -383,8 +376,6 @@ func (r *CachedVoteRepository) invalidateVoteResultsCaches(voteID string) {
 }
 
 func (r *CachedVoteRepository) invalidateVoteListCaches() {
-	fmt.Printf("🗑️  [VOTE-CACHE] Invalidating vote list caches\n")
-
 	// Invalidate exact keys
 	_ = r.cache.Invalidate("votes:list")
 	_ = r.cache.Invalidate("votes:count")
@@ -392,6 +383,4 @@ func (r *CachedVoteRepository) invalidateVoteListCaches() {
 	// Invalidate all pattern-based list and count caches
 	_ = r.cache.InvalidatePattern("votes:list:*")
 	_ = r.cache.InvalidatePattern("votes:count:*")
-
-	fmt.Printf("✅ [VOTE-CACHE] Vote list and count caches invalidated\n")
 }

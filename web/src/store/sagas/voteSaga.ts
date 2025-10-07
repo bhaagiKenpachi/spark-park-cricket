@@ -54,15 +54,36 @@ export function* fetchVotesSaga(
         const filters = action.payload;
         const response = yield call(apiService.getVotes.bind(apiService), filters);
 
-        // Extract votes array from response
-        const votesData = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        // Extract paginated data from response - handle nested data structure
+        let paginatedData = response.data;
 
-        yield put(
-            fetchVotesSuccess({
-                votes: votesData,
-                totalItems: votesData.length,
-            })
-        );
+        // Check if data is nested (response.data.data)
+        if (paginatedData && typeof paginatedData === 'object' && 'data' in paginatedData) {
+            paginatedData = paginatedData.data;
+        }
+
+        // Check if response is paginated format
+        if (paginatedData && typeof paginatedData === 'object' && 'votes' in paginatedData) {
+            // New paginated format
+            yield put(
+                fetchVotesSuccess({
+                    votes: paginatedData.votes || [],
+                    totalItems: paginatedData.total_items || 0,
+                    page: paginatedData.page || 1,
+                    pageSize: paginatedData.page_size || 20,
+                    totalPages: paginatedData.total_pages || 1,
+                })
+            );
+        } else {
+            // Legacy array format (fallback)
+            const votesData = Array.isArray(paginatedData) ? paginatedData : [];
+            yield put(
+                fetchVotesSuccess({
+                    votes: votesData,
+                    totalItems: votesData.length,
+                })
+            );
+        }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch votes';
         yield delay(100);
