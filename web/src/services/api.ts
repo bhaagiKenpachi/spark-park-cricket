@@ -407,6 +407,89 @@ class ApiService {
       `/scorecard/${matchId}/innings/${inningsNumber}/over/${overNumber}`
     );
   }
+
+  // Vote API methods
+  async getVotes(filters?: { status?: string; type?: string; created_by?: string; limit?: number; offset?: number; page?: number; page_size?: number }): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.created_by) params.append('created_by', filters.created_by);
+
+    // Support both page-based and offset-based pagination
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.page_size) params.append('page_size', filters.page_size.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/votes?${queryString}` : '/votes';
+
+    return this.request<any>(endpoint);
+  }
+
+  async getVoteById(id: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${id}`);
+  }
+
+  async getVoteWithResults(id: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${id}/results`);
+  }
+
+  async createVote(voteData: any): Promise<ApiResponse<any>> {
+    return this.request<any>('/votes', {
+      method: 'POST',
+      body: JSON.stringify(voteData),
+    });
+  }
+
+  async updateVote(id: string, voteData: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(voteData),
+    });
+  }
+
+  async deleteVote(id: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/votes/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async castVote(voteId: string, voteData: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify(voteData),
+    });
+  }
+
+  async getUserVote(voteId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/my-vote`);
+  }
+
+  async hasUserVoted(voteId: string): Promise<ApiResponse<{ has_voted: boolean }>> {
+    return this.request<{ has_voted: boolean }>(`/votes/${voteId}/has-voted`);
+  }
+
+  async closeVote(voteId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/close`, {
+      method: 'POST',
+    });
+  }
+
+  async cancelVote(voteId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  // User API methods
+  async updateUserName(name: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+  }
 }
 
 export { ApiService };

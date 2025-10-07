@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "spark-park-cricket-api",
     "name": "Spark Park Cricket API",
-    "description": "Cricket Tournament Management System with Team A vs Team B matches, toss functionality, and comprehensive ball-by-ball scoring with real-time WebSocket updates",
+    "description": "Cricket Tournament Management System with Team A vs Team B matches, toss functionality, comprehensive ball-by-ball scoring with real-time WebSocket updates, and voting system for polls and surveys",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "spark-park-cricket"
   },
@@ -17,8 +17,12 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/",
-              "host": ["{{base_url}}"],
-              "path": [""]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
             },
             "description": "Get welcome message and API version"
           },
@@ -31,8 +35,12 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health",
-              "host": ["{{base_url}}"],
-              "path": ["health"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Basic health check endpoint"
           },
@@ -45,8 +53,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/database",
-              "host": ["{{base_url}}"],
-              "path": ["health", "database"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "database"
+              ]
             },
             "description": "Database connection health check"
           },
@@ -59,8 +72,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/websocket",
-              "host": ["{{base_url}}"],
-              "path": ["health", "websocket"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "websocket"
+              ]
             },
             "description": "WebSocket connection health check"
           },
@@ -73,8 +91,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/system",
-              "host": ["{{base_url}}"],
-              "path": ["health", "system"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "system"
+              ]
             },
             "description": "System health check including memory, CPU, etc."
           },
@@ -87,8 +110,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/ready",
-              "host": ["{{base_url}}"],
-              "path": ["health", "ready"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ]
             },
             "description": "Kubernetes readiness probe endpoint"
           },
@@ -101,8 +129,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/live",
-              "host": ["{{base_url}}"],
-              "path": ["health", "live"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ]
             },
             "description": "Kubernetes liveness probe endpoint"
           },
@@ -115,8 +148,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/health/metrics",
-              "host": ["{{base_url}}"],
-              "path": ["health", "metrics"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "metrics"
+              ]
             },
             "description": "Application metrics endpoint"
           },
@@ -143,8 +181,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/series",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "series"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series"
+              ]
             },
             "description": "Create a new cricket series/tournament"
           },
@@ -162,8 +206,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/series",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "series"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series"
+              ]
             },
             "description": "Get all cricket series"
           },
@@ -181,8 +231,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/series/{{series_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "series", "{{series_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series",
+                "{{series_id}}"
+              ]
             },
             "description": "Get a specific series by ID"
           },
@@ -204,8 +261,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/series/{{series_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "series", "{{series_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series",
+                "{{series_id}}"
+              ]
             },
             "description": "Update an existing series"
           },
@@ -218,8 +282,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/series/{{series_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "series", "{{series_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series",
+                "{{series_id}}"
+              ]
             },
             "description": "Delete a series"
           },
@@ -246,8 +317,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/matches",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches"
+              ]
             },
             "description": "Create a new match with Team A vs Team B and toss functionality"
           },
@@ -265,8 +342,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/matches",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches"
+              ]
             },
             "description": "Get all matches"
           },
@@ -284,8 +367,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "{{match_id}}"
+              ]
             },
             "description": "Get a specific match by ID"
           },
@@ -307,8 +397,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "{{match_id}}"
+              ]
             },
             "description": "Update match details (player counts, overs, batting team)"
           },
@@ -321,8 +418,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/matches/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "{{match_id}}"
+              ]
             },
             "description": "Delete a match"
           },
@@ -335,8 +439,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/matches/series/{{series_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "matches", "series", "{{series_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "series",
+                "{{series_id}}"
+              ]
             },
             "description": "Get all matches for a specific series"
           },
@@ -354,8 +466,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/ws/match/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ws", "match", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ws",
+                "match",
+                "{{match_id}}"
+              ]
             },
             "description": "WebSocket connection for real-time match updates"
           },
@@ -368,8 +488,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/ws/stats",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ws", "stats"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ws",
+                "stats"
+              ]
             },
             "description": "Get WebSocket connection statistics"
           },
@@ -382,8 +509,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/ws/stats/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ws", "stats", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ws",
+                "stats",
+                "{{match_id}}"
+              ]
             },
             "description": "Get WebSocket room statistics for a specific match"
           },
@@ -396,8 +531,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/ws/test/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "ws", "test", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ws",
+                "test",
+                "{{match_id}}"
+              ]
             },
             "description": "Send a test broadcast to a match room"
           },
@@ -424,8 +567,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/start",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "start"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "start"
+              ]
             },
             "description": "Start scoring for a match. Creates first innings with toss winner batting first."
           },
@@ -447,8 +597,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a ball event to the scorecard. Supports all run types: 0-9, NB, WD, LB, WC (wicket)."
           },
@@ -470,8 +627,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a dot ball (0 runs) to the scorecard. Can include byes for additional runs."
           },
@@ -489,8 +653,15 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "{{match_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "{{match_id}}"
+              ]
             },
             "description": "Get complete scorecard for a match including all innings, overs, balls, and extras."
           },
@@ -508,7 +679,9 @@
             ],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/current-over?innings=1",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -534,8 +707,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/innings/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "{{match_id}}", "innings", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "{{match_id}}",
+                "innings",
+                "1"
+              ]
             },
             "description": "Get detailed innings information including all overs and balls."
           },
@@ -548,7 +730,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/innings/1/over/1",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -580,8 +764,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a wicket ball. Wicket types: bowled, caught, lbw, run_out, stumped, hit_wicket."
           },
@@ -603,8 +794,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a boundary (4 runs) ball."
           },
@@ -626,8 +824,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a six (6 runs) ball."
           },
@@ -649,8 +854,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a wide ball (WD). Wide balls cannot result in wickets."
           },
@@ -672,8 +884,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a no ball (NB). No balls cannot result in wickets."
           },
@@ -695,8 +914,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a ball with byes. Total runs = ball runs + byes (1 + 2 = 3 runs)."
           },
@@ -718,8 +944,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a dot ball (0 runs) with byes. Total runs = ball runs + byes (0 + 1 = 1 run)."
           },
@@ -741,8 +974,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a wide ball with byes. Total runs = 1 (wide) + 2 (byes) = 3 runs."
           },
@@ -764,8 +1004,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add a no ball with byes. Total runs = 1 (no ball) + 1 (byes) = 2 runs."
           },
@@ -787,8 +1034,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/ball",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "ball"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "ball"
+              ]
             },
             "description": "Add leg byes. Leg byes are runs scored off the batsman's body/legs."
           },
@@ -801,8 +1055,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "{{match_id}}", "ball"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "{{match_id}}",
+                "ball"
+              ],
               "query": [
                 {
                   "key": "innings",
@@ -822,8 +1084,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/scorecard/{{match_id}}/ball?innings=2",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "scorecard", "{{match_id}}", "ball"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "scorecard",
+                "{{match_id}}",
+                "ball"
+              ],
               "query": [
                 {
                   "key": "innings",
@@ -833,6 +1103,502 @@
               ]
             },
             "description": "Undo the last ball from the second innings. Use this when the match has progressed to the second innings."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Voting System",
+      "item": [
+        {
+          "name": "Create Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Best Cricket Player of 2024\",\n  \"description\": \"Vote for your favorite cricket player from the list below\",\n  \"type\": \"single\",\n  \"options\": [\n    \"Virat Kohli\",\n    \"Rohit Sharma\",\n    \"Jasprit Bumrah\",\n    \"Ravindra Jadeja\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ]
+            },
+            "description": "Create a new vote poll with multiple options (requires authentication). Creator can later update title/description but not options."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Multiple Choice Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Favorite Cricket Formats\",\n  \"description\": \"Select all cricket formats you enjoy watching\",\n  \"type\": \"multiple\",\n  \"options\": [\n    \"Test Cricket\",\n    \"One Day International (ODI)\",\n    \"Twenty20 (T20)\",\n    \"T20 World Cup\",\n    \"IPL\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ]
+            },
+            "description": "Create a multiple choice vote poll (requires authentication). Creator can later update title/description but not options."
+          },
+          "response": []
+        },
+        {
+          "name": "List Votes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ]
+            },
+            "description": "Get all votes with optional filters (public endpoint - no authentication required). Returns paginated response with total_items, page, page_size, total_pages. Supports filtering by status, type, created_by. Default page_size=20, max=100."
+          },
+          "response": []
+        },
+        {
+          "name": "List Active Votes (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes?status=active&page=1&page_size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (1-based)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "description": "Number of items per page (max 100)"
+                }
+              ]
+            },
+            "description": "Get active votes with page-based pagination. Returns paginated response with total_items, page, page_size, and total_pages."
+          },
+          "response": []
+        },
+        {
+          "name": "List Votes (Offset Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes?limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of items to return (max 100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of items to skip"
+                }
+              ]
+            },
+            "description": "Get votes with offset-based pagination. Supports both page/page_size and limit/offset parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "List Single Choice Votes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes?type=single",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "single"
+                }
+              ]
+            },
+            "description": "Get only single choice votes"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vote",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}"
+              ]
+            },
+            "description": "Get a specific vote with its options (public endpoint - no authentication required)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vote Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/results",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "results"
+              ]
+            },
+            "description": "Get vote results with vote counts, voter names per option, and user's vote (if authenticated). Results include: vote details, options, vote counts per option, list of voters with names and timestamps for each option, user's current vote, and total votes."
+          },
+          "response": []
+        },
+        {
+          "name": "Cast Vote (Single Choice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selected_options\": [\"{{option_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/vote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "vote"
+              ]
+            },
+            "description": "Cast a vote for a single choice poll (requires authentication). If user has already voted, this will update their previous selection. Voting is only allowed when vote status is 'active'."
+          },
+          "response": []
+        },
+        {
+          "name": "Cast Vote (Multiple Choice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selected_options\": [\"{{option_id_1}}\", \"{{option_id_2}}\", \"{{option_id_3}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/vote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "vote"
+              ]
+            },
+            "description": "Cast a vote for a multiple choice poll (requires authentication). If user has already voted, this will update their previous selections. Voting is only allowed when vote status is 'active'."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Vote",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/my-vote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "my-vote"
+              ]
+            },
+            "description": "Get the current user's vote for a specific poll (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Check if User Voted",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/has-voted",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "has-voted"
+              ]
+            },
+            "description": "Check if the current user has voted on a specific poll (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Vote",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Vote Title\",\n  \"description\": \"Updated description\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}"
+              ]
+            },
+            "description": "Update vote title and description (requires authentication, only by creator). Vote options cannot be modified after creation."
+          },
+          "response": []
+        },
+        {
+          "name": "Close Vote",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/close",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "close"
+              ]
+            },
+            "description": "Close a vote to prevent further voting (requires authentication, only by creator)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Vote",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "cancel"
+              ]
+            },
+            "description": "Cancel a vote (requires authentication, only by creator)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Vote",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}"
+              ]
+            },
+            "description": "Delete a vote (requires authentication, only by creator)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Update User Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Update the authenticated user's display name (requires authentication)"
           },
           "response": []
         }
@@ -857,8 +1623,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch only the essential live scorecard information with current score and run rate"
           },
@@ -880,8 +1652,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch comprehensive scorecard information including all innings, overs, and ball details"
           },
@@ -903,8 +1681,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch only the current score for real-time updates - minimal payload"
           },
@@ -926,8 +1710,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch only the current over information with ball details"
           },
@@ -949,8 +1739,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch only match summary information without detailed scoring data"
           },
@@ -972,8 +1768,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Fetch only innings summaries without ball details"
           },
@@ -995,8 +1797,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get comprehensive match information including teams, toss details, and match status"
           },
@@ -1018,8 +1826,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get aggregated match-level statistics including total runs, wickets, overs, and run rate"
           },
@@ -1041,8 +1855,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get complete details for a specific innings including all overs and balls"
           },
@@ -1064,8 +1884,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get details for a specific over in a specific innings"
           },
@@ -1087,8 +1913,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get all balls for a specific over"
           },
@@ -1110,8 +1942,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get team information for a match"
           },
@@ -1133,8 +1971,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get player information for a match"
           },
@@ -1156,8 +2000,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get player performance statistics for a match"
           },
@@ -1179,8 +2029,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get the current/latest over for a specific innings"
           },
@@ -1202,8 +2058,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get all overs for a specific innings"
           },
@@ -1225,8 +2087,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/graphql",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql"
+              ]
             },
             "description": "Get basic score information for a specific innings"
           },
@@ -1239,8 +2107,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/graphql/playground",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "graphql", "playground"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "graphql",
+                "playground"
+              ]
             },
             "description": "Access GraphQL Playground for interactive query testing and schema exploration"
           },
@@ -1261,6 +2136,9 @@
           "}",
           "if (!pm.environment.get('match_id')) {",
           "    pm.environment.set('match_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "if (!pm.environment.get('vote_id')) {",
+          "    pm.environment.set('vote_id', pm.variables.replaceIn('{{$randomUUID}}'));",
           "}"
         ]
       }
@@ -1279,6 +2157,26 @@
           "                pm.environment.set('series_id', responseJson.data.id);",
           "            } else if (pm.request.url.path.includes('matches')) {",
           "                pm.environment.set('match_id', responseJson.data.id);",
+          "            } else if (pm.request.url.path.includes('votes')) {",
+          "                pm.environment.set('vote_id', responseJson.data.id);",
+          "            }",
+          "        }",
+          "        // Extract vote_id from vote responses",
+          "        if (responseJson.data && responseJson.data.vote && responseJson.data.vote.id) {",
+          "            pm.environment.set('vote_id', responseJson.data.vote.id);",
+          "        }",
+          "        // Extract option IDs from vote responses",
+          "        if (responseJson.data && responseJson.data.options) {",
+          "            const options = responseJson.data.options;",
+          "            if (options.length > 0) {",
+          "                pm.environment.set('option_id', options[0].id);",
+          "                pm.environment.set('option_id_1', options[0].id);",
+          "            }",
+          "            if (options.length > 1) {",
+          "                pm.environment.set('option_id_2', options[1].id);",
+          "            }",
+          "            if (options.length > 2) {",
+          "                pm.environment.set('option_id_3', options[2].id);",
           "            }",
           "        }",
           "        // Also extract match_id from scorecard responses",

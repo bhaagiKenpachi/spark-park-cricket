@@ -102,6 +102,13 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Authentication routes (public)
 		SetupAuthRoutes(r, authHandler)
 
+		// User routes
+		r.Route("/users", func(r chi.Router) {
+			userHandler := NewUserHandler(serviceContainer.UserService)
+			// Protected routes (require authentication)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/me", userHandler.UpdateUserName)
+		})
+
 		// Series routes
 		r.Route("/series", func(r chi.Router) {
 			seriesHandler := NewSeriesHandler(serviceContainer.Series)
@@ -142,6 +149,25 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+		})
+
+		// Vote routes
+		r.Route("/votes", func(r chi.Router) {
+			voteHandler := NewVoteHandler(serviceContainer.VoteService)
+			// Public routes (view only)
+			r.Get("/", voteHandler.ListVotes)
+			r.Get("/{id}", voteHandler.GetVote)
+			r.Get("/{id}/results", voteHandler.GetVoteWithResults)
+
+			// Protected routes (require authentication)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", voteHandler.CreateVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", voteHandler.UpdateVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", voteHandler.DeleteVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/vote", voteHandler.CastVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{id}/my-vote", voteHandler.GetUserVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{id}/has-voted", voteHandler.HasUserVoted)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/close", voteHandler.CloseVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/cancel", voteHandler.CancelVote)
 		})
 
 		// GraphQL routes

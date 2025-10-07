@@ -17,6 +17,10 @@ type Container struct {
 	// Authentication services
 	AuthService    *AuthService
 	SessionService *SessionService
+	// User services
+	UserService UserServiceInterface
+	// Voting services
+	VoteService VoteServiceInterface
 	// Monitoring
 	Metrics *monitoring.Metrics
 }
@@ -51,6 +55,10 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		// Authentication services
 		AuthService:    authService,
 		SessionService: sessionService,
+		// User services
+		UserService: NewUserService(dbClient.Repositories.User),
+		// Voting services
+		VoteService: NewVoteService(dbClient.Repositories.Vote),
 		// Monitoring
 		Metrics: metrics,
 	}

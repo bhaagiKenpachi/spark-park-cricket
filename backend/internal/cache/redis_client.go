@@ -222,7 +222,7 @@ func (r *RedisClient) DeletePattern(pattern string) error {
 
 // Cache TTL constants
 const (
-	// Static data (series, matches) - cache for 24 hours
+	// Static data (series, matches, votes) - cache for 24 hours
 	StaticDataTTL = 24 * time.Hour
 
 	// Scorecard data - cache for 1 hour (refreshed on ball updates)
@@ -230,6 +230,9 @@ const (
 
 	// Match lists - cache for 30 minutes
 	MatchListTTL = 30 * time.Minute
+
+	// Live/dynamic data (vote results, user votes) - cache for 5 minutes
+	LiveDataTTL = 5 * time.Minute
 
 	// Version counters - cache for 1 hour
 	VersionTTL = 1 * time.Hour
