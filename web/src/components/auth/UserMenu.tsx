@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -17,7 +18,7 @@ export function UserMenu() {
     try {
       await dispatch(logout()).unwrap();
       setIsOpen(false);
-    } catch {}
+    } catch { }
   };
 
   if (!user) {
@@ -89,16 +90,18 @@ export function UserMenu() {
 
               {/* Menu Items */}
               <div className="space-y-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                  onClick={() => setIsOpen(false)}
-                  data-cy="profile-button"
-                >
-                  <Settings className="h-4 w-4" />
-                  Profile
-                </Button>
+                <Link href="/profile">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                    onClick={() => setIsOpen(false)}
+                    data-cy="profile-button"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Profile
+                  </Button>
+                </Link>
 
                 <Button
                   variant="ghost"

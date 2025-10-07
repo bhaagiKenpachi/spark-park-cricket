@@ -31,10 +31,17 @@ export interface UserVote {
     voted_at: string;
 }
 
+export interface VoterInfo {
+    user_id: string;
+    user_name: string;
+    voted_at: string;
+}
+
 export interface VoteWithResults {
     vote: Vote;
     options: VoteOption[];
     results: Record<string, number>;
+    results_with_names: Record<string, VoterInfo[]>;
     user_vote?: UserVote;
     total_votes: number;
     voted_users: string[];
