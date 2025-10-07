@@ -1190,12 +1190,12 @@
                 "votes"
               ]
             },
-            "description": "Get all votes with optional filters (public endpoint - no authentication required). Supports filtering by status, type, created_by, with pagination using limit and offset."
+            "description": "Get all votes with optional filters (public endpoint - no authentication required). Returns paginated response with total_items, page, page_size, total_pages. Supports filtering by status, type, created_by. Default page_size=20, max=100."
           },
           "response": []
         },
         {
-          "name": "List Active Votes",
+          "name": "List Active Votes (Paginated)",
           "request": {
             "method": "GET",
             "header": [
@@ -1205,7 +1205,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/v1/votes?status=active&limit=10",
+              "raw": "{{base_url}}/api/v1/votes?status=active&page=1&page_size=10",
               "host": [
                 "{{base_url}}"
               ],
@@ -1220,12 +1220,55 @@
                   "value": "active"
                 },
                 {
-                  "key": "limit",
-                  "value": "10"
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (1-based)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "description": "Number of items per page (max 100)"
                 }
               ]
             },
-            "description": "Get only active votes with pagination"
+            "description": "Get active votes with page-based pagination. Returns paginated response with total_items, page, page_size, and total_pages."
+          },
+          "response": []
+        },
+        {
+          "name": "List Votes (Offset Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes?limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of items to return (max 100)"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of items to skip"
+                }
+              ]
+            },
+            "description": "Get votes with offset-based pagination. Supports both page/page_size and limit/offset parameters."
           },
           "response": []
         },

@@ -127,6 +127,34 @@ func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.Vo
 	return votes, nil
 }
 
+// CountVotes counts votes with caching
+func (r *CachedVoteRepository) CountVotes(ctx context.Context, filters *models.VoteFilters) (int, error) {
+	// Create cache key based on filters (same as ListVotes but with :count suffix)
+	cacheKey := "votes:count"
+	if filters != nil {
+		if filters.Status != nil {
+			cacheKey += fmt.Sprintf(":status:%s", *filters.Status)
+		}
+		if filters.Type != nil {
+			cacheKey += fmt.Sprintf(":type:%s", *filters.Type)
+		}
+		if filters.CreatedBy != nil {
+			cacheKey += fmt.Sprintf(":creator:%s", *filters.CreatedBy)
+		}
+	}
+
+	var count int
+	err := r.cache.GetOrSet(cacheKey, &count, cache.MatchListTTL, func() (interface{}, error) {
+		return r.repo.CountVotes(ctx, filters)
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // UpdateVote updates a vote and invalidates related caches
 func (r *CachedVoteRepository) UpdateVote(ctx context.Context, vote *models.Vote) error {
 	err := r.repo.UpdateVote(ctx, vote)
@@ -359,9 +387,11 @@ func (r *CachedVoteRepository) invalidateVoteListCaches() {
 
 	// Invalidate exact keys
 	_ = r.cache.Invalidate("votes:list")
+	_ = r.cache.Invalidate("votes:count")
 
-	// Invalidate all pattern-based list caches
+	// Invalidate all pattern-based list and count caches
 	_ = r.cache.InvalidatePattern("votes:list:*")
+	_ = r.cache.InvalidatePattern("votes:count:*")
 
-	fmt.Printf("✅ [VOTE-CACHE] Vote list caches invalidated\n")
+	fmt.Printf("✅ [VOTE-CACHE] Vote list and count caches invalidated\n")
 }

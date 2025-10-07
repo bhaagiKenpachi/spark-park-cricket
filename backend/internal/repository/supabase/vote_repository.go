@@ -168,6 +168,37 @@ func (r *VoteRepository) DeleteVote(ctx context.Context, id string) error {
 	return nil
 }
 
+// CountVotes counts votes with filters
+func (r *VoteRepository) CountVotes(ctx context.Context, filters *models.VoteFilters) (int, error) {
+	query := r.client.From("votes").Select("id", "exact", false)
+
+	// Add filters (same as ListVotes)
+	if filters != nil {
+		if filters.Status != nil {
+			query = query.Eq("status", string(*filters.Status))
+		}
+
+		if filters.CreatedBy != nil {
+			query = query.Eq("created_by", *filters.CreatedBy)
+		}
+
+		if filters.Type != nil {
+			query = query.Eq("type", string(*filters.Type))
+		}
+	}
+
+	var votes []models.Vote
+	_, err := query.ExecuteTo(&votes)
+	if err != nil {
+		utils.LogError(err, "Failed to count votes", map[string]interface{}{
+			"filters": filters,
+		})
+		return 0, fmt.Errorf("failed to count votes: %w", err)
+	}
+
+	return len(votes), nil
+}
+
 // ListVotes lists votes with filters
 func (r *VoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) ([]*models.Vote, error) {
 	query := r.client.From("votes").Select("*", "", false)

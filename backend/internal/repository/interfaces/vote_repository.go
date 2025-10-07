@@ -15,6 +15,7 @@ type VoteRepositoryInterface interface {
 	UpdateVote(ctx context.Context, vote *models.Vote) error
 	DeleteVote(ctx context.Context, id string) error
 	ListVotes(ctx context.Context, filters *models.VoteFilters) ([]*models.Vote, error)
+	CountVotes(ctx context.Context, filters *models.VoteFilters) (int, error)
 
 	// Vote option operations
 	CreateVoteOptions(ctx context.Context, options []*models.VoteOption) error

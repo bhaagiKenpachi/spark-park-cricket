@@ -219,29 +219,40 @@ func (h *VoteHandler) ListVotes(w http.ResponseWriter, r *http.Request) {
 		filters.CreatedBy = &createdBy
 	}
 
-	// Parse limit
+	// Parse limit (page_size)
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 && limit <= 100 {
 			filters.Limit = limit
 		}
 	}
+	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
+		if pageSize, err := strconv.Atoi(pageSizeStr); err == nil && pageSize > 0 && pageSize <= 100 {
+			filters.Limit = pageSize
+		}
+	}
 
-	// Parse offset
+	// Parse offset or page
 	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
 			filters.Offset = offset
 		}
 	}
+	// Support page parameter (page=1 means offset=0, page=2 means offset=limit, etc.)
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
+			filters.Offset = (page - 1) * filters.Limit
+		}
+	}
 
-	// List votes
-	votes, err := h.voteService.ListVotes(r.Context(), filters)
+	// List votes with pagination
+	paginatedVotes, err := h.voteService.ListVotes(r.Context(), filters)
 	if err != nil {
 		utils.LogError(err, "Failed to list votes", nil)
 		utils.WriteError(w, http.StatusInternalServerError, "LIST_ERROR", "Failed to list votes", nil)
 		return
 	}
 
-	utils.WriteSuccess(w, votes)
+	utils.WriteSuccess(w, paginatedVotes)
 }
 
 // CastVote allows a user to cast their vote

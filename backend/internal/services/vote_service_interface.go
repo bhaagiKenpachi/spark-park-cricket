@@ -13,7 +13,7 @@ type VoteServiceInterface interface {
 	GetVoteWithResults(ctx context.Context, id string, userID string) (*models.VoteWithResults, error)
 	UpdateVote(ctx context.Context, id string, req *models.UpdateVoteRequest, userID string) (*models.Vote, error)
 	DeleteVote(ctx context.Context, id string, userID string) error
-	ListVotes(ctx context.Context, filters *models.VoteFilters) ([]*models.Vote, error)
+	ListVotes(ctx context.Context, filters *models.VoteFilters) (*models.PaginatedVoteList, error)
 
 	// Voting operations
 	CastVote(ctx context.Context, voteID string, req *models.VoteRequest, userID string) error

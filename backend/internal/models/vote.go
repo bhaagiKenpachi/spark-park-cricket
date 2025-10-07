@@ -111,3 +111,12 @@ type VoteResponse struct {
 	Message string `json:"message"`
 	Vote    *Vote  `json:"vote,omitempty"`
 }
+
+// PaginatedVoteList represents a paginated list of votes
+type PaginatedVoteList struct {
+	Votes      []*Vote `json:"votes"`
+	TotalItems int     `json:"total_items"`
+	Page       int     `json:"page"`
+	PageSize   int     `json:"page_size"`
+	TotalPages int     `json:"total_pages"`
+}
