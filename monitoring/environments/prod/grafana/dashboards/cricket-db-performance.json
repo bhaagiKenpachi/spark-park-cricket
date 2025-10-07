@@ -91,7 +91,7 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "ball_api_database_operations_total",
+                    "expr": "sum by (operation, table, status) (ball_api_database_operations_total)",
                     "instant": false,
                     "legendFormat": "{{operation}} - {{table}} - {{status}}",
                     "range": true,
@@ -183,7 +183,7 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.50, rate(ball_api_database_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.50, sum by (le, operation, table) (rate(ball_api_database_duration_seconds_bucket[5m])))",
                     "instant": false,
                     "legendFormat": "50th percentile - {{operation}} - {{table}}",
                     "range": true,
@@ -195,7 +195,7 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.95, rate(ball_api_database_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.95, sum by (le, operation, table) (rate(ball_api_database_duration_seconds_bucket[5m])))",
                     "hide": false,
                     "instant": false,
                     "legendFormat": "95th percentile - {{operation}} - {{table}}",
@@ -288,7 +288,7 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "rate(ball_api_database_operations_total[5m])",
+                    "expr": "sum by (operation, table, status) (rate(ball_api_database_operations_total[5m]))",
                     "instant": false,
                     "legendFormat": "{{operation}} - {{table}} - {{status}}",
                     "range": true,
@@ -380,9 +380,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "rate(http_requests_total[5m])",
+                    "expr": "sum by (method, endpoint_normalized, status) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_requests_total{endpoint=~\"/api/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n)",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}} - {{status}}",
+                    "legendFormat": "{{method}} {{endpoint_normalized}} - {{status}}",
                     "range": true,
                     "refId": "A"
                 }
@@ -472,9 +472,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "50th percentile - {{method}} {{endpoint}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 },
@@ -484,10 +484,10 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.95, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
                     "hide": false,
                     "instant": false,
-                    "legendFormat": "95th percentile - {{method}} {{endpoint}}",
+                    "legendFormat": "95th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "B"
                 }
@@ -577,106 +577,38 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=\"/health\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/health\"}[5m])))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}}",
                     "range": true,
                     "refId": "A"
-                }
-            ],
-            "title": "/health Endpoint Response Times",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "vis": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "s"
                 },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 8,
-                "y": 24
-            },
-            "id": 8,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "targets": [
                 {
                     "datasource": {
                         "type": "prometheus",
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=\"/test-db-monitoring\"}",
+                    "expr": "histogram_quantile(0.95, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/health\"}[5m])))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "95th percentile - {{method}}",
                     "range": true,
-                    "refId": "A"
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/health\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
-            "title": "/test-db-monitoring Endpoint Response Times",
+            "title": "/health Endpoint Response Times",
             "type": "timeseries"
         },
         {
@@ -761,11 +693,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=\"/metrics\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/metrics\"}[5m])))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/metrics\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/metrics\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "/metrics Endpoint Response Times",
@@ -853,11 +809,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/.*\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "API v1 Endpoints Response Times",
@@ -945,11 +925,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=\"/api/v1/series\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/api/v1/series\"}[5m])))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/api/v1/series\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=\"/api/v1/series\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "/api/v1/series Endpoint Response Times",
@@ -1037,11 +1041,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=\"/api/v1/matches\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/matches\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/matches\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/matches\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "/api/v1/matches Endpoint Response Times",
@@ -1129,11 +1157,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "{{method}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}} {{endpoint_normalized}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "/api/v1/scorecard Endpoints Response Times",
@@ -1221,9 +1273,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m])",
+                    "expr": "sum by (method, endpoint_normalized, status) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n)",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}}",
+                    "legendFormat": "{{method}} {{endpoint_normalized}} - {{status}}",
                     "range": true,
                     "refId": "A"
                 }
@@ -1313,9 +1365,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "50th percentile - {{method}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 },
@@ -1325,9 +1377,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
+                    "expr": "histogram_quantile(0.95, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "95th percentile - {{method}}",
+                    "legendFormat": "95th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "B"
                 },
@@ -1337,9 +1389,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]))",
+                    "expr": "histogram_quantile(0.99, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "99th percentile - {{method}}",
+                    "legendFormat": "99th percentile - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "C"
                 }
@@ -1433,14 +1485,14 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "avg_over_time(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m])",
+                    "expr": "histogram_quantile(0.50, sum by (le, method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n))",
                     "instant": false,
-                    "legendFormat": "Average - {{method}} {{endpoint}}",
+                    "legendFormat": "Median (p50) - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 }
             ],
-            "title": "/api/v1/scorecard Average Response Time",
+            "title": "/api/v1/scorecard Median Response Time (p50)",
             "type": "timeseries"
         },
         {
@@ -1525,9 +1577,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}",
+                    "expr": "sum by (method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          http_requests_total{endpoint=~\"/api/v1/scorecard.*\"},\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n)",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}}",
+                    "legendFormat": "{{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 }
@@ -1617,9 +1669,9 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\",status=~\"5..\"}[5m]) / rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m]) * 100",
+                    "expr": "sum by (method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\",status=~\"5..\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n)\n/\nsum by (method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          rate(http_requests_total{endpoint=~\"/api/v1/scorecard.*\"}[5m]),\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n  )\n) * 100",
                     "instant": false,
-                    "legendFormat": "Error Rate - {{method}}",
+                    "legendFormat": "Error Rate - {{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 }
@@ -1709,106 +1761,14 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_requests_total{endpoint=~\"/api/v1/.*\"}",
+                    "expr": "sum by (method, endpoint_normalized) (\n  label_replace(\n    label_replace(\n      label_replace(\n        label_replace(\n          http_requests_total{endpoint=~\"/api/v1/.*\"},\n          \"endpoint_normalized\", \"$1\", \"endpoint\", \"^(.*)$\"\n        ),\n        \"endpoint_normalized\", \"/api/v1/matches/*\", \"endpoint\", \"/api/v1/matches/.*\"\n      ),\n      \"endpoint_normalized\", \"/api/v1/scorecard/*\", \"endpoint\", \"/api/v1/scorecard/.*\"\n    ),\n    \"endpoint_normalized\", \"/api/v1/series/*\", \"endpoint\", \"/api/v1/series/.+\"\n  )\n)",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}}",
+                    "legendFormat": "{{method}} {{endpoint_normalized}}",
                     "range": true,
                     "refId": "A"
                 }
             ],
             "title": "API v1 Endpoints Request Count",
-            "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "PBFA97CFB590B2093"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "palette-classic"
-                    },
-                    "custom": {
-                        "axisLabel": "",
-                        "axisPlacement": "auto",
-                        "barAlignment": 0,
-                        "drawStyle": "line",
-                        "fillOpacity": 10,
-                        "gradientMode": "none",
-                        "hideFrom": {
-                            "legend": false,
-                            "tooltip": false,
-                            "vis": false
-                        },
-                        "lineInterpolation": "linear",
-                        "lineWidth": 1,
-                        "pointSize": 5,
-                        "scaleDistribution": {
-                            "type": "linear"
-                        },
-                        "showPoints": "never",
-                        "spanNulls": false,
-                        "stacking": {
-                            "group": "A",
-                            "mode": "none"
-                        },
-                        "thresholdsStyle": {
-                            "mode": "off"
-                        }
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    },
-                    "unit": "s"
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 8,
-                "x": 8,
-                "y": 40
-            },
-            "id": 14,
-            "options": {
-                "legend": {
-                    "calcs": [],
-                    "displayMode": "list",
-                    "placement": "bottom",
-                    "showLegend": true
-                },
-                "tooltip": {
-                    "mode": "single",
-                    "sort": "none"
-                }
-            },
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus",
-                        "uid": "PBFA97CFB590B2093"
-                    },
-                    "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/ws.*\"}",
-                    "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}} - {{le}}",
-                    "range": true,
-                    "refId": "A"
-                }
-            ],
-            "title": "/api/v1/ws WebSocket Endpoints Response Times",
             "type": "timeseries"
         },
         {
@@ -1893,11 +1853,35 @@
                         "uid": "PBFA97CFB590B2093"
                     },
                     "editorMode": "code",
-                    "expr": "http_request_duration_seconds_bucket{endpoint=~\"/api/v1/graphql.*\"}",
+                    "expr": "histogram_quantile(0.50, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/graphql.*\"}[5m])))",
                     "instant": false,
-                    "legendFormat": "{{method}} {{endpoint}} - {{le}}",
+                    "legendFormat": "50th percentile - {{method}} {{endpoint}}",
                     "range": true,
                     "refId": "A"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.95, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/graphql.*\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "95th percentile - {{method}} {{endpoint}}",
+                    "range": true,
+                    "refId": "B"
+                },
+                {
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "PBFA97CFB590B2093"
+                    },
+                    "editorMode": "code",
+                    "expr": "histogram_quantile(0.99, sum by (le, method) (rate(http_request_duration_seconds_bucket{endpoint=~\"/api/v1/graphql.*\"}[5m])))",
+                    "instant": false,
+                    "legendFormat": "99th percentile - {{method}} {{endpoint}}",
+                    "range": true,
+                    "refId": "C"
                 }
             ],
             "title": "/api/v1/graphql Endpoints Response Times",
