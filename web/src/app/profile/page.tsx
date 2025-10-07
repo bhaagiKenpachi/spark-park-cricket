@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +8,7 @@ import { useAppSelector } from '@/store/hooks';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import EditProfileForm from '@/components/auth/EditProfileForm';
 import {
     Home,
     User,
@@ -16,12 +17,14 @@ import {
     CheckCircle,
     Vote,
     Shield,
-    XCircle
+    XCircle,
+    Edit
 } from 'lucide-react';
 
 export default function ProfilePage(): React.JSX.Element {
     const router = useRouter();
     const { user, isAuthenticated, isLoading } = useAppSelector(state => state.auth);
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated) {
@@ -100,33 +103,56 @@ export default function ProfilePage(): React.JSX.Element {
             </div>
 
             <main className="w-full max-w-md mx-auto px-4 py-4">
-                {/* Profile Picture and Name */}
-                <div className="bg-white rounded-lg shadow-sm border mb-4">
-                    <div className="p-6 text-center">
-                        {user.picture ? (
-                            <Image
-                                src={user.picture}
-                                alt={user.name}
-                                width={80}
-                                height={80}
-                                className="h-20 w-20 rounded-full mx-auto mb-3"
-                            />
-                        ) : (
-                            <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-3">
-                                <User className="h-10 w-10 text-gray-600" />
-                            </div>
-                        )}
-                        <h2 className="text-lg font-bold text-gray-900">{user.name}</h2>
-                        <p className="text-sm text-gray-500 mt-1">{user.email}</p>
-
-                        {user.email_verified && (
-                            <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
-                                <CheckCircle className="h-3 w-3 text-green-600" />
-                                <span className="text-xs text-green-700 font-medium">Verified</span>
-                            </div>
-                        )}
+                {/* Edit Profile Form */}
+                {isEditing ? (
+                    <div className="mb-4">
+                        <EditProfileForm
+                            onCancel={() => setIsEditing(false)}
+                            onSuccess={() => setIsEditing(false)}
+                        />
                     </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Profile Picture and Name */}
+                        <div className="bg-white rounded-lg shadow-sm border mb-4">
+                            <div className="p-6 text-center">
+                                {user.picture ? (
+                                    <Image
+                                        src={user.picture}
+                                        alt={user.name}
+                                        width={80}
+                                        height={80}
+                                        className="h-20 w-20 rounded-full mx-auto mb-3"
+                                    />
+                                ) : (
+                                    <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-3">
+                                        <User className="h-10 w-10 text-gray-600" />
+                                    </div>
+                                )}
+                                <h2 className="text-lg font-bold text-gray-900">{user.name}</h2>
+                                <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+
+                                {user.email_verified && (
+                                    <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                        <span className="text-xs text-green-700 font-medium">Verified</span>
+                                    </div>
+                                )}
+
+                                {/* Edit Button */}
+                                <Button
+                                    onClick={() => setIsEditing(true)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-4 flex items-center gap-2 mx-auto"
+                                >
+                                    <Edit className="h-3.5 w-3.5" />
+                                    Edit Profile
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
 
                 {/* Account Details */}
                 <div className="bg-white rounded-lg shadow-sm border">
@@ -196,22 +222,17 @@ export default function ProfilePage(): React.JSX.Element {
                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="mt-6 space-y-2">
-                    <Link href="/votes">
-                        <Button variant="outline" className="w-full flex items-center justify-center gap-2">
-                            <Vote className="h-4 w-4" />
-                            My Votes
-                        </Button>
-                    </Link>
-
-                    <Link href="/">
-                        <Button variant="outline" className="w-full flex items-center justify-center gap-2">
-                            <Home className="h-4 w-4" />
-                            Back to Home
-                        </Button>
-                    </Link>
-                </div>
+                {/* Quick Actions - Only show when not editing */}
+                {!isEditing && (
+                    <div className="mt-6">
+                        <Link href="/">
+                            <Button variant="outline" className="w-full flex items-center justify-center gap-2">
+                                <Home className="h-4 w-4" />
+                                Back to Home
+                            </Button>
+                        </Link>
+                    </div>
+                )}
             </main>
 
             <footer className="bg-white border-t mt-8">

@@ -478,6 +478,14 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  // User API methods
+  async updateUserName(name: string): Promise<ApiResponse<any>> {
+    return this.request<any>('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+  }
 }
 
 export { ApiService };
