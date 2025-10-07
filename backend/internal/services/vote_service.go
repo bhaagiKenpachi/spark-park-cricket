@@ -213,16 +213,7 @@ func (s *VoteService) CastVote(ctx context.Context, voteID string, req *models.V
 
 	// Check if vote is active
 	if vote.Status != models.VoteStatusActive {
-		return fmt.Errorf("cannot vote on closed or cancelled vote")
-	}
-
-	// Check if user has already voted
-	hasVoted, err := s.voteRepo.HasUserVoted(ctx, voteID, userID)
-	if err != nil {
-		return fmt.Errorf("failed to check if user voted: %w", err)
-	}
-	if hasVoted {
-		return fmt.Errorf("user has already voted on this poll")
+		return fmt.Errorf("voting is only allowed on active votes")
 	}
 
 	// Get vote options to validate selections
@@ -236,7 +227,31 @@ func (s *VoteService) CastVote(ctx context.Context, voteID string, req *models.V
 		return err
 	}
 
-	// Create user vote
+	// Check if user has already voted
+	existingVote, err := s.voteRepo.GetUserVote(ctx, voteID, userID)
+	if err == nil && existingVote != nil {
+		// User has already voted - update their vote
+		existingVote.SelectedOptions = req.SelectedOptions
+		existingVote.VotedAt = time.Now()
+
+		if err := s.voteRepo.UpdateUserVote(ctx, existingVote); err != nil {
+			utils.LogError(err, "Failed to update user vote", map[string]interface{}{
+				"vote_id": voteID,
+				"user_id": userID,
+			})
+			return fmt.Errorf("failed to update vote: %w", err)
+		}
+
+		utils.LogInfo("Vote updated successfully", map[string]interface{}{
+			"vote_id": voteID,
+			"user_id": userID,
+			"options": req.SelectedOptions,
+		})
+
+		return nil
+	}
+
+	// Create new user vote
 	userVote := &models.UserVote{
 		ID:              uuid.New().String(),
 		VoteID:          voteID,

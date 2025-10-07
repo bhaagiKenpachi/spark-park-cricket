@@ -24,9 +24,11 @@ type VoteRepositoryInterface interface {
 
 	// User vote operations
 	CreateUserVote(ctx context.Context, userVote *models.UserVote) error
+	UpdateUserVote(ctx context.Context, userVote *models.UserVote) error
 	GetUserVote(ctx context.Context, voteID, userID string) (*models.UserVote, error)
 	HasUserVoted(ctx context.Context, voteID, userID string) (bool, error)
 	GetVoteResults(ctx context.Context, voteID string) (map[string]int, error)
+	GetVoteResultsWithNames(ctx context.Context, voteID string) (map[string][]models.VoterInfo, error)
 	GetVotedUsers(ctx context.Context, voteID string) ([]string, error)
 	GetTotalVoteCount(ctx context.Context, voteID string) (int, error)
 }

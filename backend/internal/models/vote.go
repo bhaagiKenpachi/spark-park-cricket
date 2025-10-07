@@ -61,12 +61,20 @@ type VoteWithOptions struct {
 
 // VoteWithResults represents a vote with results and user's vote
 type VoteWithResults struct {
-	Vote       *Vote          `json:"vote"`
-	Options    []*VoteOption  `json:"options"`
-	Results    map[string]int `json:"results"` // option_id -> vote_count
-	UserVote   *UserVote      `json:"user_vote,omitempty"`
-	TotalVotes int            `json:"total_votes"`
-	VotedUsers []string       `json:"voted_users"` // List of user IDs who voted
+	Vote             *Vote                  `json:"vote"`
+	Options          []*VoteOption          `json:"options"`
+	Results          map[string]int         `json:"results"`            // option_id -> vote_count
+	ResultsWithNames map[string][]VoterInfo `json:"results_with_names"` // option_id -> list of voters
+	UserVote         *UserVote              `json:"user_vote,omitempty"`
+	TotalVotes       int                    `json:"total_votes"`
+	VotedUsers       []string               `json:"voted_users"` // List of user IDs who voted
+}
+
+// VoterInfo represents voter information for a vote option
+type VoterInfo struct {
+	UserID   string `json:"user_id"`
+	UserName string `json:"user_name"`
+	VotedAt  string `json:"voted_at"`
 }
 
 // CreateVoteRequest represents the request to create a new vote

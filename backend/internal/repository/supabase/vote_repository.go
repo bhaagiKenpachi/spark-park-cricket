@@ -100,6 +100,12 @@ func (r *VoteRepository) GetVoteWithResults(ctx context.Context, id string, user
 		return nil, err
 	}
 
+	// Get results with voter names
+	resultsWithNames, err := r.GetVoteResultsWithNames(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get user's vote
 	var userVote *models.UserVote
 	if userID != "" {
@@ -119,12 +125,13 @@ func (r *VoteRepository) GetVoteWithResults(ctx context.Context, id string, user
 	}
 
 	return &models.VoteWithResults{
-		Vote:       voteWithOptions.Vote,
-		Options:    voteWithOptions.Options,
-		Results:    results,
-		UserVote:   userVote,
-		TotalVotes: totalVotes,
-		VotedUsers: votedUsers,
+		Vote:             voteWithOptions.Vote,
+		Options:          voteWithOptions.Options,
+		Results:          results,
+		ResultsWithNames: resultsWithNames,
+		UserVote:         userVote,
+		TotalVotes:       totalVotes,
+		VotedUsers:       votedUsers,
 	}, nil
 }
 
@@ -308,6 +315,41 @@ func (r *VoteRepository) CreateUserVote(ctx context.Context, userVote *models.Us
 	return nil
 }
 
+// UpdateUserVote updates an existing user's vote
+func (r *VoteRepository) UpdateUserVote(ctx context.Context, userVote *models.UserVote) error {
+	userVote.VotedAt = time.Now()
+
+	updateData := map[string]interface{}{
+		"selected_options": userVote.SelectedOptions,
+		"voted_at":         userVote.VotedAt,
+	}
+
+	var result []models.UserVote
+	_, err := r.client.From("user_votes").
+		Update(updateData, "", "").
+		Eq("id", userVote.ID).
+		ExecuteTo(&result)
+
+	if err != nil {
+		utils.LogError(err, "Failed to update user vote", map[string]interface{}{
+			"user_vote_id": userVote.ID,
+			"vote_id":      userVote.VoteID,
+			"user_id":      userVote.UserID,
+		})
+		return fmt.Errorf("failed to update user vote: %w", err)
+	}
+
+	if len(result) == 0 {
+		return fmt.Errorf("user vote not found")
+	}
+
+	if len(result) > 0 {
+		*userVote = result[0]
+	}
+
+	return nil
+}
+
 // GetUserVote retrieves a user's vote for a specific vote
 func (r *VoteRepository) GetUserVote(ctx context.Context, voteID, userID string) (*models.UserVote, error) {
 	var userVotes []models.UserVote
@@ -408,4 +450,48 @@ func (r *VoteRepository) GetTotalVoteCount(ctx context.Context, voteID string) (
 	}
 
 	return len(userVotes), nil
+}
+
+// GetVoteResultsWithNames gets vote results with voter names for each option
+func (r *VoteRepository) GetVoteResultsWithNames(ctx context.Context, voteID string) (map[string][]models.VoterInfo, error) {
+	// Get all user votes with user information
+	var userVotes []struct {
+		ID              string   `json:"id"`
+		VoteID          string   `json:"vote_id"`
+		UserID          string   `json:"user_id"`
+		SelectedOptions []string `json:"selected_options"`
+		VotedAt         string   `json:"voted_at"`
+		Users           struct {
+			Name string `json:"name"`
+		} `json:"users"`
+	}
+
+	_, err := r.client.From("user_votes").
+		Select("id, vote_id, user_id, selected_options, voted_at, users(name)", "", false).
+		Eq("vote_id", voteID).
+		Order("voted_at", &postgrest.OrderOpts{Ascending: false}).
+		ExecuteTo(&userVotes)
+
+	if err != nil {
+		utils.LogError(err, "Failed to get vote results with names", map[string]interface{}{
+			"vote_id": voteID,
+		})
+		return nil, fmt.Errorf("failed to get vote results with names: %w", err)
+	}
+
+	// Organize results by option ID
+	resultsWithNames := make(map[string][]models.VoterInfo)
+
+	for _, uv := range userVotes {
+		for _, optionID := range uv.SelectedOptions {
+			voterInfo := models.VoterInfo{
+				UserID:   uv.UserID,
+				UserName: uv.Users.Name,
+				VotedAt:  uv.VotedAt,
+			}
+			resultsWithNames[optionID] = append(resultsWithNames[optionID], voterInfo)
+		}
+	}
+
+	return resultsWithNames, nil
 }

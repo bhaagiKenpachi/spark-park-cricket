@@ -40,7 +40,11 @@ func (h *VoteHandler) CreateVote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user ID from context
-	userID := r.Context().Value(contextkeys.UserIDKey).(string)
+	userID, ok := r.Context().Value(contextkeys.UserIDKey).(string)
+	if !ok || userID == "" {
+		utils.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User authentication required", nil)
+		return
+	}
 
 	// Create vote
 	vote, err := h.voteService.CreateVote(r.Context(), &req, userID)
