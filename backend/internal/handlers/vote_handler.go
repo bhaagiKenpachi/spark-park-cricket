@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
 
@@ -16,26 +19,32 @@ import (
 // VoteHandler handles voting-related HTTP requests
 type VoteHandler struct {
 	voteService services.VoteServiceInterface
+	metrics     *monitoring.Metrics
 }
 
 // NewVoteHandler creates a new vote handler
 func NewVoteHandler(voteService services.VoteServiceInterface) *VoteHandler {
 	return &VoteHandler{
 		voteService: voteService,
+		metrics:     monitoring.NewMetrics(),
 	}
 }
 
 // CreateVote creates a new vote
 func (h *VoteHandler) CreateVote(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	var req models.CreateVoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid JSON", nil)
+		h.metrics.RecordVoteOperation("create", "", "error", time.Since(start))
 		return
 	}
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error(), nil)
+		h.metrics.RecordVoteOperation("create", string(req.Type), "validation_error", time.Since(start))
 		return
 	}
 
@@ -43,6 +52,7 @@ func (h *VoteHandler) CreateVote(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		utils.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "User authentication required", nil)
+		h.metrics.RecordVoteOperation("create", string(req.Type), "unauthorized", time.Since(start))
 		return
 	}
 
@@ -54,8 +64,20 @@ func (h *VoteHandler) CreateVote(w http.ResponseWriter, r *http.Request) {
 			"title":   req.Title,
 		})
 		utils.WriteError(w, http.StatusInternalServerError, "CREATE_ERROR", "Failed to create vote", nil)
+		h.metrics.RecordVoteOperation("create", string(req.Type), "error", time.Since(start))
 		return
 	}
+
+	h.metrics.RecordVoteOperation("create", string(req.Type), "success", time.Since(start))
+
+	// Update active votes gauge (asynchronously get count via list)
+	go func() {
+		activeStatus := models.VoteStatusActive
+		activeFilters := &models.VoteFilters{Status: &activeStatus, Type: &req.Type, Limit: 1}
+		if paginatedVotes, err := h.voteService.ListVotes(context.Background(), activeFilters); err == nil {
+			h.metrics.UpdateActiveVotesCount(string(req.Type), float64(paginatedVotes.TotalItems))
+		}
+	}()
 
 	response := models.VoteResponse{
 		Message: "Vote created successfully",
@@ -87,9 +109,12 @@ func (h *VoteHandler) GetVote(w http.ResponseWriter, r *http.Request) {
 
 // GetVoteWithResults retrieves a vote with results and user's vote
 func (h *VoteHandler) GetVoteWithResults(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	voteID := chi.URLParam(r, "id")
 	if voteID == "" {
 		utils.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "Vote ID is required", nil)
+		h.metrics.RecordVoteOperation("get_results", "", "error", time.Since(start))
 		return
 	}
 
@@ -107,9 +132,12 @@ func (h *VoteHandler) GetVoteWithResults(w http.ResponseWriter, r *http.Request)
 			"user_id": userID,
 		})
 		utils.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Vote not found", nil)
+		h.metrics.RecordVoteOperation("get_results", "", "error", time.Since(start))
 		return
 	}
 
+	voteType := string(voteWithResults.Vote.Type)
+	h.metrics.RecordVoteOperation("get_results", voteType, "success", time.Since(start))
 	utils.WriteSuccess(w, voteWithResults)
 }
 
@@ -196,6 +224,8 @@ func (h *VoteHandler) DeleteVote(w http.ResponseWriter, r *http.Request) {
 
 // ListVotes lists votes with filters
 func (h *VoteHandler) ListVotes(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	// Parse query parameters
 	filters := &models.VoteFilters{
 		Limit:  20, // Default limit
@@ -249,34 +279,51 @@ func (h *VoteHandler) ListVotes(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.LogError(err, "Failed to list votes", nil)
 		utils.WriteError(w, http.StatusInternalServerError, "LIST_ERROR", "Failed to list votes", nil)
+		h.metrics.RecordVoteOperation("list", "", "error", time.Since(start))
 		return
 	}
 
+	h.metrics.RecordVoteOperation("list", "", "success", time.Since(start))
 	utils.WriteSuccess(w, paginatedVotes)
 }
 
 // CastVote allows a user to cast their vote
 func (h *VoteHandler) CastVote(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
 	voteID := chi.URLParam(r, "id")
 	if voteID == "" {
 		utils.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "Vote ID is required", nil)
+		h.metrics.RecordVoteCast(voteID, "", false, time.Since(start))
 		return
 	}
 
 	var req models.VoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "INVALID_REQUEST", "Invalid JSON", nil)
+		h.metrics.RecordVoteCast(voteID, "", false, time.Since(start))
 		return
 	}
 
 	// Validate request
 	if err := utils.ValidateStruct(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error(), nil)
+		h.metrics.RecordVoteCast(voteID, "", false, time.Since(start))
 		return
 	}
 
 	// Get user ID from context
 	userID := r.Context().Value(contextkeys.UserIDKey).(string)
+
+	// Get vote to determine type
+	vote, voteErr := h.voteService.GetVote(r.Context(), voteID)
+	voteType := ""
+	if voteErr == nil && vote != nil {
+		voteType = string(vote.Vote.Type)
+	}
+
+	// Check if user has already voted (for metrics)
+	hasVoted, _ := h.voteService.HasUserVoted(r.Context(), voteID, userID)
 
 	// Cast vote
 	err := h.voteService.CastVote(r.Context(), voteID, &req, userID)
@@ -287,16 +334,20 @@ func (h *VoteHandler) CastVote(w http.ResponseWriter, r *http.Request) {
 		})
 		if err.Error() == "cannot vote on closed or cancelled vote" {
 			utils.WriteError(w, http.StatusBadRequest, "INVALID_STATE", "Cannot vote on closed or cancelled vote", nil)
+			h.metrics.RecordVoteCast(voteID, voteType, hasVoted, time.Since(start))
 			return
 		}
 		if err.Error() == "user has already voted on this poll" {
 			utils.WriteError(w, http.StatusConflict, "ALREADY_VOTED", "User has already voted on this poll", nil)
+			h.metrics.RecordVoteCast(voteID, voteType, hasVoted, time.Since(start))
 			return
 		}
 		utils.WriteError(w, http.StatusInternalServerError, "VOTE_ERROR", "Failed to cast vote", nil)
+		h.metrics.RecordVoteCast(voteID, voteType, hasVoted, time.Since(start))
 		return
 	}
 
+	h.metrics.RecordVoteCast(voteID, voteType, hasVoted, time.Since(start))
 	response := models.VoteResponse{
 		Message: "Vote cast successfully",
 	}

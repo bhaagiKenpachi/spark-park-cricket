@@ -11,8 +11,17 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Dev backend metrics - Direct connection to backend container
+  # Dev backend metrics - Local development
   - job_name: 'cricket-backend-dev'
+    static_configs:
+      - targets: ['host.docker.internal:8080']  # For local testing
+    metrics_path: '/metrics'
+    scheme: 'http'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+  
+  # Dev backend metrics - Remote server
+  - job_name: 'cricket-backend-dev-remote'
     static_configs:
       - targets: ['15.235.202.148:8081']
     metrics_path: '/metrics'
