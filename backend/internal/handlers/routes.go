@@ -154,10 +154,13 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Vote routes
 		r.Route("/votes", func(r chi.Router) {
 			voteHandler := NewVoteHandler(serviceContainer.VoteService)
+			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService)
+
 			// Public routes (view only)
 			r.Get("/", voteHandler.ListVotes)
 			r.Get("/{id}", voteHandler.GetVote)
 			r.Get("/{id}/results", voteHandler.GetVoteWithResults)
+			r.Get("/{vote_id}/teams", teamHandler.GetTeamsByVoteID)
 
 			// Protected routes (require authentication)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", voteHandler.CreateVote)
@@ -168,6 +171,25 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{id}/has-voted", voteHandler.HasUserVoted)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/close", voteHandler.CloseVote)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/cancel", voteHandler.CancelVote)
+
+			// Team routes (protected - any logged-in user can manage teams)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{vote_id}/teams", teamHandler.CreateTeam)
+		})
+
+		// Team management routes
+		r.Route("/teams", func(r chi.Router) {
+			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService)
+
+			// Public routes
+			r.Get("/{team_id}", teamHandler.GetTeamByID)
+			r.Get("/{team_id}/players", teamHandler.GetTeamPlayers)
+
+			// Protected routes (any logged-in user can manage teams)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{team_id}", teamHandler.UpdateTeam)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{team_id}", teamHandler.DeleteTeam)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{team_id}/players", teamHandler.AddPlayerToTeam)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{team_id}/players/bulk", teamHandler.AddPlayersToTeam)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{team_id}/players/{player_id}", teamHandler.RemovePlayerFromTeam)
 		})
 
 		// GraphQL routes

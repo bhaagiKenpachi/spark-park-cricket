@@ -20,7 +20,8 @@ type Container struct {
 	// User services
 	UserService UserServiceInterface
 	// Voting services
-	VoteService VoteServiceInterface
+	VoteService     VoteServiceInterface
+	VoteTeamService VoteTeamServiceInterface
 	// Monitoring
 	Metrics *monitoring.Metrics
 }
@@ -58,7 +59,8 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		// User services
 		UserService: NewUserService(dbClient.Repositories.User),
 		// Voting services
-		VoteService: NewVoteService(dbClient.Repositories.Vote),
+		VoteService:     NewVoteService(dbClient.Repositories.Vote),
+		VoteTeamService: NewVoteTeamService(dbClient.Repositories.VoteTeam, dbClient.Repositories.Vote),
 		// Monitoring
 		Metrics: metrics,
 	}

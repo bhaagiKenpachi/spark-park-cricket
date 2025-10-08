@@ -24,6 +24,7 @@ type Repositories struct {
 	Ball       interfaces.BallRepository
 	User       interfaces.UserRepository
 	Vote       interfaces.VoteRepositoryInterface
+	VoteTeam   interfaces.VoteTeamRepositoryInterface
 }
 
 // Client wraps the Supabase client and repositories
@@ -90,6 +91,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),
 		Vote:       supabase.NewVoteRepository(client),
+		VoteTeam:   supabase.NewVoteTeamRepository(client, cfg.DatabaseSchema),
 	}
 	log.Printf("✅ Base repositories initialized")
 
@@ -106,6 +108,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			Ball:       baseRepositories.Ball, // Not cached yet
 			User:       baseRepositories.User, // Not cached yet
 			Vote:       cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
+			VoteTeam:   baseRepositories.VoteTeam, // Not cached yet
 		}
 		log.Printf("✅ Cached repositories initialized")
 	} else {

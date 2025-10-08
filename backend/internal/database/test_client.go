@@ -42,6 +42,7 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),
 		Vote:       supabase.NewVoteRepository(client),
+		VoteTeam:   supabase.NewVoteTeamRepository(client, "testing_db"),
 	}
 
 	// Wrap repositories with caching (same as production)
@@ -50,10 +51,11 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
 		Scoreboard: baseRepositories.Scoreboard, // Not cached yet
 		Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
-		Over:       baseRepositories.Over, // Not cached yet
-		Ball:       baseRepositories.Ball, // Not cached yet
-		User:       baseRepositories.User, // Not cached yet
-		Vote:       baseRepositories.Vote, // Not cached yet
+		Over:       baseRepositories.Over,     // Not cached yet
+		Ball:       baseRepositories.Ball,     // Not cached yet
+		User:       baseRepositories.User,     // Not cached yet
+		Vote:       baseRepositories.Vote,     // Not cached yet
+		VoteTeam:   baseRepositories.VoteTeam, // Not cached yet
 	}
 
 	return &Client{
