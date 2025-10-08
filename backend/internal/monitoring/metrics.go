@@ -21,6 +21,13 @@ type Metrics struct {
 	MatchCreationsTotal  *prometheus.CounterVec
 	SeriesCreationsTotal *prometheus.CounterVec
 
+	// Voting metrics
+	VoteOperationsTotal   *prometheus.CounterVec
+	VoteOperationDuration *prometheus.HistogramVec
+	VoteCastsTotal        *prometheus.CounterVec
+	VoteCastDuration      *prometheus.HistogramVec
+	ActiveVotesGauge      *prometheus.GaugeVec
+
 	// Database metrics
 	DatabaseConnections   *prometheus.GaugeVec
 	DatabaseQueryDuration *prometheus.HistogramVec
@@ -109,6 +116,49 @@ func NewMetrics() *Metrics {
 					Help: "Total number of series creations",
 				},
 				[]string{"status"},
+			),
+
+			// Voting metrics
+			VoteOperationsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "voting_operations_total",
+					Help: "Total number of voting operations",
+				},
+				[]string{"operation", "vote_type", "status"},
+			),
+
+			VoteOperationDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "voting_operation_duration_seconds",
+					Help:    "Voting operation duration in seconds",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0},
+				},
+				[]string{"operation", "vote_type"},
+			),
+
+			VoteCastsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "vote_casts_total",
+					Help: "Total number of votes cast",
+				},
+				[]string{"vote_id", "vote_type", "is_update"},
+			),
+
+			VoteCastDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "vote_cast_duration_seconds",
+					Help:    "Time taken to cast a vote",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0},
+				},
+				[]string{"vote_type"},
+			),
+
+			ActiveVotesGauge: promauto.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "active_votes_total",
+					Help: "Current number of active votes by type",
+				},
+				[]string{"vote_type"},
 			),
 
 			// Database metrics
@@ -282,4 +332,25 @@ func (m *Metrics) RecordCacheOperation(operation, cacheType string, duration tim
 func (m *Metrics) UpdateSystemMetrics() {
 	// This would typically be called periodically to update system metrics
 	// Implementation depends on your specific needs
+}
+
+// RecordVoteOperation records voting operation metrics
+func (m *Metrics) RecordVoteOperation(operation, voteType, status string, duration time.Duration) {
+	m.VoteOperationsTotal.WithLabelValues(operation, voteType, status).Inc()
+	m.VoteOperationDuration.WithLabelValues(operation, voteType).Observe(duration.Seconds())
+}
+
+// RecordVoteCast records vote cast metrics
+func (m *Metrics) RecordVoteCast(voteID, voteType string, isUpdate bool, duration time.Duration) {
+	isUpdateStr := "false"
+	if isUpdate {
+		isUpdateStr = "true"
+	}
+	m.VoteCastsTotal.WithLabelValues(voteID, voteType, isUpdateStr).Inc()
+	m.VoteCastDuration.WithLabelValues(voteType).Observe(duration.Seconds())
+}
+
+// UpdateActiveVotesCount updates the active votes gauge
+func (m *Metrics) UpdateActiveVotesCount(voteType string, count float64) {
+	m.ActiveVotesGauge.WithLabelValues(voteType).Set(count)
 }
