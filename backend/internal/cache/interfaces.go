@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+// MetricsRecorder interface for recording cache metrics
+type MetricsRecorder interface {
+	RecordCacheHit(cacheType, keyPattern string)
+	RecordCacheMiss(cacheType, keyPattern string)
+	RecordCacheOperation(operation, cacheType string, duration time.Duration)
+	RecordCacheKeySize(keyPattern string, size int)
+	RecordCacheError(operation, errorType string)
+}
+
 // CacheInterface defines the contract for caching operations
 type CacheInterface interface {
 	// Basic operations
@@ -38,6 +47,7 @@ type CacheInterface interface {
 type CacheManager struct {
 	cache   CacheInterface
 	enabled bool
+	metrics MetricsRecorder
 }
 
 // NewCacheManager creates a new cache manager
@@ -45,6 +55,18 @@ func NewCacheManager(cache CacheInterface, enabled bool) *CacheManager {
 	return &CacheManager{
 		cache:   cache,
 		enabled: enabled,
+		metrics: nil, // Will be set later
+	}
+}
+
+// SetMetrics sets the metrics recorder for the cache manager
+func (cm *CacheManager) SetMetrics(metrics MetricsRecorder) {
+	cm.metrics = metrics
+	// Also set metrics on the underlying cache if it's a RedisClient
+	if cm.cache != nil {
+		if redisClient, ok := cm.cache.(*RedisClient); ok {
+			redisClient.SetMetrics(metrics)
+		}
 	}
 }
 

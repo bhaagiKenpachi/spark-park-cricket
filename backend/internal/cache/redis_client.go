@@ -14,8 +14,9 @@ import (
 
 // RedisClient wraps the Redis client with cricket-specific caching methods
 type RedisClient struct {
-	client *redis.Client
-	ctx    context.Context
+	client  *redis.Client
+	ctx     context.Context
+	metrics MetricsRecorder
 }
 
 // NewRedisClient creates a new Redis client with fallback support
@@ -74,15 +75,25 @@ func NewRedisClient(cfg *config.Config) (*RedisClient, error) {
 	log.Printf("✅ Redis connection successful")
 
 	return &RedisClient{
-		client: rdb,
-		ctx:    ctx,
+		client:  rdb,
+		ctx:     ctx,
+		metrics: nil, // Will be set later via SetMetrics
 	}, nil
+}
+
+// SetMetrics sets the metrics recorder for the Redis client
+func (r *RedisClient) SetMetrics(metrics MetricsRecorder) {
+	r.metrics = metrics
 }
 
 // Set stores a value in Redis with TTL
 func (r *RedisClient) Set(key string, value interface{}, ttl time.Duration) error {
+	start := time.Now()
 	jsonData, err := json.Marshal(value)
 	if err != nil {
+		if r.metrics != nil {
+			r.metrics.RecordCacheError("set", "marshal_error")
+		}
 		return fmt.Errorf("failed to marshal value: %w", err)
 	}
 
@@ -93,7 +104,16 @@ func (r *RedisClient) Set(key string, value interface{}, ttl time.Duration) erro
 	err = r.client.Set(ctx, key, jsonData, ttl).Err()
 	if err != nil {
 		log.Printf("⚠️  Cache SET failed for key %s: %v", key, err)
+		if r.metrics != nil {
+			r.metrics.RecordCacheError("set", "redis_error")
+			r.metrics.RecordCacheOperation("set", "redis", time.Since(start))
+		}
 		return fmt.Errorf("failed to set cache key %s: %w", key, err)
+	}
+
+	if r.metrics != nil {
+		r.metrics.RecordCacheOperation("set", "redis", time.Since(start))
+		r.metrics.RecordCacheKeySize(extractKeyPattern(key), len(jsonData))
 	}
 
 	return nil
@@ -101,6 +121,7 @@ func (r *RedisClient) Set(key string, value interface{}, ttl time.Duration) erro
 
 // Get retrieves a value from Redis
 func (r *RedisClient) Get(key string, dest interface{}) error {
+	start := time.Now()
 	// Add timeout to prevent hanging
 	ctx, cancel := context.WithTimeout(r.ctx, 3*time.Second)
 	defer cancel()
@@ -108,21 +129,51 @@ func (r *RedisClient) Get(key string, dest interface{}) error {
 	val, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			if r.metrics != nil {
+				r.metrics.RecordCacheMiss("redis", extractKeyPattern(key))
+				r.metrics.RecordCacheOperation("get", "redis", time.Since(start))
+			}
 			return fmt.Errorf("key not found: %s", key)
 		}
 		log.Printf("⚠️  Cache GET failed for key %s: %v", key, err)
+		if r.metrics != nil {
+			r.metrics.RecordCacheError("get", "redis_error")
+			r.metrics.RecordCacheOperation("get", "redis", time.Since(start))
+		}
 		return fmt.Errorf("failed to get cache key %s: %w", key, err)
 	}
 
-	return json.Unmarshal([]byte(val), dest)
+	err = json.Unmarshal([]byte(val), dest)
+	if err != nil {
+		if r.metrics != nil {
+			r.metrics.RecordCacheError("get", "unmarshal_error")
+		}
+		return err
+	}
+
+	if r.metrics != nil {
+		r.metrics.RecordCacheHit("redis", extractKeyPattern(key))
+		r.metrics.RecordCacheOperation("get", "redis", time.Since(start))
+		r.metrics.RecordCacheKeySize(extractKeyPattern(key), len(val))
+	}
+
+	return nil
 }
 
 // Delete removes a key from Redis
 func (r *RedisClient) Delete(key string) error {
+	start := time.Now()
 	result := r.client.Del(r.ctx, key)
 	err := result.Err()
 	if err != nil {
+		if r.metrics != nil {
+			r.metrics.RecordCacheError("delete", "redis_error")
+			r.metrics.RecordCacheOperation("delete", "redis", time.Since(start))
+		}
 		return err
+	}
+	if r.metrics != nil {
+		r.metrics.RecordCacheOperation("delete", "redis", time.Since(start))
 	}
 	return nil
 }
@@ -237,3 +288,29 @@ const (
 	// Version counters - cache for 1 hour
 	VersionTTL = 1 * time.Hour
 )
+
+// extractKeyPattern extracts the pattern from a cache key for metrics
+func extractKeyPattern(key string) string {
+	if len(key) == 0 {
+		return "unknown"
+	}
+
+	// Common patterns
+	patterns := map[string]string{
+		"series:":    "series",
+		"match:":     "match",
+		"scorecard:": "scorecard",
+		"vote:":      "vote",
+		"vote_team:": "vote_team",
+		"team:":      "team",
+		"user:":      "user",
+	}
+
+	for prefix, pattern := range patterns {
+		if len(key) >= len(prefix) && key[:len(prefix)] == prefix {
+			return pattern
+		}
+	}
+
+	return "other"
+}
