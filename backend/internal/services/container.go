@@ -46,6 +46,11 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		dbClient.Repositories.Ball,
 	)
 
+	// Set metrics on cache manager if available
+	if dbClient.CacheManager != nil {
+		dbClient.CacheManager.SetMetrics(metrics)
+	}
+
 	// Create container
 	container := &Container{
 		DBClient:   dbClient,

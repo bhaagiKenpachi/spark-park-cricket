@@ -48,6 +48,8 @@ type Metrics struct {
 	CacheMissesTotal       *prometheus.CounterVec
 	CacheOperationsTotal   *prometheus.CounterVec
 	CacheOperationDuration *prometheus.HistogramVec
+	CacheKeySize           *prometheus.HistogramVec
+	CacheErrorsTotal       *prometheus.CounterVec
 
 	// System metrics
 	MemoryUsage     *prometheus.GaugeVec
@@ -279,6 +281,23 @@ func NewMetrics() *Metrics {
 				[]string{"operation", "cache_type"},
 			),
 
+			CacheKeySize: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "cache_key_size_bytes",
+					Help:    "Size of cached data in bytes",
+					Buckets: []float64{100, 500, 1000, 5000, 10000, 50000, 100000},
+				},
+				[]string{"key_pattern"},
+			),
+
+			CacheErrorsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "cache_errors_total",
+					Help: "Total number of cache errors",
+				},
+				[]string{"operation", "error_type"},
+			),
+
 			// System metrics
 			MemoryUsage: promauto.NewGaugeVec(
 				prometheus.GaugeOpts{
@@ -366,6 +385,16 @@ func (m *Metrics) RecordCacheMiss(cacheType, keyPattern string) {
 func (m *Metrics) RecordCacheOperation(operation, cacheType string, duration time.Duration) {
 	m.CacheOperationsTotal.WithLabelValues(operation, cacheType).Inc()
 	m.CacheOperationDuration.WithLabelValues(operation, cacheType).Observe(duration.Seconds())
+}
+
+// RecordCacheKeySize records the size of cached data
+func (m *Metrics) RecordCacheKeySize(keyPattern string, size int) {
+	m.CacheKeySize.WithLabelValues(keyPattern).Observe(float64(size))
+}
+
+// RecordCacheError records cache error metrics
+func (m *Metrics) RecordCacheError(operation, errorType string) {
+	m.CacheErrorsTotal.WithLabelValues(operation, errorType).Inc()
 }
 
 // UpdateSystemMetrics updates system metrics
