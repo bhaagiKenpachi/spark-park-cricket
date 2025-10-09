@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	contextkeys "spark-park-cricket-backend/internal/context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/services"
 	"spark-park-cricket-backend/internal/utils"
@@ -36,8 +37,8 @@ func (h *VoteTeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	voteID := chi.URLParam(r, "vote_id")
 
-	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	// Get user ID from context using the correct context key
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
@@ -97,7 +98,7 @@ func (h *VoteTeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 	teamID := chi.URLParam(r, "team_id")
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
@@ -126,7 +127,7 @@ func (h *VoteTeamHandler) DeleteTeam(w http.ResponseWriter, r *http.Request) {
 	teamID := chi.URLParam(r, "team_id")
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
@@ -148,7 +149,7 @@ func (h *VoteTeamHandler) AddPlayerToTeam(w http.ResponseWriter, r *http.Request
 	teamID := chi.URLParam(r, "team_id")
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
@@ -177,7 +178,7 @@ func (h *VoteTeamHandler) AddPlayersToTeam(w http.ResponseWriter, r *http.Reques
 	teamID := chi.URLParam(r, "team_id")
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return
@@ -207,7 +208,7 @@ func (h *VoteTeamHandler) RemovePlayerFromTeam(w http.ResponseWriter, r *http.Re
 	playerID := chi.URLParam(r, "player_id")
 
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(string)
+	userID, ok := ctx.Value(contextkeys.UserIDKey).(string)
 	if !ok || userID == "" {
 		errorResponse(w, http.StatusUnauthorized, "UNAUTHORIZED", "User not authenticated")
 		return

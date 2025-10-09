@@ -33,12 +33,6 @@ CREATE TABLE IF NOT EXISTS testing_db.team_players (
     UNIQUE(team_id, user_id)
 );
 
--- Create constraint to ensure user is only in one team per vote
-CREATE UNIQUE INDEX IF NOT EXISTS idx_team_players_one_team_per_vote 
-ON testing_db.team_players(user_id, (
-    SELECT vote_id FROM testing_db.vote_teams WHERE id = team_id
-));
-
 -- ============================================
 -- INDEXES FOR PERFORMANCE
 -- ============================================

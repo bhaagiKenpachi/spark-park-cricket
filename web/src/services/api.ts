@@ -490,6 +490,59 @@ class ApiService {
       body: JSON.stringify({ name }),
     });
   }
+
+  // Team API methods
+  async createTeam(voteId: string, teamData: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/teams`, {
+      method: 'POST',
+      body: JSON.stringify(teamData),
+    });
+  }
+
+  async getTeamsByVoteId(voteId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/votes/${voteId}/teams`);
+  }
+
+  async getTeamById(teamId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/teams/${teamId}`);
+  }
+
+  async updateTeam(teamId: string, teamData: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/teams/${teamId}`, {
+      method: 'PUT',
+      body: JSON.stringify(teamData),
+    });
+  }
+
+  async deleteTeam(teamId: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/teams/${teamId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getTeamPlayers(teamId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/teams/${teamId}/players`);
+  }
+
+  async addPlayerToTeam(teamId: string, userId: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/teams/${teamId}/players`, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
+
+  async addPlayersToTeam(teamId: string, userIds: string[]): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/teams/${teamId}/players/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({ user_ids: userIds }),
+    });
+  }
+
+  async removePlayerFromTeam(teamId: string, playerId: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/teams/${teamId}/players/${playerId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export { ApiService };

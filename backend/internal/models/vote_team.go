@@ -4,22 +4,22 @@ import "time"
 
 // VoteTeam represents a team associated with a vote
 type VoteTeam struct {
-	ID         string    `json:"id" db:"id"`
+	ID         string    `json:"id,omitempty" db:"id"`
 	VoteID     string    `json:"vote_id" db:"vote_id"`
 	TeamName   string    `json:"team_name" db:"team_name"`
 	TeamLetter string    `json:"team_letter" db:"team_letter"` // 'A' or 'B'
 	CaptainID  string    `json:"captain_id" db:"captain_id"`   // Must be a voter
 	CreatedBy  string    `json:"created_by" db:"created_by"`
-	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+	CreatedAt  time.Time `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 // TeamPlayer represents a player assigned to a team
 type TeamPlayer struct {
-	ID        string    `json:"id" db:"id"`
+	ID        string    `json:"id,omitempty" db:"id"`
 	TeamID    string    `json:"team_id" db:"team_id"`
 	UserID    string    `json:"user_id" db:"user_id"` // Must be a voter
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at"`
 }
 
 // VoteTeamWithPlayers represents a team with its players and captain info
