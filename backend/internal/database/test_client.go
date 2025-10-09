@@ -51,11 +51,11 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
 		Scoreboard: baseRepositories.Scoreboard, // Not cached yet
 		Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
-		Over:       baseRepositories.Over,     // Not cached yet
-		Ball:       baseRepositories.Ball,     // Not cached yet
-		User:       baseRepositories.User,     // Not cached yet
-		Vote:       baseRepositories.Vote,     // Not cached yet
-		VoteTeam:   baseRepositories.VoteTeam, // Not cached yet
+		Over:       baseRepositories.Over, // Not cached yet
+		Ball:       baseRepositories.Ball, // Not cached yet
+		User:       baseRepositories.User, // Not cached yet
+		Vote:       baseRepositories.Vote,
+		VoteTeam:   baseRepositories.VoteTeam,
 	}
 
 	return &Client{
