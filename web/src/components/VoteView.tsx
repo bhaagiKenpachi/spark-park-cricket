@@ -23,6 +23,8 @@ import {
     ChevronUp,
     RefreshCw
 } from 'lucide-react';
+import TeamManagement from './TeamManagement';
+import { User } from '@/types/team';
 
 interface VoteViewProps {
     voteId: string;
@@ -32,11 +34,13 @@ interface VoteViewProps {
 export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const { currentVote, loading, error, hasVotedStatus, userVotes } = useAppSelector(state => state.vote);
+    const { user, isAuthenticated } = useAppSelector(state => state.auth);
 
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [showTeams, setShowTeams] = useState(false);
 
     useEffect(() => {
         dispatch(fetchVoteWithResultsRequest(voteId));
@@ -424,7 +428,54 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                         </div>
                     </div>
                 </div>
+
+                {/* Team Management Section */}
+                {currentVote.total_votes > 0 && (
+                    <div className="mt-6">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowTeams(!showTeams)}
+                            className="w-full mb-4"
+                        >
+                            <Users className="h-4 w-4 mr-2" />
+                            {showTeams ? 'Hide Teams' : 'Manage Teams'}
+                        </Button>
+
+                        {showTeams && (
+                            <TeamManagement
+                                vote={currentVote}
+                                voters={getVotersFromResults(currentVote)}
+                                isAuthenticated={isAuthenticated}
+                                currentUserId={user?.id || undefined}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
+}
+
+// Helper function to extract unique voters from results
+function getVotersFromResults(vote: VoteWithResults): User[] {
+    const votersMap = new Map<string, User>();
+
+    if (vote.results_with_names) {
+        // results_with_names is an object with option_id as keys and voter arrays as values
+        Object.values(vote.results_with_names).forEach((voters: any) => {
+            if (Array.isArray(voters)) {
+                voters.forEach((voter: any) => {
+                    if (voter && voter.user_id && !votersMap.has(voter.user_id)) {
+                        votersMap.set(voter.user_id, {
+                            id: voter.user_id,
+                            name: voter.user_name || 'Unknown',
+                            email: '', // Not available in results
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    return Array.from(votersMap.values());
 }

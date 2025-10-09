@@ -1605,6 +1605,244 @@
       ]
     },
     {
+      "name": "Vote Teams",
+      "item": [
+        {
+          "name": "Create Team for Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"team_name\": \"Blue Warriors\",\n    \"team_letter\": \"A\",\n    \"captain_id\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/teams",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "teams"
+              ]
+            },
+            "description": "Create a new team for a vote. Team letter must be 'A' or 'B'. Captain must be one of the voters. Captain is automatically added as the first player. Any logged-in user can create teams (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Teams for Vote",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/teams",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "teams"
+              ]
+            },
+            "description": "Get all teams for a vote with player details. Returns array with Team A and Team B (if both exist). Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}"
+              ]
+            },
+            "description": "Get team details including captain info and all players. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"team_name\": \"Updated Warriors\",\n    \"captain_id\": \"{{new_captain_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}"
+              ]
+            },
+            "description": "Update team name and/or captain. New captain must be a voter and will be added to the team if not already there. Any logged-in user can update teams (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Team",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}"
+              ]
+            },
+            "description": "Delete a team and all its players (cascade delete). Any logged-in user can delete teams (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Team Players",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}",
+                "players"
+              ]
+            },
+            "description": "Get all players in a team with their user details. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Player to Team",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": \"{{voter_user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}",
+                "players"
+              ]
+            },
+            "description": "Add a single player to a team. User must have voted in the poll. User cannot be in both teams. Team cannot exceed 20 players. Any logged-in user can add players (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Multiple Players to Team (Bulk)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_ids\": [\n        \"{{voter_id_1}}\",\n        \"{{voter_id_2}}\",\n        \"{{voter_id_3}}\"\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}",
+                "players",
+                "bulk"
+              ]
+            },
+            "description": "Add multiple players to a team at once. All users must have voted. Users cannot be in both teams. Team cannot exceed 20 players total. Any logged-in user can add players (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Player from Team",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/teams/{{team_id}}/players/{{player_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "teams",
+                "{{team_id}}",
+                "players",
+                "{{player_id}}"
+              ]
+            },
+            "description": "Remove a player from a team. Cannot remove the captain - must change captain first. Any logged-in user can remove players (requires authentication)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "GraphQL Queries",
       "item": [
         {

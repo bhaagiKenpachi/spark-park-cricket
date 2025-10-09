@@ -28,6 +28,12 @@ type Metrics struct {
 	VoteCastDuration      *prometheus.HistogramVec
 	ActiveVotesGauge      *prometheus.GaugeVec
 
+	// Vote Team metrics
+	TeamOperationsTotal   *prometheus.CounterVec
+	TeamOperationDuration *prometheus.HistogramVec
+	TeamPlayerOpsTotal    *prometheus.CounterVec
+	ActiveTeamsGauge      *prometheus.GaugeVec
+
 	// Database metrics
 	DatabaseConnections   *prometheus.GaugeVec
 	DatabaseQueryDuration *prometheus.HistogramVec
@@ -159,6 +165,40 @@ func NewMetrics() *Metrics {
 					Help: "Current number of active votes by type",
 				},
 				[]string{"vote_type"},
+			),
+
+			// Vote Team metrics
+			TeamOperationsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "vote_team_operations_total",
+					Help: "Total number of vote team operations",
+				},
+				[]string{"operation", "team_letter", "status"},
+			),
+
+			TeamOperationDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "vote_team_operation_duration_seconds",
+					Help:    "Vote team operation duration in seconds",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0},
+				},
+				[]string{"operation", "team_letter"},
+			),
+
+			TeamPlayerOpsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "team_player_operations_total",
+					Help: "Total number of team player add/remove operations",
+				},
+				[]string{"operation", "team_id", "status"},
+			),
+
+			ActiveTeamsGauge: promauto.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "active_teams_total",
+					Help: "Current number of active teams by vote",
+				},
+				[]string{"vote_id"},
 			),
 
 			// Database metrics
@@ -353,4 +393,20 @@ func (m *Metrics) RecordVoteCast(voteID, voteType string, isUpdate bool, duratio
 // UpdateActiveVotesCount updates the active votes gauge
 func (m *Metrics) UpdateActiveVotesCount(voteType string, count float64) {
 	m.ActiveVotesGauge.WithLabelValues(voteType).Set(count)
+}
+
+// RecordTeamOperation records team operation metrics
+func (m *Metrics) RecordTeamOperation(operation, teamLetter, status string, duration time.Duration) {
+	m.TeamOperationsTotal.WithLabelValues(operation, teamLetter, status).Inc()
+	m.TeamOperationDuration.WithLabelValues(operation, teamLetter).Observe(duration.Seconds())
+}
+
+// RecordTeamPlayerOperation records team player add/remove metrics
+func (m *Metrics) RecordTeamPlayerOperation(operation, teamID, status string) {
+	m.TeamPlayerOpsTotal.WithLabelValues(operation, teamID, status).Inc()
+}
+
+// UpdateActiveTeamsCount updates the active teams gauge for a vote
+func (m *Metrics) UpdateActiveTeamsCount(voteID string, count float64) {
+	m.ActiveTeamsGauge.WithLabelValues(voteID).Set(count)
 }
