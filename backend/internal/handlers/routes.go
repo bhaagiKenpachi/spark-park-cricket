@@ -154,7 +154,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Vote routes
 		r.Route("/votes", func(r chi.Router) {
 			voteHandler := NewVoteHandler(serviceContainer.VoteService)
-			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService)
+			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService, serviceContainer.Metrics)
 
 			// Public routes (view only)
 			r.Get("/", voteHandler.ListVotes)
@@ -178,7 +178,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 
 		// Team management routes
 		r.Route("/teams", func(r chi.Router) {
-			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService)
+			teamHandler := NewVoteTeamHandler(serviceContainer.VoteTeamService, serviceContainer.Metrics)
 
 			// Public routes
 			r.Get("/{team_id}", teamHandler.GetTeamByID)
