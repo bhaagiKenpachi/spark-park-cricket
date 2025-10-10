@@ -11,6 +11,11 @@ on:
         options:
           - 'true'
           - 'false'
+  push:
+    branches:
+      - dev
+    paths:
+      - '.github/workflows/deploy-dev.yml'
 
 env:
   REGISTRY: ghcr.io
