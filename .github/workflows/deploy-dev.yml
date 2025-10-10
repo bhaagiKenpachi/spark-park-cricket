@@ -226,7 +226,22 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
             cd ~/cricket-deployment/deploy/environments/dev
+            
+            # Stop existing containers
+            echo "🛑 Stopping existing containers..."
             docker compose down || true
+            
+            # Stop any container using port 80
+            echo "🔍 Checking for processes on port 80..."
+            NGINX_CONTAINER=$(docker ps -q -f "publish=80")
+            if [ ! -z "$NGINX_CONTAINER" ]; then
+              echo "Stopping container using port 80: $NGINX_CONTAINER"
+              docker stop $NGINX_CONTAINER || true
+              docker rm $NGINX_CONTAINER || true
+            fi
+            
+            # Start all services
+            echo "🚀 Starting all services..."
             docker compose up -d
           EOF
 
