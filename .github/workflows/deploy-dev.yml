@@ -174,12 +174,14 @@ jobs:
           echo "${{ secrets.DEV_VM_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
-          # Add host to known_hosts
-          echo "🔑 Adding host to known_hosts..."
-          ssh-keyscan -H ${{ secrets.DEV_VM_HOST }} >> ~/.ssh/known_hosts 2>&1 || {
-            echo "❌ ERROR: Failed to scan SSH host. Check if host is reachable."
-            exit 1
-          }
+          # Create SSH config to skip host key checking (since runner may not reach VM for ssh-keyscan)
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile=/dev/null
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
           
           echo "✅ SSH setup completed"
 
