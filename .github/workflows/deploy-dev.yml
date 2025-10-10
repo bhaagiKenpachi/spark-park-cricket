@@ -23,7 +23,7 @@ env:
 jobs:
   build-backend:
     name: Build Backend Image
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     if: ${{ github.event.inputs.skip_build != 'true' }}
     permissions:
       contents: read
@@ -77,7 +77,7 @@ jobs:
 
   build-web:
     name: Build Web Image
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     if: ${{ github.event.inputs.skip_build != 'true' }}
     permissions:
       contents: read
@@ -131,7 +131,7 @@ jobs:
 
   deploy:
     name: Deploy to Dev VM
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     needs: [build-backend, build-web]
     if: ${{ always() && (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') && (needs.build-web.result == 'success' || needs.build-web.result == 'skipped') }}
     
