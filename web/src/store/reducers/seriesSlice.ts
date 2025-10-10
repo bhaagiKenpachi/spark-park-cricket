@@ -87,7 +87,11 @@ export const seriesSlice = createSlice({
     },
     createSeriesSuccess: (state, action: PayloadAction<Series>) => {
       state.loading = false;
-      state.series.push(action.payload);
+      state.series.unshift(action.payload); // Add to beginning so new series appear at top
+      state.pagination.totalItems += 1; // Increment total count
+      state.pagination.totalPages = Math.ceil(
+        state.pagination.totalItems / state.pagination.pageSize
+      );
     },
     createSeriesFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -121,6 +125,10 @@ export const seriesSlice = createSlice({
       state.loading = false;
       state.series = state.series.filter(
         series => series.id !== action.payload
+      );
+      state.pagination.totalItems = Math.max(0, state.pagination.totalItems - 1); // Decrement total count
+      state.pagination.totalPages = Math.ceil(
+        state.pagination.totalItems / state.pagination.pageSize
       );
     },
     deleteSeriesFailure: (state, action: PayloadAction<string>) => {

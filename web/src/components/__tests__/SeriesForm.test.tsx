@@ -182,6 +182,40 @@ describe('SeriesForm', () => {
     });
   });
 
+  it('should allow same start and end date', async () => {
+    const mockStore = createMockStore({
+      series: {
+        series: [],
+        currentSeries: null,
+        loading: false,
+        error: null,
+      },
+    });
+
+    render(
+      <Provider store={mockStore}>
+        <SeriesForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />
+      </Provider>
+    );
+
+    const nameInput = screen.getByLabelText('Series Name *');
+    const startDateInput = screen.getByLabelText('Start Date *');
+    const endDateInput = screen.getByLabelText('End Date *');
+    const submitButton = screen.getByText('Series');
+
+    fireEvent.change(nameInput, { target: { value: 'Test Series' } });
+    fireEvent.change(startDateInput, { target: { value: '2024-01-15' } });
+    fireEvent.change(endDateInput, { target: { value: '2024-01-15' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText('End date must be after start date')
+      ).not.toBeInTheDocument();
+    });
+    expect(mockOnSuccess).toHaveBeenCalledTimes(1);
+  });
+
   it('should clear validation errors when user types', async () => {
     const mockStore = createMockStore({
       series: {

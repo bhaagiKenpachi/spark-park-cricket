@@ -221,7 +221,7 @@ export function MatchForm({
                   )
                 }
                 min="1"
-                max="11"
+                max="20"
                 data-cy="team-player-count"
                 className={formErrors.team_player_count ? 'border-red-500' : ''}
               />
