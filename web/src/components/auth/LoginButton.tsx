@@ -17,11 +17,12 @@ export function LoginButton() {
   return (
     <Button
       onClick={handleGoogleLogin}
-      className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+      className="flex items-center gap-1.5 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 h-8 px-2.5"
       data-cy="login-button"
+      size="sm"
     >
-      <LogIn className="h-4 w-4" />
-      Sign in with Google
+      <LogIn className="h-3.5 w-3.5" />
+      <span className="text-xs font-medium">Sign in</span>
     </Button>
   );
 }

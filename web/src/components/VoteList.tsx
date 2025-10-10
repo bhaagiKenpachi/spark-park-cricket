@@ -16,6 +16,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
     Trash2,
     Eye,
     Edit,
@@ -28,7 +35,8 @@ import {
     CheckCircle,
     XCircle,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    MoreVertical
 } from 'lucide-react';
 
 interface VoteListProps {
@@ -145,64 +153,56 @@ export function VoteList({
     return (
         <div className="w-full max-w-md mx-auto px-4 py-4">
             <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <h1 className="text-xl font-bold text-gray-900">Votes</h1>
-                    {onCreateVote && (
-                        <Button onClick={onCreateVote} size="sm" className="flex items-center gap-1 px-3 py-2">
-                            <Plus className="h-4 w-4" />
-                            <span className="text-sm">Create</span>
-                        </Button>
-                    )}
-                </div>
+                <h1 className="text-xl font-bold text-gray-900">Votes</h1>
                 <p className="text-sm text-gray-600">Manage and participate in voting polls</p>
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-lg shadow-sm border mb-4">
-                <div className="p-3 border-b">
-                    <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">Filters</span>
+            <div className="bg-white rounded-lg shadow-sm border mb-3">
+                <div className="p-2">
+                    <div className="flex items-center gap-1.5 mb-2">
+                        <Filter className="h-3.5 w-3.5 text-gray-600" />
+                        <span className="text-xs font-medium text-gray-700">Filters</span>
                     </div>
-                </div>
-                <div className="p-3 space-y-3">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Status
-                        </label>
-                        <Select
-                            value={localFilters.status || 'all'}
-                            onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
-                        >
-                            <SelectTrigger className="w-full h-9">
-                                <SelectValue placeholder="All statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All statuses</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <label className="block text-[10px] font-medium text-gray-600 mb-0.5">
+                                Status
+                            </label>
+                            <Select
+                                value={localFilters.status || 'all'}
+                                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
+                            >
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                    <SelectValue placeholder="All" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="closed">Closed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                    <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                            Type
-                        </label>
-                        <Select
-                            value={localFilters.type || 'all'}
-                            onValueChange={(value) => handleFilterChange('type', value === 'all' ? undefined : value)}
-                        >
-                            <SelectTrigger className="w-full h-9">
-                                <SelectValue placeholder="All types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All types</SelectItem>
-                                <SelectItem value="single">Single Choice</SelectItem>
-                                <SelectItem value="multiple">Multiple Choice</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div>
+                            <label className="block text-[10px] font-medium text-gray-600 mb-0.5">
+                                Type
+                            </label>
+                            <Select
+                                value={localFilters.type || 'all'}
+                                onValueChange={(value) => handleFilterChange('type', value === 'all' ? undefined : value)}
+                            >
+                                <SelectTrigger className="w-full h-8 text-xs">
+                                    <SelectValue placeholder="All" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="single">Single</SelectItem>
+                                    <SelectItem value="multiple">Multiple</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -223,12 +223,6 @@ export function VoteList({
                                 ? 'No votes match your current filters.'
                                 : 'Get started by creating your first vote.'}
                         </p>
-                        {onCreateVote && (
-                            <Button onClick={onCreateVote} className="flex items-center gap-2">
-                                <Plus className="h-4 w-4" />
-                                Create Vote
-                            </Button>
-                        )}
                     </div>
                 </div>
             ) : (
@@ -262,66 +256,71 @@ export function VoteList({
 
                                 {/* Actions */}
                                 <div className="flex items-center justify-between">
-                                    <div className="flex gap-2">
-                                        {onViewVote && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => onViewVote(vote.id)}
-                                                className="flex items-center gap-1 text-xs px-2 py-1"
-                                            >
-                                                <Eye className="h-3 w-3" />
-                                                View
-                                            </Button>
-                                        )}
-
-                                        {onEditVote && vote.status === 'active' && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => onEditVote(vote)}
-                                                className="flex items-center gap-1 text-xs px-2 py-1"
-                                            >
-                                                <Edit className="h-3 w-3" />
-                                                Edit
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex gap-1">
-                                        {vote.status === 'active' && (
-                                            <>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleCloseVote(vote.id)}
-                                                    className="text-green-600 hover:text-green-700 p-1"
-                                                    title="Close vote"
-                                                >
-                                                    <CheckCircle className="h-3 w-3" />
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleCancelVote(vote.id)}
-                                                    className="text-red-600 hover:text-red-700 p-1"
-                                                    title="Cancel vote"
-                                                >
-                                                    <XCircle className="h-3 w-3" />
-                                                </Button>
-                                            </>
-                                        )}
-
+                                    {onViewVote && (
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => handleDeleteVote(vote.id)}
-                                            className="text-red-600 hover:text-red-700 p-1"
-                                            title="Delete vote"
+                                            onClick={() => onViewVote(vote.id)}
+                                            className="flex items-center gap-1 text-xs px-2 py-1"
                                         >
-                                            <Trash2 className="h-3 w-3" />
+                                            <Eye className="h-3 w-3" />
+                                            View
                                         </Button>
-                                    </div>
+                                    )}
+
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                            >
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {onEditVote && vote.status === 'active' && (
+                                                <DropdownMenuItem
+                                                    onClick={() => onEditVote(vote)}
+                                                    className="cursor-pointer"
+                                                >
+                                                    <Edit className="h-4 w-4 mr-2" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                            )}
+
+                                            {vote.status === 'active' && (
+                                                <>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleCloseVote(vote.id)}
+                                                        className="cursor-pointer text-green-600"
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                                        Close Vote
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleCancelVote(vote.id)}
+                                                        className="cursor-pointer text-orange-600"
+                                                    >
+                                                        <XCircle className="h-4 w-4 mr-2" />
+                                                        Cancel Vote
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+
+                                            {(onEditVote || vote.status === 'active') && (
+                                                <DropdownMenuSeparator />
+                                            )}
+
+                                            <DropdownMenuItem
+                                                onClick={() => handleDeleteVote(vote.id)}
+                                                className="cursor-pointer text-red-600"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             </div>
                         </div>

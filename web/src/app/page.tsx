@@ -8,7 +8,13 @@ import { UserMenu } from '@/components/auth/UserMenu';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { checkAuthStatus } from '@/store/reducers/authSlice';
 import { Button } from '@/components/ui/button';
-import { Vote, Trophy, Home as HomeIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Vote, Trophy, Home as HomeIcon, Menu } from 'lucide-react';
 
 export default function Home(): React.JSX.Element {
   const { isAuthenticated } = useAppSelector(state => state.auth);
@@ -42,12 +48,21 @@ export default function Home(): React.JSX.Element {
 
             {/* Right: Navigation + Auth */}
             <div className="flex items-center gap-2">
-              <Link href="/votes">
-                <Button variant="ghost" size="sm" className="h-8 px-2.5 flex items-center gap-1.5">
-                  <Vote className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">Votes</span>
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 px-2.5 flex items-center gap-1.5">
+                    <Menu className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <Link href="/votes">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Vote className="h-4 w-4 mr-2" />
+                      <span className="text-sm">Votes</span>
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {isAuthenticated ? <UserMenu /> : <LoginButton />}
             </div>
           </div>

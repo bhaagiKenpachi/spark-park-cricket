@@ -43,8 +43,14 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
     const [showTeams, setShowTeams] = useState(false);
 
     useEffect(() => {
-        dispatch(fetchVoteWithResultsRequest(voteId));
-        dispatch(checkUserVotedRequest(voteId));
+        // Add a small delay to allow backend to initialize vote results
+        // This prevents showing 0 results immediately after vote creation
+        const timer = setTimeout(() => {
+            dispatch(fetchVoteWithResultsRequest(voteId));
+            dispatch(checkUserVotedRequest(voteId));
+        }, 300);
+
+        return () => clearTimeout(timer);
     }, [dispatch, voteId]);
 
     useEffect(() => {

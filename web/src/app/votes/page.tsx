@@ -21,6 +21,56 @@ export default function VotesPage(): React.JSX.Element {
     const [selectedVoteId, setSelectedVoteId] = useState<string | null>(null);
 
     const handleCreateVote = () => {
+        if (!isAuthenticated) {
+            // Find the sign-in button and add a blinking red border effect
+            const signInButton = document.querySelector(
+                '[data-cy="login-button"]'
+            ) as HTMLElement;
+            if (signInButton) {
+                // Focus and scroll to the button
+                signInButton.focus();
+                signInButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Add blinking red border effect
+                let blinkCount = 0;
+                const blinkInterval = setInterval(() => {
+                    blinkCount++;
+
+                    if (blinkCount % 2 === 1) {
+                        // Red border ON
+                        signInButton.style.setProperty(
+                            'border',
+                            '2px solid red',
+                            'important'
+                        );
+                        signInButton.style.setProperty(
+                            'box-shadow',
+                            '0 0 10px rgba(255, 0, 0, 0.5)',
+                            'important'
+                        );
+                        signInButton.style.setProperty(
+                            'background-color',
+                            '#fee2e2',
+                            'important'
+                        );
+                    } else {
+                        // Red border OFF
+                        signInButton.style.removeProperty('border');
+                        signInButton.style.removeProperty('box-shadow');
+                        signInButton.style.removeProperty('background-color');
+                    }
+
+                    if (blinkCount >= 6) {
+                        clearInterval(blinkInterval);
+                        // Clean up any remaining styles
+                        signInButton.style.removeProperty('border');
+                        signInButton.style.removeProperty('box-shadow');
+                        signInButton.style.removeProperty('background-color');
+                    }
+                }, 500);
+            }
+            return;
+        }
         setSelectedVote(null);
         setViewMode('create');
     };
@@ -97,10 +147,10 @@ export default function VotesPage(): React.JSX.Element {
                             )}
                             <div>
                                 <h1 className="text-base font-bold text-gray-900">
-                                {viewMode === 'list' && 'Votes'}
-                                {viewMode === 'create' && 'Create Vote'}
-                                {viewMode === 'edit' && 'Edit Vote'}
-                                {viewMode === 'view' && 'Vote Details'}
+                                    {viewMode === 'list' && 'Votes'}
+                                    {viewMode === 'create' && 'Create Vote'}
+                                    {viewMode === 'edit' && 'Edit Vote'}
+                                    {viewMode === 'view' && 'Vote Details'}
                                 </h1>
                                 {viewMode === 'list' && (
                                     <p className="text-xs text-gray-500">Browse and participate</p>
