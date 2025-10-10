@@ -108,11 +108,11 @@ jobs:
       - name: Build and push Web Docker image
         run: |
           cd web
-          echo "🔨 Building web Docker image (production)..."
+          echo "🔨 Building web Docker image..."
           
-          # Build image with multiple tags using production Dockerfile
+          # Build image with multiple tags
           docker build \
-            --file Dockerfile.prod \
+            --file Dockerfile \
             --tag ${{ steps.image-name.outputs.web }}:dev \
             --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
             .
