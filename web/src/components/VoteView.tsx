@@ -41,6 +41,7 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
     const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showTeams, setShowTeams] = useState(false);
+    const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
     useEffect(() => {
         // Add a small delay to allow backend to initialize vote results
@@ -74,6 +75,14 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
     };
 
     const handleSubmitVote = async () => {
+        // Check if user is authenticated
+        if (!isAuthenticated) {
+            setShowAuthPrompt(true);
+            // Auto-hide after 5 seconds
+            setTimeout(() => setShowAuthPrompt(false), 5000);
+            return;
+        }
+
         if (selectedOptions.length === 0) {
             alert('Please select at least one option');
             return;
@@ -286,12 +295,20 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                                     ))}
                                 </div>
 
+                                {!isAuthenticated && showAuthPrompt && (
+                                    <div className="p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg animate-pulse">
+                                        <p className="text-sm font-medium text-yellow-800 text-center">
+                                            🔐 Please sign in to vote
+                                        </p>
+                                    </div>
+                                )}
+
                                 <Button
                                     onClick={handleSubmitVote}
                                     disabled={selectedOptions.length === 0 || isSubmitting}
                                     className="w-full"
                                 >
-                                    {isSubmitting ? 'Submitting...' : (hasVoted ? 'Update Vote' : 'Submit Vote')}
+                                    {isSubmitting ? 'Submitting...' : !isAuthenticated ? 'Sign in to Vote' : (hasVoted ? 'Update Vote' : 'Submit Vote')}
                                 </Button>
                             </div>
                         ) : hasVoted ? (

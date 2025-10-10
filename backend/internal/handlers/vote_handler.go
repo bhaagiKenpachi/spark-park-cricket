@@ -391,8 +391,20 @@ func (h *VoteHandler) HasUserVoted(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user ID from context
-	userID := r.Context().Value(contextkeys.UserIDKey).(string)
+	// Get user ID from context (optional - might be nil if not authenticated)
+	userID := ""
+	if userIDVal := r.Context().Value(contextkeys.UserIDKey); userIDVal != nil {
+		userID = userIDVal.(string)
+	}
+
+	// If no user ID (not authenticated), return false
+	if userID == "" {
+		response := map[string]interface{}{
+			"has_voted": false,
+		}
+		utils.WriteSuccess(w, response)
+		return
+	}
 
 	// Check if user has voted
 	hasVoted, err := h.voteService.HasUserVoted(r.Context(), voteID, userID)
