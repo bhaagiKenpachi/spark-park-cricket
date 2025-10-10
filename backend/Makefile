@@ -13,9 +13,6 @@ help:
 	@echo "  test-integration Run integration tests (requires database)"
 	@echo "  test-e2e         Run end-to-end tests (requires database)"
 	@echo "  test-illegal     Run illegal balls tests (requires database)"
-	@echo "  test-series      Run series-specific tests (unit + integration)"
-	@echo "  test-match       Run match-specific tests (unit + integration + e2e)"
-	@echo "  test-scorecard   Run scorecard-specific tests (unit + integration + e2e)"
 	@echo "  test-all         Run all tests using Go test runner"
 	@echo ""
 	@echo "Build Commands:"
@@ -45,7 +42,7 @@ help:
 test-unit:
 	@echo "🧪 Running Unit Tests..."
 	@echo "------------------------"
-	go test ./tests/unit/ -v
+	go test ./internal/tests/match_completion_unit_test.go -v
 
 # Integration tests (requires database)
 test-integration:

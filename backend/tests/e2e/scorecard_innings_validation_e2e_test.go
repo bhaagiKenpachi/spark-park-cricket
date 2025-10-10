@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/pkg/testutils"
+	"spark-park-cricket-backend/internal/services"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

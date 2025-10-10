@@ -47,10 +47,10 @@ func TestScorecardInningsValidation_Integration(t *testing.T) {
 	// Create authenticated context
 	ctx = context.WithValue(ctx, contextkeys.UserIDKey, testUser.ID) // nolint:staticcheck // Test context key
 
-	// Use repositories from test client
-	seriesRepo := testDB.Repositories.Series
-	matchRepo := testDB.Repositories.Match
-	scorecardRepo := testDB.Repositories.Scorecard
+	// Create repositories
+	seriesRepo := supabase.NewSeriesRepository(testDB.Supabase)
+	matchRepo := supabase.NewMatchRepository(testDB.Supabase)
+	scorecardRepo := supabase.NewScorecardRepository(testDB.Supabase)
 
 	// Create services
 	seriesService := services.NewSeriesService(seriesRepo)

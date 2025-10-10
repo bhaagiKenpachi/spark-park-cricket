@@ -16,6 +16,8 @@ on:
       - main
     paths:
       - '.github/workflows/deploy-prod.yml'
+  # Trigger only on workflow file changes to make it visible
+  # Remove this trigger after first appearance for manual-only deployments
 
 env:
   REGISTRY: ghcr.io

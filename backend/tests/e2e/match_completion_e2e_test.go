@@ -5,15 +5,106 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"spark-park-cricket-backend/internal/config"
+	"spark-park-cricket-backend/internal/database"
+	"spark-park-cricket-backend/internal/handlers"
 	"spark-park-cricket-backend/internal/models"
-	"spark-park-cricket-backend/pkg/testutils"
+	"spark-park-cricket-backend/internal/services"
 )
+
+func setupE2ETestServer(t *testing.T) (*httptest.Server, *database.Client) {
+	// Load test configuration with testing_db schema
+	cfg := config.LoadTestConfig()
+
+	// Initialize test database
+	db, err := database.NewTestClient(cfg)
+	require.NoError(t, err)
+
+	// Setup test schema
+	err = database.SetupTestSchema(cfg)
+	require.NoError(t, err)
+
+	// Create service container
+	serviceContainer := services.NewContainer(db.Repositories)
+
+	// Create handlers
+	seriesHandler := handlers.NewSeriesHandler(serviceContainer.Series)
+	matchHandler := handlers.NewMatchHandler(serviceContainer.Match)
+	scorecardHandler := handlers.NewScorecardHandler(serviceContainer.Scorecard)
+
+	// Create router and register all routes
+	router := http.NewServeMux()
+
+	// Series routes
+	router.HandleFunc("/api/v1/series", seriesHandler.CreateSeries)
+	router.HandleFunc("/api/v1/series/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if len(path) > len("/api/v1/series/") {
+			_ = path[len("/api/v1/series/"):] // seriesID
+			if r.Method == "GET" {
+				seriesHandler.GetSeries(w, r)
+			}
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
+	// Match routes
+	router.HandleFunc("/api/v1/matches", matchHandler.CreateMatch)
+	router.HandleFunc("/api/v1/matches/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if len(path) > len("/api/v1/matches/") {
+			_ = path[len("/api/v1/matches/"):] // matchID
+			if r.Method == "GET" {
+				matchHandler.GetMatch(w, r)
+			}
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
+	// Scorecard routes
+	router.HandleFunc("/api/v1/scorecard/ball", scorecardHandler.AddBall)
+	router.HandleFunc("/api/v1/scorecard/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if len(path) > len("/api/v1/scorecard/") {
+			matchID := path[len("/api/v1/scorecard/"):]
+			if r.Method == "GET" {
+				// Create a custom handler that extracts match_id from URL
+				scorecard, err := serviceContainer.Scorecard.GetScorecard(r.Context(), matchID)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"data": scorecard,
+				})
+			}
+		} else {
+			http.NotFound(w, r)
+		}
+	})
+
+	// Health check
+	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+	})
+
+	// Create test server
+	server := httptest.NewServer(router)
+
+	return server, db
+}
 
 func TestCompleteMatchFlow_TargetReached_E2E(t *testing.T) {
 	// Setup with authentication
@@ -562,13 +653,13 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
-		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeZero, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
+		{MatchID: matchID, InningsNumber: 1, BallType: models.BallTypeGood, RunType: models.RunTypeOne, IsWicket: false, Byes: 0},
 	}
 
 	for _, ballReq := range firstInningsBalls {
@@ -588,14 +679,14 @@ func TestCompleteMatchFlow_AllOversCompleted_E2E(t *testing.T) {
 		resp.Body.Close()
 	}
 
-	// Step 4: Add 12 balls to second innings to complete all overs (score 0 runs so target is never reached)
+	// Step 4: Add 12 balls to second innings to complete all overs
 	secondInningsBalls := make([]models.BallEventRequest, 12)
 	for i := 0; i < 12; i++ {
 		secondInningsBalls[i] = models.BallEventRequest{
 			MatchID:       matchID,
 			InningsNumber: 2,
 			BallType:      models.BallTypeGood,
-			RunType:       models.RunTypeZero,
+			RunType:       models.RunTypeOne,
 			IsWicket:      false,
 			Byes:          0,
 		}

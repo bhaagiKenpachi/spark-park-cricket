@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS dev_v1.innings (
 );
 
 -- ============================================
--- OVERS TABLE
+-- OVERS TABLE (Updated for scorecard)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS dev_v1.overs (
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS dev_v1.overs (
 );
 
 -- ============================================
--- BALLS TABLE
+-- BALLS TABLE (Updated for scorecard)
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS dev_v1.balls (
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS dev_v1.balls (
     ball_type VARCHAR(20) NOT NULL CHECK (ball_type IN ('good', 'wide', 'no_ball', 'dead_ball')),
     run_type VARCHAR(2) NOT NULL CHECK (run_type IN ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'NB', 'WD', 'LB', 'WC')),
     runs INTEGER DEFAULT 0 CHECK (runs >= 0),
-    byes INTEGER DEFAULT 0 CHECK (byes >= 0 AND byes <= 6),
+    byes INTEGER DEFAULT 0 CHECK (byes >= 0 AND byes <= 6), -- Additional runs from byes
     is_wicket BOOLEAN DEFAULT FALSE,
     wicket_type VARCHAR(20) CHECK (wicket_type IN ('bowled', 'caught', 'lbw', 'run_out', 'stumped', 'hit_wicket')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS dev_v1.balls (
 );
 
 -- ============================================
--- PERFORMANCE INDEXES
+-- INDEXES FOR PERFORMANCE
 -- ============================================
 
 -- Series indexes
@@ -159,7 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_balls_run_type ON dev_v1.balls(run_type);
 CREATE INDEX IF NOT EXISTS idx_balls_is_wicket ON dev_v1.balls(is_wicket);
 
 -- ============================================
--- DOCUMENTATION AND COMMENTS
+-- COMMENTS FOR DOCUMENTATION
 -- ============================================
 
 -- Table comments
@@ -204,7 +204,7 @@ COMMENT ON COLUMN dev_v1.balls.wicket_type IS 'Type of wicket: bowled, caught, l
 -- VERIFICATION
 -- ============================================
 
-SELECT 'Complete schema created successfully!' as status;
+SELECT 'Scorecard schema created successfully!' as status;
 SELECT 'Tables created:' as info;
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema = 'dev_v1' 

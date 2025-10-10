@@ -13,20 +13,6 @@
 # testing
 /coverage
 
-# Cypress test artifacts
-cypress/screenshots/
-cypress/videos/
-cypress/downloads/
-
-# Jest test artifacts
-test-results/
-junit.xml
-*.lcov
-
-# Test logs
-*.test.log
-test.log
-
 # next.js
 /.next/
 /out/
