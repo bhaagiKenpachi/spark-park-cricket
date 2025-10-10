@@ -150,54 +150,9 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          
-          # Verify secrets are set
-          if [ -z "${{ secrets.DEV_VM_HOST }}" ]; then
-            echo "❌ ERROR: DEV_VM_HOST secret is not set!"
-            exit 1
-          fi
-          
-          if [ -z "${{ secrets.DEV_VM_USER }}" ]; then
-            echo "❌ ERROR: DEV_VM_USER secret is not set!"
-            exit 1
-          fi
-          
-          if [ -z "${{ secrets.DEV_VM_SSH_KEY }}" ]; then
-            echo "❌ ERROR: DEV_VM_SSH_KEY secret is not set!"
-            exit 1
-          fi
-          
-          echo "✅ All required secrets are set"
-          echo "📝 Setting up SSH key for host: ${{ secrets.DEV_VM_HOST }}"
-          
-          # Create SSH key file
           echo "${{ secrets.DEV_VM_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
-          # Create SSH config with increased timeouts
-          cat > ~/.ssh/config << 'SSHCONFIG'
-          Host *
-            StrictHostKeyChecking no
-            UserKnownHostsFile=/dev/null
-            LogLevel ERROR
-            ConnectTimeout 120
-            ServerAliveInterval 60
-            ServerAliveCountMax 10
-            TCPKeepAlive yes
-          SSHCONFIG
-          chmod 600 ~/.ssh/config
-          
-          echo "✅ SSH setup completed"
-
-      - name: Test SSH connection
-        run: |
-          echo "🔍 Testing SSH connection to ${{ secrets.DEV_VM_HOST }}..."
-          echo "⏱️  Waiting for SSH daemon (may take up to 2 minutes)..."
-          
-          # Test connection with extended timeout
-          ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} \
-            "echo '✅ SSH connection successful!' && whoami && pwd"
+          ssh-keyscan -H ${{ secrets.DEV_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create deployment directory on VM
         run: |
