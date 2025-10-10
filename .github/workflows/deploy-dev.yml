@@ -132,6 +132,7 @@ jobs:
 
   deploy:
     name: Deploy to Dev VM
+    environment: dev
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: [build-backend, build-web]
     if: ${{ always() && (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') && (needs.build-web.result == 'success' || needs.build-web.result == 'skipped') }}
