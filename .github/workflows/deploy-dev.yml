@@ -77,7 +77,7 @@ jobs:
 
   build-web:
     name: Build Web Image
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux]
     if: ${{ github.event.inputs.skip_build != 'true' }}
     permissions:
       contents: read
@@ -93,35 +93,41 @@ jobs:
           echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
           echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Verify Docker environment
+        run: |
+          echo "🐳 Verifying Docker environment..."
+          echo "Docker version: $(docker --version)"
+          echo "Docker Compose version: $(docker compose version)"
+          echo "✅ Docker environment ready!"
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.image-name.outputs.web }}
-          tags: |
-            type=raw,value=dev
-            type=sha,prefix=dev-
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build and push Web Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./web
-          file: ./web/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ steps.image-name.outputs.web }}:buildcache
-          cache-to: type=registry,ref=${{ steps.image-name.outputs.web }}:buildcache,mode=max
+        run: |
+          cd web
+          echo "🔨 Building web Docker image..."
+          
+          # Build image with multiple tags
+          docker build \
+            --file Dockerfile \
+            --tag ${{ steps.image-name.outputs.web }}:dev \
+            --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
+            .
+          
+          echo "📤 Pushing web images to GHCR..."
+          docker push ${{ steps.image-name.outputs.web }}:dev
+          docker push ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD)
+          
+          echo "✅ Web image built and pushed successfully!"
+
+      - name: Clean up Docker
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker resources..."
+          docker system prune -f || true
+          echo "✅ Cleanup completed"
 
   deploy:
     name: Deploy to Dev VM
