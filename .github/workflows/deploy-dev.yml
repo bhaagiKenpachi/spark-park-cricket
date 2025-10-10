@@ -106,13 +106,18 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build and push Web Docker image
+        env:
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: |
           cd web
           echo "🔨 Building web Docker image..."
+          echo "📝 Using API URL: ${FRONTEND_URL}/api/v1"
           
-          # Build image with multiple tags
+          # Build image with build args for Next.js public variables
           docker build \
             --file Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=${FRONTEND_URL}/api/v1 \
+            --build-arg NEXT_PUBLIC_GRAPHQL_URL=${FRONTEND_URL}/api/v1/graphql \
             --tag ${{ steps.image-name.outputs.web }}:dev \
             --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
             .
