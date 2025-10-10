@@ -27,9 +27,7 @@ services:
 
   # Go Backend API
   backend:
-    build:
-      context: ../../../backend
-      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-spark-cricket-backend-prod}
     container_name: cricket-backend-prod
     ports:
       - "8080:8080"
@@ -58,9 +56,7 @@ services:
 
   # Next.js Frontend
   web:
-    build:
-      context: ../../../web
-      dockerfile: Dockerfile
+    image: ${WEB_IMAGE:-spark-cricket-frontend-prod}
     container_name: cricket-frontend-prod
     ports:
       - "3000:3000"
