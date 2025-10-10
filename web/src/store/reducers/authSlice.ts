@@ -94,6 +94,20 @@ export const initializeAuth = createAsyncThunk(
   }
 );
 
+export const updateUserName = createAsyncThunk(
+  'auth/updateUserName',
+  async (name: string, { rejectWithValue }) => {
+    try {
+      const response = await authService.updateUserName(name);
+      return response.data;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update user name';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -208,6 +222,23 @@ const authSlice = createSlice({
         state.error = action.payload as string;
         state.isInitialized = true;
         authService.clearAuthState();
+      })
+      // Update User Name
+      .addCase(updateUserName.pending, state => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserName.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.user = action.payload;
+          authService.setAuthState(true, action.payload);
+        }
+        state.error = null;
+      })
+      .addCase(updateUserName.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });

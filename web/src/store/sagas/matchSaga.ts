@@ -20,6 +20,9 @@ import {
   deleteMatchRequest,
   deleteMatchSuccess,
   deleteMatchFailure,
+  startMatchRequest,
+  startMatchSuccess,
+  startMatchFailure,
 } from '../reducers/matchSlice';
 import { ApiService, ApiError, ApiResponse } from '@/services/api';
 import { Match } from '../reducers/matchSlice';
@@ -117,10 +120,30 @@ export function* deleteMatchSaga(
   }
 }
 
+export function* startMatchSaga(
+  action: ReturnType<typeof startMatchRequest>
+): Generator<CallEffect | PutEffect, void, ApiResponse<{ message: string; match_id: string }>> {
+  try {
+    const apiService = new ApiService();
+    yield call(
+      apiService.startMatch.bind(apiService),
+      action.payload
+    );
+
+    // Just dispatch success with the match ID - the reducer will handle the status update
+    yield put(startMatchSuccess({ id: action.payload, status: 'live' } as Match));
+  } catch (error) {
+    const errorMessage =
+      error instanceof ApiError ? error.message : 'Failed to start match';
+    yield put(startMatchFailure(errorMessage));
+  }
+}
+
 export function* matchSaga() {
   yield takeLatest(fetchMatchesRequest.type, fetchMatchesSaga);
   yield takeLatest(fetchMatchesBySeriesRequest.type, fetchMatchesBySeriesSaga);
   yield takeEvery(createMatchRequest.type, createMatchSaga);
   yield takeEvery(updateMatchRequest.type, updateMatchSaga);
   yield takeEvery(deleteMatchRequest.type, deleteMatchSaga);
+  yield takeEvery(startMatchRequest.type, startMatchSaga);
 }

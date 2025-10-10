@@ -21,6 +21,19 @@ type Metrics struct {
 	MatchCreationsTotal  *prometheus.CounterVec
 	SeriesCreationsTotal *prometheus.CounterVec
 
+	// Voting metrics
+	VoteOperationsTotal   *prometheus.CounterVec
+	VoteOperationDuration *prometheus.HistogramVec
+	VoteCastsTotal        *prometheus.CounterVec
+	VoteCastDuration      *prometheus.HistogramVec
+	ActiveVotesGauge      *prometheus.GaugeVec
+
+	// Vote Team metrics
+	TeamOperationsTotal   *prometheus.CounterVec
+	TeamOperationDuration *prometheus.HistogramVec
+	TeamPlayerOpsTotal    *prometheus.CounterVec
+	ActiveTeamsGauge      *prometheus.GaugeVec
+
 	// Database metrics
 	DatabaseConnections   *prometheus.GaugeVec
 	DatabaseQueryDuration *prometheus.HistogramVec
@@ -35,6 +48,8 @@ type Metrics struct {
 	CacheMissesTotal       *prometheus.CounterVec
 	CacheOperationsTotal   *prometheus.CounterVec
 	CacheOperationDuration *prometheus.HistogramVec
+	CacheKeySize           *prometheus.HistogramVec
+	CacheErrorsTotal       *prometheus.CounterVec
 
 	// System metrics
 	MemoryUsage     *prometheus.GaugeVec
@@ -109,6 +124,83 @@ func NewMetrics() *Metrics {
 					Help: "Total number of series creations",
 				},
 				[]string{"status"},
+			),
+
+			// Voting metrics
+			VoteOperationsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "voting_operations_total",
+					Help: "Total number of voting operations",
+				},
+				[]string{"operation", "vote_type", "status"},
+			),
+
+			VoteOperationDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "voting_operation_duration_seconds",
+					Help:    "Voting operation duration in seconds",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0},
+				},
+				[]string{"operation", "vote_type"},
+			),
+
+			VoteCastsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "vote_casts_total",
+					Help: "Total number of votes cast",
+				},
+				[]string{"vote_id", "vote_type", "is_update"},
+			),
+
+			VoteCastDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "vote_cast_duration_seconds",
+					Help:    "Time taken to cast a vote",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0},
+				},
+				[]string{"vote_type"},
+			),
+
+			ActiveVotesGauge: promauto.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "active_votes_total",
+					Help: "Current number of active votes by type",
+				},
+				[]string{"vote_type"},
+			),
+
+			// Vote Team metrics
+			TeamOperationsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "vote_team_operations_total",
+					Help: "Total number of vote team operations",
+				},
+				[]string{"operation", "team_letter", "status"},
+			),
+
+			TeamOperationDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "vote_team_operation_duration_seconds",
+					Help:    "Vote team operation duration in seconds",
+					Buckets: []float64{0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0},
+				},
+				[]string{"operation", "team_letter"},
+			),
+
+			TeamPlayerOpsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "team_player_operations_total",
+					Help: "Total number of team player add/remove operations",
+				},
+				[]string{"operation", "team_id", "status"},
+			),
+
+			ActiveTeamsGauge: promauto.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "active_teams_total",
+					Help: "Current number of active teams by vote",
+				},
+				[]string{"vote_id"},
 			),
 
 			// Database metrics
@@ -187,6 +279,23 @@ func NewMetrics() *Metrics {
 					Buckets: []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0},
 				},
 				[]string{"operation", "cache_type"},
+			),
+
+			CacheKeySize: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "cache_key_size_bytes",
+					Help:    "Size of cached data in bytes",
+					Buckets: []float64{100, 500, 1000, 5000, 10000, 50000, 100000},
+				},
+				[]string{"key_pattern"},
+			),
+
+			CacheErrorsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "cache_errors_total",
+					Help: "Total number of cache errors",
+				},
+				[]string{"operation", "error_type"},
 			),
 
 			// System metrics
@@ -278,8 +387,55 @@ func (m *Metrics) RecordCacheOperation(operation, cacheType string, duration tim
 	m.CacheOperationDuration.WithLabelValues(operation, cacheType).Observe(duration.Seconds())
 }
 
+// RecordCacheKeySize records the size of cached data
+func (m *Metrics) RecordCacheKeySize(keyPattern string, size int) {
+	m.CacheKeySize.WithLabelValues(keyPattern).Observe(float64(size))
+}
+
+// RecordCacheError records cache error metrics
+func (m *Metrics) RecordCacheError(operation, errorType string) {
+	m.CacheErrorsTotal.WithLabelValues(operation, errorType).Inc()
+}
+
 // UpdateSystemMetrics updates system metrics
 func (m *Metrics) UpdateSystemMetrics() {
 	// This would typically be called periodically to update system metrics
 	// Implementation depends on your specific needs
+}
+
+// RecordVoteOperation records voting operation metrics
+func (m *Metrics) RecordVoteOperation(operation, voteType, status string, duration time.Duration) {
+	m.VoteOperationsTotal.WithLabelValues(operation, voteType, status).Inc()
+	m.VoteOperationDuration.WithLabelValues(operation, voteType).Observe(duration.Seconds())
+}
+
+// RecordVoteCast records vote cast metrics
+func (m *Metrics) RecordVoteCast(voteID, voteType string, isUpdate bool, duration time.Duration) {
+	isUpdateStr := "false"
+	if isUpdate {
+		isUpdateStr = "true"
+	}
+	m.VoteCastsTotal.WithLabelValues(voteID, voteType, isUpdateStr).Inc()
+	m.VoteCastDuration.WithLabelValues(voteType).Observe(duration.Seconds())
+}
+
+// UpdateActiveVotesCount updates the active votes gauge
+func (m *Metrics) UpdateActiveVotesCount(voteType string, count float64) {
+	m.ActiveVotesGauge.WithLabelValues(voteType).Set(count)
+}
+
+// RecordTeamOperation records team operation metrics
+func (m *Metrics) RecordTeamOperation(operation, teamLetter, status string, duration time.Duration) {
+	m.TeamOperationsTotal.WithLabelValues(operation, teamLetter, status).Inc()
+	m.TeamOperationDuration.WithLabelValues(operation, teamLetter).Observe(duration.Seconds())
+}
+
+// RecordTeamPlayerOperation records team player add/remove metrics
+func (m *Metrics) RecordTeamPlayerOperation(operation, teamID, status string) {
+	m.TeamPlayerOpsTotal.WithLabelValues(operation, teamID, status).Inc()
+}
+
+// UpdateActiveTeamsCount updates the active teams gauge for a vote
+func (m *Metrics) UpdateActiveTeamsCount(voteID string, count float64) {
+	m.ActiveTeamsGauge.WithLabelValues(voteID).Set(count)
 }

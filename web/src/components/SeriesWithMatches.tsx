@@ -5,8 +5,10 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchMatchesBySeriesRequest,
   deleteMatchRequest,
+  startMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
+import { useCompletedMatchesCache } from '@/hooks/useCompletedMatchesCache';
 import { fetchScorecardRequest } from '@/store/reducers/scorecardSlice';
 import { MatchForm } from './MatchForm';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,11 @@ import {
   Calendar,
   Play,
   MoreVertical,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Trophy,
 } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
@@ -48,6 +55,8 @@ interface SeriesWithMatchesProps {
   onViewScorecard?: (matchId: string, seriesCreatedBy: string) => void;
   currentUser?: User | null;
   isAuthenticated: boolean;
+  expanded?: boolean;
+  onToggleExpanded?: (expanded: boolean) => void;
 }
 
 export function SeriesWithMatches({
@@ -57,6 +66,8 @@ export function SeriesWithMatches({
   onViewScorecard,
   currentUser,
   isAuthenticated,
+  expanded = false,
+  onToggleExpanded,
 }: SeriesWithMatchesProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const {
@@ -65,11 +76,14 @@ export function SeriesWithMatches({
     error: matchesError,
   } = useAppSelector(state => state.match);
   const { scorecard } = useAppSelector(state => state.scorecard);
+  const { getCachedData, setCachedData, clearExpired, isCached, clearMatch } = useCompletedMatchesCache();
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
-  const [expanded, setExpanded] = useState(false);
   const [scorecardData, setScorecardData] = useState<{
     [matchId: string]: ScorecardData;
+  }>({});
+  const [expandedMatchDetails, setExpandedMatchDetails] = useState<{
+    [matchId: string]: boolean;
   }>({});
 
   // Format date to human readable format
@@ -86,9 +100,22 @@ export function SeriesWithMatches({
     }
   };
 
-  // Fetch scorecard data for completed matches
+  // Fetch scorecard data for completed matches with caching
   const fetchMatchScorecard = useCallback(
     async (matchId: string) => {
+      // Check if data exists in cache and is not expired
+      const cachedData = getCachedData(matchId);
+
+      if (cachedData) {
+        // Use cached data - cast to ScorecardData since we know it's the right type
+        setScorecardData(prev => ({
+          ...prev,
+          [matchId]: cachedData as ScorecardData,
+        }));
+        return;
+      }
+
+      // Check if data already exists in local state
       if (!scorecardData[matchId]) {
         try {
           dispatch(fetchScorecardRequest(matchId));
@@ -97,7 +124,7 @@ export function SeriesWithMatches({
         }
       }
     },
-    [dispatch, scorecardData]
+    [dispatch, scorecardData, getCachedData]
   );
 
   // Filter matches for this series
@@ -116,30 +143,47 @@ export function SeriesWithMatches({
     }
   }, [dispatch, expanded, series.id]);
 
+  // Clear expired cache entries on component mount
+  useEffect(() => {
+    clearExpired();
+  }, [clearExpired]);
+
   // Fetch scorecard data for completed matches
   useEffect(() => {
     if (seriesMatches.length > 0) {
       seriesMatches.forEach(match => {
-        if (match.status === 'completed' && !scorecardData[match.id]) {
+        if (match.status === 'completed' && !scorecardData[match.id] && !isCached(match.id)) {
           fetchMatchScorecard(match.id);
         }
       });
     }
-  }, [seriesMatches, scorecardData, fetchMatchScorecard]);
+  }, [seriesMatches, scorecardData, fetchMatchScorecard, isCached]);
 
-  // Update scorecard data when scorecard changes
+  // Update scorecard data when scorecard changes and cache it
   useEffect(() => {
     if (scorecard && scorecard.match_id) {
       setScorecardData(prev => ({
         ...prev,
         [scorecard.match_id]: scorecard,
       }));
+
+      // Cache the scorecard data for completed matches
+      const match = seriesMatches.find(m => m.id === scorecard.match_id);
+      if (match && match.status === 'completed') {
+        setCachedData(scorecard.match_id, scorecard, 10 * 60 * 1000); // 10 minutes for completed matches
+      }
     }
-  }, [scorecard]);
+  }, [scorecard, dispatch, seriesMatches, setCachedData]);
 
   const handleDeleteMatch = (id: string) => {
     if (window.confirm('Are you sure you want to delete this match?')) {
       dispatch(deleteMatchRequest(id));
+    }
+  };
+
+  const handleStartMatch = (id: string) => {
+    if (window.confirm('Are you sure you want to start this match?')) {
+      dispatch(startMatchRequest(id));
     }
   };
 
@@ -157,6 +201,54 @@ export function SeriesWithMatches({
   const handleMatchFormCancel = () => {
     setShowMatchForm(false);
     setEditingMatch(undefined);
+  };
+
+  // Smart refresh that respects cache
+  const handleSmartRefresh = () => {
+    console.log('🔄 Smart Refresh - Checking cache for completed matches');
+
+    // Always refresh matches list (this is lightweight)
+    dispatch(fetchMatchesBySeriesRequest(series.id));
+
+    // Only fetch scorecard data for completed matches that aren't cached
+    if (seriesMatches.length > 0) {
+      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
+      const cachedMatches = completedMatches.filter(match => isCached(match.id));
+      const uncachedMatches = completedMatches.filter(match => !isCached(match.id));
+
+      console.log(`📊 Cache Status: ${cachedMatches.length} cached, ${uncachedMatches.length} need API call`);
+
+      uncachedMatches.forEach(match => {
+        console.log(`🌐 API Call needed for match ${match.id} (${match.match_number})`);
+        fetchMatchScorecard(match.id);
+      });
+
+      if (cachedMatches.length > 0) {
+        console.log(`✅ Using cache for matches: ${cachedMatches.map(m => m.match_number).join(', ')}`);
+      }
+    }
+  };
+
+  // Force refresh that bypasses cache
+  const handleForceRefresh = () => {
+    console.log('🔄 Force Refresh - Bypassing cache for all completed matches');
+
+    // Always refresh matches list
+    dispatch(fetchMatchesBySeriesRequest(series.id));
+
+    // Force fetch scorecard data for all completed matches (bypass cache)
+    if (seriesMatches.length > 0) {
+      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
+      console.log(`🌐 Force API calls for ${completedMatches.length} completed matches`);
+
+      completedMatches.forEach(match => {
+        console.log(`🔄 Force refreshing match ${match.id} (${match.match_number})`);
+        // Clear cache for this match first
+        clearMatch(match.id);
+        // Then fetch fresh data
+        dispatch(fetchScorecardRequest(match.id));
+      });
+    }
   };
 
   if (showMatchForm) {
@@ -193,36 +285,64 @@ export function SeriesWithMatches({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setExpanded(!expanded)}
+              onClick={() => onToggleExpanded?.(!expanded)}
               className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
             >
               {expanded ? 'Hide Matches' : 'Show Matches'}
             </Button>
             {isOwner && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="hover:bg-gray-100"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEditSeries(series)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Series
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDeleteSeries(series.id)}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Series
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-gray-100"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {/* Series management options - at the top */}
+                {isOwner && (
+                  <>
+                    <DropdownMenuItem onClick={() => onEditSeries(series)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Series
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onDeleteSeries(series.id)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Series
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {/* Cache refresh options - at the bottom, only show when matches are expanded */}
+                {expanded && (
+                  <>
+                    <div className="border-t border-gray-200 my-1"></div>
+                    <DropdownMenuItem
+                      onClick={handleSmartRefresh}
+                      disabled={matchesLoading}
+                      data-cy="refresh-matches-button"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
+                      Smart Refresh (Cache)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleForceRefresh}
+                      disabled={matchesLoading}
+                      data-cy="force-refresh-button"
+                      className="text-orange-600 focus:text-orange-600"
+                    >
+                      <RotateCcw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
+                      Force Refresh (No Cache)
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
             )}
           </div>
         </div>
@@ -272,15 +392,12 @@ export function SeriesWithMatches({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => dispatch(fetchMatchesRequest())}
+                  onClick={handleSmartRefresh}
                   disabled={matchesLoading}
-                  data-cy="refresh-matches-button"
-                  title="Refresh"
-                  className="hover:bg-gray-50"
+                  title="Refresh Matches"
+                  className="border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
-                  <RefreshCw
-                    className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`}
-                  />
+                  <RefreshCw className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`} />
                 </Button>
                 {isOwner && (
                   <Button
@@ -334,21 +451,21 @@ export function SeriesWithMatches({
                     key={match.id || `match-${index}`}
                     className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div
-                          className="space-y-4 cursor-pointer flex-1 group"
+                          className="space-y-5 cursor-pointer flex-1 group"
                           onClick={() =>
                             onViewScorecard?.(match.id, series.created_by || '')
                           }
                         >
                           {/* Match Header */}
                           <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-xl">
                                 Match #{match.match_number}
                               </h4>
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm text-gray-600 mt-1">
                                 {new Date(match.date).toLocaleDateString(
                                   'en-US',
                                   {
@@ -360,73 +477,143 @@ export function SeriesWithMatches({
                                 )}
                               </p>
                             </div>
-                            <Badge
-                              variant={
-                                match.status === 'live'
-                                  ? 'default'
-                                  : match.status === 'completed'
-                                    ? 'secondary'
-                                    : 'outline'
-                              }
-                              className={
-                                match.status === 'live'
-                                  ? 'bg-green-500 text-white border-green-500 font-semibold'
-                                  : match.status === 'completed'
-                                    ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold'
-                                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold'
-                              }
+                            <div className="ml-4">
+                              <Badge
+                                variant={
+                                  match.status === 'live'
+                                    ? 'default'
+                                    : match.status === 'completed'
+                                      ? 'secondary'
+                                      : match.status === 'not_started'
+                                        ? 'outline'
+                                        : 'outline'
+                                }
+                                className={
+                                  match.status === 'live'
+                                    ? 'bg-green-500 text-white border-green-500 font-semibold px-3 py-1'
+                                    : match.status === 'completed'
+                                      ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold px-3 py-1'
+                                      : match.status === 'not_started'
+                                        ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold px-3 py-1'
+                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold px-3 py-1'
+                                }
+                              >
+                                {match.status === 'not_started' ? 'NOT STARTED' : match.status.toUpperCase()}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Match Quick Info */}
+                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-5 border border-blue-100">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Teams</span>
+                                <p className="text-lg font-bold text-blue-900">
+                                  {match.team_a_player_count}v{match.team_b_player_count}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Format</span>
+                                <p className="text-lg font-bold text-purple-900">
+                                  {match.total_overs} Over{match.total_overs !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Show More Info Button */}
+                          <div className="mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedMatchDetails(prev => ({
+                                  ...prev,
+                                  [match.id]: !prev[match.id]
+                                }));
+                              }}
+                              className="w-full h-10 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-colors"
                             >
-                              {match.status.toUpperCase()}
-                            </Badge>
+                              {expandedMatchDetails[match.id] ? (
+                                <>
+                                  <ChevronUp className="h-4 w-4 mr-2" />
+                                  Hide Details
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-4 w-4 mr-2" />
+                                  Show More Info
+                                </>
+                              )}
+                            </Button>
                           </div>
 
-                          {/* Match Details Grid */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Teams Info */}
-                            <div className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Teams
-                                </span>
-                              </div>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {match.team_a_player_count} vs{' '}
-                                {match.team_b_player_count} players
-                              </p>
-                            </div>
-
-                            {/* Match Format */}
-                            <div className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  Format
-                                </span>
-                              </div>
-                              <p className="text-sm font-semibold text-gray-900">
-                                {match.total_overs} overs
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Toss Information */}
-                          <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                          {/* Expandable Details */}
+                          {expandedMatchDetails[match.id] && (
+                            <div className="space-y-4 mt-4">{/* Toss Information */}
+                          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
                             <div className="flex items-center space-x-2 mb-2">
-                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                              <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">
+                              <Trophy className="h-4 w-4 text-orange-600" />
+                              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
                                 Toss Result
                               </span>
                             </div>
-                            <p className="text-sm font-semibold text-blue-900">
-                              Team {match.toss_winner} won the toss and chose to{' '}
-                              {match.toss_type === 'H'
-                                ? 'bat first'
-                                : 'bowl first'}
+                            <p className="text-sm font-medium text-orange-900">
+                              Team {match.toss_winner} won and chose to{' '}
+                              {match.toss_type === 'H' ? 'bat first' : 'bowl first'}
                             </p>
                           </div>
 
-                          {/* Match Completion Summary */}
+                          {/* Match Timing Information */}
+                          {(match.start_time || match.end_time) && (
+                            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Clock className="h-4 w-4 text-green-600" />
+                                <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                  Match Timing
+                                </span>
+                              </div>
+                              <div className="space-y-1 text-sm">
+                                {match.start_time && (
+                                  <p className="text-green-800">
+                                    <span className="font-semibold">Started:</span>{' '}
+                                    {new Date(match.start_time).toLocaleString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                )}
+                                {match.end_time && (
+                                  <p className="text-green-800">
+                                    <span className="font-semibold">Ended:</span>{' '}
+                                    {new Date(match.end_time).toLocaleString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                )}
+                                {match.start_time && match.end_time && (
+                                  <p className="text-green-900 font-semibold">
+                                    Duration: {(() => {
+                                      const start = new Date(match.start_time);
+                                      const end = new Date(match.end_time);
+                                      const duration = end.getTime() - start.getTime();
+                                      const hours = Math.floor(duration / (1000 * 60 * 60));
+                                      const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+                                      return `${hours}h ${minutes}m`;
+                                    })()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Match Result - Only for Completed Matches */}
                           {match.status === 'completed' &&
                             (() => {
                               const matchScorecard = scorecardData[match.id];
@@ -456,36 +643,33 @@ export function SeriesWithMatches({
                                   );
 
                                   return (
-                                    <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 shadow-sm">
                                       <div className="flex items-center space-x-2 mb-3">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                        <Trophy className="h-5 w-5 text-green-600" />
+                                        <span className="text-sm font-bold text-green-700 uppercase tracking-wide">
                                           Match Result
                                         </span>
                                       </div>
-                                      <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-sm font-medium text-gray-700">
+                                      <div className="space-y-3">
+                                        <div className="bg-white rounded-md p-3 flex justify-between items-center">
+                                          <span className="text-base font-semibold text-gray-800">
                                             {matchScorecard.team_a}
                                           </span>
-                                          <span className="text-sm font-bold text-gray-900">
-                                            {teamARuns}/
-                                            {teamAInnings.total_wickets}
+                                          <span className="text-lg font-bold text-blue-900">
+                                            {teamARuns}/{teamAInnings.total_wickets}
                                           </span>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-sm font-medium text-gray-700">
+                                        <div className="bg-white rounded-md p-3 flex justify-between items-center">
+                                          <span className="text-base font-semibold text-gray-800">
                                             {matchScorecard.team_b}
                                           </span>
-                                          <span className="text-sm font-bold text-gray-900">
-                                            {teamBRuns}/
-                                            {teamBInnings.total_wickets}
+                                          <span className="text-lg font-bold text-purple-900">
+                                            {teamBRuns}/{teamBInnings.total_wickets}
                                           </span>
                                         </div>
-                                        <div className="pt-2 border-t border-green-200">
-                                          <p className="text-sm font-semibold text-green-800 text-center">
-                                            {winner} won by {margin} run
-                                            {margin !== 1 ? 's' : ''}
+                                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-md p-3">
+                                          <p className="text-base font-bold text-green-800 text-center">
+                                            🏆 {winner} won by {margin} run{margin !== 1 ? 's' : ''}
                                           </p>
                                         </div>
                                       </div>
@@ -498,17 +682,19 @@ export function SeriesWithMatches({
                               return (
                                 <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                                   <div className="flex items-center space-x-2 mb-2">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <span className="text-xs font-medium text-green-600 uppercase tracking-wide">
+                                    <Trophy className="h-4 w-4 text-green-600" />
+                                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
                                       Match Result
                                     </span>
                                   </div>
-                                  <p className="text-sm font-semibold text-green-800">
+                                  <p className="text-sm font-medium text-green-800">
                                     Match completed - Loading scores...
                                   </p>
                                 </div>
                               );
                             })()}
+                            </div>
+                          )}
                         </div>
 
                         {/* Match Actions Dropdown */}
@@ -536,6 +722,15 @@ export function SeriesWithMatches({
                             </DropdownMenuItem>
                             {isOwner && (
                               <>
+                                {match.status === 'not_started' && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleStartMatch(match.id)}
+                                    className="text-green-600 focus:text-green-600"
+                                  >
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Start Match
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() => handleEditMatch(match)}
                                 >

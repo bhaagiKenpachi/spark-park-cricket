@@ -31,7 +31,7 @@ func NewMatchStateService(
 	}
 }
 
-// StartMatch starts a match (changes status from scheduled to live)
+// StartMatch starts a match (changes status from not_started to live)
 func (s *MatchStateService) StartMatch(ctx context.Context, matchID string) (*models.Match, error) {
 	if matchID == "" {
 		return nil, fmt.Errorf("match ID is required")
@@ -42,8 +42,13 @@ func (s *MatchStateService) StartMatch(ctx context.Context, matchID string) (*mo
 		return nil, fmt.Errorf("match not found: %w", err)
 	}
 
-	// Matches are now always live by default, so no need to check status
-	// Just return the match as is
+	// Check if match is in not_started status
+	if match.Status != models.MatchStatusNotStarted {
+		return nil, fmt.Errorf("match must be not started to begin")
+	}
+
+	// Change status to live
+	match.Status = models.MatchStatusLive
 	match.UpdatedAt = time.Now()
 
 	err = s.matchRepo.Update(ctx, matchID, match)
@@ -69,8 +74,10 @@ func (s *MatchStateService) CompleteMatch(ctx context.Context, matchID string) (
 		return nil, fmt.Errorf("match must be live to complete")
 	}
 
+	now := time.Now()
 	match.Status = models.MatchStatusCompleted
-	match.UpdatedAt = time.Now()
+	match.EndTime = &now
+	match.UpdatedAt = now
 
 	err = s.matchRepo.Update(ctx, matchID, match)
 	if err != nil {

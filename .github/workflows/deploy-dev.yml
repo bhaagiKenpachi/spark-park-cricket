@@ -1,0 +1,319 @@
+name: Deploy to Dev VM
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip building images (use existing images)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  push:
+    branches:
+      - dev
+    paths:
+      - '.github/workflows/deploy-dev.yml'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-backend:
+    name: Build Backend Image
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    if: ${{ github.event.inputs.skip_build != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
+
+      - name: Verify Docker environment
+        run: |
+          echo "🐳 Verifying Docker environment..."
+          echo "Docker version: $(docker --version)"
+          echo "Docker Compose version: $(docker compose version)"
+          echo "✅ Docker environment ready!"
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push Backend Docker image
+        run: |
+          cd backend
+          echo "🔨 Building backend Docker image..."
+          
+          # Build image with multiple tags
+          docker build \
+            --file Dockerfile \
+            --tag ${{ steps.image-name.outputs.backend }}:dev \
+            --tag ${{ steps.image-name.outputs.backend }}:dev-$(git rev-parse --short HEAD) \
+            .
+          
+          echo "📤 Pushing backend images to GHCR..."
+          docker push ${{ steps.image-name.outputs.backend }}:dev
+          docker push ${{ steps.image-name.outputs.backend }}:dev-$(git rev-parse --short HEAD)
+          
+          echo "✅ Backend image built and pushed successfully!"
+
+      - name: Clean up Docker
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker resources..."
+          docker system prune -f || true
+          echo "✅ Cleanup completed"
+
+  build-web:
+    name: Build Web Image
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    needs: build-backend
+    if: ${{ github.event.inputs.skip_build != 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
+
+      - name: Verify Docker environment
+        run: |
+          echo "🐳 Verifying Docker environment..."
+          echo "Docker version: $(docker --version)"
+          echo "Docker Compose version: $(docker compose version)"
+          echo "✅ Docker environment ready!"
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push Web Docker image
+        env:
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        run: |
+          cd web
+          echo "🔨 Building web Docker image..."
+          echo "📝 Using frontend URL: ${FRONTEND_URL}"
+          echo "📝 API URL: ${FRONTEND_URL}/api/v1"
+          echo "📝 GraphQL URL: ${FRONTEND_URL}/api/v1/graphql"
+          
+          # Build image with build args for Next.js public variables
+          docker build \
+            --file Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=${FRONTEND_URL}/api/v1 \
+            --build-arg NEXT_PUBLIC_GRAPHQL_URL=${FRONTEND_URL}/api/v1/graphql \
+            --build-arg NODE_ENV=production \
+            --tag ${{ steps.image-name.outputs.web }}:dev \
+            --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
+            .
+          
+          echo "📤 Pushing web images to GHCR..."
+          docker push ${{ steps.image-name.outputs.web }}:dev
+          docker push ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD)
+          
+          echo "✅ Web image built and pushed successfully!"
+
+      - name: Clean up Docker
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker resources..."
+          docker system prune -f || true
+          echo "✅ Cleanup completed"
+
+  deploy:
+    name: Deploy to Dev VM
+    environment: dev
+    runs-on: [self-hosted, ovh, ubuntu-22.04]
+    needs: [build-backend, build-web]
+    if: ${{ always() && (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') && (needs.build-web.result == 'success' || needs.build-web.result == 'skipped') }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEV_VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEV_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment directory on VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+            mkdir -p ~/cricket-deployment
+          EOF
+
+      - name: Copy configuration files to VM
+        run: |
+          # Copy deploy directory structure
+          scp -i ~/.ssh/deploy_key -r deploy ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+          
+          # Copy monitoring configurations
+          scp -i ~/.ssh/deploy_key -r monitoring ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+
+      - name: Create environment files on VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+            cd ~/cricket-deployment/deploy/environments/dev
+            
+            # Create backend .env file
+            cat > .env.backend << 'ENVFILE'
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY=${{ secrets.SUPABASE_API_KEY }}
+          SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URL=${{ secrets.GOOGLE_REDIRECT_URL }}
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          PORT=8080
+          REDIS_URL=redis:6379
+          REDIS_DB=1
+          REDIS_USE_TLS=false
+          CACHE_ENABLED=true
+          SESSION_MAX_AGE=86400
+          ENVIRONMENT=dev
+          DATABASE_SCHEMA=dev_v1
+          FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+          ENVFILE
+
+            # Create frontend .env file
+            cat > .env.frontend << 'ENVFILE'
+          NODE_ENV=production
+          NEXT_PUBLIC_API_URL=${{ secrets.FRONTEND_URL }}/api/v1
+          NEXT_PUBLIC_GRAPHQL_URL=${{ secrets.FRONTEND_URL }}/api/v1/graphql
+          ENVFILE
+
+            # Create docker-compose .env file for image references
+            cat > .env << 'ENVFILE'
+          GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
+          BACKEND_IMAGE=${{ steps.image-name.outputs.backend }}:dev
+          WEB_IMAGE=${{ steps.image-name.outputs.web }}:dev
+          ENVFILE
+          EOF
+
+      - name: Login to GHCR on VM and pull images
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << EOF
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ${{ steps.image-name.outputs.backend }}:dev
+            docker pull ${{ steps.image-name.outputs.web }}:dev
+            
+            # Tag images for local reference
+            docker tag ${{ steps.image-name.outputs.backend }}:dev spark-cricket-backend-dev
+            docker tag ${{ steps.image-name.outputs.web }}:dev spark-cricket-frontend-dev
+          EOF
+
+      - name: Deploy services with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+            cd ~/cricket-deployment/deploy/environments/dev
+            
+            # Stop existing containers
+            echo "🛑 Stopping existing containers..."
+            docker compose down || true
+            
+            # Stop any container using port 80
+            echo "🔍 Checking for processes on port 80..."
+            NGINX_CONTAINER=$(docker ps -q -f "publish=80")
+            if [ ! -z "$NGINX_CONTAINER" ]; then
+              echo "Stopping container using port 80: $NGINX_CONTAINER"
+              docker stop $NGINX_CONTAINER || true
+              docker rm $NGINX_CONTAINER || true
+            fi
+            
+            # Start all services
+            echo "🚀 Starting all services..."
+            docker compose up -d
+          EOF
+
+      - name: Wait for services to be healthy
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+            echo "Waiting for services to be healthy..."
+            sleep 30
+            
+            # Check Redis
+            docker exec cricket-redis-dev redis-cli ping || echo "Redis not ready"
+            
+            # Check backend health (using external port 8081)
+            for i in {1..10}; do
+              if curl -f http://localhost:8081/health; then
+                echo "Backend is healthy"
+                break
+              fi
+              echo "Waiting for backend... attempt $i/10"
+              sleep 5
+            done
+            
+            # Check web (using external port 3001)
+            for i in {1..10}; do
+              if curl -f http://localhost:3001; then
+                echo "Web is healthy"
+                break
+              fi
+              echo "Waiting for web... attempt $i/10"
+              sleep 5
+            done
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+            cd ~/cricket-deployment/deploy/environments/dev
+            echo "=== Running Containers ==="
+            docker ps
+            echo ""
+            echo "=== Container Health Status ==="
+            docker compose ps
+          EOF
+
+      - name: Cleanup SSH key
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🌐 Application URLs:"
+          echo "  Backend API: http://${{ secrets.DEV_VM_HOST }}:8081"
+          echo "  Frontend: http://${{ secrets.DEV_VM_HOST }}:3001"
+          echo "  Nginx (Port 80): http://${{ secrets.DEV_VM_HOST }}"
+          echo ""
+          echo "📊 Monitoring URLs:"
+          echo "  Grafana: http://${{ secrets.DEV_VM_HOST }}:3003"
+          echo "  Prometheus: http://${{ secrets.DEV_VM_HOST }}:9091"
+          echo "  Loki: http://${{ secrets.DEV_VM_HOST }}:3101"
+
+
+
+
+

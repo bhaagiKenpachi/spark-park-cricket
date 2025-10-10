@@ -121,9 +121,25 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 		return fmt.Errorf("access denied: you can only start scoring for matches in series you created")
 	}
 
-	// Check if match is live
-	if match.Status != models.MatchStatusLive {
-		return fmt.Errorf("match is not live, cannot start scoring")
+	// Check if match is not_started or live
+	if match.Status != models.MatchStatusNotStarted && match.Status != models.MatchStatusLive {
+		return fmt.Errorf("match must be not started or live to begin scoring")
+	}
+
+	// If match is not_started, transition it to live
+	if match.Status == models.MatchStatusNotStarted {
+		now := time.Now()
+		match.Status = models.MatchStatusLive
+		match.StartTime = &now
+		match.UpdatedAt = now
+
+		err = s.matchRepo.Update(ctx, matchID, match)
+		if err != nil {
+			log.Printf("Error updating match status: %v", err)
+			return fmt.Errorf("failed to start match: %w", err)
+		}
+
+		log.Printf("Match %s status changed from not_started to live at %s", matchID, now.Format(time.RFC3339))
 	}
 
 	// Check if scoring is already started
@@ -439,7 +455,10 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 				return fmt.Errorf("failed to fetch match data: %w", err)
 			}
 
+			now := time.Now()
 			completeMatch.Status = models.MatchStatusCompleted
+			completeMatch.EndTime = &now
+			completeMatch.UpdatedAt = now
 			err = s.matchRepo.Update(ctx, req.MatchID, completeMatch)
 			if err != nil {
 				return fmt.Errorf("failed to complete match: %w", err)
@@ -775,12 +794,15 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 			}
 
 			// Complete the match
+			now := time.Now()
 			match.Status = models.MatchStatusCompleted
+			match.EndTime = &now
+			match.UpdatedAt = now
 			err = s.matchRepo.Update(ctx, req.MatchID, match)
 			if err != nil {
 				return fmt.Errorf("failed to complete match: %w", err)
 			}
-			log.Printf("Match %s completed - %s", req.MatchID, reason)
+			log.Printf("Match %s completed at %s - %s", req.MatchID, now.Format(time.RFC3339), reason)
 		}
 	}
 

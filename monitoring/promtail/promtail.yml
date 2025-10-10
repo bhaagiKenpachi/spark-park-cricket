@@ -1,0 +1,65 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Collect logs from local Docker containers
+  - job_name: cricket-backend
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ["cricket-backend"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: 'container_name'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_id']
+        target_label: 'container_id'
+      - target_label: 'environment'
+        replacement: 'local'
+      - target_label: 'service'
+        replacement: 'backend'
+    pipeline_stages:
+      - docker: {}
+      - labels:
+          stream:
+          container_name:
+          environment:
+          service:
+
+  - job_name: cricket-frontend
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ["cricket-frontend"]
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/?(.*)'
+        target_label: 'container_name'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_id']
+        target_label: 'container_id'
+      - target_label: 'environment'
+        replacement: 'local'
+      - target_label: 'service'
+        replacement: 'frontend'
+    pipeline_stages:
+      - docker: {}
+      - labels:
+          stream:
+          container_name:
+          environment:
+          service:

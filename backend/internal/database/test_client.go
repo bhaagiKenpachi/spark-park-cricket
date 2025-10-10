@@ -41,6 +41,8 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),
+		Vote:       supabase.NewVoteRepository(client),
+		VoteTeam:   supabase.NewVoteTeamRepository(client, "testing_db"),
 	}
 
 	// Wrap repositories with caching (same as production)
@@ -52,6 +54,8 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		Over:       baseRepositories.Over, // Not cached yet
 		Ball:       baseRepositories.Ball, // Not cached yet
 		User:       baseRepositories.User, // Not cached yet
+		Vote:       baseRepositories.Vote,
+		VoteTeam:   baseRepositories.VoteTeam,
 	}
 
 	return &Client{

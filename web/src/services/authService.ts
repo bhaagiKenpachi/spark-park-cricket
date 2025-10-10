@@ -116,6 +116,16 @@ class AuthService {
   }
 
   /**
+   * Update user name
+   */
+  async updateUserName(name: string): Promise<ApiResponse<User>> {
+    return this.request<User>('/users/me', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  /**
    * Check if user is authenticated (client-side check)
    */
   isAuthenticated(): boolean {

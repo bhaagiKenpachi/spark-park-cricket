@@ -6,13 +6,15 @@ export interface Match {
   series_id: string;
   match_number: number;
   date: string;
-  status: 'live' | 'completed' | 'cancelled';
+  status: 'not_started' | 'live' | 'completed' | 'cancelled';
   team_a_player_count: number;
   team_b_player_count: number;
   total_overs: number;
   toss_winner: 'A' | 'B';
   toss_type: 'H' | 'T';
   batting_team: 'A' | 'B';
+  start_time?: string;
+  end_time?: string;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +24,14 @@ interface MatchState {
   currentMatch: Match | null;
   loading: boolean;
   error: string | null;
+  // Cache for completed matches scorecard data
+  completedMatchesCache: {
+    [matchId: string]: {
+      data: unknown;
+      timestamp: number;
+      expiresAt: number;
+    };
+  };
 }
 
 const initialState: MatchState = {
@@ -29,6 +39,7 @@ const initialState: MatchState = {
   currentMatch: null,
   loading: false,
   error: null,
+  completedMatchesCache: {},
 };
 
 export const matchSlice = createSlice({
@@ -65,7 +76,7 @@ export const matchSlice = createSlice({
     },
     createMatchSuccess: (state, action: PayloadAction<Match>) => {
       state.loading = false;
-      state.matches.push(action.payload);
+      state.matches.unshift(action.payload); // Add to beginning so new matches appear at top
     },
     createMatchFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -111,6 +122,57 @@ export const matchSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    startMatchRequest: (state, _action: PayloadAction<string>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    startMatchSuccess: (state, action: PayloadAction<Match>) => {
+      state.loading = false;
+      const index = state.matches.findIndex(
+        match => match.id === action.payload.id
+      );
+      if (index !== -1 && state.matches[index]) {
+        // Update only the status and updated_at fields
+        state.matches[index].status = action.payload.status;
+        state.matches[index].updated_at = action.payload.updated_at;
+      }
+    },
+    startMatchFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    // Cache management for completed matches
+    cacheCompletedMatchData: (
+      state,
+      action: PayloadAction<{
+        matchId: string;
+        data: unknown;
+        cacheDuration?: number; // in milliseconds, default 5 minutes
+      }>
+    ) => {
+      const { matchId, data, cacheDuration = 5 * 60 * 1000 } = action.payload;
+      const now = Date.now();
+      state.completedMatchesCache[matchId] = {
+        data,
+        timestamp: now,
+        expiresAt: now + cacheDuration,
+      };
+    },
+    clearExpiredCache: (state) => {
+      const now = Date.now();
+      Object.keys(state.completedMatchesCache).forEach(matchId => {
+        const cacheEntry = state.completedMatchesCache[matchId];
+        if (cacheEntry && cacheEntry.expiresAt < now) {
+          delete state.completedMatchesCache[matchId];
+        }
+      });
+    },
+    clearMatchCache: (state, action: PayloadAction<string>) => {
+      delete state.completedMatchesCache[action.payload];
+    },
+    clearAllCache: (state) => {
+      state.completedMatchesCache = {};
+    },
   },
 });
 
@@ -129,6 +191,13 @@ export const {
   deleteMatchRequest,
   deleteMatchSuccess,
   deleteMatchFailure,
+  startMatchRequest,
+  startMatchSuccess,
+  startMatchFailure,
+  cacheCompletedMatchData,
+  clearExpiredCache,
+  clearMatchCache,
+  clearAllCache,
 } = matchSlice.actions;
 
 export default matchSlice.reducer;

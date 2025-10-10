@@ -9,13 +9,19 @@ import (
 
 // Container holds all service instances
 type Container struct {
-	DBClient  *database.Client
-	Series    *SeriesService
-	Match     *MatchService
-	Scorecard interfaces.ScorecardServiceInterface
+	DBClient   *database.Client
+	Series     *SeriesService
+	Match      *MatchService
+	MatchState MatchStateServiceInterface
+	Scorecard  interfaces.ScorecardServiceInterface
 	// Authentication services
 	AuthService    *AuthService
 	SessionService *SessionService
+	// User services
+	UserService UserServiceInterface
+	// Voting services
+	VoteService     VoteServiceInterface
+	VoteTeamService VoteTeamServiceInterface
 	// Monitoring
 	Metrics *monitoring.Metrics
 }
@@ -32,15 +38,34 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 	sessionService := NewSessionService(dbClient.Repositories.User, cfg)
 	authService := NewAuthService(cfg, dbClient.Repositories.User, sessionService)
 
+	// Create match state service
+	matchStateService := NewMatchStateService(
+		dbClient.Repositories.Match,
+		dbClient.Repositories.Scoreboard,
+		dbClient.Repositories.Over,
+		dbClient.Repositories.Ball,
+	)
+
+	// Set metrics on cache manager if available
+	if dbClient.CacheManager != nil {
+		dbClient.CacheManager.SetMetrics(metrics)
+	}
+
 	// Create container
 	container := &Container{
-		DBClient:  dbClient,
-		Series:    NewSeriesService(dbClient.Repositories.Series),
-		Match:     NewMatchService(dbClient.Repositories.Match, dbClient.Repositories.Series),
-		Scorecard: scorecardService,
+		DBClient:   dbClient,
+		Series:     NewSeriesService(dbClient.Repositories.Series),
+		Match:      NewMatchService(dbClient.Repositories.Match, dbClient.Repositories.Series),
+		MatchState: matchStateService,
+		Scorecard:  scorecardService,
 		// Authentication services
 		AuthService:    authService,
 		SessionService: sessionService,
+		// User services
+		UserService: NewUserService(dbClient.Repositories.User),
+		// Voting services
+		VoteService:     NewVoteService(dbClient.Repositories.Vote),
+		VoteTeamService: NewVoteTeamService(dbClient.Repositories.VoteTeam, dbClient.Repositories.Vote),
 		// Monitoring
 		Metrics: metrics,
 	}

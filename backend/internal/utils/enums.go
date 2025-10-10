@@ -4,10 +4,10 @@ package utils
 type MatchStatus string
 
 const (
-	MatchStatusScheduled MatchStatus = "scheduled"
-	MatchStatusLive      MatchStatus = "live"
-	MatchStatusCompleted MatchStatus = "completed"
-	MatchStatusCancelled MatchStatus = "cancelled"
+	MatchStatusNotStarted MatchStatus = "not_started"
+	MatchStatusLive       MatchStatus = "live"
+	MatchStatusCompleted  MatchStatus = "completed"
+	MatchStatusCancelled  MatchStatus = "cancelled"
 )
 
 // BallType represents the type of ball in cricket
@@ -23,7 +23,7 @@ const (
 // IsValidMatchStatus checks if the status is valid
 func IsValidMatchStatus(status string) bool {
 	switch MatchStatus(status) {
-	case MatchStatusScheduled, MatchStatusLive, MatchStatusCompleted, MatchStatusCancelled:
+	case MatchStatusNotStarted, MatchStatusLive, MatchStatusCompleted, MatchStatusCancelled:
 		return true
 	default:
 		return false
@@ -43,7 +43,7 @@ func IsValidBallType(ballType string) bool {
 // GetValidMatchStatuses returns all valid match statuses
 func GetValidMatchStatuses() []string {
 	return []string{
-		string(MatchStatusScheduled),
+		string(MatchStatusNotStarted),
 		string(MatchStatusLive),
 		string(MatchStatusCompleted),
 		string(MatchStatusCancelled),

@@ -1,4 +1,31 @@
-# Development stage
+# Build stage
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Set build-time environment variables for Next.js
+ARG NEXT_PUBLIC_API_URL=https://spark-park-dev.dojima.foundation/api/v1
+ARG NEXT_PUBLIC_GRAPHQL_URL=https://spark-park-dev.dojima.foundation/api/v1/graphql
+ARG NODE_ENV=production
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_GRAPHQL_URL=$NEXT_PUBLIC_GRAPHQL_URL
+ENV NODE_ENV=$NODE_ENV
+
+# Build the application
+RUN npm run build
+
+# Production stage
 FROM node:20-alpine
 
 # Set working directory
@@ -10,22 +37,27 @@ RUN apk add --no-cache curl
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm install --ignore-scripts
+# Install production dependencies + TypeScript (needed for next.config.ts at runtime)
+RUN npm ci --omit=dev --ignore-scripts || npm ci --production --ignore-scripts
 
-# Copy source code
-COPY . .
+# Install TypeScript separately (needed for next.config.ts)
+RUN npm install --save-prod typescript @types/node
+
+# Copy built application from builder
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.* ./
 
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check with longer start period
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:3000 || exit 1
 
 # Set environment variables
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 ENV PORT=3000
 
-# Run the application in development mode
-CMD ["npm", "run", "dev"]
+# Run the application in production mode
+CMD ["npm", "start"]

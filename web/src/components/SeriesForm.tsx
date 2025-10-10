@@ -80,7 +80,7 @@ export function SeriesForm({
     if (
       formData.start_date &&
       formData.end_date &&
-      formData.start_date >= formData.end_date
+      formData.start_date > formData.end_date
     ) {
       errors.end_date = 'End date must be after start date';
     }

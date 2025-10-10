@@ -8,9 +8,10 @@ import (
 type MatchStatus string
 
 const (
-	MatchStatusLive      MatchStatus = "live"
-	MatchStatusCompleted MatchStatus = "completed"
-	MatchStatusCancelled MatchStatus = "cancelled"
+	MatchStatusNotStarted MatchStatus = "not_started"
+	MatchStatusLive       MatchStatus = "live"
+	MatchStatusCompleted  MatchStatus = "completed"
+	MatchStatusCancelled  MatchStatus = "cancelled"
 )
 
 // TossType represents the toss result
@@ -42,6 +43,8 @@ type Match struct {
 	TossWinner       TeamType    `json:"toss_winner" db:"toss_winner"`
 	TossType         TossType    `json:"toss_type" db:"toss_type"`
 	BattingTeam      TeamType    `json:"batting_team" db:"batting_team"`
+	StartTime        *time.Time  `json:"start_time,omitempty" db:"start_time,omitempty"`
+	EndTime          *time.Time  `json:"end_time,omitempty" db:"end_time,omitempty"`
 	CreatedBy        string      `json:"created_by,omitempty" db:"created_by,omitempty"`
 	CreatedAt        time.Time   `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time   `json:"updated_at" db:"updated_at"`
@@ -63,7 +66,7 @@ type CreateMatchRequest struct {
 type UpdateMatchRequest struct {
 	MatchNumber      *int         `json:"match_number,omitempty" validate:"omitempty,min=1"`
 	Date             *time.Time   `json:"date,omitempty"`
-	Status           *MatchStatus `json:"status,omitempty" validate:"omitempty,oneof=live completed cancelled"`
+	Status           *MatchStatus `json:"status,omitempty" validate:"omitempty,oneof=not_started live completed cancelled"`
 	TeamAPlayerCount *int         `json:"team_a_player_count,omitempty" validate:"omitempty,min=1,max=20"`
 	TeamBPlayerCount *int         `json:"team_b_player_count,omitempty" validate:"omitempty,min=1,max=20"`
 	TotalOvers       *int         `json:"total_overs,omitempty" validate:"omitempty,min=1,max=20"`

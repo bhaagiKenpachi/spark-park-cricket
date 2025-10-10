@@ -370,7 +370,7 @@ export function ScorecardView({
 
       return (
         <div
-          key={index}
+          key={ball.ball_number}
           className="w-8 h-8 rounded-full border-2 border-orange-500 bg-orange-100 flex flex-col items-center justify-center text-xs font-medium"
         >
           <div className="text-[10px] leading-none text-orange-700 font-bold">
@@ -390,7 +390,7 @@ export function ScorecardView({
 
       return (
         <div
-          key={index}
+          key={ball.ball_number}
           className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
         >
           <div className="text-[10px] leading-none text-slate-700 font-bold">
@@ -407,7 +407,7 @@ export function ScorecardView({
     // Handle display for other ball types without byes
     return (
       <div
-        key={index}
+        key={ball.ball_number}
         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
             ? 'border-red-500 bg-red-100 text-red-700'
             : ball.ball_type === 'WIDE' ||
@@ -463,25 +463,7 @@ export function ScorecardView({
     );
   }
 
-  if (error) {
-    return (
-      <div className="w-full max-w-6xl mx-auto p-6">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
-          <strong className="font-bold">Error:</strong>
-          <span className="block sm:inline"> {error}</span>
-          <div className="mt-3">
-            <Button
-              onClick={() => dispatch(fetchScorecardRequest(matchId))}
-              variant="destructive"
-              size="sm"
-            >
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Error is now displayed at the bottom instead of blocking the entire view
 
   if (!scorecard) {
     return (
@@ -537,9 +519,16 @@ export function ScorecardView({
               scorecardData.match_status === 'live' ? 'default' : 'secondary'
             }
             className={
-              scorecardData.match_status === 'live' ? 'bg-green-600' : ''
+              scorecardData.match_status === 'live' 
+                ? 'bg-green-600 text-white animate-pulse' 
+                : scorecardData.match_status === 'completed'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-500 text-white'
             }
           >
+            {scorecardData.match_status === 'live' && '🔴 '}
+            {scorecardData.match_status === 'completed' && '✅ '}
+            {scorecardData.match_status === 'scheduled' && '⏰ '}
             {scorecardData.match_status.toUpperCase()}
           </Badge>
           {(scorecardData.match_status === 'live' ||
@@ -613,14 +602,15 @@ export function ScorecardView({
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {scorecardData.team_a}
                       </h3>
-                      <div className="text-3xl font-bold text-blue-600 mb-1">
-                        {teamAInnings.total_runs}/{teamAInnings.total_wickets}
+                      <div className="text-3xl font-bold text-green-600 mb-1">
+                        {teamAInnings.total_runs}
+                        <span className="text-2xl text-gray-500">/{teamAInnings.total_wickets}</span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-blue-600 font-medium">
                         {teamAInnings.total_overs} overs
                       </div>
                       {teamAInnings.extras && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-orange-600 mt-1 font-medium">
                           Extras: {teamAInnings.extras.total}
                         </div>
                       )}
@@ -638,14 +628,15 @@ export function ScorecardView({
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {scorecardData.team_b}
                       </h3>
-                      <div className="text-3xl font-bold text-blue-600 mb-1">
-                        {teamBInnings.total_runs}/{teamBInnings.total_wickets}
+                      <div className="text-3xl font-bold text-purple-600 mb-1">
+                        {teamBInnings.total_runs}
+                        <span className="text-2xl text-gray-500">/{teamBInnings.total_wickets}</span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-blue-600 font-medium">
                         {teamBInnings.total_overs} overs
                       </div>
                       {teamBInnings.extras && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-orange-600 mt-1 font-medium">
                           Extras: {teamBInnings.extras.total}
                         </div>
                       )}
@@ -674,11 +665,11 @@ export function ScorecardView({
 
                   return (
                     <div className="mt-6 text-center">
-                      <div className="inline-block bg-white rounded-lg px-6 py-4 shadow-sm border">
-                        <div className="text-lg font-semibold text-gray-800 mb-1">
-                          Result
+                      <div className="inline-block bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg px-6 py-4 shadow-sm border border-green-200">
+                        <div className="text-lg font-semibold text-green-700 mb-1">
+                          🏆 Match Result
                         </div>
-                        <div className="text-xl font-bold text-green-600">
+                        <div className="text-xl font-bold text-green-800">
                           {winner} won by {margin} run{margin !== 1 ? 's' : ''}
                         </div>
                       </div>
@@ -752,12 +743,168 @@ export function ScorecardView({
                           {innings.total_runs}/{innings.total_wickets}
                         </div>
                       </div>
-                      <div className="text-xs text-gray-600 mb-2 flex items-center">
+                      <div className="text-xs mb-2 flex items-center">
                         {scoring ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500 mr-2"></div>
                         ) : null}
-                        {innings.total_overs} overs
+                        <span className="font-bold">
+                          <span className="text-blue-600">{innings.total_overs}</span> / <span className="text-gray-600">{scorecardData?.total_overs || 0}</span> overs
+                        </span>
                       </div>
+
+                      {/* Run Rate Display for First Innings */}
+                      {innings.status === 'in_progress' &&
+                        innings.innings_number === 1 &&
+                        (() => {
+                          // Calculate balls bowled more accurately (excluding extras)
+                          let ballsBowled = 0;
+                          
+                          if (innings.overs && Array.isArray(innings.overs)) {
+                            // Count only legal balls (excluding wides and no balls)
+                            ballsBowled = innings.overs.reduce((total, over) => {
+                              if (over.balls && Array.isArray(over.balls)) {
+                                const legalBalls = over.balls.filter(ball => 
+                                  ball.ball_type !== 'WIDE' && 
+                                  ball.ball_type !== 'wide' && 
+                                  ball.ball_type !== 'NO_BALL' && 
+                                  ball.ball_type !== 'no_ball'
+                                );
+                                return total + legalBalls.length;
+                              }
+                              return total;
+                            }, 0);
+                          }
+                          
+                          // Calculate current run rate using overs notation
+                          const currentOversDecimal = innings.total_overs || 0;
+                          const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
+                          const currentRunRate = ballsBowledFromOvers > 0 ? (innings.total_runs / ballsBowledFromOvers * 6).toFixed(2) : '0.00';
+
+                          return (
+                            <div className="text-xs font-medium mb-2">
+                              <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                📊 Current RR: {currentRunRate}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                      {/* Runs Required for Chasing Team - Only for Team A when they are chasing */}
+                      {innings.status === 'in_progress' &&
+                        innings.innings_number === 2 &&
+                        innings.batting_team === 'A' &&
+                        (() => {
+                          // Find the first innings (team that batted first) to calculate target
+                          const firstInnings = scorecardData?.innings?.find(
+                            (teamInn: InningsSummary) =>
+                              teamInn.innings_number === 1
+                          );
+                          if (firstInnings) {
+                            const target = firstInnings.total_runs + 1;
+                            const runsRequired = target - innings.total_runs;
+                            const totalBalls =
+                              (scorecardData?.total_overs || 0) * 6;
+                            
+                            // Calculate balls bowled more accurately
+                            let ballsBowled = 0;
+                            
+                            if (innings.overs && Array.isArray(innings.overs)) {
+                              // Count balls from all completed overs
+                              ballsBowled = innings.overs.reduce((total, over) => {
+                                return total + (over.balls ? over.balls.length : 0);
+                              }, 0);
+                            }
+                            
+                            // Ensure we don't exceed total balls available
+                            const ballsRemaining = Math.max(0, totalBalls - ballsBowled);
+                            
+                            // Calculate balls bowled more accurately (excluding extras)
+                            let ballsBowledCorrected = 0;
+                            
+                            if (innings.overs && Array.isArray(innings.overs)) {
+                              // Count only legal balls (excluding wides and no balls)
+                              ballsBowledCorrected = innings.overs.reduce((total, over) => {
+                                if (over.balls && Array.isArray(over.balls)) {
+                                  const legalBalls = over.balls.filter(ball => 
+                                    ball.ball_type !== 'WIDE' && 
+                                    ball.ball_type !== 'wide' && 
+                                    ball.ball_type !== 'NO_BALL' && 
+                                    ball.ball_type !== 'no_ball'
+                                  );
+                                  return total + legalBalls.length;
+                                }
+                                return total;
+                              }, 0);
+                            }
+                            
+                            // Use corrected balls bowled for remaining calculation
+                            const ballsRemainingCorrected = Math.max(0, totalBalls - ballsBowledCorrected);
+                            
+                            // Calculate balls remaining based on overs notation (e.g., 1.5 overs = 11 balls)
+                            // Convert overs notation to balls: 1.5 = 11 balls, 2.0 = 12 balls
+                            const currentOversDecimal = innings.total_overs || 0;
+                            const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
+                            const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
+                            
+                            // Debug logging
+                            console.log('Required runs calculation (Team A):', {
+                              firstInningsRuns: firstInnings.total_runs,
+                              target,
+                              currentRuns: innings.total_runs,
+                              runsRequired,
+                              totalBalls,
+                              currentOversDecimal,
+                              ballsBowledFromOvers,
+                              ballsRemainingFromOvers,
+                              ballsBowled,
+                              ballsBowledCorrected,
+                              ballsRemaining,
+                              ballsRemainingCorrected
+                            });
+                            
+                            // Calculate run rates with error handling
+                            let currentRunRate = '0.00';
+                            let requiredRunRate = '0.00';
+                            
+                            try {
+                              if (ballsBowledFromOvers > 0 && innings.total_runs >= 0) {
+                                currentRunRate = (innings.total_runs / ballsBowledFromOvers * 6).toFixed(2);
+                              }
+                              if (ballsRemainingFromOvers > 0 && runsRequired >= 0) {
+                                requiredRunRate = (runsRequired / ballsRemainingFromOvers * 6).toFixed(2);
+                              }
+                            } catch (error) {
+                              console.error('Run rate calculation error:', error);
+                              currentRunRate = '0.00';
+                              requiredRunRate = '0.00';
+                            }
+
+                            return (
+                              <div className="text-xs font-medium mb-2 space-y-1">
+                                {runsRequired > 0 ? (
+                                  <>
+                                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded border border-red-200">
+                                      🎯 Need {runsRequired} runs in {ballsRemainingFromOvers} balls
+                                    </div>
+                                    <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                      📊 Current RR: {currentRunRate} | Required RR: {requiredRunRate}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">
+                                      🏆 Won by {Math.abs(runsRequired)} runs
+                                    </div>
+                                    <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                      📊 Final RR: {currentRunRate}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                       {/* Extras Display */}
                       {innings.extras && (
@@ -777,14 +924,14 @@ export function ScorecardView({
 
                       {/* Latest Over Only */}
                       {latestOver && (
-                        <div className="mb-2">
+                        <div className="mb-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">
-                              Over {latestOver.over_number}
+                            <span className="text-sm font-bold text-yellow-800">
+                              🔥 Over {latestOver.over_number}
                             </span>
-                            <span className="text-xs text-gray-600 flex items-center">
+                            <span className="text-xs text-yellow-700 flex items-center font-medium">
                               {scoring ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-1"></div>
                               ) : null}
                               {latestOver.total_runs} runs,{' '}
                               {latestOver.total_wickets} wickets
@@ -922,46 +1069,160 @@ export function ScorecardView({
                           {innings.total_runs}/{innings.total_wickets}
                         </div>
                       </div>
-                      <div className="text-xs text-gray-600 mb-2 flex items-center">
+                      <div className="text-xs mb-2 flex items-center">
                         {scoring ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500 mr-2"></div>
                         ) : null}
-                        {innings.total_overs} overs
+                        <span className="font-bold">
+                          <span className="text-blue-600">{innings.total_overs}</span> / <span className="text-gray-600">{scorecardData?.total_overs || 0}</span> overs
+                        </span>
                       </div>
 
-                      {/* Runs Required for Team B */}
-                      {innings.batting_team === 'B' &&
-                        innings.status === 'in_progress' &&
+                      {/* Run Rate Display for First Innings */}
+                      {innings.status === 'in_progress' &&
+                        innings.innings_number === 1 &&
                         (() => {
-                          // Find Team A's total runs to calculate target
-                          const teamAInn = scorecardData?.innings?.find(
-                            (teamInn: InningsSummary) =>
-                              teamInn.batting_team === 'A'
+                          // Calculate balls bowled more accurately
+                          let ballsBowled = 0;
+                          
+                          if (innings.overs && Array.isArray(innings.overs)) {
+                            // Count balls from all completed overs
+                            ballsBowled = innings.overs.reduce((total, over) => {
+                              return total + (over.balls ? over.balls.length : 0);
+                            }, 0);
+                          }
+                          
+                          // Calculate current run rate with error handling
+                          let currentRunRate = '0.00';
+                          
+                          try {
+                            if (ballsBowled > 0 && innings.total_runs >= 0) {
+                              currentRunRate = (innings.total_runs / ballsBowled * 6).toFixed(2);
+                            }
+                          } catch (error) {
+                            console.error('Run rate calculation error:', error);
+                            currentRunRate = '0.00';
+                          }
+
+                          return (
+                            <div className="text-xs font-medium mb-2">
+                              <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                📊 Current RR: {currentRunRate}
+                              </div>
+                            </div>
                           );
-                          if (teamAInn) {
-                            const target = teamAInn.total_runs + 1;
+                        })()}
+
+                      {/* Runs Required for Chasing Team - Only for Team B when they are chasing */}
+                      {innings.status === 'in_progress' &&
+                        innings.innings_number === 2 &&
+                        innings.batting_team === 'B' &&
+                        (() => {
+                          // Find the first innings (team that batted first) to calculate target
+                          const firstInnings = scorecardData?.innings?.find(
+                            (teamInn: InningsSummary) =>
+                              teamInn.innings_number === 1
+                          );
+                          if (firstInnings) {
+                            const target = firstInnings.total_runs + 1;
                             const runsRequired = target - innings.total_runs;
                             const totalBalls =
                               (scorecardData?.total_overs || 0) * 6;
+                            
                             // Calculate balls bowled more accurately
-                            const completedOvers = Math.floor(
-                              innings.total_overs
-                            );
-                            const ballsInCurrentOver =
-                              latestOver?.balls?.length || 0;
-                            const ballsBowled =
-                              completedOvers * 6 + ballsInCurrentOver;
-                            const ballsRemaining = totalBalls - ballsBowled;
+                            let ballsBowled = 0;
+                            
+                            if (innings.overs && Array.isArray(innings.overs)) {
+                              // Count balls from all completed overs
+                              ballsBowled = innings.overs.reduce((total, over) => {
+                                return total + (over.balls ? over.balls.length : 0);
+                              }, 0);
+                            }
+                            
+                            // Ensure we don't exceed total balls available
+                            const ballsRemaining = Math.max(0, totalBalls - ballsBowled);
+                            
+                            // Calculate balls bowled more accurately (excluding extras)
+                            let ballsBowledCorrected = 0;
+                            
+                            if (innings.overs && Array.isArray(innings.overs)) {
+                              // Count only legal balls (excluding wides and no balls)
+                              ballsBowledCorrected = innings.overs.reduce((total, over) => {
+                                if (over.balls && Array.isArray(over.balls)) {
+                                  const legalBalls = over.balls.filter(ball => 
+                                    ball.ball_type !== 'WIDE' && 
+                                    ball.ball_type !== 'wide' && 
+                                    ball.ball_type !== 'NO_BALL' && 
+                                    ball.ball_type !== 'no_ball'
+                                  );
+                                  return total + legalBalls.length;
+                                }
+                                return total;
+                              }, 0);
+                            }
+                            
+                            // Use corrected balls bowled for remaining calculation
+                            const ballsRemainingCorrected = Math.max(0, totalBalls - ballsBowledCorrected);
+                            
+                            // Calculate balls remaining based on overs notation (e.g., 1.5 overs = 11 balls)
+                            // Convert overs notation to balls: 1.5 = 11 balls, 2.0 = 12 balls
+                            const currentOversDecimal = innings.total_overs || 0;
+                            const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
+                            const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
+                            
+                            // Debug logging
+                            console.log('Required runs calculation (Team B):', {
+                              firstInningsRuns: firstInnings.total_runs,
+                              target,
+                              currentRuns: innings.total_runs,
+                              runsRequired,
+                              totalBalls,
+                              currentOversDecimal,
+                              ballsBowledFromOvers,
+                              ballsRemainingFromOvers,
+                              ballsBowled,
+                              ballsBowledCorrected,
+                              ballsRemaining,
+                              ballsRemainingCorrected
+                            });
+                            
+                            // Calculate run rates with error handling
+                            let currentRunRate = '0.00';
+                            let requiredRunRate = '0.00';
+                            
+                            try {
+                              if (ballsBowledFromOvers > 0 && innings.total_runs >= 0) {
+                                currentRunRate = (innings.total_runs / ballsBowledFromOvers * 6).toFixed(2);
+                              }
+                              if (ballsRemainingFromOvers > 0 && runsRequired >= 0) {
+                                requiredRunRate = (runsRequired / ballsRemainingFromOvers * 6).toFixed(2);
+                              }
+                            } catch (error) {
+                              console.error('Run rate calculation error:', error);
+                              currentRunRate = '0.00';
+                              requiredRunRate = '0.00';
+                            }
 
                             return (
-                              <div className="text-xs text-red-600 font-medium mb-2">
+                              <div className="text-xs font-medium mb-2 space-y-1">
                                 {runsRequired > 0 ? (
                                   <>
-                                    Need {runsRequired} runs in {ballsRemaining}{' '}
-                                    balls
+                                    <div className="bg-red-100 text-red-800 px-2 py-1 rounded border border-red-200">
+                                      🎯 Need {runsRequired} runs in {ballsRemainingFromOvers} balls
+                                    </div>
+                                    <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                      📊 Current RR: {currentRunRate} | Required RR: {requiredRunRate}
+                                    </div>
                                   </>
                                 ) : (
-                                  <>Won by {Math.abs(runsRequired)} runs</>
+                                  <>
+                                    <div className="bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">
+                                      🏆 Won by {Math.abs(runsRequired)} runs
+                                    </div>
+                                    <div className="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                                      📊 Final RR: {currentRunRate}
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             );
@@ -987,14 +1248,14 @@ export function ScorecardView({
 
                       {/* Latest Over Only */}
                       {latestOver && (
-                        <div className="mb-2">
+                        <div className="mb-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">
-                              Over {latestOver.over_number}
+                            <span className="text-sm font-bold text-yellow-800">
+                              🔥 Over {latestOver.over_number}
                             </span>
-                            <span className="text-xs text-gray-600 flex items-center">
+                            <span className="text-xs text-yellow-700 flex items-center font-medium">
                               {scoring ? (
-                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-1"></div>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-1"></div>
                               ) : null}
                               {latestOver.total_runs} runs,{' '}
                               {latestOver.total_wickets} wickets
@@ -1337,6 +1598,36 @@ export function ScorecardView({
             })()}
           </CardContent>
         </Card>
+      )}
+
+      {/* Error Message Display */}
+      {error && (
+        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <X className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Error occurred
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <div className="mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => dispatch(fetchScorecardRequest(matchId))}
+                  className="text-red-700 border-red-300 hover:bg-red-100"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

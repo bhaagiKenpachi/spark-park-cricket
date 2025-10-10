@@ -136,9 +136,15 @@ func (r *CachedSeriesRepository) Update(ctx context.Context, id string, series *
 	return nil
 }
 
-// Delete deletes a series and invalidates cache
+// Delete deletes a series and invalidates all related caches
 func (r *CachedSeriesRepository) Delete(ctx context.Context, id string) error {
-	err := r.repo.Delete(ctx, id)
+	// Get series first to know what to invalidate
+	_, err := r.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	err = r.repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -164,6 +170,9 @@ func (r *CachedSeriesRepository) Delete(ctx context.Context, id string) error {
 	for _, key := range keysToInvalidate {
 		_ = r.cache.Invalidate(key)
 	}
+
+	// Use comprehensive cache invalidation for series deletion
+	r.cache.InvalidateAllSeriesRelatedCaches(id)
 
 	return nil
 }

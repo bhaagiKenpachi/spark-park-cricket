@@ -23,6 +23,8 @@ type Repositories struct {
 	Over       interfaces.OverRepository
 	Ball       interfaces.BallRepository
 	User       interfaces.UserRepository
+	Vote       interfaces.VoteRepositoryInterface
+	VoteTeam   interfaces.VoteTeamRepositoryInterface
 }
 
 // Client wraps the Supabase client and repositories
@@ -88,6 +90,8 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		Over:       supabase.NewOverRepository(client),
 		Ball:       supabase.NewBallRepository(client),
 		User:       supabase.NewUserRepository(client),
+		Vote:       supabase.NewVoteRepository(client),
+		VoteTeam:   supabase.NewVoteTeamRepository(client, cfg.DatabaseSchema),
 	}
 	log.Printf("✅ Base repositories initialized")
 
@@ -103,6 +107,8 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			Over:       baseRepositories.Over, // Not cached yet
 			Ball:       baseRepositories.Ball, // Not cached yet
 			User:       baseRepositories.User, // Not cached yet
+			Vote:       cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
+			VoteTeam:   cacherepo.NewCachedVoteTeamRepository(baseRepositories.VoteTeam, cacheManager),
 		}
 		log.Printf("✅ Cached repositories initialized")
 	} else {
@@ -118,7 +124,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	} else {
 		log.Printf("Cache Layer: Disabled")
 	}
-	log.Printf("Repositories: Series, Match, Scoreboard, Scorecard, Over, Ball, User")
+	log.Printf("Repositories: Series, Match, Scoreboard, Scorecard, Over, Ball, User, Vote")
 	log.Printf("==========================================")
 
 	return &Client{
