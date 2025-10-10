@@ -13,6 +13,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Set build-time environment variables for Next.js
+ARG NEXT_PUBLIC_API_URL=https://spark-park-dev.dojima.foundation/api/v1
+ARG NEXT_PUBLIC_GRAPHQL_URL=https://spark-park-dev.dojima.foundation/api/v1/graphql
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_GRAPHQL_URL=$NEXT_PUBLIC_GRAPHQL_URL
+
 # Build the application
 RUN npm run build
 
