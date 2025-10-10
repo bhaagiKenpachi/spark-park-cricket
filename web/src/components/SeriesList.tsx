@@ -30,6 +30,7 @@ export function SeriesList(): React.JSX.Element {
   const [currentSeriesCreatedBy, setCurrentSeriesCreatedBy] = useState<
     string | null
   >(null);
+  const [expandedSeriesId, setExpandedSeriesId] = useState<string | null>(null);
 
   // Fetch series data on component mount
   useEffect(() => {
@@ -307,6 +308,10 @@ export function SeriesList(): React.JSX.Element {
                   onViewScorecard={handleViewScorecard}
                   currentUser={currentUser}
                   isAuthenticated={isAuthenticated}
+                  expanded={expandedSeriesId === seriesItem.id}
+                  onToggleExpanded={(isExpanded) => {
+                    setExpandedSeriesId(isExpanded ? seriesItem.id : null);
+                  }}
                 />
               ))}
           </div>

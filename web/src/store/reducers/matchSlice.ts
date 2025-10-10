@@ -76,7 +76,7 @@ export const matchSlice = createSlice({
     },
     createMatchSuccess: (state, action: PayloadAction<Match>) => {
       state.loading = false;
-      state.matches.push(action.payload);
+      state.matches.unshift(action.payload); // Add to beginning so new matches appear at top
     },
     createMatchFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;

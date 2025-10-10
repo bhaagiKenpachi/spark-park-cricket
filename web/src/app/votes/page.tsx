@@ -52,12 +52,16 @@ export default function VotesPage(): React.JSX.Element {
             <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
                 <div className="w-full max-w-md mx-auto px-3 py-2">
                     <div className="flex items-center justify-between">
-                        {/* Left: Logo/Home */}
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="bg-blue-600 p-1.5 rounded-lg">
-                                <Home className="h-4 w-4 text-white" />
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">Spark Park</span>
+                        {/* Left: Back to Home */}
+                        <Link href="/">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-2 p-1.5 h-auto"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                <span className="text-sm font-medium">Back to Home</span>
+                            </Button>
                         </Link>
 
                         {/* Right: Auth */}
@@ -93,10 +97,10 @@ export default function VotesPage(): React.JSX.Element {
                             )}
                             <div>
                                 <h1 className="text-base font-bold text-gray-900">
-                                    {viewMode === 'list' && 'Votes'}
-                                    {viewMode === 'create' && 'Create Vote'}
-                                    {viewMode === 'edit' && 'Edit Vote'}
-                                    {viewMode === 'view' && 'Vote Details'}
+                                {viewMode === 'list' && 'Votes'}
+                                {viewMode === 'create' && 'Create Vote'}
+                                {viewMode === 'edit' && 'Edit Vote'}
+                                {viewMode === 'view' && 'Vote Details'}
                                 </h1>
                                 {viewMode === 'list' && (
                                     <p className="text-xs text-gray-500">Browse and participate</p>

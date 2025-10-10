@@ -124,6 +124,8 @@ describe('seriesSlice', () => {
 
     expect(actual.loading).toBe(false);
     expect(actual.series).toContain(newSeries);
+    expect(actual.series[0]).toEqual(newSeries); // New series should be first
+    expect(actual.pagination.totalItems).toBe(1);
   });
 
   it('should handle createSeriesFailure', () => {
@@ -195,6 +197,11 @@ describe('seriesSlice', () => {
     const stateWithSeries = {
       ...initialState,
       series: [seriesToDelete, remainingSeries],
+      pagination: {
+        ...initialState.pagination,
+        totalItems: 2,
+        totalPages: 1,
+      },
     };
 
     const actual = seriesSlice.reducer(
@@ -205,5 +212,7 @@ describe('seriesSlice', () => {
     expect(actual.loading).toBe(false);
     expect(actual.series).toHaveLength(1);
     expect(actual.series[0]).toEqual(remainingSeries);
+    expect(actual.pagination.totalItems).toBe(1);
+    expect(actual.pagination.totalPages).toBe(1);
   });
 });
