@@ -16,7 +16,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - cricket-network
+      - cricket-prod-network
     restart: always
     deploy:
       resources:
@@ -43,7 +43,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - cricket-network
+      - cricket-prod-network
     restart: always
     deploy:
       resources:
@@ -71,7 +71,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - cricket-network
+      - cricket-prod-network
     restart: always
     deploy:
       resources:
@@ -95,7 +95,7 @@ services:
       - backend
       - web
     networks:
-      - cricket-network
+      - cricket-prod-network
     restart: always
     deploy:
       resources:
@@ -111,8 +111,8 @@ volumes:
     driver: local
 
 networks:
-  cricket-network:
+  cricket-prod-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.22.0.0/16
