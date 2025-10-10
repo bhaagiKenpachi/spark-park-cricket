@@ -111,10 +111,15 @@ export function* fetchVoteSaga(
 // Fetch vote with results saga
 export function* fetchVoteWithResultsSaga(
     action: ReturnType<typeof fetchVoteWithResultsRequest>
-): Generator<CallEffect | PutEffect, void, any> {
+): Generator<any, void, any> {
     try {
         const apiService = new ApiService();
         const voteId = action.payload;
+
+        // Add a small delay to allow backend to initialize vote results
+        // This prevents showing 0 results immediately after vote creation
+        yield delay(200);
+
         const response = yield call(apiService.getVoteWithResults.bind(apiService), voteId);
 
         const voteWithResultsData = response.data.data || response.data;
