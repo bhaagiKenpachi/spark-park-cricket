@@ -174,12 +174,16 @@ jobs:
           echo "${{ secrets.DEV_VM_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
-          # Create SSH config to skip host key checking (since runner may not reach VM for ssh-keyscan)
+          # Create SSH config with increased timeouts
           cat > ~/.ssh/config << 'SSHCONFIG'
           Host *
             StrictHostKeyChecking no
             UserKnownHostsFile=/dev/null
             LogLevel ERROR
+            ConnectTimeout 120
+            ServerAliveInterval 60
+            ServerAliveCountMax 10
+            TCPKeepAlive yes
           SSHCONFIG
           chmod 600 ~/.ssh/config
           
@@ -188,37 +192,26 @@ jobs:
       - name: Test SSH connection
         run: |
           echo "🔍 Testing SSH connection to ${{ secrets.DEV_VM_HOST }}..."
+          echo "⏱️  Waiting for SSH daemon (may take up to 2 minutes)..."
           
-          # Test connection with verbose output and timeout
+          # Test connection with extended timeout
           ssh -i ~/.ssh/deploy_key \
-            -o ConnectTimeout=30 \
-            -o ConnectionAttempts=3 \
-            -v \
             ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} \
             "echo '✅ SSH connection successful!' && whoami && pwd"
 
       - name: Create deployment directory on VM
         run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o ConnectTimeout=30 \
-            -o ConnectionAttempts=3 \
-            ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
             mkdir -p ~/cricket-deployment
           EOF
 
       - name: Copy configuration files to VM
         run: |
           # Copy deploy directory structure
-          scp -i ~/.ssh/deploy_key \
-            -o ConnectTimeout=30 \
-            -o ConnectionAttempts=3 \
-            -r deploy ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+          scp -i ~/.ssh/deploy_key -r deploy ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
           
           # Copy monitoring configurations
-          scp -i ~/.ssh/deploy_key \
-            -o ConnectTimeout=30 \
-            -o ConnectionAttempts=3 \
-            -r monitoring ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+          scp -i ~/.ssh/deploy_key -r monitoring ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
 
       - name: Create environment files on VM
         run: |
