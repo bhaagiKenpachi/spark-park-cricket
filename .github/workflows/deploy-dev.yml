@@ -185,19 +185,40 @@ jobs:
           
           echo "✅ SSH setup completed"
 
+      - name: Test SSH connection
+        run: |
+          echo "🔍 Testing SSH connection to ${{ secrets.DEV_VM_HOST }}..."
+          
+          # Test connection with verbose output and timeout
+          ssh -i ~/.ssh/deploy_key \
+            -o ConnectTimeout=30 \
+            -o ConnectionAttempts=3 \
+            -v \
+            ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} \
+            "echo '✅ SSH connection successful!' && whoami && pwd"
+
       - name: Create deployment directory on VM
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
+          ssh -i ~/.ssh/deploy_key \
+            -o ConnectTimeout=30 \
+            -o ConnectionAttempts=3 \
+            ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << 'EOF'
             mkdir -p ~/cricket-deployment
           EOF
 
       - name: Copy configuration files to VM
         run: |
           # Copy deploy directory structure
-          scp -i ~/.ssh/deploy_key -r deploy ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+          scp -i ~/.ssh/deploy_key \
+            -o ConnectTimeout=30 \
+            -o ConnectionAttempts=3 \
+            -r deploy ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
           
           # Copy monitoring configurations
-          scp -i ~/.ssh/deploy_key -r monitoring ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
+          scp -i ~/.ssh/deploy_key \
+            -o ConnectTimeout=30 \
+            -o ConnectionAttempts=3 \
+            -r monitoring ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }}:~/cricket-deployment/
 
       - name: Create environment files on VM
         run: |
