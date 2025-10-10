@@ -11,19 +11,19 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Production backend metrics - Direct connection to backend container
+  # Production backend metrics - Using container name in Docker network
   - job_name: 'cricket-backend-prod'
     static_configs:
-      - targets: ['15.235.202.148:8080']
+      - targets: ['cricket-backend-prod:8080']
     metrics_path: '/metrics'
     scheme: 'http'
     scrape_interval: 15s
     scrape_timeout: 10s
 
-  # Production frontend metrics (if available) - Direct connection to frontend container
+  # Production frontend metrics (if available) - Using container name in Docker network
   - job_name: 'cricket-frontend-prod'
     static_configs:
-      - targets: ['15.235.202.148:3000']
+      - targets: ['cricket-frontend-prod:3000']
     metrics_path: '/api/metrics'
     scheme: 'http'
     scrape_interval: 30s
