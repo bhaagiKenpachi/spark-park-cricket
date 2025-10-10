@@ -121,8 +121,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ../../../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ../../../monitoring/prometheus/rules:/etc/prometheus/rules
+      - ../../../monitoring/environments/prod/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../../../monitoring/environments/prod/prometheus/rules:/etc/prometheus/rules
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -148,7 +148,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ../../../monitoring/loki/loki.yml:/etc/loki/local-config.yaml
+      - ../../../monitoring/environments/prod/loki/loki.yml:/etc/loki/local-config.yaml
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     healthcheck:
@@ -165,7 +165,7 @@ services:
     image: grafana/promtail:2.9.0
     container_name: cricket-promtail-prod
     volumes:
-      - ../../../monitoring/promtail/promtail.yml:/etc/promtail/config.yml
+      - ../../../monitoring/environments/prod/promtail/promtail.yml:/etc/promtail/config.yml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
@@ -187,9 +187,9 @@ services:
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
       - grafana_data:/var/lib/grafana
-      - ../../../monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-      - ../../../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ../../../monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ../../../monitoring/environments/prod/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ../../../monitoring/environments/prod/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ../../../monitoring/environments/prod/grafana/dashboards:/var/lib/grafana/dashboards
     depends_on:
       - prometheus
       - loki
