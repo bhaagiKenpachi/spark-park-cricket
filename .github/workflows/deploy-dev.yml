@@ -19,8 +19,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE_NAME: ${{ github.repository }}/cricket-backend
-  WEB_IMAGE_NAME: ${{ github.repository }}/cricket-web
 
 jobs:
   build-backend:
@@ -35,6 +33,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -49,7 +53,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+          images: ${{ steps.image-name.outputs.backend }}
           tags: |
             type=raw,value=dev
             type=sha,prefix=dev-
@@ -62,8 +66,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ steps.image-name.outputs.backend }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image-name.outputs.backend }}:buildcache,mode=max
 
   build-web:
     name: Build Web Image
@@ -77,6 +81,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -91,7 +101,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
+          images: ${{ steps.image-name.outputs.web }}
           tags: |
             type=raw,value=dev
             type=sha,prefix=dev-
@@ -104,8 +114,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ steps.image-name.outputs.web }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image-name.outputs.web }}:buildcache,mode=max
 
   deploy:
     name: Deploy to Dev VM
@@ -116,6 +126,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        id: image-name
+        run: |
+          echo "backend=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-backend" >> $GITHUB_OUTPUT
+          echo "web=ghcr.io/${GITHUB_REPOSITORY,,}/cricket-web" >> $GITHUB_OUTPUT
 
       - name: Setup SSH key
         run: |
@@ -175,8 +191,8 @@ jobs:
             # Create docker-compose .env file for image references
             cat > .env << 'ENVFILE'
           GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
-          BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:dev
-          WEB_IMAGE=${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:dev
+          BACKEND_IMAGE=${{ steps.image-name.outputs.backend }}:dev
+          WEB_IMAGE=${{ steps.image-name.outputs.web }}:dev
           ENVFILE
           EOF
 
@@ -184,12 +200,12 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.DEV_VM_USER }}@${{ secrets.DEV_VM_HOST }} << EOF
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:dev
-            docker pull ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:dev
+            docker pull ${{ steps.image-name.outputs.backend }}:dev
+            docker pull ${{ steps.image-name.outputs.web }}:dev
             
             # Tag images for local reference
-            docker tag ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:dev spark-cricket-backend-dev
-            docker tag ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:dev spark-cricket-frontend-dev
+            docker tag ${{ steps.image-name.outputs.backend }}:dev spark-cricket-backend-dev
+            docker tag ${{ steps.image-name.outputs.web }}:dev spark-cricket-frontend-dev
           EOF
 
       - name: Deploy services with Docker Compose
