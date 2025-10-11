@@ -5,11 +5,14 @@ import { LogIn } from 'lucide-react';
 
 export function LoginButton() {
   const handleGoogleLogin = () => {
+    // Get the current URL to redirect back after authentication
+    const currentUrl = window.location.href;
+
     // Redirect directly to backend OAuth endpoint
     // The backend will handle the OAuth flow and redirect back
     const apiBaseUrl =
       process.env.NEXT_PUBLIC_API_URL || 'https://spark-park.dojima.foundation/api/v1';
-    const oauthUrl = `${apiBaseUrl}/auth/google`;
+    const oauthUrl = `${apiBaseUrl}/auth/google?redirect_url=${encodeURIComponent(currentUrl)}`;
 
     window.location.href = oauthUrl;
   };

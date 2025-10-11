@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import { SeriesList } from '@/components/SeriesList';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { checkAuthStatus } from '@/store/reducers/authSlice';
+import { useAppSelector } from '@/store/hooks';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,19 +16,6 @@ import { Vote, Trophy, Home as HomeIcon, Menu } from 'lucide-react';
 
 export default function Home(): React.JSX.Element {
   const { isAuthenticated } = useAppSelector(state => state.auth);
-  const dispatch = useAppDispatch();
-
-  // Handle authentication success callback
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    if (urlParams.get('auth') === 'success') {
-      // Clear the URL parameter
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Check authentication status
-      dispatch(checkAuthStatus());
-    }
-  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-gray-50">
