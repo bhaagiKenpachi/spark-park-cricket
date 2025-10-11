@@ -39,8 +39,13 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the redirect URL from query parameter
+	redirectURL := r.URL.Query().Get("redirect_url")
+	if redirectURL == "" {
+		redirectURL = h.Config.FrontendURL
+	}
 
-	// Store state in session for validation
+	// Store state and redirect URL in session for validation
 	session, err := h.SessionSvc.GetStore().Get(r, "oauth_state")
 	if err != nil {
 		utils.LogError(err, "Failed to get OAuth state session", nil)
@@ -49,6 +54,7 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.Values["state"] = state
+	session.Values["redirect_url"] = redirectURL
 	session.Options.MaxAge = 600 // 10 minutes
 
 	if err := session.Save(r, w); err != nil {
@@ -69,10 +75,8 @@ func (h *AuthHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, backupCookie)
 
-
 	// Get Google OAuth URL and redirect
 	authURL := h.AuthService.GetAuthURL(state)
-
 
 	http.Redirect(w, r, authURL, http.StatusTemporaryRedirect)
 }
@@ -84,7 +88,6 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 	errorParam := r.URL.Query().Get("error")
-
 
 	// Check for OAuth errors
 	if errorParam != "" {
@@ -103,7 +106,6 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	storedState, ok := session.Values["state"].(string)
 
 	// Check backup cookie if session state is not available
@@ -120,7 +122,6 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	if !ok || storedState == "" {
 		validState = backupState
 	}
-
 
 	if validState == "" || validState != state {
 		utils.LogWarn("Invalid state parameter", map[string]interface{}{
@@ -164,15 +165,55 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the redirect URL from session
+	redirectURL := h.Config.FrontendURL
+	if storedRedirectURL, ok := session.Values["redirect_url"].(string); ok && storedRedirectURL != "" {
+		redirectURL = storedRedirectURL
+	}
+
 	utils.LogInfo("User session created successfully, redirecting to frontend", map[string]interface{}{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"cookies": w.Header().Get("Set-Cookie"),
+		"user_id":      user.ID,
+		"email":        user.Email,
+		"cookies":      w.Header().Get("Set-Cookie"),
+		"redirect_url": redirectURL,
 	})
 
 	// Redirect to frontend after successful authentication
-	frontendURL := h.Config.FrontendURL + "?auth=success"
-	http.Redirect(w, r, frontendURL, http.StatusTemporaryRedirect)
+	// Add ?auth=success to the redirect URL
+	parsedURL, err := r.URL.Parse(redirectURL)
+	if err != nil {
+		// If URL parsing fails, fallback to simple concatenation
+		separator := "?"
+		if len(redirectURL) > 0 && (redirectURL[len(redirectURL)-1:] == "?" || redirectURL[len(redirectURL)-1:] == "&") {
+			separator = ""
+		} else if redirectURL != "" && redirectURL != "/" {
+			// Check if URL already has query parameters
+			hasQuery := false
+			for i := len(redirectURL) - 1; i >= 0; i-- {
+				if redirectURL[i] == '?' {
+					hasQuery = true
+					separator = "&"
+					break
+				}
+				if redirectURL[i] == '/' {
+					break
+				}
+			}
+			if !hasQuery {
+				separator = "?"
+			}
+		}
+		finalRedirectURL := redirectURL + separator + "auth=success"
+		http.Redirect(w, r, finalRedirectURL, http.StatusTemporaryRedirect)
+		return
+	}
+
+	// Add auth=success parameter
+	query := parsedURL.Query()
+	query.Set("auth", "success")
+	parsedURL.RawQuery = query.Encode()
+
+	http.Redirect(w, r, parsedURL.String(), http.StatusTemporaryRedirect)
 }
 
 // Logout handles user logout

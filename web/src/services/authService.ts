@@ -85,10 +85,18 @@ class AuthService {
 
   /**
    * Initiate Google OAuth login
+   * @param redirectUrl - Optional URL to redirect to after successful login
    */
-  async initiateGoogleLogin(): Promise<void> {
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = `${this.baseURL}/auth/google`;
+  async initiateGoogleLogin(redirectUrl?: string): Promise<void> {
+    // Get the current URL if no redirect URL is provided
+    const redirect = redirectUrl || (typeof window !== 'undefined' ? window.location.href : '');
+
+    // Redirect to backend Google OAuth endpoint with redirect URL
+    const url = redirect
+      ? `${this.baseURL}/auth/google?redirect_url=${encodeURIComponent(redirect)}`
+      : `${this.baseURL}/auth/google`;
+
+    window.location.href = url;
   }
 
   /**
