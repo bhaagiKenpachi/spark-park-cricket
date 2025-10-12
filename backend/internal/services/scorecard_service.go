@@ -934,8 +934,12 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 			return fmt.Errorf("failed to update innings: %w", err)
 		}
 
-		// Invalidate caches
+		// Invalidate caches including the deleted over and previous over
 		s.invalidateScorecardCacheForMatch(matchID, innings.ID)
+		s.invalidateOverCaches(innings.ID, lastOver.ID)
+		if previousOver != nil {
+			s.invalidateOverCaches(innings.ID, previousOver.ID)
+		}
 
 		log.Printf("Successfully deleted over %d and reverted to over %d", lastOver.OverNumber, previousOver.OverNumber)
 		return nil
@@ -1067,8 +1071,9 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		log.Printf("Reverted match %s status from completed to live", matchID)
 	}
 
-	// Invalidate caches
+	// Invalidate caches including the specific over that was modified
 	s.invalidateScorecardCacheForMatch(matchID, innings.ID)
+	s.invalidateOverCaches(innings.ID, lastOver.ID)
 
 	log.Printf("Successfully undone ball: %s %d runs, byes: %d, total: %d, wicket: %v", lastBall.RunType, runs, byes, totalRuns, lastBall.IsWicket)
 	return nil
@@ -1310,6 +1315,38 @@ func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID s
 	_ = s.cache.Invalidate(fmt.Sprintf("match_innings_over:%s:%d", matchID, 2))
 
 	log.Printf("Scorecard cache invalidation completed for match %s", matchID)
+}
+
+// invalidateOverCaches invalidates all caches related to a specific over
+func (s *ScorecardService) invalidateOverCaches(inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating over-specific caches for over %s", overID)
+
+	// Invalidate balls cache for this over
+	ballsKey := fmt.Sprintf("balls:over:%s", overID)
+	_ = s.cache.Invalidate(ballsKey)
+
+	// Invalidate ball count cache
+	ballCountKey := fmt.Sprintf("ball_count:over:%s", overID)
+	_ = s.cache.Invalidate(ballCountKey)
+
+	// Invalidate balls for next number cache
+	ballsNextNumberKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+	_ = s.cache.Invalidate(ballsNextNumberKey)
+
+	// Invalidate last ball cache
+	lastBallKey := fmt.Sprintf("ball:last:over:%s", overID)
+	_ = s.cache.Invalidate(lastBallKey)
+
+	// Invalidate last over cache for innings (since over details changed)
+	lastOverKey := fmt.Sprintf("over:last:innings:%s", inningsID)
+	_ = s.cache.Invalidate(lastOverKey)
+
+	log.Printf("Over-specific cache invalidation completed for over %s", overID)
 }
 
 // calculateOversInMemory performs optimized overs calculation in memory
