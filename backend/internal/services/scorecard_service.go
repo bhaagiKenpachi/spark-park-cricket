@@ -241,6 +241,18 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		return fmt.Errorf("over is complete, cannot add more balls")
 	}
 
+	// CRITICAL PRE-VALIDATION: Check if adding this wicket would exceed maximum wickets
+	// This check MUST happen BEFORE adding the ball to prevent balls being added after all wickets are down.
+	// Issue fixed: Without this check, the system allowed 24 balls for 19 wickets (5 extra balls after last wicket).
+	// DO NOT REMOVE: This prevents innings from continuing after all wickets have fallen.
+	// The post-validation (after adding ball) only marks innings as complete but doesn't prevent the ball from being added.
+	if req.IsWicket {
+		maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
+		if data.InningsTotalWickets >= maxWickets {
+			return fmt.Errorf("innings is complete, all wickets are down (%d/%d)", data.InningsTotalWickets, maxWickets)
+		}
+	}
+
 	// Calculate next ball number - use fresh calculation to avoid stale data
 	nextBallNumber, err := s.getNextBallNumber(ctx, data.OverID)
 	if err != nil {
@@ -350,8 +362,9 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 
@@ -692,8 +705,9 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 

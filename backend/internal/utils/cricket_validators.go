@@ -75,8 +75,8 @@ func (v *CricketValidator) ValidateScoreboard(scoreboard *models.LiveScoreboard)
 		return fmt.Errorf("score cannot be negative")
 	}
 
-	if scoreboard.Wickets < 0 || scoreboard.Wickets > 10 {
-		return fmt.Errorf("wickets must be between 0 and 10")
+	if scoreboard.Wickets < 0 || scoreboard.Wickets > 20 {
+		return fmt.Errorf("wickets must be between 0 and 20")
 	}
 
 	if scoreboard.Overs < 0 {
@@ -174,12 +174,13 @@ func (v *CricketValidator) CalculateRequiredBalls(totalOvers float64, currentOve
 	return remaining
 }
 
-// IsInningsComplete checks if an innings is complete
+// IsInningsComplete checks if an innings is complete based on team size
+// Note: This is a legacy function. Actual wicket limits should be calculated
+// dynamically based on team player count (playerCount - 1)
 func (v *CricketValidator) IsInningsComplete(wickets int, overs float64, maxOvers float64) bool {
-	// Innings complete if all wickets are down
-	if wickets >= 10 {
-		return true
-	}
+	// Note: Hardcoded 10 removed - callers should pass correct maxWickets
+	// This function is kept for backward compatibility but should not be used
+	// for actual wicket validation. Use match.TeamAPlayerCount - 1 instead.
 
 	// Innings complete if all overs are bowled
 	if overs >= maxOvers {
@@ -296,8 +297,8 @@ func ValidateInnings(innings *models.Innings) error {
 		return fmt.Errorf("total runs cannot be negative")
 	}
 
-	if innings.TotalWickets < 0 || innings.TotalWickets > 10 {
-		return fmt.Errorf("total wickets must be between 0 and 10")
+	if innings.TotalWickets < 0 || innings.TotalWickets > 20 {
+		return fmt.Errorf("total wickets must be between 0 and 20")
 	}
 
 	if innings.TotalOvers < 0 {
