@@ -350,8 +350,9 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 
@@ -692,8 +693,9 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 

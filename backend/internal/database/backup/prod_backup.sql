@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS backup_prod_v1.innings (
     innings_number INTEGER NOT NULL CHECK (innings_number IN (1, 2)),
     batting_team VARCHAR(1) NOT NULL CHECK (batting_team IN ('A', 'B')),
     total_runs INTEGER DEFAULT 0 CHECK (total_runs >= 0),
-    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0 AND total_wickets <= 10),
+    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0 AND total_wickets <= 20),
     total_overs DECIMAL(4,1) DEFAULT 0.0 CHECK (total_overs >= 0),
     total_balls INTEGER DEFAULT 0 CHECK (total_balls >= 0),
     status VARCHAR(20) DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),

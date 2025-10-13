@@ -119,7 +119,7 @@ CREATE SCHEMA IF NOT EXISTS your_custom_schema;
 
 - **Match Constraints**: Team player counts (1-20), overs (1-20), status validation
 - **Toss Constraints**: Winner (A/B), type (H/T), batting team validation
-- **Innings Constraints**: Innings number (1-2), wickets (0-10), status validation
+- **Innings Constraints**: Innings number (1-2), wickets (0-20), status validation
 - **Over Constraints**: Over number (≥1), balls (0-6), status validation
 - **Ball Constraints**: Ball number (1-20), ball types, run types, wicket validation
 - **Wicket Logic**: Ensures wicket_type is NULL when is_wicket is false
