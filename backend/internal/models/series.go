@@ -8,6 +8,8 @@ import (
 type Series struct {
 	ID        string    `json:"id,omitempty" db:"id,omitempty"`
 	Name      string    `json:"name" db:"name"`
+	TeamAName *string   `json:"team_a_name,omitempty" db:"team_a_name,omitempty"`
+	TeamBName *string   `json:"team_b_name,omitempty" db:"team_b_name,omitempty"`
 	StartDate time.Time `json:"start_date" db:"start_date"`
 	EndDate   time.Time `json:"end_date" db:"end_date"`
 	CreatedBy string    `json:"created_by,omitempty" db:"created_by,omitempty"`
@@ -18,6 +20,8 @@ type Series struct {
 // CreateSeriesRequest represents the request to create a new series
 type CreateSeriesRequest struct {
 	Name      string    `json:"name" validate:"required,min=3,max=255"`
+	TeamAName *string   `json:"team_a_name,omitempty" validate:"omitempty,min=1,max=100"`
+	TeamBName *string   `json:"team_b_name,omitempty" validate:"omitempty,min=1,max=100"`
 	StartDate time.Time `json:"start_date" validate:"required"`
 	EndDate   time.Time `json:"end_date" validate:"required,gtfield=StartDate"`
 }
@@ -25,6 +29,8 @@ type CreateSeriesRequest struct {
 // UpdateSeriesRequest represents the request to update a series
 type UpdateSeriesRequest struct {
 	Name      *string    `json:"name,omitempty" validate:"omitempty,min=3,max=255"`
+	TeamAName *string    `json:"team_a_name,omitempty" validate:"omitempty,min=1,max=100"`
+	TeamBName *string    `json:"team_b_name,omitempty" validate:"omitempty,min=1,max=100"`
 	StartDate *time.Time `json:"start_date,omitempty"`
 	EndDate   *time.Time `json:"end_date,omitempty"`
 }

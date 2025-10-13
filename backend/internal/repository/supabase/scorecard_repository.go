@@ -813,12 +813,22 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 		}
 	}
 
+	// Get team names from match or use defaults
+	teamAName := "Team A"
+	if match.TeamAName != nil && *match.TeamAName != "" {
+		teamAName = *match.TeamAName
+	}
+	teamBName := "Team B"
+	if match.TeamBName != nil && *match.TeamBName != "" {
+		teamBName = *match.TeamBName
+	}
+
 	scorecard := &models.ScorecardResponse{
 		MatchID:        matchID,
 		MatchNumber:    match.MatchNumber,
 		SeriesName:     seriesName,
-		TeamA:          "Team A",
-		TeamB:          "Team B",
+		TeamA:          teamAName,
+		TeamB:          teamBName,
 		TotalOvers:     match.TotalOvers,
 		TossWinner:     match.TossWinner,
 		TossType:       match.TossType,

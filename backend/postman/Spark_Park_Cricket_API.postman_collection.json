@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "spark-park-cricket-api",
     "name": "Spark Park Cricket API",
-    "description": "Cricket Tournament Management System with Team A vs Team B matches, toss functionality, comprehensive ball-by-ball scoring with real-time WebSocket updates, and voting system for polls and surveys",
+    "description": "Cricket Tournament Management System with Team A vs Team B matches, custom team naming, toss functionality, comprehensive ball-by-ball scoring with real-time WebSocket updates, and voting system for polls and surveys",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "spark-park-cricket"
   },
@@ -177,7 +177,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Vijay vs Venkat\",\n  \"start_date\": \"2024-03-22T00:00:00Z\",\n  \"end_date\": \"2024-03-23T23:59:59Z\"\n}"
+              "raw": "{\n  \"name\": \"Vijay vs Venkat\",\n  \"team_a_name\": \"Team Lions\",\n  \"team_b_name\": \"Team Tigers\",\n  \"start_date\": \"2024-03-22T00:00:00Z\",\n  \"end_date\": \"2024-03-23T23:59:59Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/series",
@@ -190,7 +190,7 @@
                 "series"
               ]
             },
-            "description": "Create a new cricket series/tournament"
+            "description": "Create a new cricket series/tournament with optional team names for Team A and Team B. Team names will be automatically applied to all matches created under this series."
           },
           "response": []
         },
@@ -257,7 +257,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Series Name\",\n  \"start_date\": \"2024-03-22T00:00:00Z\",\n  \"end_date\": \"2024-03-25T23:59:59Z\"\n}"
+              "raw": "{\n  \"name\": \"Updated Series Name\",\n  \"team_a_name\": \"Updated Team A\",\n  \"team_b_name\": \"Updated Team B\",\n  \"start_date\": \"2024-03-22T00:00:00Z\",\n  \"end_date\": \"2024-03-25T23:59:59Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/series/{{series_id}}",
@@ -271,7 +271,7 @@
                 "{{series_id}}"
               ]
             },
-            "description": "Update an existing series"
+            "description": "Update an existing series including team names. All fields are optional."
           },
           "response": []
         },
@@ -293,6 +293,65 @@
               ]
             },
             "description": "Delete a series"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Series with Team Names",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Champions League 2025\",\n  \"team_a_name\": \"Mumbai Indians\",\n  \"team_b_name\": \"Chennai Super Kings\",\n  \"start_date\": \"2025-06-01T00:00:00Z\",\n  \"end_date\": \"2025-08-31T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/series",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series"
+              ]
+            },
+            "description": "Example of creating a series with custom team names. Matches created under this series will automatically inherit 'Mumbai Indians' as Team A and 'Chennai Super Kings' as Team B."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Team Names Only",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"team_a_name\": \"Royal Challengers\",\n  \"team_b_name\": \"Knight Riders\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/series/{{series_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "series",
+                "{{series_id}}"
+              ]
+            },
+            "description": "Update only the team names for a series. Future matches will use the new team names."
           },
           "response": []
         }
@@ -326,7 +385,7 @@
                 "matches"
               ]
             },
-            "description": "Create a new match with Team A vs Team B and toss functionality"
+            "description": "Create a new match with Team A vs Team B and toss functionality. If the series has team names defined, they will be automatically assigned to this match."
           },
           "response": []
         },

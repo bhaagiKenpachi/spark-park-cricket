@@ -37,6 +37,8 @@ func (s *SeriesService) CreateSeries(ctx context.Context, req *models.CreateSeri
 	// Create series model
 	series := &models.Series{
 		Name:      req.Name,
+		TeamAName: req.TeamAName,
+		TeamBName: req.TeamBName,
 		StartDate: req.StartDate,
 		EndDate:   req.EndDate,
 		CreatedBy: userID,
@@ -112,6 +114,12 @@ func (s *SeriesService) UpdateSeries(ctx context.Context, id string, req *models
 	// Update fields if provided
 	if req.Name != nil {
 		series.Name = *req.Name
+	}
+	if req.TeamAName != nil {
+		series.TeamAName = req.TeamAName
+	}
+	if req.TeamBName != nil {
+		series.TeamBName = req.TeamBName
 	}
 	if req.StartDate != nil {
 		series.StartDate = *req.StartDate

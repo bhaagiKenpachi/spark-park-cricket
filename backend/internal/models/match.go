@@ -37,6 +37,8 @@ type Match struct {
 	MatchNumber      int         `json:"match_number" db:"match_number"`
 	Date             time.Time   `json:"date" db:"date"`
 	Status           MatchStatus `json:"status" db:"status"`
+	TeamAName        *string     `json:"team_a_name,omitempty" db:"team_a_name,omitempty"`
+	TeamBName        *string     `json:"team_b_name,omitempty" db:"team_b_name,omitempty"`
 	TeamAPlayerCount int         `json:"team_a_player_count" db:"team_a_player_count"`
 	TeamBPlayerCount int         `json:"team_b_player_count" db:"team_b_player_count"`
 	TotalOvers       int         `json:"total_overs" db:"total_overs"`

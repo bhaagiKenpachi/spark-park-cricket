@@ -175,8 +175,8 @@ describe('SeriesList', () => {
 
     render(<SeriesList />);
 
-    // Due to component logic, empty series array shows loading state
-    expect(screen.getByText('Loading series...')).toBeInTheDocument();
+    // Due to component logic, empty series array shows "No series found" message
+    expect(screen.getByText('No series found.')).toBeInTheDocument();
   });
 
   it('should render series list when series exist', () => {
