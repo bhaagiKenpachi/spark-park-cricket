@@ -348,6 +348,43 @@ export function SeriesWithMatches({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
+        {/* Team Names Section - Show if either team name is provided */}
+        {(series.team_a_name || series.team_b_name) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
+            {series.team_a_name && (
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Trophy className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Team A
+                  </span>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {series.team_a_name}
+                  </p>
+                </div>
+              </div>
+            )}
+            {series.team_b_name && (
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Trophy className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Team B
+                  </span>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {series.team_b_name}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dates Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -502,6 +539,31 @@ export function SeriesWithMatches({
                               </Badge>
                             </div>
                           </div>
+
+                          {/* Team Names - Show if available */}
+                          {(match.team_a_name || match.team_b_name) && (
+                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 mb-3">
+                              <div className="flex items-center justify-center space-x-4">
+                                <div className="flex-1 text-center">
+                                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
+                                    Team A
+                                  </span>
+                                  <p className="text-md font-bold text-blue-900">
+                                    {match.team_a_name || 'Team A'}
+                                  </p>
+                                </div>
+                                <span className="text-2xl font-bold text-gray-400">vs</span>
+                                <div className="flex-1 text-center">
+                                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
+                                    Team B
+                                  </span>
+                                  <p className="text-md font-bold text-purple-900">
+                                    {match.team_b_name || 'Team B'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                           {/* Match Quick Info */}
                           <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-5 border border-blue-100">

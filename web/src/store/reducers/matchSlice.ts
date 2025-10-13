@@ -7,6 +7,8 @@ export interface Match {
   match_number: number;
   date: string;
   status: 'not_started' | 'live' | 'completed' | 'cancelled';
+  team_a_name?: string;
+  team_b_name?: string;
   team_a_player_count: number;
   team_b_player_count: number;
   total_overs: number;
