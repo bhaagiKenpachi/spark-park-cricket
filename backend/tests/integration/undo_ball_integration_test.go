@@ -452,4 +452,57 @@ func TestUndoBallIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, errorResponse.Error.Message, "innings must be 1 or 2")
 	})
+
+	t.Run("multiple undo - undo same ball multiple times", func(t *testing.T) {
+		// Create series and match
+		seriesID := createTestSeriesForUndoBall(t, router, sessionCookie)
+		require.NotEmpty(t, seriesID)
+
+		matchID := createTestMatchForUndoBall(t, router, seriesID, sessionCookie)
+		require.NotEmpty(t, matchID)
+
+		updateMatchToLiveForUndoBall(t, router, matchID, sessionCookie)
+
+		// Add 6 balls to complete an over
+		for i := 0; i < 6; i++ {
+			ballReq := map[string]interface{}{
+				"innings_number": 1,
+				"ball_type":      "good",
+				"run_type":       "one",
+				"byes":           0,
+				"is_wicket":      false,
+			}
+			ballJSON, _ := json.Marshal(ballReq)
+			addBallReq := httptest.NewRequest("POST", "/api/v1/scorecard/"+matchID+"/ball", bytes.NewBuffer(ballJSON))
+			addBallReq.Header.Set("Content-Type", "application/json")
+			addBallReq.AddCookie(&http.Cookie{Name: "user_session", Value: sessionCookie})
+			addBallW := httptest.NewRecorder()
+			router.ServeHTTP(addBallW, addBallReq)
+			assert.Equal(t, http.StatusOK, addBallW.Code, "Failed to add ball %d", i+1)
+		}
+
+		// Now undo all 6 balls one by one
+		for i := 0; i < 6; i++ {
+			undoReq := httptest.NewRequest("DELETE", "/api/v1/scorecard/"+matchID+"/ball?innings=1", nil)
+			undoReq.AddCookie(&http.Cookie{Name: "user_session", Value: sessionCookie})
+			undoW := httptest.NewRecorder()
+			router.ServeHTTP(undoW, undoReq)
+			assert.Equal(t, http.StatusOK, undoW.Code, "Failed to undo ball %d", i+1)
+		}
+
+		// Verify the scorecard shows 0 balls
+		scorecardReq := httptest.NewRequest("GET", "/api/v1/scorecard/"+matchID, nil)
+		scorecardW := httptest.NewRecorder()
+		router.ServeHTTP(scorecardW, scorecardReq)
+		assert.Equal(t, http.StatusOK, scorecardW.Code)
+
+		var scorecardResponse struct {
+			Success bool                     `json:"success"`
+			Data    models.ScorecardResponse `json:"data"`
+		}
+		err := json.Unmarshal(scorecardW.Body.Bytes(), &scorecardResponse)
+		require.NoError(t, err)
+		assert.Equal(t, 0, scorecardResponse.Data.Innings[0].TotalBalls)
+		assert.Equal(t, 0.0, scorecardResponse.Data.Innings[0].TotalOvers)
+	})
 }

@@ -18,9 +18,11 @@ type ScorecardRepository interface {
 	CreateOver(ctx context.Context, over *models.ScorecardOver) error
 	GetOverByInningsAndNumber(ctx context.Context, inningsID string, overNumber int) (*models.ScorecardOver, error)
 	GetCurrentOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error)
+	GetLastOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error)
 	GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error)
 	UpdateOver(ctx context.Context, over *models.ScorecardOver) error
 	CompleteOver(ctx context.Context, overID string) error
+	DeleteOver(ctx context.Context, overID string) error
 
 	// Ball operations
 	CreateBall(ctx context.Context, ball *models.ScorecardBall) error

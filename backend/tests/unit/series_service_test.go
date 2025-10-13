@@ -1,10 +1,11 @@
-package tests
+package unit
 
 import (
 	"context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 

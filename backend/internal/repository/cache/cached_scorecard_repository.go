@@ -167,6 +167,22 @@ func (r *CachedScorecardRepository) GetCurrentOver(ctx context.Context, inningsI
 	return &over, nil
 }
 
+// GetLastOver retrieves last over (by over_number) with caching
+func (r *CachedScorecardRepository) GetLastOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
+	cacheKey := fmt.Sprintf("over:last:innings:%s", inningsID)
+
+	var over models.ScorecardOver
+	err := r.cache.GetOrSet(cacheKey, &over, cache.ScorecardTTL, func() (interface{}, error) {
+		return r.repo.GetLastOver(ctx, inningsID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &over, nil
+}
+
 // GetOversByInnings retrieves overs with caching
 func (r *CachedScorecardRepository) GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error) {
 	cacheKey := fmt.Sprintf("overs:innings:%s", inningsID)
@@ -212,6 +228,18 @@ func (r *CachedScorecardRepository) CompleteOver(ctx context.Context, overID str
 	}
 
 	// Note: Similar to CompleteInnings, we would need matchID to invalidate properly
+	return nil
+}
+
+// DeleteOver deletes over and invalidates caches
+func (r *CachedScorecardRepository) DeleteOver(ctx context.Context, overID string) error {
+	err := r.repo.DeleteOver(ctx, overID)
+	if err != nil {
+		return err
+	}
+
+	// Note: We would need innings ID to properly invalidate specific caches
+	// For now, we'll rely on the service layer to invalidate relevant caches
 	return nil
 }
 
