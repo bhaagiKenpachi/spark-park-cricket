@@ -34,8 +34,8 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	}
 	log.Printf("Creating match for user ID: %s", userID)
 
-	// Validate series exists
-	_, err := s.seriesRepo.GetByID(ctx, req.SeriesID)
+	// Validate series exists and get team names
+	series, err := s.seriesRepo.GetByID(ctx, req.SeriesID)
 	if err != nil {
 		return nil, fmt.Errorf("series not found: %w", err)
 	}
@@ -79,11 +79,14 @@ func (s *MatchService) CreateMatch(ctx context.Context, req *models.CreateMatchR
 	}
 
 	// Create match model with toss winner as batting team by default
+	// Copy team names from series if available
 	match := &models.Match{
 		SeriesID:         req.SeriesID,
 		MatchNumber:      matchNumber,
 		Date:             req.Date,
 		Status:           models.MatchStatusNotStarted, // Not started by default
+		TeamAName:        series.TeamAName,             // Copy from series
+		TeamBName:        series.TeamBName,             // Copy from series
 		TeamAPlayerCount: req.TeamAPlayerCount,
 		TeamBPlayerCount: req.TeamBPlayerCount,
 		TotalOvers:       req.TotalOvers,
