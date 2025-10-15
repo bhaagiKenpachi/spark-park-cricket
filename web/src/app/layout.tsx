@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Spark Park Cricket',
   description: 'Cricket Tournament Management System',
+  other: {
+    'google-adsense-account': 'ca-pub-5474524579770573',
+  },
 };
 
 export default function RootLayout({
