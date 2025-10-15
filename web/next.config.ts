@@ -19,7 +19,13 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "connect-src 'self' http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:* https://cricket.dojima.foundation https://cricket-dev.dojima.foundation https://spark-park.dojima.foundation https://ochhmsslirapqqzcgvek.supabase.co https://api.whatsapp.com https://api.iconify.design; default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;",
+              "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://*.google.com https://*.adtrafficquality.google https://www.googletagmanager.com; " +
+              "connect-src 'self' http://localhost:* https://localhost:* http://127.0.0.1:* https://127.0.0.1:* https://cricket.dojima.foundation https://cricket-dev.dojima.foundation https://spark-park.dojima.foundation https://spark-park-dev.dojima.foundation https://ochhmsslirapqqzcgvek.supabase.co https://api.whatsapp.com https://api.iconify.design https://pagead2.googlesyndication.com https://*.google.com https://*.google-analytics.com https://*.adtrafficquality.google; " +
+              "img-src 'self' data: https: blob:; " +
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+              "font-src 'self' data: https://fonts.gstatic.com; " +
+              "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google https://www.google.com;",
           },
         ],
       },
