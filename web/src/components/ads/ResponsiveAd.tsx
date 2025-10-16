@@ -20,6 +20,7 @@ export function ResponsiveAd({
     className = '',
 }: ResponsiveAdProps): React.JSX.Element {
     const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+    const adsEnabled = process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false';
     const isAdPushed = useRef(false);
 
     useEffect(() => {
@@ -27,16 +28,16 @@ export function ResponsiveAd({
         if (isAdPushed.current) return;
 
         try {
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && adsEnabled) {
                 (window.adsbygoogle = window.adsbygoogle || []).push({});
                 isAdPushed.current = true;
             }
         } catch (error) {
             console.error('AdSense error:', error);
         }
-    }, []);
+    }, [adsEnabled]);
 
-    if (!clientId) {
+    if (!adsEnabled || !clientId) {
         return <></>;
     }
 

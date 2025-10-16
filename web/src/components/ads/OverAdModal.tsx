@@ -15,7 +15,13 @@ export function OverAdModal({
     adSlot,
     overNumber,
 }: OverAdModalProps): React.JSX.Element {
+    const adsEnabled = process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false';
     const [countdown, setCountdown] = useState(5);
+
+    // If ads are disabled, don't render the modal
+    if (!adsEnabled) {
+        return <></>;
+    }
 
     useEffect(() => {
         // Countdown timer
