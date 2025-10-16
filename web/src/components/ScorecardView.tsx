@@ -58,7 +58,6 @@ export function ScorecardView({
   const [expandedOvers, setExpandedOvers] = useState<{
     [key: string]: boolean;
   }>({});
-  const [shownOverAds, setShownOverAds] = useState<Set<string>>(new Set());
   const [currentOverAd, setCurrentOverAd] = useState<{
     inningsKey: string;
     overNumber: number;
@@ -134,9 +133,6 @@ export function ScorecardView({
               inningsKey,
               overNumber: latestOverNumber,
             });
-
-            // Mark this over as shown
-            setShownOverAds(prev => new Set(prev).add(`${inningsKey}-${latestOverNumber}`));
           }
 
           // Update the last known over number in ref
