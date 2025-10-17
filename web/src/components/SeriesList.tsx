@@ -206,7 +206,7 @@ export function SeriesList(): React.JSX.Element {
   // Show loading state only when actually loading
   if (loading || !series || !Array.isArray(series)) {
     return (
-      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-6 md:max-w-lg md:px-8">
+      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-4 md:max-w-lg md:px-8">
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="text-sm text-gray-600">Loading series...</span>
@@ -217,14 +217,14 @@ export function SeriesList(): React.JSX.Element {
 
   if (error) {
     return (
-      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-6 md:max-w-lg md:px-8">
+      <div className="w-full max-w-sm mx-auto px-4 py-8 sm:max-w-md sm:px-4 md:max-w-lg md:px-8">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
           <strong className="font-bold">Error:</strong>
           <span className="block sm:inline"> {error}</span>
           <div className="mt-3">
             <button
               onClick={handleRefresh}
-              className="w-full py-2 px-4 bg-red-600 text-white rounded-lg font-medium active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 sm:w-auto sm:px-6"
+              className="w-full py-2 px-4 bg-red-600 text-white rounded-lg font-medium active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 sm:w-auto sm:px-4"
             >
               Retry
             </button>
@@ -259,7 +259,7 @@ export function SeriesList(): React.JSX.Element {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6" data-cy="series-list">
+    <div className="w-full max-w-4xl mx-auto" data-cy="series-list">
       <div className="flex flex-col items-center space-y-4 mb-6 sm:flex-row sm:justify-between sm:space-y-0">
         <h2 className="text-2xl font-bold text-center">Cricket Series</h2>
         <div className="flex space-x-2">

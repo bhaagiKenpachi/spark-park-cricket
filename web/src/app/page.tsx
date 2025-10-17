@@ -18,7 +18,7 @@ export default function Home(): React.JSX.Element {
   const { isAuthenticated } = useAppSelector(state => state.auth);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Top Navigation Bar */}
       <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="w-full max-w-md mx-auto px-3 py-2">
@@ -69,7 +69,7 @@ export default function Home(): React.JSX.Element {
         </div>
       </div>
 
-      <main className="w-full max-w-md mx-auto px-4 py-4">
+      <main className="w-full max-w-md mx-auto px-4 py-4 overflow-y-auto">
         <SeriesList />
       </main>
 
