@@ -112,12 +112,15 @@ jobs:
           echo "📝 Using frontend URL: ${FRONTEND_URL}"
           echo "📝 API URL: ${FRONTEND_URL}/api/v1"
           echo "📝 GraphQL URL: ${FRONTEND_URL}/api/v1/graphql"
+          echo "📝 AdSense Client ID: ${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}"
           
           # Build image with build args for Next.js public variables
           docker build \
             --file Dockerfile \
             --build-arg NEXT_PUBLIC_API_URL=${FRONTEND_URL}/api/v1 \
             --build-arg NEXT_PUBLIC_GRAPHQL_URL=${FRONTEND_URL}/api/v1/graphql \
+            --build-arg NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS || 'true' }} \
             --build-arg NODE_ENV=production \
             --tag ${{ steps.image-name.outputs.web }}:dev \
             --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
@@ -206,6 +209,8 @@ jobs:
           NODE_ENV=production
           NEXT_PUBLIC_API_URL=${{ secrets.FRONTEND_URL }}/api/v1
           NEXT_PUBLIC_GRAPHQL_URL=${{ secrets.FRONTEND_URL }}/api/v1/graphql
+          NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
+          NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS }}
           ENVFILE
 
             # Create docker-compose .env file for image references

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchScorecardRequest,
@@ -35,6 +35,7 @@ import {
   Users,
 } from 'lucide-react';
 import { User } from '@/services/authService';
+import { OverAdModal } from '@/components/ads/OverAdModal';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -69,6 +70,11 @@ export function ScorecardView({
   const [loadedOverDetails, setLoadedOverDetails] = useState<{
     [key: string]: boolean;
   }>({});
+  const [currentOverAd, setCurrentOverAd] = useState<{
+    inningsKey: string;
+    overNumber: number;
+  } | null>(null);
+  const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
   const isOwner =
@@ -118,6 +124,36 @@ export function ScorecardView({
     ) {
       // If no innings exist yet, start with innings 1
       setCurrentInn(1);
+    }
+  }, [scorecard]);
+
+  // Check for new overs and show ads
+  useEffect(() => {
+    if (scorecard?.innings && Array.isArray(scorecard.innings)) {
+      scorecard.innings.forEach((innings) => {
+        const inningsKey = `${innings.batting_team}-${innings.innings_number}`;
+
+        if (innings.overs && innings.overs.length > 0) {
+          // Get the latest over number
+          const latestOverNumber = Math.max(...innings.overs.map(over => over.over_number));
+          const lastKnownOverNumber = lastOverNumbersRef.current[inningsKey] || 0;
+
+          // If there's a new over and it's not the first over
+          if (latestOverNumber > lastKnownOverNumber && latestOverNumber > 1) {
+            // Show ad for the new over
+            setCurrentOverAd({
+              inningsKey,
+              overNumber: latestOverNumber,
+            });
+          }
+
+          // Update the last known over number in ref
+          lastOverNumbersRef.current = {
+            ...lastOverNumbersRef.current,
+            [inningsKey]: latestOverNumber
+          };
+        }
+      });
     }
   }, [scorecard]);
 
@@ -300,6 +336,10 @@ export function ScorecardView({
   const handleRefresh = () => {
     dispatch(fetchScorecardRequest(matchId));
   };
+
+  const handleCloseOverAd = useCallback(() => {
+    setCurrentOverAd(null);
+  }, []);
 
   const toggleExpandedOvers = (inningsKey: string) => {
     const isCurrentlyExpanded = expandedOvers[inningsKey];
@@ -2036,6 +2076,15 @@ export function ScorecardView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Over Ad Modal */}
+      {currentOverAd && (
+        <OverAdModal
+          onClose={handleCloseOverAd}
+          adSlot="5949756909"
+          overNumber={currentOverAd.overNumber}
+        />
       )}
     </div>
   );

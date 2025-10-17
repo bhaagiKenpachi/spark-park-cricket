@@ -4,6 +4,7 @@ import './globals.css';
 import { ReduxProvider } from '@/providers/ReduxProvider';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { GraphQLProvider } from '@/providers/GraphQLProvider';
+import { AdSenseScript } from '@/components/ads/AdSenseScript';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -18,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Spark Park Cricket',
   description: 'Cricket Tournament Management System',
+  other: {
+    'google-adsense-account': 'ca-pub-5474524579770573',
+  },
 };
 
 export default function RootLayout({
@@ -30,6 +34,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <AdSenseScript />
         <ReduxProvider>
           <GraphQLProvider>
             <AuthProvider>{children}</AuthProvider>

@@ -15,6 +15,7 @@ import { ScorecardView } from './ScorecardView';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { RefreshCw, Plus } from 'lucide-react';
+import { InFeedAd } from '@/components/ads/InFeedAd';
 
 export function SeriesList(): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -300,19 +301,28 @@ export function SeriesList(): React.JSX.Element {
           <div className="space-y-4">
             {Array.isArray(series) &&
               series.map((seriesItem, index) => (
-                <SeriesWithMatches
-                  key={seriesItem.id || `series-${index}`}
-                  series={seriesItem}
-                  onEditSeries={handleEdit}
-                  onDeleteSeries={handleDelete}
-                  onViewScorecard={handleViewScorecard}
-                  currentUser={currentUser}
-                  isAuthenticated={isAuthenticated}
-                  expanded={expandedSeriesId === seriesItem.id}
-                  onToggleExpanded={(isExpanded) => {
-                    setExpandedSeriesId(isExpanded ? seriesItem.id : null);
-                  }}
-                />
+                <div key={seriesItem.id || `series-${index}`}>
+                  <SeriesWithMatches
+                    series={seriesItem}
+                    onEditSeries={handleEdit}
+                    onDeleteSeries={handleDelete}
+                    onViewScorecard={handleViewScorecard}
+                    currentUser={currentUser}
+                    isAuthenticated={isAuthenticated}
+                    expanded={expandedSeriesId === seriesItem.id}
+                    onToggleExpanded={(isExpanded) => {
+                      setExpandedSeriesId(isExpanded ? seriesItem.id : null);
+                    }}
+                  />
+                  {/* Insert ad after every 3 series items */}
+                  {(index + 1) % 3 === 0 && index < series.length - 1 && (
+                    <InFeedAd
+                      adSlot="9963510764"
+                      adLayout="in-article"
+                      className="my-6"
+                    />
+                  )}
+                </div>
               ))}
           </div>
 
