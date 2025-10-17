@@ -151,6 +151,18 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
 		})
 
+		// Server-Sent Events (SSE) routes for real-time updates
+		r.Route("/sse", func(r chi.Router) {
+			// Get Redis client from cache manager
+			redisClient := dbClient.CacheManager.GetRedisClient()
+			sseHandler := NewSSEHandler(redisClient, serviceContainer.Metrics)
+
+			// Public SSE routes (no authentication required for real-time streaming)
+			// These endpoints stream ball events in real-time using Server-Sent Events
+			r.Get("/matches/{match_id}/balls", sseHandler.StreamBallEvents)
+			r.Get("/matches/{match_id}/events", sseHandler.StreamMatchEvents)
+		})
+
 		// Vote routes
 		r.Route("/votes", func(r chi.Router) {
 			voteHandler := NewVoteHandler(serviceContainer.VoteService)

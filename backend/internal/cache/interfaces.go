@@ -336,6 +336,21 @@ func (cm *CacheManager) GetMatchesBySeriesKey(seriesID string) string {
 	return fmt.Sprintf("matches:series:%s", seriesID)
 }
 
+// IsEnabled returns whether caching is enabled
+func (cm *CacheManager) IsEnabled() bool {
+	return cm.enabled
+}
+
+// GetRedisClient returns the underlying Redis client if available
+func (cm *CacheManager) GetRedisClient() *RedisClient {
+	if cm.cache != nil {
+		if redisClient, ok := cm.cache.(*RedisClient); ok {
+			return redisClient
+		}
+	}
+	return nil
+}
+
 // copyValue copies a value to destination interface
 func copyValue(src, dest interface{}) error {
 	// This is a simplified implementation

@@ -55,6 +55,15 @@ type Metrics struct {
 	MemoryUsage     *prometheus.GaugeVec
 	CPUUsage        *prometheus.GaugeVec
 	GoroutinesCount *prometheus.GaugeVec
+
+	// SSE (Server-Sent Events) metrics
+	SSEConnectionsTotal   *prometheus.CounterVec
+	SSEConnectionsActive  *prometheus.GaugeVec
+	SSEConnectionDuration *prometheus.HistogramVec
+	SSEEventsSent         *prometheus.CounterVec
+	SSEEventsTotal        *prometheus.CounterVec
+	SSEStreamReadDuration *prometheus.HistogramVec
+	SSEErrorsTotal        *prometheus.CounterVec
 }
 
 var (
@@ -322,6 +331,65 @@ func NewMetrics() *Metrics {
 				},
 				[]string{"service"},
 			),
+
+			// SSE metrics
+			SSEConnectionsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "sse_connections_total",
+					Help: "Total number of SSE connections",
+				},
+				[]string{"match_id", "endpoint"},
+			),
+
+			SSEConnectionsActive: promauto.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "sse_connections_active",
+					Help: "Current number of active SSE connections",
+				},
+				[]string{"match_id", "endpoint"},
+			),
+
+			SSEConnectionDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "sse_connection_duration_seconds",
+					Help:    "SSE connection duration in seconds",
+					Buckets: []float64{1, 5, 10, 30, 60, 300, 600, 1800, 3600}, // 1s to 1h
+				},
+				[]string{"match_id", "endpoint", "disconnect_reason"},
+			),
+
+			SSEEventsSent: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "sse_events_sent_total",
+					Help: "Total number of SSE events sent to clients",
+				},
+				[]string{"match_id", "event_type"},
+			),
+
+			SSEEventsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "sse_events_processed_total",
+					Help: "Total number of events processed from Redis streams",
+				},
+				[]string{"match_id", "event_type", "status"},
+			),
+
+			SSEStreamReadDuration: promauto.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "sse_stream_read_duration_seconds",
+					Help:    "Redis stream read duration for SSE",
+					Buckets: []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 2.0},
+				},
+				[]string{"match_id"},
+			),
+
+			SSEErrorsTotal: promauto.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "sse_errors_total",
+					Help: "Total number of SSE errors",
+				},
+				[]string{"match_id", "error_type"},
+			),
 		}
 	})
 	return metricsInstance
@@ -438,4 +506,36 @@ func (m *Metrics) RecordTeamPlayerOperation(operation, teamID, status string) {
 // UpdateActiveTeamsCount updates the active teams gauge for a vote
 func (m *Metrics) UpdateActiveTeamsCount(voteID string, count float64) {
 	m.ActiveTeamsGauge.WithLabelValues(voteID).Set(count)
+}
+
+// RecordSSEConnection records a new SSE connection
+func (m *Metrics) RecordSSEConnection(matchID, endpoint string) {
+	m.SSEConnectionsTotal.WithLabelValues(matchID, endpoint).Inc()
+	m.SSEConnectionsActive.WithLabelValues(matchID, endpoint).Inc()
+}
+
+// RecordSSEDisconnection records an SSE disconnection
+func (m *Metrics) RecordSSEDisconnection(matchID, endpoint, reason string, duration time.Duration) {
+	m.SSEConnectionsActive.WithLabelValues(matchID, endpoint).Dec()
+	m.SSEConnectionDuration.WithLabelValues(matchID, endpoint, reason).Observe(duration.Seconds())
+}
+
+// RecordSSEEventSent records an SSE event sent to client
+func (m *Metrics) RecordSSEEventSent(matchID, eventType string) {
+	m.SSEEventsSent.WithLabelValues(matchID, eventType).Inc()
+}
+
+// RecordSSEEventProcessed records an SSE event processed from Redis stream
+func (m *Metrics) RecordSSEEventProcessed(matchID, eventType, status string) {
+	m.SSEEventsTotal.WithLabelValues(matchID, eventType, status).Inc()
+}
+
+// RecordSSEStreamRead records Redis stream read duration for SSE
+func (m *Metrics) RecordSSEStreamRead(matchID string, duration time.Duration) {
+	m.SSEStreamReadDuration.WithLabelValues(matchID).Observe(duration.Seconds())
+}
+
+// RecordSSEError records an SSE error
+func (m *Metrics) RecordSSEError(matchID, errorType string) {
+	m.SSEErrorsTotal.WithLabelValues(matchID, errorType).Inc()
 }

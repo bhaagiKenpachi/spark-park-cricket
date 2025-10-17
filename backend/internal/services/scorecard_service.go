@@ -39,6 +39,14 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 	}
 }
 
+// getRedisClient returns the Redis client from the cache manager if available
+func (s *ScorecardService) getRedisClient() *cache.RedisClient {
+	if s.cache != nil && s.cache.IsEnabled() {
+		return s.cache.GetRedisClient()
+	}
+	return nil
+}
+
 // getBallAdditionMutex returns a mutex for the specific match and innings combination
 // This prevents race conditions when multiple requests try to add balls to the same innings
 func (s *ScorecardService) getBallAdditionMutex(matchID string, inningsNumber int) *sync.Mutex {
@@ -482,6 +490,9 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 
 	// Invalidate match-related caches after successful ball addition (async)
 	go s.invalidateMatchCachesAsync(req.MatchID, data.InningsID, data.OverID)
+
+	// Publish ball event to Redis stream for SSE (async, non-blocking)
+	go s.publishBallEvent(req, ball, totalRuns, innings)
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
@@ -1293,6 +1304,48 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID string) {
 	ctx := context.Background()
 	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
+}
+
+// publishBallEvent publishes a ball event to Redis stream for SSE
+func (s *ScorecardService) publishBallEvent(req *models.BallEventRequest, ball *models.ScorecardBall, totalRuns int, innings *models.Innings) {
+	// Get Redis client from cache manager
+	redisClient := s.getRedisClient()
+	if redisClient == nil {
+		// Redis not available, skip publishing (fail gracefully)
+		log.Printf("📡 Redis client not available, skipping ball event publish for match %s", req.MatchID)
+		return
+	}
+
+	// Prepare event data
+	eventData := map[string]interface{}{
+		"event_type":      "ball_added",
+		"match_id":        req.MatchID,
+		"innings_number":  req.InningsNumber,
+		"ball_number":     ball.BallNumber,
+		"ball_type":       string(req.BallType),
+		"run_type":        string(req.RunType),
+		"runs":            ball.Runs,
+		"byes":            ball.Byes,
+		"total_runs":      totalRuns,
+		"is_wicket":       req.IsWicket,
+		"wicket_type":     string(req.WicketType),
+		"innings_runs":    innings.TotalRuns,
+		"innings_wickets": innings.TotalWickets,
+		"innings_overs":   fmt.Sprintf("%.1f", float64(innings.TotalBalls)/6.0),
+		"timestamp":       time.Now().Format(time.RFC3339),
+	}
+
+	// Get stream key for this match
+	streamKey := redisClient.GetStreamKey(req.MatchID)
+
+	// Publish to Redis stream
+	eventID, err := redisClient.PublishToStream(streamKey, eventData)
+	if err != nil {
+		log.Printf("⚠️  Failed to publish ball event to Redis stream for match %s: %v", req.MatchID, err)
+		return
+	}
+
+	log.Printf("📡 Published ball event to Redis stream for match %s (event ID: %s)", req.MatchID, eventID)
 }
 
 // invalidateScorecardCacheForMatch invalidates scorecard-related caches for a match
