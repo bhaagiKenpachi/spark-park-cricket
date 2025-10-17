@@ -279,7 +279,7 @@ export function SeriesList(): React.JSX.Element {
             title="Create Series"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Series
+            New
           </Button>
         </div>
       </div>
@@ -293,7 +293,7 @@ export function SeriesList(): React.JSX.Element {
             title="Create Your First Series"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Your First Series
+            New
           </Button>
         </div>
       ) : (

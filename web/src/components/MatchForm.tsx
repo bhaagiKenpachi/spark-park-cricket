@@ -346,7 +346,7 @@ export function MatchForm({
                 }
               >
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : 'Match'}
+                {loading ? 'Saving...' : 'Save'}
               </Button>
 
               {onCancel && (
