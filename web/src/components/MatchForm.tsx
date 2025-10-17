@@ -69,8 +69,8 @@ export function MatchForm({
     series_id: seriesId || match?.series_id || '',
     date:
       (match?.date
-        ? match.date.split('T')[0]
-        : new Date().toISOString().split('T')[0]) || '',
+        ? match.date.split('T')[0] + 'T' + (match.date.split('T')[1] || '20:00')
+        : new Date().toISOString().slice(0, 16)) || '',
     team_player_count: match?.team_a_player_count || 0,
     total_overs: match?.total_overs ?? 0,
     toss_winner: match?.toss_winner || 'A',
@@ -83,7 +83,7 @@ export function MatchForm({
     if (match) {
       setFormData({
         series_id: match.series_id,
-        date: match.date.split('T')[0] || '',
+        date: match.date.split('T')[0] + 'T' + (match.date.split('T')[1] || '20:00'),
         team_player_count: match.team_a_player_count,
         total_overs: match.total_overs,
         toss_winner: match.toss_winner,
@@ -222,10 +222,10 @@ export function MatchForm({
             <div className="space-y-2">
               <Label htmlFor="date" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
-                Date *
+                Date & Time *
               </Label>
               <Input
-                type="date"
+                type="datetime-local"
                 id="date"
                 value={formData.date}
                 onChange={e => handleInputChange('date', e.target.value)}
