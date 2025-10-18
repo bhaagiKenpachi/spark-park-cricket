@@ -75,6 +75,7 @@ jobs:
 
   build-web:
     name: Build Web Image
+    environment: dev
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: build-backend
     if: ${{ github.event.inputs.skip_build != 'true' }}
@@ -120,7 +121,7 @@ jobs:
             --build-arg NEXT_PUBLIC_API_URL=${FRONTEND_URL}/api/v1 \
             --build-arg NEXT_PUBLIC_GRAPHQL_URL=${FRONTEND_URL}/api/v1/graphql \
             --build-arg NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }} \
-            --build-arg NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS || 'true' }} \
+            --build-arg NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS }} \
             --build-arg NODE_ENV=production \
             --tag ${{ steps.image-name.outputs.web }}:dev \
             --tag ${{ steps.image-name.outputs.web }}:dev-$(git rev-parse --short HEAD) \
