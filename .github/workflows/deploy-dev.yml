@@ -75,6 +75,7 @@ jobs:
 
   build-web:
     name: Build Web Image
+    environment: dev
     runs-on: [self-hosted, ovh, ubuntu-22.04]
     needs: build-backend
     if: ${{ github.event.inputs.skip_build != 'true' }}
