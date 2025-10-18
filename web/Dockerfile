@@ -17,7 +17,7 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL=https://spark-park-dev.dojima.foundation/api/v1
 ARG NEXT_PUBLIC_GRAPHQL_URL=https://spark-park-dev.dojima.foundation/api/v1/graphql
 ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-5474524579770573
-ARG NEXT_PUBLIC_ENABLE_ADS=true
+ARG NEXT_PUBLIC_ENABLE_ADS
 ARG NODE_ENV=production
 
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
