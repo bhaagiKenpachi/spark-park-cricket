@@ -114,8 +114,8 @@ export function MatchForm({
 
     if (formData.total_overs === 0) {
       errors.total_overs = 'Total overs is required';
-    } else if (formData.total_overs < 1 || formData.total_overs > 20) {
-      errors.total_overs = 'Total overs must be between 1 and 20';
+    } else if (formData.total_overs < 1 || formData.total_overs > 50) {
+      errors.total_overs = 'Total overs must be between 1 and 50';
     }
 
     if (!formData.toss_winner) {
