@@ -280,7 +280,7 @@ export function MatchForm({
                   )
                 }
                 min="1"
-                max="20"
+                max="50"
                 data-cy="total-overs"
                 className={formErrors.total_overs ? 'border-red-500' : ''}
               />
