@@ -117,6 +117,13 @@ export function ScorecardView({
 
   // Check for new overs and show ads
   useEffect(() => {
+    const adsEnabled = process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false';
+    
+    // Don't show ads if disabled
+    if (!adsEnabled) {
+      return;
+    }
+
     if (scorecard?.innings && Array.isArray(scorecard.innings)) {
       scorecard.innings.forEach((innings) => {
         const inningsKey = `${innings.batting_team}-${innings.innings_number}`;
