@@ -27,12 +27,6 @@ import {
   ChevronUp,
   RefreshCw,
   Undo2,
-  CircleDot,
-  CheckCircle,
-  Clock,
-  Trophy,
-  Target,
-  Users,
 } from 'lucide-react';
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
@@ -62,12 +56,6 @@ export function ScorecardView({
   const [currentByes, setCurrentByes] = useState(0);
   const [scoringMessage, setScoringMessage] = useState<string | null>(null);
   const [expandedOvers, setExpandedOvers] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [expandedCompletedOvers, setExpandedCompletedOvers] = useState<{
-    [key: string]: boolean;
-  }>({});
-  const [loadedOverDetails, setLoadedOverDetails] = useState<{
     [key: string]: boolean;
   }>({});
   const [currentOverAd, setCurrentOverAd] = useState<{
@@ -367,26 +355,6 @@ export function ScorecardView({
     }
   };
 
-  const toggleExpandedCompletedOvers = (inningsKey: string) => {
-    const isExpanding = !expandedCompletedOvers[inningsKey];
-    
-    // If expanding and not loaded yet, mark as loaded (simulate lazy loading)
-    if (isExpanding && !loadedOverDetails[inningsKey]) {
-      setLoadedOverDetails(prev => ({
-        ...prev,
-        [inningsKey]: true,
-      }));
-      
-      // Simulate API call delay - in real implementation, this would fetch over details
-      console.log(`Loading over details for completed match ${inningsKey}...`);
-    }
-    
-    setExpandedCompletedOvers(prev => ({
-      ...prev,
-      [inningsKey]: isExpanding,
-    }));
-  };
-
   const renderBallCircle = (ball: BallSummary, index: number) => {
     const isWicket = ball.is_wicket;
 
@@ -577,7 +545,7 @@ export function ScorecardView({
 
   if (loading && !scorecard) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4">
+      <div className="w-full max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-2 text-sm text-gray-600">
@@ -592,7 +560,7 @@ export function ScorecardView({
 
   if (!scorecard) {
     return (
-      <div className="w-full max-w-6xl mx-auto p-4">
+      <div className="w-full max-w-6xl mx-auto p-6">
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">
             No scorecard found for this match.
@@ -606,43 +574,56 @@ export function ScorecardView({
   const scorecardData = scorecard;
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <div className="w-full max-w-6xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={onBack} title="Back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleRefresh}
-              title="Refresh Scorecard"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-            <div className="text-center sm:text-right">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">
-                Match #{scorecardData.match_number}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-600">
-                {scorecardData.team_a} vs {scorecardData.team_b}
-              </p>
-            </div>
-          </div>
+        <div className="text-center mb-4">
+          <h1 className="text-2xl lg:text-3xl font-bold">
+            {scorecardData.series_name} - Match #{scorecardData.match_number}
+          </h1>
+          <p className="text-sm lg:text-base text-gray-600">
+            {scorecardData.team_a} vs {scorecardData.team_b}
+          </p>
+        </div>
+        <div className="flex justify-center space-x-2">
+          <Button variant="outline" onClick={onBack} title="Back">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            title="Refresh Scorecard"
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Live Scoring Button */}
+      {/* Match Status and Live Scoring Button */}
       <div className="mb-6 text-center">
         <div className="flex items-center justify-center space-x-4">
+          <Badge
+            variant={
+              scorecardData.match_status === 'live' ? 'default' : 'secondary'
+            }
+            className={
+              scorecardData.match_status === 'live'
+                ? 'bg-green-600 text-white animate-pulse'
+                : scorecardData.match_status === 'completed'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-500 text-white'
+            }
+          >
+            {scorecardData.match_status === 'live' && '🔴 '}
+            {scorecardData.match_status === 'completed' && '✅ '}
+            {scorecardData.match_status === 'scheduled' && '⏰ '}
+            {scorecardData.match_status.toUpperCase()}
+          </Badge>
           {(scorecardData.match_status === 'live' ||
             scorecardData.match_status === 'scheduled') &&
             !showLiveScoring &&
@@ -678,18 +659,14 @@ export function ScorecardView({
         {isMatchCompleted && (
           <div className="mt-3">
             <Badge variant="secondary" className="bg-gray-500 text-white">
-              <div className="flex items-center space-x-1">
-                <CheckCircle className="h-3 w-3" />
-              </div>
+              Match Completed - Scoring Not Available
             </Badge>
           </div>
         )}
         {isBothInnCompleted && !isMatchCompleted && (
           <div className="mt-3">
             <Badge variant="secondary" className="bg-gray-500 text-white">
-              <div className="flex items-center space-x-1">
-                <CheckCircle className="h-3 w-3" />
-              </div>
+              Both Inn Completed - Scoring Not Available
             </Badge>
           </div>
         )}
@@ -702,7 +679,8 @@ export function ScorecardView({
           <Card className="mb-6 border-2 border-green-200 bg-gradient-to-r from-green-50 to-blue-50">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 mr-3 text-green-600" />
+                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                Match Completed
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -780,7 +758,7 @@ export function ScorecardView({
 
                   return (
                     <div className="mt-6 text-center">
-                      <div className="inline-block bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg px-4 py-4 shadow-sm border border-green-200">
+                      <div className="inline-block bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg px-6 py-4 shadow-sm border border-green-200">
                         <div className="text-lg font-semibold text-green-700 mb-1">
                           🏆 Match Result
                         </div>
@@ -796,100 +774,6 @@ export function ScorecardView({
             </CardContent>
           </Card>
         )}
-
-      {/* Completed Match Over Details */}
-      {isMatchCompleted && scorecardData.innings && Array.isArray(scorecardData.innings) && (
-        <Card className="mb-6 border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center">
-              <Trophy className="h-6 w-6 mr-2 text-blue-600" />
-              Match Over Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {scorecardData.innings.map((innings: InningsSummary) => {
-              const inningsKey = `${innings.batting_team}-${innings.innings_number}`;
-              const isExpanded = expandedCompletedOvers[inningsKey];
-              const isLoaded = loadedOverDetails[inningsKey];
-              
-              return (
-                <div key={innings.innings_number} className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {innings.batting_team === 'A' ? scorecardData.team_a : scorecardData.team_b} - 
-                        Innings {innings.innings_number}
-                      </h3>
-                      <Badge
-                        variant="secondary"
-                        className="bg-green-600 text-white"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleExpandedCompletedOvers(inningsKey)}
-                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                    >
-                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      {isExpanded ? 'Hide' : 'Show'} Over Details
-                    </Button>
-                  </div>
-                  
-                  {isExpanded && (
-                    <div className="bg-white rounded-lg p-4 space-y-3">
-                      {isLoaded ? (
-                        <div className="space-y-3">
-                          {(() => {
-                            const filteredOvers = innings.overs.filter((over: OverSummary, index: number, self: OverSummary[]) => 
-                              self.findIndex(o => o.over_number === over.over_number) === index
-                            );
-                            const sortedOvers = filteredOvers.sort((a: OverSummary, b: OverSummary) => {
-                              const aNum = Number(a.over_number);
-                              const bNum = Number(b.over_number);
-                              return bNum - aNum; // Descending order (newest first)
-                            });
-                            
-                            return sortedOvers;
-                          })()
-                            .map((over: OverSummary) => (
-                              <div key={over.over_number} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-gray-800">Over {over.over_number}</span>
-                                  <span className="text-sm text-gray-600">
-                                    {over.total_runs} runs, {over.total_wickets} wickets
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap gap-1">
-                                  {over.balls && Array.isArray(over.balls) && over.balls.length > 0 ? (
-                                    [...over.balls]
-                                      .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
-                                      .map((ball: BallSummary, index: number) =>
-                                        renderBallCircle(ball, index)
-                                      )
-                                  ) : (
-                                    <div className="text-xs text-gray-400">No balls</div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-                          <span className="text-sm text-gray-600">Loading over details...</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
@@ -941,13 +825,9 @@ export function ScorecardView({
                                 : 'bg-gray-500 text-white'
                             }
                           >
-                            <div className="flex items-center space-x-1">
-                              {innings.status === 'in_progress' ? (
-                                <CircleDot className="h-3 w-3 animate-pulse" />
-                              ) : (
-                                <CheckCircle className="h-3 w-3" />
-                              )}
-                            </div>
+                            {innings.status === 'in_progress'
+                              ? 'Live'
+                              : 'Completed'}
                           </Badge>
                         </div>
                         <div className="text-xl font-bold flex items-center">
@@ -1277,13 +1157,9 @@ export function ScorecardView({
                                 : 'bg-gray-500 text-white'
                             }
                           >
-                            <div className="flex items-center space-x-1">
-                              {innings.status === 'in_progress' ? (
-                                <CircleDot className="h-3 w-3 animate-pulse" />
-                              ) : (
-                                <CheckCircle className="h-3 w-3" />
-                              )}
-                            </div>
+                            {innings.status === 'in_progress'
+                              ? 'Live'
+                              : 'Completed'}
                           </Badge>
                         </div>
                         <div className="text-xl font-bold flex items-center">
@@ -1567,11 +1443,12 @@ export function ScorecardView({
       )}
 
       {/* Live Scoring Interface */}
-      {showLiveScoring && !isMatchCompleted && (
+      {showLiveScoring && (
         <Card className="border border-gray-200 shadow-lg">
           <CardHeader className="border-b border-gray-200">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-xl font-bold text-gray-800">
                   Live Score
                 </span>
@@ -1620,13 +1497,9 @@ export function ScorecardView({
                         innings.status === 'in_progress' ? 'bg-green-600' : ''
                       }
                     >
-                      <div className="flex items-center space-x-1">
-                        {innings.status === 'in_progress' ? (
-                          <CircleDot className="h-3 w-3 animate-pulse" />
-                        ) : (
-                          <CheckCircle className="h-3 w-3" />
-                        )}
-                      </div>
+                      {innings.status === 'in_progress'
+                        ? 'In Progress'
+                        : 'Completed'}
                     </Badge>
                     <span className="flex items-center">
                       {scoring ? (
@@ -1758,7 +1631,7 @@ export function ScorecardView({
             {/* Runs Actions */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <Target className="h-4 w-4 text-green-500 mr-2" />
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                 <h4 className="font-semibold text-lg text-gray-800">Runs</h4>
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -1795,7 +1668,7 @@ export function ScorecardView({
             {/* Extras Actions */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <CircleDot className="h-4 w-4 text-yellow-500 mr-2" />
+                <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
                 <h4 className="font-semibold text-lg text-gray-800">Extras</h4>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1831,7 +1704,7 @@ export function ScorecardView({
             {/* Wicket Actions */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <Users className="h-4 w-4 text-red-500 mr-2" />
+                <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                 <h4 className="font-semibold text-lg text-gray-800">Wickets</h4>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1866,7 +1739,7 @@ export function ScorecardView({
             {/* Byes Selection - Moved to Bottom */}
             <div className="border-t border-gray-200 pt-6">
               <div className="flex items-center mb-4">
-                <CircleDot className="h-4 w-4 text-blue-500 mr-2" />
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                 <h4 className="font-semibold text-lg text-gray-800">
                   Byes (Optional)
                 </h4>
@@ -1946,12 +1819,26 @@ export function ScorecardView({
             </>
             )}
             
+            {/* Read-only message for non-authenticated users */}
+            {!isAuthenticated && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full mr-3"></div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800">Read-Only View</h4>
+                    <p className="text-sm text-blue-600">
+                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Show All Overs Section */}
             {scorecardData.innings && Array.isArray(scorecardData.innings) && (
               <div className="border-t border-gray-200 pt-6 mt-8">
                 <div className="flex items-center mb-4">
-                  <Trophy className="h-4 w-4 text-purple-500 mr-2" />
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                   <h4 className="font-semibold text-lg text-gray-800">All Overs</h4>
                 </div>
                 {scorecardData.innings
@@ -1972,13 +1859,7 @@ export function ScorecardView({
                               variant={innings.status === 'in_progress' ? 'default' : 'secondary'}
                               className={innings.status === 'in_progress' ? 'bg-green-600' : 'bg-gray-500'}
                             >
-                              <div className="flex items-center space-x-1">
-                                {innings.status === 'in_progress' ? (
-                                  <CircleDot className="h-3 w-3 animate-pulse" />
-                                ) : (
-                                  <CheckCircle className="h-3 w-3" />
-                                )}
-                              </div>
+                              {innings.status === 'in_progress' ? 'Live' : 'Completed'}
                             </Badge>
                           </div>
                           <Button
