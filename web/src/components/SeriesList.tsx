@@ -315,15 +315,15 @@ export function SeriesList(): React.JSX.Element {
                     }}
                   />
                   {/* Insert ad after every 3 series items (only if ads enabled) */}
-                  {process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false' &&
-                    (index + 1) % 3 === 0 &&
-                    index < series.length - 1 && (
-                      <InFeedAd
-                        adSlot="9963510764"
-                        adLayout="in-article"
-                        className="my-6"
-                      />
-                    )}
+                  {process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false' && 
+                   (index + 1) % 3 === 0 && 
+                   index < series.length - 1 && (
+                    <InFeedAd
+                      adSlot="9963510764"
+                      adLayout="in-article"
+                      className="my-6"
+                    />
+                  )}
                 </div>
               ))}
           </div>
