@@ -21,6 +21,8 @@ interface SeriesFormProps {
 
 interface FormData {
   name: string;
+  team_a_name: string;
+  team_b_name: string;
   start_date: string;
   end_date: string;
 }
@@ -33,31 +35,48 @@ export function SeriesForm({
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector(state => state.series);
 
+  // Helper function to format datetime for datetime-local input
+  const formatDateTimeForInput = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return '';
+    }
+  };
+
+  const getDefaultDateTime = (): string => {
+    const now = new Date();
+    return formatDateTimeForInput(now.toISOString());
+  };
+
   const [formData, setFormData] = useState<FormData>({
     name: series?.name || '',
-    start_date:
-      (series?.start_date
-        ? series.start_date.split('T')[0]
-        : new Date().toISOString().split('T')[0]) || '',
-    end_date:
-      (series?.end_date
-        ? series.end_date.split('T')[0]
-        : new Date().toISOString().split('T')[0]) || '',
+    team_a_name: series?.team_a_name || '',
+    team_b_name: series?.team_b_name || '',
+    start_date: series?.start_date
+      ? formatDateTimeForInput(series.start_date)
+      : getDefaultDateTime(),
+    end_date: series?.end_date
+      ? formatDateTimeForInput(series.end_date)
+      : getDefaultDateTime(),
   });
 
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
 
   useEffect(() => {
     if (series) {
-      // Convert RFC3339 dates to YYYY-MM-DD format for HTML date inputs
-      const formatDateForInput = (dateString: string): string => {
-        return dateString.split('T')[0] || '';
-      };
-
       setFormData({
         name: series.name,
-        start_date: formatDateForInput(series.start_date),
-        end_date: formatDateForInput(series.end_date),
+        team_a_name: series.team_a_name || '',
+        team_b_name: series.team_b_name || '',
+        start_date: formatDateTimeForInput(series.start_date),
+        end_date: formatDateTimeForInput(series.end_date),
       });
     }
   }, [series]);
@@ -70,19 +89,22 @@ export function SeriesForm({
     }
 
     if (!formData.start_date) {
-      errors.start_date = 'Start date is required';
+      errors.start_date = 'Start date & time is required';
     }
 
     if (!formData.end_date) {
-      errors.end_date = 'End date is required';
+      errors.end_date = 'End date & time is required';
     }
 
-    if (
-      formData.start_date &&
-      formData.end_date &&
-      formData.start_date > formData.end_date
-    ) {
-      errors.end_date = 'End date must be after start date';
+    // Compare datetime values properly
+    if (formData.start_date && formData.end_date) {
+      const startDateTime = new Date(formData.start_date);
+      const endDateTime = new Date(formData.end_date);
+
+      // End datetime must be greater than or equal to start datetime
+      if (endDateTime < startDateTime) {
+        errors.end_date = 'End date & time cannot be earlier than start date & time';
+      }
     }
 
     setFormErrors(errors);
@@ -96,12 +118,30 @@ export function SeriesForm({
       return;
     }
 
-    // Convert date strings to RFC3339 format for the API
-    const apiData = {
-      ...formData,
-      start_date: `${formData.start_date}T00:00:00Z`,
-      end_date: `${formData.end_date}T00:00:00Z`,
+    // Convert datetime-local strings to RFC3339 format for the API
+    // datetime-local format is YYYY-MM-DDTHH:mm
+    const convertToRFC3339 = (dateTimeString: string): string => {
+      // If already includes time, add seconds and Z
+      if (dateTimeString.includes('T')) {
+        return `${dateTimeString}:00Z`;
+      }
+      // If only date, add time
+      return `${dateTimeString}T00:00:00Z`;
+    };
+
+    // Build the API data object
+    const baseData = {
+      name: formData.name,
+      start_date: convertToRFC3339(formData.start_date),
+      end_date: convertToRFC3339(formData.end_date),
       status: 'upcoming' as const,
+    };
+
+    // Add team names if they have values
+    const apiData = {
+      ...baseData,
+      ...(formData.team_a_name && { team_a_name: formData.team_a_name }),
+      ...(formData.team_b_name && { team_b_name: formData.team_b_name }),
     };
 
     if (series) {
@@ -163,12 +203,44 @@ export function SeriesForm({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="team_a_name">Team A Name (Optional)</Label>
+              <Input
+                type="text"
+                id="team_a_name"
+                value={formData.team_a_name}
+                onChange={e => handleInputChange('team_a_name', e.target.value)}
+                placeholder="e.g., Mumbai Indians"
+                data-cy="team-a-name"
+                className={formErrors.team_a_name ? 'border-red-500' : ''}
+              />
+              {formErrors.team_a_name && (
+                <p className="text-sm text-red-600">{formErrors.team_a_name}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="team_b_name">Team B Name (Optional)</Label>
+              <Input
+                type="text"
+                id="team_b_name"
+                value={formData.team_b_name}
+                onChange={e => handleInputChange('team_b_name', e.target.value)}
+                placeholder="e.g., Chennai Super Kings"
+                data-cy="team-b-name"
+                className={formErrors.team_b_name ? 'border-red-500' : ''}
+              />
+              {formErrors.team_b_name && (
+                <p className="text-sm text-red-600">{formErrors.team_b_name}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="start_date" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
-                Start Date *
+                Start Date & Time *
               </Label>
               <Input
-                type="date"
+                type="datetime-local"
                 id="start_date"
                 value={formData.start_date}
                 onChange={e => handleInputChange('start_date', e.target.value)}
@@ -183,10 +255,10 @@ export function SeriesForm({
             <div className="space-y-2">
               <Label htmlFor="end_date" className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />
-                End Date *
+                End Date & Time *
               </Label>
               <Input
-                type="date"
+                type="datetime-local"
                 id="end_date"
                 value={formData.end_date}
                 onChange={e => handleInputChange('end_date', e.target.value)}

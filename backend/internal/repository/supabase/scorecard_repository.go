@@ -292,6 +292,48 @@ func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID stri
 	return overs[0], nil
 }
 
+// GetLastOver gets the last over (by over_number) for an innings, regardless of status
+func (r *scorecardRepository) GetLastOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
+	log.Printf("Getting last over for innings %s", inningsID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	// Get all overs and find the one with the highest over_number
+	var overs []*models.ScorecardOver
+	_, err := r.client.From(r.getTableName("overs")).
+		Select("*", "", false).
+		Eq("innings_id", inningsID).
+		ExecuteTo(&overs)
+
+	if err != nil {
+		log.Printf("Error getting overs: %v", err)
+		return nil, fmt.Errorf("failed to get overs: %w", err)
+	}
+
+	if len(overs) == 0 {
+		return nil, fmt.Errorf("no overs found for innings")
+	}
+
+	// Find the over with the highest over_number
+	var lastOver *models.ScorecardOver
+	maxOverNumber := 0
+	for _, over := range overs {
+		if over.OverNumber > maxOverNumber {
+			maxOverNumber = over.OverNumber
+			lastOver = over
+		}
+	}
+
+	if lastOver == nil {
+		return nil, fmt.Errorf("no last over found")
+	}
+
+	log.Printf("Found last over %d for innings %s", lastOver.OverNumber, inningsID)
+	return lastOver, nil
+}
+
 // GetOversByInnings gets all overs for an innings
 func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error) {
 	log.Printf("Getting all overs for innings %s", inningsID)
@@ -371,6 +413,28 @@ func (r *scorecardRepository) CompleteOver(ctx context.Context, overID string) e
 	}
 
 	log.Printf("Successfully completed over %s", overID)
+	return nil
+}
+
+// DeleteOver deletes an over by ID
+func (r *scorecardRepository) DeleteOver(ctx context.Context, overID string) error {
+	log.Printf("Deleting over %s", overID)
+
+	// Add timeout to prevent hanging queries
+	_, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	_, _, err := r.client.From(r.getTableName("overs")).
+		Delete("", "").
+		Eq("id", overID).
+		Execute()
+
+	if err != nil {
+		log.Printf("Error deleting over: %v", err)
+		return fmt.Errorf("failed to delete over: %w", err)
+	}
+
+	log.Printf("Successfully deleted over %s", overID)
 	return nil
 }
 
@@ -749,12 +813,22 @@ func (r *scorecardRepository) GetScorecard(ctx context.Context, matchID string) 
 		}
 	}
 
+	// Get team names from match or use defaults
+	teamAName := "Team A"
+	if match.TeamAName != nil && *match.TeamAName != "" {
+		teamAName = *match.TeamAName
+	}
+	teamBName := "Team B"
+	if match.TeamBName != nil && *match.TeamBName != "" {
+		teamBName = *match.TeamBName
+	}
+
 	scorecard := &models.ScorecardResponse{
 		MatchID:        matchID,
 		MatchNumber:    match.MatchNumber,
 		SeriesName:     seriesName,
-		TeamA:          "Team A",
-		TeamB:          "Team B",
+		TeamA:          teamAName,
+		TeamB:          teamBName,
 		TotalOvers:     match.TotalOvers,
 		TossWinner:     match.TossWinner,
 		TossType:       match.TossType,

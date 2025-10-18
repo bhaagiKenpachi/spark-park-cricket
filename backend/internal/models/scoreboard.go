@@ -72,7 +72,7 @@ type UpdateScoreRequest struct {
 
 // UpdateWicketRequest represents the request to update wickets
 type UpdateWicketRequest struct {
-	Wickets int `json:"wickets" validate:"required,min=0,max=10"`
+	Wickets int `json:"wickets" validate:"required,min=0,max=20"`
 }
 
 // GetRunValue returns the numeric value of a run type

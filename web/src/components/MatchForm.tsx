@@ -7,6 +7,7 @@ import {
   updateMatchRequest,
   Match,
 } from '@/store/reducers/matchSlice';
+import { Series } from '@/store/reducers/seriesSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +54,16 @@ export function MatchForm({
 }: MatchFormProps): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { loading, error } = useAppSelector(state => state.match);
+  const { series } = useAppSelector(state => state.series);
+
+  // Find the current series to get team names
+  const currentSeries = series.find(
+    s => s.id === (seriesId || match?.series_id)
+  );
+
+  // Get team names or fall back to default labels
+  const teamAName = currentSeries?.team_a_name || 'Team A';
+  const teamBName = currentSeries?.team_b_name || 'Team B';
 
   const [formData, setFormData] = useState<FormData>({
     series_id: seriesId || match?.series_id || '',
@@ -186,6 +197,27 @@ export function MatchForm({
             </div>
           )}
 
+          {/* Display team names if available */}
+          {(currentSeries?.team_a_name || currentSeries?.team_b_name) && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="text-center">
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+                    Team A
+                  </p>
+                  <p className="text-lg font-bold text-blue-900">{teamAName}</p>
+                </div>
+                <span className="text-2xl font-bold text-gray-400">vs</span>
+                <div className="text-center">
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
+                    Team B
+                  </p>
+                  <p className="text-lg font-bold text-purple-900">{teamBName}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="date" className="flex items-center">
@@ -272,8 +304,8 @@ export function MatchForm({
                   <SelectValue placeholder="Select toss winner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">Team A</SelectItem>
-                  <SelectItem value="B">Team B</SelectItem>
+                  <SelectItem value="A">{teamAName}</SelectItem>
+                  <SelectItem value="B">{teamBName}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -314,7 +346,7 @@ export function MatchForm({
                 }
               >
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : 'Match'}
+                {loading ? 'Saving...' : 'Save'}
               </Button>
 
               {onCancel && (

@@ -1,10 +1,11 @@
-package tests
+package unit
 
 import (
 	"context"
 	"spark-park-cricket-backend/internal/models"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/services"
+	"spark-park-cricket-backend/pkg/testutils"
 	"testing"
 	"time"
 
@@ -13,47 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
-
-// MockSeriesRepository is a mock implementation of SeriesRepository
-type MockSeriesRepository struct {
-	mock.Mock
-}
-
-func (m *MockSeriesRepository) Create(ctx context.Context, series *models.Series) error {
-	args := m.Called(ctx, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) GetByID(ctx context.Context, id string) (*models.Series, error) {
-	args := m.Called(ctx, id)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) ([]*models.Series, error) {
-	args := m.Called(ctx, filters)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]*models.Series), args.Error(1)
-}
-
-func (m *MockSeriesRepository) Update(ctx context.Context, id string, series *models.Series) error {
-	args := m.Called(ctx, id, series)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Delete(ctx context.Context, id string) error {
-	args := m.Called(ctx, id)
-	return args.Error(0)
-}
-
-func (m *MockSeriesRepository) Count(ctx context.Context) (int64, error) {
-	args := m.Called(ctx)
-	return args.Get(0).(int64), args.Error(1)
-}
 
 func TestSeriesService_CreateSeries(t *testing.T) {
 	tests := []struct {
@@ -72,6 +32,23 @@ func TestSeriesService_CreateSeries(t *testing.T) {
 			},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				mockRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Series")).Return(nil)
+			},
+			expectError: false,
+		},
+		{
+			name: "successful series creation with team names",
+			request: &models.CreateSeriesRequest{
+				Name:      "Test Series",
+				TeamAName: testutils.StringPtr("Team Lions"),
+				TeamBName: testutils.StringPtr("Team Tigers"),
+				StartDate: time.Now(),
+				EndDate:   time.Now().AddDate(0, 0, 7),
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(series *models.Series) bool {
+					return series.TeamAName != nil && *series.TeamAName == "Team Lions" &&
+						series.TeamBName != nil && *series.TeamBName == "Team Tigers"
+				})).Return(nil)
 			},
 			expectError: false,
 		},
@@ -334,10 +311,35 @@ func TestSeriesService_UpdateSeries(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name:     "successful series update - team names",
+			seriesID: "test-series-id",
+			request: &models.UpdateSeriesRequest{
+				TeamAName: testutils.StringPtr("Updated Team A"),
+				TeamBName: testutils.StringPtr("Updated Team B"),
+			},
+			mockSetup: func(mockRepo *MockSeriesRepository) {
+				existingSeries := &models.Series{
+					ID:        "test-series-id",
+					Name:      "Original Series",
+					TeamAName: testutils.StringPtr("Original Team A"),
+					TeamBName: testutils.StringPtr("Original Team B"),
+					StartDate: time.Now(),
+					EndDate:   time.Now().AddDate(0, 0, 7),
+					CreatedBy: "test-user-123",
+				}
+				mockRepo.On("GetByID", mock.Anything, "test-series-id").Return(existingSeries, nil)
+				mockRepo.On("Update", mock.Anything, "test-series-id", mock.MatchedBy(func(series *models.Series) bool {
+					return series.TeamAName != nil && *series.TeamAName == "Updated Team A" &&
+						series.TeamBName != nil && *series.TeamBName == "Updated Team B"
+				})).Return(nil)
+			},
+			expectError: false,
+		},
+		{
 			name:     "successful series update - dates only",
 			seriesID: "test-series-id",
 			request: &models.UpdateSeriesRequest{
-				Name: stringPtr("Updated Series"),
+				Name: testutils.StringPtr("Updated Series"),
 			},
 			mockSetup: func(mockRepo *MockSeriesRepository) {
 				existingSeries := &models.Series{
@@ -474,9 +476,4 @@ func TestSeriesService_DeleteSeries(t *testing.T) {
 			mockRepo.AssertExpectations(t)
 		})
 	}
-}
-
-// Helper function to create string pointer
-func stringPtr(s string) *string {
-	return &s
 }

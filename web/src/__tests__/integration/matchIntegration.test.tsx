@@ -123,7 +123,7 @@ describe('Match Integration Tests', () => {
         expect(createMatchRequest).toHaveBeenCalledWith({
           series_id: 'series-1',
           date: '2024-01-01T00:00:00Z',
-          status: 'live',
+          status: 'not_started',
           team_a_player_count: 11,
           team_b_player_count: 11,
           total_overs: 20,
@@ -205,7 +205,7 @@ describe('Match Integration Tests', () => {
           matchData: {
             series_id: 'series-1',
             date: '2024-01-01T00:00:00Z',
-            status: 'live',
+            status: 'not_started',
             team_a_player_count: 10,
             team_b_player_count: 10,
             total_overs: 15,
@@ -276,7 +276,7 @@ describe('Match Integration Tests', () => {
         expect(createMatchRequest).toHaveBeenCalledWith({
           series_id: 'series-1',
           date: '2024-01-01T00:00:00Z',
-          status: 'live',
+          status: 'not_started',
           team_a_player_count: 11,
           team_b_player_count: 11,
           total_overs: 20,

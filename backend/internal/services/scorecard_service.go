@@ -241,6 +241,18 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		return fmt.Errorf("over is complete, cannot add more balls")
 	}
 
+	// CRITICAL PRE-VALIDATION: Check if adding this wicket would exceed maximum wickets
+	// This check MUST happen BEFORE adding the ball to prevent balls being added after all wickets are down.
+	// Issue fixed: Without this check, the system allowed 24 balls for 19 wickets (5 extra balls after last wicket).
+	// DO NOT REMOVE: This prevents innings from continuing after all wickets have fallen.
+	// The post-validation (after adding ball) only marks innings as complete but doesn't prevent the ball from being added.
+	if req.IsWicket {
+		maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
+		if data.InningsTotalWickets >= maxWickets {
+			return fmt.Errorf("innings is complete, all wickets are down (%d/%d)", data.InningsTotalWickets, maxWickets)
+		}
+	}
+
 	// Calculate next ball number - use fresh calculation to avoid stale data
 	nextBallNumber, err := s.getNextBallNumber(ctx, data.OverID)
 	if err != nil {
@@ -350,8 +362,9 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 
@@ -692,8 +705,9 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		over.TotalWickets++
 	}
 
-	// Check if over is complete (6 legal balls or all wickets)
-	if over.TotalBalls >= 6 || over.TotalWickets >= 10 {
+	// Check if over is complete (6 legal balls)
+	// Note: Removed hardcoded wicket check - innings completion is handled separately
+	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
 	}
 
@@ -814,6 +828,10 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 }
 
 // UndoBall removes the last ball from the current over and updates statistics
+// Handles edge cases:
+// 1. First ball of first over: prevents undo
+// 2. First ball of any over: deletes the over and reverts to previous over
+// 3. Last ball of innings: properly reverts innings status
 func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
 	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
 
@@ -852,18 +870,93 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		return fmt.Errorf("innings is not in progress, cannot undo ball")
 	}
 
-	// Get current over
-	over, err := s.scorecardRepo.GetCurrentOver(ctx, innings.ID)
+	// Get the last over (by over_number) - this works regardless of over status
+	lastOver, err := s.scorecardRepo.GetLastOver(ctx, innings.ID)
 	if err != nil {
-		log.Printf("Error getting current over: %v", err)
-		return fmt.Errorf("no current over found: %w", err)
+		log.Printf("Error getting last over: %v", err)
+		return fmt.Errorf("no over found to undo ball: %w", err)
 	}
 
 	// Get all balls for this over
-	balls, err := s.scorecardRepo.GetBallsByOver(ctx, over.ID)
+	balls, err := s.scorecardRepo.GetBallsByOver(ctx, lastOver.ID)
 	if err != nil {
 		log.Printf("Error getting balls: %v", err)
 		return fmt.Errorf("failed to get balls: %w", err)
+	}
+
+	// Edge case 1: Check if this is the first ball of the first over
+	if lastOver.OverNumber == 1 && len(balls) == 0 {
+		return fmt.Errorf("cannot undo: no balls have been bowled yet")
+	}
+
+	// Edge case 2: Check if this is the first ball of any over (but not first over)
+	if len(balls) == 0 && lastOver.OverNumber > 1 {
+		log.Printf("First ball of over %d - deleting the over and reverting to previous over", lastOver.OverNumber)
+
+		// Delete this empty over
+		err = s.scorecardRepo.DeleteOver(ctx, lastOver.ID)
+		if err != nil {
+			log.Printf("Error deleting over: %v", err)
+			return fmt.Errorf("failed to delete over: %w", err)
+		}
+
+		// Get the previous over and mark it as in progress
+		previousOver, err := s.scorecardRepo.GetOverByInningsAndNumber(ctx, innings.ID, lastOver.OverNumber-1)
+		if err != nil {
+			log.Printf("Error getting previous over: %v", err)
+			return fmt.Errorf("failed to get previous over: %w", err)
+		}
+
+		// Mark previous over as in progress
+		previousOver.Status = string(models.OverStatusInProgress)
+		err = s.scorecardRepo.UpdateOver(ctx, previousOver)
+		if err != nil {
+			log.Printf("Error updating previous over: %v", err)
+			return fmt.Errorf("failed to update previous over: %w", err)
+		}
+
+		// Recalculate innings total overs
+		overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
+		if err != nil {
+			log.Printf("Error getting overs for innings: %v", err)
+			return fmt.Errorf("failed to get overs: %w", err)
+		}
+
+		completedOvers := 0
+		currentOverBalls := 0
+		for _, over := range overs {
+			if over.Status == string(models.OverStatusCompleted) {
+				completedOvers++
+			} else if over.Status == string(models.OverStatusInProgress) {
+				currentOverBalls = over.TotalBalls
+			}
+		}
+
+		var currentOverDecimal float64
+		if currentOverBalls > 0 {
+			if currentOverBalls == 6 {
+				currentOverDecimal = 1.0
+			} else {
+				currentOverDecimal = float64(currentOverBalls) / 10.0
+			}
+		}
+		innings.TotalOvers = float64(completedOvers) + currentOverDecimal
+
+		err = s.scorecardRepo.UpdateInnings(ctx, innings)
+		if err != nil {
+			log.Printf("Error updating innings: %v", err)
+			return fmt.Errorf("failed to update innings: %w", err)
+		}
+
+		// Invalidate caches including the deleted over and previous over
+		s.invalidateScorecardCacheForMatch(matchID, innings.ID)
+		s.invalidateOverCaches(innings.ID, lastOver.ID)
+		if previousOver != nil {
+			s.invalidateOverCaches(innings.ID, previousOver.ID)
+		}
+
+		log.Printf("Successfully deleted over %d and reverted to over %d", lastOver.OverNumber, previousOver.OverNumber)
+		return nil
 	}
 
 	if len(balls) == 0 {
@@ -897,25 +990,26 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	}
 
 	// Update over statistics
-	over.TotalRuns -= totalRuns
+	lastOver.TotalRuns -= totalRuns
 	// Ensure total_runs doesn't go negative (database constraint)
-	if over.TotalRuns < 0 {
-		over.TotalRuns = 0
+	if lastOver.TotalRuns < 0 {
+		lastOver.TotalRuns = 0
 	}
 	// Only count legal balls (good balls) for over completion
 	if lastBall.BallType == models.BallTypeGood {
-		over.TotalBalls--
+		lastOver.TotalBalls--
 	}
 	if lastBall.IsWicket {
-		over.TotalWickets--
+		lastOver.TotalWickets--
 	}
 
 	// Check if over should be marked as in progress (if it was completed)
-	if over.Status == string(models.OverStatusCompleted) && over.TotalBalls < 6 && over.TotalWickets < 10 {
-		over.Status = string(models.OverStatusInProgress)
+	if lastOver.Status == string(models.OverStatusCompleted) && lastOver.TotalBalls < 6 {
+		lastOver.Status = string(models.OverStatusInProgress)
+		log.Printf("Reverting over %d status from completed to in_progress", lastOver.OverNumber)
 	}
 
-	err = s.scorecardRepo.UpdateOver(ctx, over)
+	err = s.scorecardRepo.UpdateOver(ctx, lastOver)
 	if err != nil {
 		log.Printf("Error updating over: %v", err)
 		return fmt.Errorf("failed to update over: %w", err)
@@ -965,11 +1059,12 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	}
 	innings.TotalOvers = float64(completedOvers) + currentOverDecimal
 
-	// Check if innings should be marked as in progress (if it was completed)
+	// Edge case 3: Check if innings should be marked as in progress (if it was completed)
 	if innings.Status == string(models.InningsStatusCompleted) {
 		maxWickets := match.TeamAPlayerCount - 1
 		if innings.TotalWickets < maxWickets && innings.TotalOvers < float64(match.TotalOvers) {
 			innings.Status = string(models.InningsStatusInProgress)
+			log.Printf("Reverting innings %d status from completed to in_progress", innings.InningsNumber)
 		}
 	}
 
@@ -989,6 +1084,10 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		}
 		log.Printf("Reverted match %s status from completed to live", matchID)
 	}
+
+	// Invalidate caches including the specific over that was modified
+	s.invalidateScorecardCacheForMatch(matchID, innings.ID)
+	s.invalidateOverCaches(innings.ID, lastOver.ID)
 
 	log.Printf("Successfully undone ball: %s %d runs, byes: %d, total: %d, wicket: %v", lastBall.RunType, runs, byes, totalRuns, lastBall.IsWicket)
 	return nil
@@ -1194,6 +1293,74 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID string) {
 	ctx := context.Background()
 	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
+}
+
+// invalidateScorecardCacheForMatch invalidates scorecard-related caches for a match
+func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating scorecard caches for match %s", matchID)
+
+	// Invalidate scorecard cache
+	scorecardKey := fmt.Sprintf("scorecard:%s", matchID)
+	_ = s.cache.Invalidate(scorecardKey)
+
+	// Invalidate innings cache
+	inningsKey := fmt.Sprintf("innings:match:%s", matchID)
+	_ = s.cache.Invalidate(inningsKey)
+
+	// Invalidate overs cache for this innings
+	oversKey := fmt.Sprintf("overs:innings:%s", inningsID)
+	_ = s.cache.Invalidate(oversKey)
+
+	// Invalidate current over cache
+	currentOverKey := fmt.Sprintf("over:current:innings:%s", inningsID)
+	_ = s.cache.Invalidate(currentOverKey)
+
+	// Invalidate last over cache
+	lastOverKey := fmt.Sprintf("over:last:innings:%s", inningsID)
+	_ = s.cache.Invalidate(lastOverKey)
+
+	// Invalidate match innings over data cache
+	_ = s.cache.Invalidate(fmt.Sprintf("match_innings_over:%s:%d", matchID, 1))
+	_ = s.cache.Invalidate(fmt.Sprintf("match_innings_over:%s:%d", matchID, 2))
+
+	log.Printf("Scorecard cache invalidation completed for match %s", matchID)
+}
+
+// invalidateOverCaches invalidates all caches related to a specific over
+func (s *ScorecardService) invalidateOverCaches(inningsID, overID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating over-specific caches for over %s", overID)
+
+	// Invalidate balls cache for this over
+	ballsKey := fmt.Sprintf("balls:over:%s", overID)
+	_ = s.cache.Invalidate(ballsKey)
+
+	// Invalidate ball count cache
+	ballCountKey := fmt.Sprintf("ball_count:over:%s", overID)
+	_ = s.cache.Invalidate(ballCountKey)
+
+	// Invalidate balls for next number cache
+	ballsNextNumberKey := fmt.Sprintf("balls_next_number:over:%s", overID)
+	_ = s.cache.Invalidate(ballsNextNumberKey)
+
+	// Invalidate last ball cache
+	lastBallKey := fmt.Sprintf("ball:last:over:%s", overID)
+	_ = s.cache.Invalidate(lastBallKey)
+
+	// Invalidate last over cache for innings (since over details changed)
+	lastOverKey := fmt.Sprintf("over:last:innings:%s", inningsID)
+	_ = s.cache.Invalidate(lastOverKey)
+
+	log.Printf("Over-specific cache invalidation completed for over %s", overID)
 }
 
 // calculateOversInMemory performs optimized overs calculation in memory

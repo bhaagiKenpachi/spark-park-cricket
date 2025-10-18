@@ -37,6 +37,14 @@ func (r *matchRepository) Create(ctx context.Context, match *models.Match) error
 		"updated_at":          match.UpdatedAt,
 	}
 
+	// Add team names if they exist
+	if match.TeamAName != nil {
+		matchData["team_a_name"] = match.TeamAName
+	}
+	if match.TeamBName != nil {
+		matchData["team_b_name"] = match.TeamBName
+	}
+
 	matchDataSlice := []map[string]interface{}{matchData}
 	var result []models.Match
 
@@ -153,6 +161,13 @@ func (r *matchRepository) Update(ctx context.Context, id string, match *models.M
 		matchData["end_time"] = match.EndTime
 	}
 
+	// Add team names if they exist
+	if match.TeamAName != nil {
+		matchData["team_a_name"] = match.TeamAName
+	}
+	if match.TeamBName != nil {
+		matchData["team_b_name"] = match.TeamBName
+	}
 
 	// Only include created_by if it's not empty
 	if match.CreatedBy != "" {

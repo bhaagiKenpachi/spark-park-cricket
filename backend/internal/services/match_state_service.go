@@ -176,8 +176,9 @@ func (s *MatchStateService) CheckMatchCompletion(ctx context.Context, matchID st
 		return false, nil // No scoreboard means match not started
 	}
 
-	// Check if all wickets are down (10 wickets)
-	if scoreboard.Wickets >= 10 {
+	// Check if all wickets are down - use dynamic calculation based on team size
+	maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+	if scoreboard.Wickets >= maxWickets {
 		return true, nil
 	}
 

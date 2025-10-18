@@ -2,7 +2,7 @@
 
 ## Simplified Cricket Tournament Management System
 
-This document provides cURL examples for the simplified Spark Park Cricket API with Team A vs Team B matches and toss functionality.
+This document provides cURL examples for the simplified Spark Park Cricket API with Team A vs Team B matches, custom team naming, and toss functionality.
 
 ## Base URL
 
@@ -44,6 +44,22 @@ curl --location 'http://localhost:8080/api/v1/series' \
 }'
 ```
 
+### Create Series with Team Names
+
+```bash
+curl --location 'http://localhost:8080/api/v1/series' \
+--header 'Content-Type: application/json' \
+--data '{
+  "name": "Champions League 2025",
+  "team_a_name": "Mumbai Indians",
+  "team_b_name": "Chennai Super Kings",
+  "start_date": "2025-06-01T00:00:00Z",
+  "end_date": "2025-08-31T00:00:00Z"
+}'
+```
+
+**Note**: Team names are optional. When specified, they will be automatically applied to all matches created under this series.
+
 ### List Series
 
 ```bash
@@ -67,6 +83,19 @@ curl --location --request PUT 'http://localhost:8080/api/v1/series/d577f3b7-c8aa
   "end_date": "2024-03-25T23:59:59Z"
 }'
 ```
+
+### Update Team Names Only
+
+```bash
+curl --location --request PUT 'http://localhost:8080/api/v1/series/d577f3b7-c8aa-413e-8c43-021f233aaa33' \
+--header 'Content-Type: application/json' \
+--data '{
+  "team_a_name": "Royal Challengers",
+  "team_b_name": "Knight Riders"
+}'
+```
+
+**Note**: All fields in update are optional. You can update just the team names, just the dates, or any combination.
 
 ### Delete Series
 
@@ -92,6 +121,8 @@ curl --location 'http://localhost:8080/api/v1/matches' \
   "toss_type": "H"
 }'
 ```
+
+**Note**: If the series has team names defined, the match will automatically inherit them. The response will include `team_a_name` and `team_b_name` fields if available.
 
 ### List Matches
 

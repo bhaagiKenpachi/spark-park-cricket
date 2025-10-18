@@ -52,6 +52,7 @@ export function VoteList({
 }: VoteListProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const { votes, loading, error, filters, pagination } = useAppSelector(state => state.vote);
+    const { user: currentUser, isAuthenticated } = useAppSelector(state => state.auth);
 
     const [localFilters, setLocalFilters] = useState<VoteFilters>({
         ...filters,
@@ -268,59 +269,62 @@ export function VoteList({
                                         </Button>
                                     )}
 
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0"
-                                            >
-                                                <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            {onEditVote && vote.status === 'active' && (
-                                                <DropdownMenuItem
-                                                    onClick={() => onEditVote(vote)}
-                                                    className="cursor-pointer"
+                                    {/* Only show actions menu if user is authenticated and is the creator */}
+                                    {isAuthenticated && currentUser && currentUser.id === vote.created_by && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0"
                                                 >
-                                                    <Edit className="h-4 w-4 mr-2" />
-                                                    Edit
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {onEditVote && vote.status === 'active' && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => onEditVote(vote)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        <Edit className="h-4 w-4 mr-2" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                )}
+
+                                                {vote.status === 'active' && (
+                                                    <>
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleCloseVote(vote.id)}
+                                                            className="cursor-pointer text-green-600"
+                                                        >
+                                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                                            Close Vote
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleCancelVote(vote.id)}
+                                                            className="cursor-pointer text-orange-600"
+                                                        >
+                                                            <XCircle className="h-4 w-4 mr-2" />
+                                                            Cancel Vote
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+
+                                                {(onEditVote || vote.status === 'active') && (
+                                                    <DropdownMenuSeparator />
+                                                )}
+
+                                                <DropdownMenuItem
+                                                    onClick={() => handleDeleteVote(vote.id)}
+                                                    className="cursor-pointer text-red-600"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Delete
                                                 </DropdownMenuItem>
-                                            )}
-
-                                            {vote.status === 'active' && (
-                                                <>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleCloseVote(vote.id)}
-                                                        className="cursor-pointer text-green-600"
-                                                    >
-                                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                                        Close Vote
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleCancelVote(vote.id)}
-                                                        className="cursor-pointer text-orange-600"
-                                                    >
-                                                        <XCircle className="h-4 w-4 mr-2" />
-                                                        Cancel Vote
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-
-                                            {(onEditVote || vote.status === 'active') && (
-                                                <DropdownMenuSeparator />
-                                            )}
-
-                                            <DropdownMenuItem
-                                                onClick={() => handleDeleteVote(vote.id)}
-                                                className="cursor-pointer text-red-600"
-                                            >
-                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
                             </div>
                         </div>

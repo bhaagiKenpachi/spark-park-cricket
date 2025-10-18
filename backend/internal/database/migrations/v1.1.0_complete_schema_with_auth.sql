@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS innings (
     innings_number INTEGER NOT NULL CHECK (innings_number IN (1, 2)),
     batting_team VARCHAR(1) NOT NULL CHECK (batting_team IN ('A', 'B')),
     total_runs INTEGER DEFAULT 0 CHECK (total_runs >= 0),
-    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0 AND total_wickets <= 10),
+    total_wickets INTEGER DEFAULT 0 CHECK (total_wickets >= 0 AND total_wickets <= 20),
     total_overs DECIMAL(4,1) DEFAULT 0.0 CHECK (total_overs >= 0),
     total_balls INTEGER DEFAULT 0 CHECK (total_balls >= 0),
     status VARCHAR(20) DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
@@ -276,7 +276,7 @@ COMMENT ON COLUMN matches.total_overs IS 'Total overs for the match (1-20)';
 COMMENT ON COLUMN innings.innings_number IS 'Innings number: 1 (first innings) or 2 (second innings)';
 COMMENT ON COLUMN innings.batting_team IS 'Team currently batting: A or B';
 COMMENT ON COLUMN innings.total_runs IS 'Total runs scored in this innings';
-COMMENT ON COLUMN innings.total_wickets IS 'Total wickets fallen in this innings (0-10)';
+COMMENT ON COLUMN innings.total_wickets IS 'Total wickets fallen in this innings (0-20)';
 COMMENT ON COLUMN innings.total_overs IS 'Total overs completed in this innings (decimal)';
 COMMENT ON COLUMN innings.total_balls IS 'Total balls bowled in this innings';
 COMMENT ON COLUMN innings.status IS 'Innings status: in_progress or completed';

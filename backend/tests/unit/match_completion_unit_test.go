@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	"context"
@@ -44,8 +44,21 @@ func (m *MockScorecardRepository) GetCurrentOver(ctx context.Context, inningsID 
 	return args.Get(0).(*models.ScorecardOver), args.Error(1)
 }
 
+func (m *MockScorecardRepository) GetLastOver(ctx context.Context, inningsID string) (*models.ScorecardOver, error) {
+	args := m.Called(ctx, inningsID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.ScorecardOver), args.Error(1)
+}
+
 func (m *MockScorecardRepository) UpdateOver(ctx context.Context, over *models.ScorecardOver) error {
 	args := m.Called(ctx, over)
+	return args.Error(0)
+}
+
+func (m *MockScorecardRepository) DeleteOver(ctx context.Context, overID string) error {
+	args := m.Called(ctx, overID)
 	return args.Error(0)
 }
 

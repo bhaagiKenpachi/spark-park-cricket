@@ -5,6 +5,8 @@ export interface Series {
   id: string;
   name: string;
   description?: string;
+  team_a_name?: string;
+  team_b_name?: string;
   start_date: string;
   end_date: string;
   status: 'upcoming' | 'ongoing' | 'completed';

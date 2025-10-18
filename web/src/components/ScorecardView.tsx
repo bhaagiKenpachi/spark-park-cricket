@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   fetchScorecardRequest,
@@ -29,6 +29,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { User } from '@/services/authService';
+import { OverAdModal } from '@/components/ads/OverAdModal';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -57,6 +58,11 @@ export function ScorecardView({
   const [expandedOvers, setExpandedOvers] = useState<{
     [key: string]: boolean;
   }>({});
+  const [currentOverAd, setCurrentOverAd] = useState<{
+    inningsKey: string;
+    overNumber: number;
+  } | null>(null);
+  const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
   const isOwner =
@@ -106,6 +112,36 @@ export function ScorecardView({
     ) {
       // If no innings exist yet, start with innings 1
       setCurrentInn(1);
+    }
+  }, [scorecard]);
+
+  // Check for new overs and show ads
+  useEffect(() => {
+    if (scorecard?.innings && Array.isArray(scorecard.innings)) {
+      scorecard.innings.forEach((innings) => {
+        const inningsKey = `${innings.batting_team}-${innings.innings_number}`;
+
+        if (innings.overs && innings.overs.length > 0) {
+          // Get the latest over number
+          const latestOverNumber = Math.max(...innings.overs.map(over => over.over_number));
+          const lastKnownOverNumber = lastOverNumbersRef.current[inningsKey] || 0;
+
+          // If there's a new over and it's not the first over
+          if (latestOverNumber > lastKnownOverNumber && latestOverNumber > 1) {
+            // Show ad for the new over
+            setCurrentOverAd({
+              inningsKey,
+              overNumber: latestOverNumber,
+            });
+          }
+
+          // Update the last known over number in ref
+          lastOverNumbersRef.current = {
+            ...lastOverNumbersRef.current,
+            [inningsKey]: latestOverNumber
+          };
+        }
+      });
     }
   }, [scorecard]);
 
@@ -222,13 +258,13 @@ export function ScorecardView({
     // Ball counting is handled by the backend
   };
 
-  // Helper function to check if it's the first ball of the current innings
+  // Helper function to check if there are no balls bowled yet in the current innings
   const isFirstBallOfInn = () => {
     const currentInnData = scorecardData?.innings?.find(
       innings => innings.innings_number === currentInn
     );
     if (!currentInnData) {
-      return true; // If no innings data, consider it first ball
+      return true; // If no innings data, consider it as having no balls
     }
 
     // Count total balls across all overs in this innings
@@ -237,8 +273,8 @@ export function ScorecardView({
         return total + (over.balls ? over.balls.length : 0);
       }, 0) || 0;
 
-    // If there's exactly 1 ball, it's the first ball (and we can't undo it)
-    return totalBalls === 1;
+    // If there are 0 balls, we can't undo
+    return totalBalls === 0;
   };
 
   const handleUndoBall = () => {
@@ -271,15 +307,6 @@ export function ScorecardView({
       return;
     }
 
-    // Check if it's the first ball of the innings
-    if (isFirstBallOfInn()) {
-      setScoringMessage(
-        'Cannot undo ball - this is the first ball of the innings.'
-      );
-      setTimeout(() => setScoringMessage(null), 3000);
-      return;
-    }
-
     dispatch(undoBallThunk({ matchId, inningsNumber: currentInn }));
     setScoringMessage('Undoing last ball...');
 
@@ -297,6 +324,10 @@ export function ScorecardView({
   const handleRefresh = () => {
     dispatch(fetchScorecardRequest(matchId));
   };
+
+  const handleCloseOverAd = useCallback(() => {
+    setCurrentOverAd(null);
+  }, []);
 
   const toggleExpandedOvers = (inningsKey: string) => {
     const isCurrentlyExpanded = expandedOvers[inningsKey];
@@ -384,8 +415,68 @@ export function ScorecardView({
       );
     }
 
-    // Special handling for balls with byes
-    if (ball.byes > 0) {
+    // Special handling for wide balls with byes
+    if ((ball.ball_type === 'WIDE' || ball.ball_type === 'wide') && ball.byes > 0) {
+      const totalRuns = ball.runs + ball.byes;
+
+      return (
+        <div
+          key={ball.ball_number}
+          className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
+        >
+          <div className="text-[10px] leading-none text-slate-700 font-bold">
+            wd
+          </div>
+          <div className="text-[8px] leading-none text-slate-600">+</div>
+          <div className="text-[10px] leading-none text-slate-700 font-bold">
+            {totalRuns}
+          </div>
+        </div>
+      );
+    }
+
+    // Special handling for wickets with byes
+    if (isWicket && ball.byes > 0) {
+      const totalRuns = ball.runs + ball.byes;
+
+      return (
+        <div
+          key={ball.ball_number}
+          className="w-8 h-8 rounded-full border-2 border-red-500 bg-red-100 flex flex-col items-center justify-center text-xs font-medium"
+        >
+          <div className="text-[10px] leading-none text-red-700 font-bold">
+            W
+          </div>
+          <div className="text-[8px] leading-none text-red-600">+</div>
+          <div className="text-[10px] leading-none text-red-700 font-bold">
+            {totalRuns}
+          </div>
+        </div>
+      );
+    }
+
+    // Special handling for leg byes with byes
+    if (ball.run_type === 'LB' && ball.byes > 0) {
+      const totalRuns = ball.runs + ball.byes;
+
+      return (
+        <div
+          key={ball.ball_number}
+          className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
+        >
+          <div className="text-[10px] leading-none text-slate-700 font-bold">
+            Lb
+          </div>
+          <div className="text-[8px] leading-none text-slate-600">+</div>
+          <div className="text-[10px] leading-none text-slate-700 font-bold">
+            {totalRuns}
+          </div>
+        </div>
+      );
+    }
+
+    // Special handling for regular balls with byes (no special ball type)
+    if (ball.byes > 0 && !ball.ball_type && ball.run_type !== 'LB') {
       const totalRuns = ball.runs + ball.byes;
 
       return (
@@ -409,20 +500,20 @@ export function ScorecardView({
       <div
         key={ball.ball_number}
         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-medium ${isWicket
-            ? 'border-red-500 bg-red-100 text-red-700'
-            : ball.ball_type === 'WIDE' ||
-              ball.ball_type === 'wide' ||
-              ball.run_type === 'LB'
-              ? 'border-slate-400 bg-slate-100 text-slate-700'
-              : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
-                ? 'border-gray-500 bg-gray-100 text-gray-700'
-                : ball.runs === 4
-                  ? 'border-blue-500 bg-blue-100 text-blue-700'
-                  : ball.runs === 6
-                    ? 'border-purple-500 bg-purple-100 text-purple-700'
-                    : ball.runs === 0
-                      ? 'border-gray-300 bg-gray-100 text-gray-600'
-                      : 'border-green-500 bg-green-100 text-green-700'
+          ? 'border-red-500 bg-red-100 text-red-700'
+          : ball.ball_type === 'WIDE' ||
+            ball.ball_type === 'wide' ||
+            ball.run_type === 'LB'
+            ? 'border-slate-400 bg-slate-100 text-slate-700'
+            : ball.ball_type === 'DEAD_BALL' || ball.ball_type === 'dead_ball'
+              ? 'border-gray-500 bg-gray-100 text-gray-700'
+              : ball.runs === 4
+                ? 'border-blue-500 bg-blue-100 text-blue-700'
+                : ball.runs === 6
+                  ? 'border-purple-500 bg-purple-100 text-purple-700'
+                  : ball.runs === 0
+                    ? 'border-gray-300 bg-gray-100 text-gray-600'
+                    : 'border-green-500 bg-green-100 text-green-700'
           }`}
       >
         {display}
@@ -440,9 +531,11 @@ export function ScorecardView({
       </div>
       <div className="flex flex-wrap gap-1">
         {over.balls && Array.isArray(over.balls) && over.balls.length > 0 ? (
-          over.balls.map((ball: BallSummary, index: number) =>
-            renderBallCircle(ball, index)
-          )
+          [...over.balls]
+            .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+            .map((ball: BallSummary, index: number) =>
+              renderBallCircle(ball, index)
+            )
         ) : (
           <div className="text-xs text-gray-400">Over not started</div>
         )}
@@ -519,11 +612,11 @@ export function ScorecardView({
               scorecardData.match_status === 'live' ? 'default' : 'secondary'
             }
             className={
-              scorecardData.match_status === 'live' 
-                ? 'bg-green-600 text-white animate-pulse' 
+              scorecardData.match_status === 'live'
+                ? 'bg-green-600 text-white animate-pulse'
                 : scorecardData.match_status === 'completed'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-500 text-white'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-500 text-white'
             }
           >
             {scorecardData.match_status === 'live' && '🔴 '}
@@ -682,7 +775,8 @@ export function ScorecardView({
           </Card>
         )}
 
-      {/* Teams Scorecard - Horizontal Layout */}
+      {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
+      {!showLiveScoring && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Team A */}
         <Card>
@@ -758,15 +852,15 @@ export function ScorecardView({
                         (() => {
                           // Calculate balls bowled more accurately (excluding extras)
                           let ballsBowled = 0;
-                          
+
                           if (innings.overs && Array.isArray(innings.overs)) {
                             // Count only legal balls (excluding wides and no balls)
                             ballsBowled = innings.overs.reduce((total, over) => {
                               if (over.balls && Array.isArray(over.balls)) {
-                                const legalBalls = over.balls.filter(ball => 
-                                  ball.ball_type !== 'WIDE' && 
-                                  ball.ball_type !== 'wide' && 
-                                  ball.ball_type !== 'NO_BALL' && 
+                                const legalBalls = over.balls.filter(ball =>
+                                  ball.ball_type !== 'WIDE' &&
+                                  ball.ball_type !== 'wide' &&
+                                  ball.ball_type !== 'NO_BALL' &&
                                   ball.ball_type !== 'no_ball'
                                 );
                                 return total + legalBalls.length;
@@ -774,7 +868,7 @@ export function ScorecardView({
                               return total;
                             }, 0);
                           }
-                          
+
                           // Calculate current run rate using overs notation
                           const currentOversDecimal = innings.total_overs || 0;
                           const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
@@ -804,31 +898,31 @@ export function ScorecardView({
                             const runsRequired = target - innings.total_runs;
                             const totalBalls =
                               (scorecardData?.total_overs || 0) * 6;
-                            
+
                             // Calculate balls bowled more accurately
                             let ballsBowled = 0;
-                            
+
                             if (innings.overs && Array.isArray(innings.overs)) {
                               // Count balls from all completed overs
                               ballsBowled = innings.overs.reduce((total, over) => {
                                 return total + (over.balls ? over.balls.length : 0);
                               }, 0);
                             }
-                            
+
                             // Ensure we don't exceed total balls available
                             const ballsRemaining = Math.max(0, totalBalls - ballsBowled);
-                            
+
                             // Calculate balls bowled more accurately (excluding extras)
                             let ballsBowledCorrected = 0;
-                            
+
                             if (innings.overs && Array.isArray(innings.overs)) {
                               // Count only legal balls (excluding wides and no balls)
                               ballsBowledCorrected = innings.overs.reduce((total, over) => {
                                 if (over.balls && Array.isArray(over.balls)) {
-                                  const legalBalls = over.balls.filter(ball => 
-                                    ball.ball_type !== 'WIDE' && 
-                                    ball.ball_type !== 'wide' && 
-                                    ball.ball_type !== 'NO_BALL' && 
+                                  const legalBalls = over.balls.filter(ball =>
+                                    ball.ball_type !== 'WIDE' &&
+                                    ball.ball_type !== 'wide' &&
+                                    ball.ball_type !== 'NO_BALL' &&
                                     ball.ball_type !== 'no_ball'
                                   );
                                   return total + legalBalls.length;
@@ -836,16 +930,16 @@ export function ScorecardView({
                                 return total;
                               }, 0);
                             }
-                            
+
                             // Use corrected balls bowled for remaining calculation
                             const ballsRemainingCorrected = Math.max(0, totalBalls - ballsBowledCorrected);
-                            
+
                             // Calculate balls remaining based on overs notation (e.g., 1.5 overs = 11 balls)
                             // Convert overs notation to balls: 1.5 = 11 balls, 2.0 = 12 balls
                             const currentOversDecimal = innings.total_overs || 0;
                             const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                             const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
-                            
+
                             // Debug logging
                             console.log('Required runs calculation (Team A):', {
                               firstInningsRuns: firstInnings.total_runs,
@@ -861,11 +955,11 @@ export function ScorecardView({
                               ballsRemaining,
                               ballsRemainingCorrected
                             });
-                            
+
                             // Calculate run rates with error handling
                             let currentRunRate = '0.00';
                             let requiredRunRate = '0.00';
-                            
+
                             try {
                               if (ballsBowledFromOvers > 0 && innings.total_runs >= 0) {
                                 currentRunRate = (innings.total_runs / ballsBowledFromOvers * 6).toFixed(2);
@@ -941,10 +1035,12 @@ export function ScorecardView({
                             {latestOver.balls &&
                               Array.isArray(latestOver.balls) &&
                               latestOver.balls.length > 0 ? (
-                              latestOver.balls.map(
-                                (ball: BallSummary, index: number) =>
-                                  renderBallCircle(ball, index)
-                              )
+                              [...latestOver.balls]
+                                .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+                                .map(
+                                  (ball: BallSummary, index: number) =>
+                                    renderBallCircle(ball, index)
+                                )
                             ) : (
                               <div className="text-xs text-gray-400">
                                 Over not started
@@ -985,9 +1081,13 @@ export function ScorecardView({
                         innings.overs.length > 0 && (
                           <div className="mt-2 space-y-2 border-t pt-2">
                             {[...innings.overs]
+                              .filter((over: OverSummary, index: number, self: OverSummary[]) => 
+                                // Remove duplicates by keeping only the first occurrence of each over number
+                                self.findIndex(o => o.over_number === over.over_number) === index
+                              )
                               .sort(
                                 (a: OverSummary, b: OverSummary) =>
-                                  b.over_number - a.over_number
+                                  a.over_number - b.over_number
                               )
                               .map((over: OverSummary) =>
                                 renderOverDetails(over)
@@ -1084,17 +1184,17 @@ export function ScorecardView({
                         (() => {
                           // Calculate balls bowled more accurately
                           let ballsBowled = 0;
-                          
+
                           if (innings.overs && Array.isArray(innings.overs)) {
                             // Count balls from all completed overs
                             ballsBowled = innings.overs.reduce((total, over) => {
                               return total + (over.balls ? over.balls.length : 0);
                             }, 0);
                           }
-                          
+
                           // Calculate current run rate with error handling
                           let currentRunRate = '0.00';
-                          
+
                           try {
                             if (ballsBowled > 0 && innings.total_runs >= 0) {
                               currentRunRate = (innings.total_runs / ballsBowled * 6).toFixed(2);
@@ -1128,31 +1228,31 @@ export function ScorecardView({
                             const runsRequired = target - innings.total_runs;
                             const totalBalls =
                               (scorecardData?.total_overs || 0) * 6;
-                            
+
                             // Calculate balls bowled more accurately
                             let ballsBowled = 0;
-                            
+
                             if (innings.overs && Array.isArray(innings.overs)) {
                               // Count balls from all completed overs
                               ballsBowled = innings.overs.reduce((total, over) => {
                                 return total + (over.balls ? over.balls.length : 0);
                               }, 0);
                             }
-                            
+
                             // Ensure we don't exceed total balls available
                             const ballsRemaining = Math.max(0, totalBalls - ballsBowled);
-                            
+
                             // Calculate balls bowled more accurately (excluding extras)
                             let ballsBowledCorrected = 0;
-                            
+
                             if (innings.overs && Array.isArray(innings.overs)) {
                               // Count only legal balls (excluding wides and no balls)
                               ballsBowledCorrected = innings.overs.reduce((total, over) => {
                                 if (over.balls && Array.isArray(over.balls)) {
-                                  const legalBalls = over.balls.filter(ball => 
-                                    ball.ball_type !== 'WIDE' && 
-                                    ball.ball_type !== 'wide' && 
-                                    ball.ball_type !== 'NO_BALL' && 
+                                  const legalBalls = over.balls.filter(ball =>
+                                    ball.ball_type !== 'WIDE' &&
+                                    ball.ball_type !== 'wide' &&
+                                    ball.ball_type !== 'NO_BALL' &&
                                     ball.ball_type !== 'no_ball'
                                   );
                                   return total + legalBalls.length;
@@ -1160,16 +1260,16 @@ export function ScorecardView({
                                 return total;
                               }, 0);
                             }
-                            
+
                             // Use corrected balls bowled for remaining calculation
                             const ballsRemainingCorrected = Math.max(0, totalBalls - ballsBowledCorrected);
-                            
+
                             // Calculate balls remaining based on overs notation (e.g., 1.5 overs = 11 balls)
                             // Convert overs notation to balls: 1.5 = 11 balls, 2.0 = 12 balls
                             const currentOversDecimal = innings.total_overs || 0;
                             const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                             const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
-                            
+
                             // Debug logging
                             console.log('Required runs calculation (Team B):', {
                               firstInningsRuns: firstInnings.total_runs,
@@ -1185,11 +1285,11 @@ export function ScorecardView({
                               ballsRemaining,
                               ballsRemainingCorrected
                             });
-                            
+
                             // Calculate run rates with error handling
                             let currentRunRate = '0.00';
                             let requiredRunRate = '0.00';
-                            
+
                             try {
                               if (ballsBowledFromOvers > 0 && innings.total_runs >= 0) {
                                 currentRunRate = (innings.total_runs / ballsBowledFromOvers * 6).toFixed(2);
@@ -1265,10 +1365,12 @@ export function ScorecardView({
                             {latestOver.balls &&
                               Array.isArray(latestOver.balls) &&
                               latestOver.balls.length > 0 ? (
-                              latestOver.balls.map(
-                                (ball: BallSummary, index: number) =>
-                                  renderBallCircle(ball, index)
-                              )
+                              [...latestOver.balls]
+                                .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+                                .map(
+                                  (ball: BallSummary, index: number) =>
+                                    renderBallCircle(ball, index)
+                                )
                             ) : (
                               <div className="text-xs text-gray-400">
                                 Over not started
@@ -1309,9 +1411,13 @@ export function ScorecardView({
                         innings.overs.length > 0 && (
                           <div className="mt-2 space-y-2 border-t pt-2">
                             {[...innings.overs]
+                              .filter((over: OverSummary, index: number, self: OverSummary[]) => 
+                                // Remove duplicates by keeping only the first occurrence of each over number
+                                self.findIndex(o => o.over_number === over.over_number) === index
+                              )
                               .sort(
                                 (a: OverSummary, b: OverSummary) =>
-                                  b.over_number - a.over_number
+                                  a.over_number - b.over_number
                               )
                               .map((over: OverSummary) =>
                                 renderOverDetails(over)
@@ -1334,9 +1440,10 @@ export function ScorecardView({
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Live Scoring Interface */}
-      {showLiveScoring && isScoringAvailable && (
+      {showLiveScoring && (
         <Card className="border border-gray-200 shadow-lg">
           <CardHeader className="border-b border-gray-200">
             <CardTitle className="flex items-center justify-between">
@@ -1358,15 +1465,17 @@ export function ScorecardView({
                 >
                   Inn {currentInn}
                 </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowLiveScoring(false)}
-                  className="h-9 w-9 p-0 border-red-300 hover:bg-red-50 hover:border-red-400"
-                  disabled={scoring}
-                >
-                  <X className="h-4 w-4 text-red-600" />
-                </Button>
+                {isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowLiveScoring(false)}
+                    className="h-9 w-9 p-0 border-red-300 hover:bg-red-50 hover:border-red-400"
+                    disabled={scoring}
+                  >
+                    <X className="h-4 w-4 text-red-600" />
+                  </Button>
+                )}
               </div>
             </CardTitle>
             {/* Current Inn Info */}
@@ -1408,6 +1517,117 @@ export function ScorecardView({
             )}
           </CardHeader>
           <CardContent>
+            {/* Enhanced Live Scorecard Display */}
+            {scorecardData.innings && Array.isArray(scorecardData.innings) && (
+              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+                {scorecardData.innings
+                  .filter((innings: InningsSummary) => innings.status === 'in_progress')
+                  .map((innings: InningsSummary) => {
+                    // Calculate run rates for both innings
+                    let runsRequired = null;
+                    let currentRunRate = '0.00';
+                    let requiredRunRate = '0.00';
+                    
+                    // Calculate current run rate for both innings
+                    const ballsBowled = innings.total_overs ? Math.floor(innings.total_overs) * 6 + Math.round((innings.total_overs % 1) * 10) : 0;
+                    if (ballsBowled > 0) {
+                      currentRunRate = (innings.total_runs / ballsBowled * 6).toFixed(2);
+                    }
+                    
+                    // Calculate required runs and required run rate for second innings
+                    if (innings.innings_number === 2) {
+                      const firstInnings = scorecardData.innings.find(
+                        (inn: InningsSummary) => inn.innings_number === 1
+                      );
+                      
+                      if (firstInnings) {
+                        const target = firstInnings.total_runs + 1;
+                        runsRequired = target - innings.total_runs;
+                        
+                        const totalBalls = scorecardData.total_overs * 6;
+                        const ballsRemaining = Math.max(0, totalBalls - ballsBowled);
+                        
+                        if (ballsRemaining > 0 && runsRequired > 0) {
+                          requiredRunRate = (runsRequired / ballsRemaining * 6).toFixed(2);
+                        }
+                      }
+                    }
+                    
+                    return (
+                      <div key={innings.innings_number} className="space-y-4">
+                        {/* Current Score Display */}
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-gray-800 mb-2">
+                            {innings.total_runs}
+                            <span className="text-2xl text-gray-500">/{innings.total_wickets}</span>
+                          </div>
+                          <div className="text-lg text-gray-600 mb-1">
+                            {innings.batting_team === 'A' ? scorecardData.team_a : scorecardData.team_b}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {innings.total_overs} overs • Current RR: {currentRunRate}
+                            {innings.innings_number === 2 && requiredRunRate !== '0.00' && (
+                              <span> • Required RR: {requiredRunRate}</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Required Runs and Target Info (Second Innings Only) */}
+                        {runsRequired !== null && (
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">
+                              {runsRequired > 0 ? `${runsRequired} runs needed` : 'Target achieved!'}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Current Over Display */}
+                        {(() => {
+                          // Calculate what the current over number should be
+                          const totalOversPlayed = innings.total_overs || 0;
+                          const currentOverNumber = Math.ceil(totalOversPlayed) || 1;
+                          
+                          // Find the over object that matches the current over number
+                          const currentInningsOver = innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0
+                            ? innings.overs.find((over: OverSummary) => over.over_number === currentOverNumber) ||
+                              innings.overs.reduce((latest: OverSummary, current: OverSummary) =>
+                                current.over_number > latest.over_number ? current : latest
+                              )
+                            : null;
+                          
+                          return (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-lg font-bold text-yellow-800">
+                                  Over {currentOverNumber}
+                                </span>
+                                <span className="text-sm text-yellow-700 font-medium">
+                                  {currentInningsOver ? `${currentInningsOver.total_runs} runs, ${currentInningsOver.total_wickets} wickets` : '0 runs, 0 wickets'}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {currentInningsOver && currentInningsOver.balls && Array.isArray(currentInningsOver.balls) && currentInningsOver.balls.length > 0 ? (
+                                  [...currentInningsOver.balls]
+                                    .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+                                    .map((ball: BallSummary, index: number) =>
+                                      renderBallCircle(ball, index)
+                                    )
+                                ) : (
+                                  <div className="text-sm text-gray-400">Over not started</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+            
+            {/* Scoring Controls - Only for authenticated owners */}
+            {isScoringAvailable && (
+            <>
             {/* Runs Actions */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
@@ -1428,10 +1648,10 @@ export function ScorecardView({
                           : 'outline'
                     }
                     className={`h-14 text-lg font-bold transition-all duration-200 ${runs === 4
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                        : runs === 6
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
-                          : 'border-2 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                      : runs === 6
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
+                        : 'border-2 hover:border-green-400 hover:bg-green-50 hover:text-green-700'
                       }`}
                     disabled={scoring}
                   >
@@ -1532,8 +1752,8 @@ export function ScorecardView({
                       onClick={() => handleByesChange(byes)}
                       disabled={scoring}
                       className={`w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-200 ${byes === currentByes
-                          ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-lg scale-110'
-                          : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-400 hover:scale-105'
+                        ? 'border-blue-500 bg-blue-100 text-blue-700 shadow-lg scale-110'
+                        : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50 hover:border-gray-400 hover:scale-105'
                         } ${scoring ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {byes}
@@ -1571,8 +1791,8 @@ export function ScorecardView({
                       variant="outline"
                       size="lg"
                       className={`h-12 border-2 border-red-500 text-red-700 hover:bg-red-50 hover:border-red-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl ${isFirstBallOfInn()
-                          ? 'opacity-50 cursor-not-allowed'
-                          : ''
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
                         }`}
                       disabled={scoring || isFirstBallOfInn()}
                     >
@@ -1596,6 +1816,115 @@ export function ScorecardView({
                 </div>
               );
             })()}
+            </>
+            )}
+            
+            {/* Read-only message for non-authenticated users */}
+            {!isAuthenticated && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full mr-3"></div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800">Read-Only View</h4>
+                    <p className="text-sm text-blue-600">
+                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Show All Overs Section */}
+            {scorecardData.innings && Array.isArray(scorecardData.innings) && (
+              <div className="border-t border-gray-200 pt-6 mt-8">
+                <div className="flex items-center mb-4">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  <h4 className="font-semibold text-lg text-gray-800">All Overs</h4>
+                </div>
+                {scorecardData.innings
+                  .filter((innings: InningsSummary) => innings.status === 'in_progress' || innings.status === 'completed')
+                  .map((innings: InningsSummary) => {
+                    const inningsKey = `${innings.batting_team}-${innings.innings_number}`;
+                    const isExpanded = expandedOvers[inningsKey];
+                    
+                    return (
+                      <div key={innings.innings_number} className="mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <h5 className="font-medium text-gray-800">
+                              {innings.batting_team === 'A' ? scorecardData.team_a : scorecardData.team_b} - 
+                              Inn {innings.innings_number}
+                            </h5>
+                            <Badge
+                              variant={innings.status === 'in_progress' ? 'default' : 'secondary'}
+                              className={innings.status === 'in_progress' ? 'bg-green-600' : 'bg-gray-500'}
+                            >
+                              {innings.status === 'in_progress' ? 'Live' : 'Completed'}
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleExpandedOvers(inningsKey)}
+                            className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {isExpanded ? 'Hide' : 'Show'} Overs
+                          </Button>
+                        </div>
+                        
+                        {isExpanded && innings.overs && Array.isArray(innings.overs) && (
+                          <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                            {(() => {
+                              const filteredOvers = innings.overs.filter((over: OverSummary, index: number, self: OverSummary[]) => 
+                                // Remove duplicates by keeping only the first occurrence of each over number
+                                self.findIndex(o => o.over_number === over.over_number) === index
+                              );
+                              
+                              const sortedOvers = filteredOvers.sort((a: OverSummary, b: OverSummary) => {
+                                const aNum = Number(a.over_number);
+                                const bNum = Number(b.over_number);
+                                return bNum - aNum; // Descending order (newest first)
+                              });
+                              
+                              // Debug logging
+                              console.log('Show All Overs Debug:', {
+                                inningsNumber: innings.innings_number,
+                                originalOverNumbers: innings.overs.map(o => ({ number: o.over_number, type: typeof o.over_number })),
+                                filteredOverNumbers: filteredOvers.map(o => ({ number: o.over_number, type: typeof o.over_number })),
+                                sortedOverNumbers: sortedOvers.map(o => ({ number: o.over_number, type: typeof o.over_number }))
+                              });
+                              
+                              return sortedOvers;
+                            })()
+                              .map((over: OverSummary) => (
+                                <div key={over.over_number} className="bg-white rounded-lg p-3 border border-gray-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="font-medium text-gray-800">Over {over.over_number}</span>
+                                    <span className="text-sm text-gray-600">
+                                      {over.total_runs} runs, {over.total_wickets} wickets
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {over.balls && Array.isArray(over.balls) && over.balls.length > 0 ? (
+                                      [...over.balls]
+                                        .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+                                        .map((ball: BallSummary, index: number) =>
+                                          renderBallCircle(ball, index)
+                                        )
+                                    ) : (
+                                      <div className="text-xs text-gray-400">No balls</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -1628,6 +1957,15 @@ export function ScorecardView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Over Ad Modal */}
+      {currentOverAd && (
+        <OverAdModal
+          onClose={handleCloseOverAd}
+          adSlot="5949756909"
+          overNumber={currentOverAd.overNumber}
+        />
       )}
     </div>
   );

@@ -168,8 +168,8 @@ func (s *ScoreboardService) UpdateWicket(ctx context.Context, matchID string, re
 		return nil, fmt.Errorf("match ID is required")
 	}
 
-	if req.Wickets < 0 || req.Wickets > 10 {
-		return nil, fmt.Errorf("wickets must be between 0 and 10")
+	if req.Wickets < 0 || req.Wickets > 20 {
+		return nil, fmt.Errorf("wickets must be between 0 and 20")
 	}
 
 	scoreboard, err := s.GetScoreboard(ctx, matchID)
@@ -277,7 +277,9 @@ func (s *ScoreboardService) ValidateInningsOrder(ctx context.Context, matchID st
 		}
 
 		// First innings is complete if all wickets are down or overs are completed
-		firstInningsComplete := scoreboard.Wickets >= 10 || scoreboard.Overs >= float64(match.TotalOvers)
+		// Use dynamic wicket calculation based on team player count
+		maxWickets := match.TeamAPlayerCount - 1 // n-1 wickets for n players
+		firstInningsComplete := scoreboard.Wickets >= maxWickets || scoreboard.Overs >= float64(match.TotalOvers)
 
 		if !firstInningsComplete {
 			// First innings is not complete, only toss winner can bat

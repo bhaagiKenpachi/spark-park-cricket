@@ -42,8 +42,8 @@ describe('SeriesForm', () => {
 
     expect(screen.getByText('Create New Series')).toBeInTheDocument();
     expect(screen.getByLabelText('Series Name *')).toBeInTheDocument();
-    expect(screen.getByLabelText('Start Date *')).toBeInTheDocument();
-    expect(screen.getByLabelText('End Date *')).toBeInTheDocument();
+    expect(screen.getByLabelText('Start Date & Time *')).toBeInTheDocument();
+    expect(screen.getByLabelText('End Date & Time *')).toBeInTheDocument();
     expect(screen.getByText('Series')).toBeInTheDocument();
     expect(screen.getByTitle('Cancel')).toBeInTheDocument();
   });
@@ -166,8 +166,8 @@ describe('SeriesForm', () => {
     );
 
     const nameInput = screen.getByLabelText('Series Name *');
-    const startDateInput = screen.getByLabelText('Start Date *');
-    const endDateInput = screen.getByLabelText('End Date *');
+    const startDateInput = screen.getByLabelText('Start Date & Time *');
+    const endDateInput = screen.getByLabelText('End Date & Time *');
     const submitButton = screen.getByText('Series');
 
     fireEvent.change(nameInput, { target: { value: 'Test Series' } });
@@ -199,8 +199,8 @@ describe('SeriesForm', () => {
     );
 
     const nameInput = screen.getByLabelText('Series Name *');
-    const startDateInput = screen.getByLabelText('Start Date *');
-    const endDateInput = screen.getByLabelText('End Date *');
+    const startDateInput = screen.getByLabelText('Start Date & Time *');
+    const endDateInput = screen.getByLabelText('End Date & Time *');
     const submitButton = screen.getByText('Series');
 
     fireEvent.change(nameInput, { target: { value: 'Test Series' } });
@@ -286,8 +286,8 @@ describe('SeriesForm', () => {
     );
 
     const nameInput = screen.getByLabelText('Series Name *');
-    const startDateInput = screen.getByLabelText('Start Date *');
-    const endDateInput = screen.getByLabelText('End Date *');
+    const startDateInput = screen.getByLabelText('Start Date & Time *');
+    const endDateInput = screen.getByLabelText('End Date & Time *');
     const submitButton = screen.getByText('Series');
 
     fireEvent.change(nameInput, { target: { value: 'Test Series' } });
@@ -296,5 +296,94 @@ describe('SeriesForm', () => {
     fireEvent.click(submitButton);
 
     expect(mockOnSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render team name fields', () => {
+    const mockStore = createMockStore({
+      series: {
+        series: [],
+        currentSeries: null,
+        loading: false,
+        error: null,
+      },
+    });
+
+    render(
+      <Provider store={mockStore}>
+        <SeriesForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />
+      </Provider>
+    );
+
+    expect(screen.getByLabelText('Team A Name (Optional)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Team B Name (Optional)')).toBeInTheDocument();
+  });
+
+  it('should submit form with team names', async () => {
+    const mockStore = createMockStore({
+      series: {
+        series: [],
+        currentSeries: null,
+        loading: false,
+        error: null,
+      },
+    });
+
+    render(
+      <Provider store={mockStore}>
+        <SeriesForm onSuccess={mockOnSuccess} onCancel={mockOnCancel} />
+      </Provider>
+    );
+
+    const nameInput = screen.getByLabelText('Series Name *');
+    const teamAInput = screen.getByLabelText('Team A Name (Optional)');
+    const teamBInput = screen.getByLabelText('Team B Name (Optional)');
+    const startDateInput = screen.getByLabelText('Start Date & Time *');
+    const endDateInput = screen.getByLabelText('End Date & Time *');
+    const submitButton = screen.getByText('Series');
+
+    fireEvent.change(nameInput, { target: { value: 'Test Series' } });
+    fireEvent.change(teamAInput, { target: { value: 'Team Lions' } });
+    fireEvent.change(teamBInput, { target: { value: 'Team Tigers' } });
+    fireEvent.change(startDateInput, { target: { value: '2024-01-01' } });
+    fireEvent.change(endDateInput, { target: { value: '2024-01-31' } });
+    fireEvent.click(submitButton);
+
+    expect(mockOnSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('should populate team names when editing series', () => {
+    const mockSeries: Series = {
+      id: '1',
+      name: 'Test Series',
+      team_a_name: 'Mumbai Indians',
+      team_b_name: 'Chennai Super Kings',
+      start_date: '2024-01-01T00:00:00Z',
+      end_date: '2024-01-31T00:00:00Z',
+      status: 'upcoming',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    const mockStore = createMockStore({
+      series: {
+        series: [],
+        currentSeries: null,
+        loading: false,
+        error: null,
+      },
+    });
+
+    render(
+      <Provider store={mockStore}>
+        <SeriesForm
+          series={mockSeries}
+          onSuccess={mockOnSuccess}
+          onCancel={mockOnCancel}
+        />
+      </Provider>
+    );
+
+    expect(screen.getByDisplayValue('Mumbai Indians')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Chennai Super Kings')).toBeInTheDocument();
   });
 });
