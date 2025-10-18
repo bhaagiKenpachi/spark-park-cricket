@@ -5,6 +5,7 @@ import { ReduxProvider } from '@/providers/ReduxProvider';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { GraphQLProvider } from '@/providers/GraphQLProvider';
 import { AdSenseScript } from '@/components/ads/AdSenseScript';
+import { AdDebug } from '@/components/ads/AdDebug';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -40,6 +41,7 @@ export default function RootLayout({
             <AuthProvider>{children}</AuthProvider>
           </GraphQLProvider>
         </ReduxProvider>
+        <AdDebug />
       </body>
     </html>
   );
