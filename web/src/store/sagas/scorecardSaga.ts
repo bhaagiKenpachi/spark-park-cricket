@@ -146,6 +146,8 @@ export function* addBallSaga(
         );
 
         // Fetch latest over for the current innings
+        // Note: The reducer adds new overs to the array, so we'll have both
+        // the completed over and any newly created over in state
         yield put(
           fetchLatestOverThunk({
             matchId: ballEvent.match_id,
@@ -211,7 +213,7 @@ export function* undoBallSaga(
       // If no innings data exists in state, do a full scorecard refresh
       yield put(fetchScorecardRequest(matchId));
     }
-  } catch {}
+  } catch { }
 }
 
 export function* fetchInningsSaga(
