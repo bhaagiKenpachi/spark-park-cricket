@@ -1141,7 +1141,9 @@ export function ScorecardView({
                                 )
                                 .sort(
                                   (a: OverSummary, b: OverSummary) =>
-                                    a.over_number - b.over_number
+                                    isMatchCompleted 
+                                      ? b.over_number - a.over_number  // Reverse order for completed matches
+                                      : a.over_number - b.over_number  // Normal order for live matches
                                 )
                                 .map((over: OverSummary) =>
                                   renderOverDetails(over)
@@ -1473,7 +1475,9 @@ export function ScorecardView({
                                 )
                                 .sort(
                                   (a: OverSummary, b: OverSummary) =>
-                                    a.over_number - b.over_number
+                                    isMatchCompleted 
+                                      ? b.over_number - a.over_number  // Reverse order for completed matches
+                                      : a.over_number - b.over_number  // Normal order for live matches
                                 )
                                 .map((over: OverSummary) =>
                                   renderOverDetails(over)
