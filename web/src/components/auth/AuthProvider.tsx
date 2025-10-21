@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { initializeAuth, checkAuthStatus } from '@/store/reducers/authSlice';
+import { identifyUser, resetUser, trackUserLogin, trackUserLogout } from '@/lib/analytics';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -10,7 +11,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const dispatch = useAppDispatch();
-  const { isInitialized } = useAppSelector(state => state.auth);
+  const { isInitialized, user, isAuthenticated } = useAppSelector(state => state.auth);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -37,6 +38,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
   }, [dispatch]);
+
+  // Track user authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // User logged in - identify them in PostHog
+      identifyUser(user.id, {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        created_at: user.created_at,
+      });
+
+      // Track login event
+      trackUserLogin({
+        user_id: user.id,
+        email: user.email,
+        name: user.name,
+        provider: 'google', // Currently only Google OAuth is supported
+      });
+    } else if (!isAuthenticated && isInitialized) {
+      // User logged out - reset PostHog user
+      resetUser();
+    }
+  }, [isAuthenticated, user, isInitialized]);
 
   // Always render children, don't block the app for auth initialization
   // Auth can be initialized in the background
