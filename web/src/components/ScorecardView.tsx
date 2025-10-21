@@ -829,7 +829,7 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
           {/* Team A */}
           <Card>
             <CardHeader className="pb-3">
