@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
+import { LiveUpdates } from '@/components/LiveUpdates';
+import { BallEvent } from '@/hooks/useSSE';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -62,6 +64,7 @@ export function ScorecardView({
     inningsKey: string;
     overNumber: number;
   } | null>(null);
+  const [showLiveUpdates, setShowLiveUpdates] = useState(false);
   const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
@@ -92,6 +95,7 @@ export function ScorecardView({
       setShowLiveScoring(true);
     }
   }, [scorecard]);
+
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
@@ -625,6 +629,7 @@ export function ScorecardView({
 
   const scorecardData = scorecard;
 
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -723,6 +728,29 @@ export function ScorecardView({
           </div>
         )}
       </div>
+
+      {/* Live Updates Section */}
+      {scorecardData.match_status === 'live' && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Live Updates</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowLiveUpdates(!showLiveUpdates);
+              }}
+            >
+              {showLiveUpdates ? 'Hide' : 'Show'} Live Events
+            </Button>
+          </div>
+          {showLiveUpdates && (
+            <LiveUpdates
+              matchId={matchId}
+            />
+          )}
+        </div>
+      )}
 
       {/* Match Completion Summary */}
       {isMatchCompleted &&
@@ -1561,7 +1589,7 @@ export function ScorecardView({
                       {scoring ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                       ) : null}
-                     
+
                       {innings.total_runs}/{innings.total_wickets} (
                       {innings.total_overs} overs) -
                       {innings.batting_team === 'A'

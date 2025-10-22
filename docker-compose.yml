@@ -1,47 +1,3 @@
-# ========================================================================
-# DOCKER COMPOSE CONFIGURATION - CRITICAL ENVIRONMENT SETUP NOTES
-# ========================================================================
-#
-# IMPORTANT: How to Avoid Common Environment Variable Mistakes
-# ========================================================================
-#
-# 1. NEVER HARDCODE VALUES IN DOCKERFILES
-#    - DON'T: ARG NEXT_PUBLIC_API_URL=https://hardcoded-domain.com
-#    - DO: ARG NEXT_PUBLIC_API_URL (no default, comes from env)
-#
-# 2. UNDERSTAND BUILD-TIME vs RUNTIME ENVIRONMENT VARIABLES
-#    - Next.js NEXT_PUBLIC_* vars are BAKED INTO BUILD at compile time
-#    - Changing .env and restarting container WON'T update these values
-#    - You MUST rebuild: docker compose build --no-cache web
-#
-# 3. ENVIRONMENT VARIABLE SOURCES (priority order):
-#    a. Shell environment variables (highest priority)
-#    b. .env file in service directory (e.g., backend/.env, web/.env)
-#    c. docker-compose.yml "environment" section
-#    d. Dockerfile ARG defaults (should be avoided!)
-#
-# 4. PASSING VARIABLES TO DOCKER BUILD
-#    - Use "build.args" in docker-compose.yml
-#    - Reference env vars: ${VARIABLE_NAME} (not hardcoded values)
-#    - Set them in .env files or shell before: docker compose build
-#
-# 5. WHEN TO REBUILD vs RESTART
-#    - RESTART (docker compose restart): Runtime env changes only
-#    - REBUILD (docker compose build): Any NEXT_PUBLIC_*, Dockerfile, or code changes
-#    - NUCLEAR (docker compose down -v && docker compose up -d --build): When in doubt
-#
-# 6. CHECKING WHAT'S IN THE BUILD
-#    - Check container env: docker exec <container> env
-#    - Check build output: docker exec <container> grep -r "your-domain" .next/
-#    - Verify no hardcoded domains remain in built files
-#
-# 7. BROWSER CACHE ISSUES
-#    - Docker containers can be perfect, but browser caches old JS
-#    - Always test in Incognito OR hard refresh (Cmd+Shift+R)
-#    - Old cached JS will use old API URLs even with new containers
-#
-# ========================================================================
-
 services:
   # Redis Cache
   redis:
@@ -61,34 +17,29 @@ services:
       - cricket-network
 
   # Go Backend API
-  # ========================================================================
-  # BACKEND SERVICE CONFIGURATION
-  # ========================================================================
-  # - Primary config comes from: backend/.env
-  # - Docker overrides below are for container-specific values (Redis hostname, etc.)
-  # - ALL sensitive values (Google OAuth, Supabase, etc.) should be in backend/.env
-  # - To apply backend/.env changes: docker compose restart backend
-  # ========================================================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: cricket-backend-dev
+    container_name: cricket-backend
     ports:
       - "8080:8080"
     env_file:
-      - ./backend/.env # Main configuration source
+      - ./backend/.env
     environment:
-      # Server Configuration (container-specific overrides)
+      # Server Configuration
       - PORT=8080
       - FRONTEND_URL=http://localhost:3000
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
 
-      # Redis Configuration (using Docker service name 'redis')
+      # Redis Configuration
       - REDIS_URL=redis:6379
       - REDIS_DB=0
       - REDIS_USE_TLS=false
       - CACHE_ENABLED=true
+
+      # OAuth Configuration
+      - GOOGLE_REDIRECT_URL=http://localhost:8080/api/v1/auth/google/callback
 
       # Session Configuration
       - SESSION_MAX_AGE=86400
@@ -105,56 +56,20 @@ services:
       - cricket-network
 
   # Next.js Frontend
-  # ========================================================================
-  # FRONTEND SERVICE CONFIGURATION - CRITICAL BUILD-TIME NOTES
-  # ========================================================================
-  #
-  # ⚠️  CRITICAL: Next.js NEXT_PUBLIC_* variables are BAKED AT BUILD TIME
-  #
-  # What this means:
-  # - NEXT_PUBLIC_* vars are compiled into JavaScript during "npm run build"
-  # - They become STATIC strings in the .next/ build output
-  # - Changing .env and restarting will NOT update them
-  # - You MUST rebuild to pick up changes
-  #
-  # Configuration sources (in order):
-  # 1. web/.env - Primary source for all NEXT_PUBLIC_* variables
-  # 2. "build.args" below - Pass web/.env values to Docker build
-  # 3. "env_file" below - Sets runtime environment (less important for NEXT_PUBLIC_*)
-  #
-  # How to update NEXT_PUBLIC_* variables:
-  # 1. Edit web/.env
-  # 2. Rebuild: docker compose build --no-cache web
-  # 3. Restart: docker compose up -d web
-  # 4. Clear browser cache or use Incognito to test
-  #
-  # Common mistakes to avoid:
-  # - ❌ Hardcoding domains in Dockerfile ARG defaults
-  # - ❌ Using fallback values in code (process.env.VAR || 'hardcoded')
-  # - ❌ Expecting restart to pick up NEXT_PUBLIC_* changes
-  # - ❌ Forgetting to clear browser cache after rebuild
-  # - ✅ Always use env vars with no defaults: process.env.VAR!
-  # - ✅ Always rebuild after changing NEXT_PUBLIC_* vars
-  # - ✅ Test in Incognito to avoid browser cache issues
-  #
-  # ========================================================================
   web:
     build:
       context: ./web
       dockerfile: Dockerfile
-      args:
-        # Build arguments - passed to Docker build from web/.env
-        # These are used during "npm run build" to bake values into JavaScript
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-        - NEXT_PUBLIC_GRAPHQL_URL=${NEXT_PUBLIC_GRAPHQL_URL}
-        - NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID}
-        - NEXT_PUBLIC_ENABLE_ADS=${NEXT_PUBLIC_ENABLE_ADS}
-        - NODE_ENV=production # Always use production for Docker builds
-    container_name: cricket-frontend-dev
-    env_file:
-      - ./web/.env # Runtime environment (also source for ${} references above)
+    container_name: cricket-frontend
     ports:
       - "3000:3000"
+    environment:
+      # Next.js Configuration
+      - NODE_ENV=development
+      - PORT=3000
+      # API Configuration - Use localhost for local development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+      - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
     depends_on:
       - backend
     healthcheck:

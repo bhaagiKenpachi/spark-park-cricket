@@ -49,13 +49,13 @@ export default defineConfig({
         launchOptions: {
           args: process.env.CI
             ? [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu',
-              '--disable-web-security',
-              '--disable-features=VizDisplayCompositor',
-            ]
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=VizDisplayCompositor',
+              ]
             : [],
         },
       },
@@ -91,11 +91,11 @@ export default defineConfig({
         launchOptions: {
           args: process.env.CI
             ? [
-              '--no-sandbox',
-              '--disable-setuid-sandbox',
-              '--disable-dev-shm-usage',
-              '--disable-gpu',
-            ]
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+              ]
             : [],
         },
       },
@@ -119,7 +119,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: process.env.CI ? 180 * 1000 : 120 * 1000,
     env: {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL!,
+      NEXT_PUBLIC_API_URL:
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1',
       NEXT_PUBLIC_TEST_MODE: 'true',
     },
   },
