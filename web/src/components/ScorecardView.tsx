@@ -1883,7 +1883,7 @@ export function ScorecardView({
                   <div>
                     <h4 className="font-semibold text-blue-800">Read-Only View</h4>
                     <p className="text-sm text-blue-600">
-                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                      You&apos;re viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
                     </p>
                   </div>
                 </div>
