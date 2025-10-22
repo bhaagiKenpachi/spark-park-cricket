@@ -381,7 +381,7 @@ export function SeriesWithMatches({
       <CardContent className="px-3 pt-0">
         {/* Team Names Section - Show if either team name is provided */}
         {(series.team_a_name || series.team_b_name) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
             {series.team_a_name && (
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -416,7 +416,7 @@ export function SeriesWithMatches({
         )}
 
         {/* Dates Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg border border-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 p-4 bg-white/50 rounded-lg border border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <Calendar className="h-4 w-4 text-green-600" />
@@ -521,7 +521,7 @@ export function SeriesWithMatches({
                     key={match.id || `match-${index}`}
                     className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
-                    <CardContent className="p-4 flex flex-col">
+                    <CardContent className="flex flex-col">
                       <div className="flex  justify-between">
                         <div
                           className="space-y-5 cursor-pointer flex w-full justify-between group"
@@ -530,7 +530,7 @@ export function SeriesWithMatches({
                           }
                         >
                           {/* Match Header */}
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center ">
                                 {' '}
@@ -883,6 +883,7 @@ export function SeriesWithMatches({
                           </div>
                         )}
                       </div>
+                      
                     </CardContent>
                   </Card>
                 ))}
