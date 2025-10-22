@@ -829,7 +829,7 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
           {/* Team A */}
           <Card>
             <CardHeader className="pb-3">
@@ -1883,7 +1883,7 @@ export function ScorecardView({
                   <div>
                     <h4 className="font-semibold text-blue-800">Read-Only View</h4>
                     <p className="text-sm text-blue-600">
-                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                      You&apos;re viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
                     </p>
                   </div>
                 </div>
