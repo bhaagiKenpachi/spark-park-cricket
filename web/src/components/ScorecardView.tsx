@@ -1543,7 +1543,7 @@ export function ScorecardView({
                     className="flex items-center space-x-2"
                   >
                     <span>Inn {innings.innings_number}:</span>
-                    <Badge
+                    {/* <Badge
                       variant={
                         innings.status === 'in_progress'
                           ? 'default'
@@ -1556,16 +1556,17 @@ export function ScorecardView({
                       {innings.status === 'in_progress'
                         ? 'In Progress'
                         : 'Completed'}
-                    </Badge>
+                    </Badge> */}
                     <span className="flex items-center">
                       {scoring ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                       ) : null}
+                     
+                      {innings.total_runs}/{innings.total_wickets} (
+                      {innings.total_overs} overs) -
                       {innings.batting_team === 'A'
                         ? scorecardData.team_a
                         : scorecardData.team_b}
-                      - {innings.total_runs}/{innings.total_wickets} (
-                      {innings.total_overs} overs)
                     </span>
                   </div>
                 ))}
