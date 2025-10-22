@@ -829,7 +829,7 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
           {/* Team A */}
           <Card>
             <CardHeader className="pb-3">
@@ -1543,7 +1543,7 @@ export function ScorecardView({
                     className="flex items-center space-x-2"
                   >
                     <span>Inn {innings.innings_number}:</span>
-                    <Badge
+                    {/* <Badge
                       variant={
                         innings.status === 'in_progress'
                           ? 'default'
@@ -1556,16 +1556,17 @@ export function ScorecardView({
                       {innings.status === 'in_progress'
                         ? 'In Progress'
                         : 'Completed'}
-                    </Badge>
+                    </Badge> */}
                     <span className="flex items-center">
                       {scoring ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                       ) : null}
+                     
+                      {innings.total_runs}/{innings.total_wickets} (
+                      {innings.total_overs} overs) -
                       {innings.batting_team === 'A'
                         ? scorecardData.team_a
                         : scorecardData.team_b}
-                      - {innings.total_runs}/{innings.total_wickets} (
-                      {innings.total_overs} overs)
                     </span>
                   </div>
                 ))}
@@ -1575,7 +1576,7 @@ export function ScorecardView({
           <CardContent>
             {/* Enhanced Live Scorecard Display */}
             {scorecardData.innings && Array.isArray(scorecardData.innings) && (
-              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-200">
                 {scorecardData.innings
                   .filter((innings: InningsSummary) => innings.status === 'in_progress')
                   .map((innings: InningsSummary) => {
@@ -1883,7 +1884,7 @@ export function ScorecardView({
                   <div>
                     <h4 className="font-semibold text-blue-800">Read-Only View</h4>
                     <p className="text-sm text-blue-600">
-                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                      You&apos;re viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
                     </p>
                   </div>
                 </div>
