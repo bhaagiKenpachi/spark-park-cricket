@@ -262,7 +262,7 @@ export function SeriesList(): React.JSX.Element {
     <div className="w-full max-w-4xl mx-auto p-6" data-cy="series-list">
       <div className="flex flex-col items-center space-y-4 mb-6 sm:flex-row sm:justify-between sm:space-y-0">
         <h2 className="text-2xl font-bold text-center">Cricket Series</h2>
-        <div className="flex space-x-2 items-center">
+        <div className="flex space-x-2">
           <Button
             variant="outline"
             size="sm"

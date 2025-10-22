@@ -43,7 +43,7 @@ export function Pagination({
   return (
     <div className="w-full">
       {/* Mobile-first: Simple horizontal layout */}
-      <div className="flex flex-col space-y-4 sm:flex-row md:flex-col md:gap-y-2 sm:items-center sm:justify-between sm:space-y-0">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         {/* Total info - Always visible but compact on mobile */}
         {showTotalInfo && (
           <div className="text-sm text-gray-600">
@@ -66,7 +66,7 @@ export function Pagination({
                 value={pageSize.toString()}
                 onValueChange={value => onPageSizeChange(parseInt(value))}
               >
-                <SelectTrigger className="w-17 mr-4">
+                <SelectTrigger className="w-16">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
