@@ -119,6 +119,7 @@ export function* deleteSeriesSaga(
   }
 }
 
+
 export function* seriesSaga() {
   yield takeLatest(fetchSeriesRequest.type, fetchSeriesSaga);
   yield takeEvery(createSeriesRequest.type, createSeriesSaga);
