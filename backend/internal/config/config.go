@@ -56,16 +56,16 @@ func Load() *Config {
 		// Google OAuth Configuration
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
-		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", "http://localhost:8081/api/v1/auth/google/callback"),
+		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
 		SessionSecret:      getEnv("SESSION_SECRET", "your-super-secret-session-key-change-this-in-production"),
 		SessionMaxAge:      getEnvInt("SESSION_MAX_AGE", 86400), // 24 hours
 		// Frontend Configuration
-		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
+		FrontendURL: getEnv("FRONTEND_URL", ""),
 		// CORS Configuration
-		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,https://spark-park.dojima.foundation,https://cricket-dev.dojima.foundation"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", ""),
 		// Monitoring Configuration
-		PrometheusURL: getEnv("PROMETHEUS_URL", getDefaultPrometheusURL()),
-		GrafanaURL:    getEnv("GRAFANA_URL", getDefaultGrafanaURL()),
+		PrometheusURL: getEnv("PROMETHEUS_URL", ""),
+		GrafanaURL:    getEnv("GRAFANA_URL", ""),
 	}
 
 	// Log database configuration
@@ -168,30 +168,4 @@ func getEnvBool(key string, defaultValue bool) bool {
 		}
 	}
 	return defaultValue
-}
-
-// getDefaultPrometheusURL returns the default Prometheus URL based on environment
-func getDefaultPrometheusURL() string {
-	env := getEnv("ENVIRONMENT", "local")
-	switch env {
-	case "dev":
-		return "https://cricket-dev.dojima.foundation:9090"
-	case "prod":
-		return "https://cricket.dojima.foundation:9090"
-	default:
-		return "http://localhost:9090"
-	}
-}
-
-// getDefaultGrafanaURL returns the default Grafana URL based on environment
-func getDefaultGrafanaURL() string {
-	env := getEnv("ENVIRONMENT", "local")
-	switch env {
-	case "dev":
-		return "https://cricket-dev.dojima.foundation:3000"
-	case "prod":
-		return "https://cricket.dojima.foundation:3000"
-	default:
-		return "http://localhost:3002"
-	}
 }

@@ -13,12 +13,12 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Set build-time environment variables for Next.js
-ARG NEXT_PUBLIC_API_URL=https://spark-park-dev.dojima.foundation/api/v1
-ARG NEXT_PUBLIC_GRAPHQL_URL=https://spark-park-dev.dojima.foundation/api/v1/graphql
-ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-5474524579770573
+# Set build-time environment variables for Next.js (all from env, no defaults)
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_GRAPHQL_URL
+ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID
 ARG NEXT_PUBLIC_ENABLE_ADS
-ARG NODE_ENV=production
+ARG NODE_ENV
 
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_GRAPHQL_URL=$NEXT_PUBLIC_GRAPHQL_URL
