@@ -76,7 +76,8 @@ export function SeriesWithMatches({
     error: matchesError,
   } = useAppSelector(state => state.match);
   const { scorecard } = useAppSelector(state => state.scorecard);
-  const { getCachedData, setCachedData, clearExpired, isCached, clearMatch } = useCompletedMatchesCache();
+  const { getCachedData, setCachedData, clearExpired, isCached, clearMatch } =
+    useCompletedMatchesCache();
   const [showMatchForm, setShowMatchForm] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | undefined>();
   const [scorecardData, setScorecardData] = useState<{
@@ -152,7 +153,11 @@ export function SeriesWithMatches({
   useEffect(() => {
     if (seriesMatches.length > 0) {
       seriesMatches.forEach(match => {
-        if (match.status === 'completed' && !scorecardData[match.id] && !isCached(match.id)) {
+        if (
+          match.status === 'completed' &&
+          !scorecardData[match.id] &&
+          !isCached(match.id)
+        ) {
           fetchMatchScorecard(match.id);
         }
       });
@@ -212,19 +217,31 @@ export function SeriesWithMatches({
 
     // Only fetch scorecard data for completed matches that aren't cached
     if (seriesMatches.length > 0) {
-      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
-      const cachedMatches = completedMatches.filter(match => isCached(match.id));
-      const uncachedMatches = completedMatches.filter(match => !isCached(match.id));
+      const completedMatches = seriesMatches.filter(
+        match => match.status === 'completed'
+      );
+      const cachedMatches = completedMatches.filter(match =>
+        isCached(match.id)
+      );
+      const uncachedMatches = completedMatches.filter(
+        match => !isCached(match.id)
+      );
 
-      console.log(`📊 Cache Status: ${cachedMatches.length} cached, ${uncachedMatches.length} need API call`);
+      console.log(
+        `📊 Cache Status: ${cachedMatches.length} cached, ${uncachedMatches.length} need API call`
+      );
 
       uncachedMatches.forEach(match => {
-        console.log(`🌐 API Call needed for match ${match.id} (${match.match_number})`);
+        console.log(
+          `🌐 API Call needed for match ${match.id} (${match.match_number})`
+        );
         fetchMatchScorecard(match.id);
       });
 
       if (cachedMatches.length > 0) {
-        console.log(`✅ Using cache for matches: ${cachedMatches.map(m => m.match_number).join(', ')}`);
+        console.log(
+          `✅ Using cache for matches: ${cachedMatches.map(m => m.match_number).join(', ')}`
+        );
       }
     }
   };
@@ -238,11 +255,17 @@ export function SeriesWithMatches({
 
     // Force fetch scorecard data for all completed matches (bypass cache)
     if (seriesMatches.length > 0) {
-      const completedMatches = seriesMatches.filter(match => match.status === 'completed');
-      console.log(`🌐 Force API calls for ${completedMatches.length} completed matches`);
+      const completedMatches = seriesMatches.filter(
+        match => match.status === 'completed'
+      );
+      console.log(
+        `🌐 Force API calls for ${completedMatches.length} completed matches`
+      );
 
       completedMatches.forEach(match => {
-        console.log(`🔄 Force refreshing match ${match.id} (${match.match_number})`);
+        console.log(
+          `🔄 Force refreshing match ${match.id} (${match.match_number})`
+        );
         // Clear cache for this match first
         clearMatch(match.id);
         // Then fetch fresh data
@@ -288,66 +311,74 @@ export function SeriesWithMatches({
               onClick={() => onToggleExpanded?.(!expanded)}
               className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
             >
-              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {expanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
             </Button>
             {isOwner && (
               <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hover:bg-gray-100"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {/* Series management options - at the top */}
-                {isOwner && (
-                  <>
-                    <DropdownMenuItem onClick={() => onEditSeries(series)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Series
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDeleteSeries(series.id)}
-                      className="text-red-600 focus:text-red-600"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Series
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {/* Cache refresh options - at the bottom, only show when matches are expanded */}
-                {expanded && (
-                  <>
-                    <div className="border-t border-gray-200 my-1"></div>
-                    <DropdownMenuItem
-                      onClick={handleSmartRefresh}
-                      disabled={matchesLoading}
-                      data-cy="refresh-matches-button"
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
-                      Smart Refresh (Cache)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleForceRefresh}
-                      disabled={matchesLoading}
-                      data-cy="force-refresh-button"
-                      className="text-orange-600 focus:text-orange-600"
-                    >
-                      <RotateCcw className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`} />
-                      Force Refresh (No Cache)
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-gray-100"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {/* Series management options - at the top */}
+                  {isOwner && (
+                    <>
+                      <DropdownMenuItem onClick={() => onEditSeries(series)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Series
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDeleteSeries(series.id)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Series
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {/* Cache refresh options - at the bottom, only show when matches are expanded */}
+                  {expanded && (
+                    <>
+                      <div className="border-t border-gray-200 my-1"></div>
+                      <DropdownMenuItem
+                        onClick={handleSmartRefresh}
+                        disabled={matchesLoading}
+                        data-cy="refresh-matches-button"
+                      >
+                        <RefreshCw
+                          className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`}
+                        />
+                        Smart Refresh (Cache)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleForceRefresh}
+                        disabled={matchesLoading}
+                        data-cy="force-refresh-button"
+                        className="text-orange-600 focus:text-orange-600"
+                      >
+                        <RotateCcw
+                          className={`h-4 w-4 mr-2 ${matchesLoading ? 'animate-spin' : ''}`}
+                        />
+                        Force Refresh (No Cache)
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="px-3 pt-0">
         {/* Team Names Section - Show if either team name is provided */}
         {(series.team_a_name || series.team_b_name) && (
           <div className="grid grid-cols-2 md:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
@@ -434,7 +465,9 @@ export function SeriesWithMatches({
                   title="Refresh Matches"
                   className="border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
-                  <RefreshCw className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 ${matchesLoading ? 'animate-spin' : ''}`}
+                  />
                 </Button>
                 {isOwner && (
                   <Button
@@ -488,10 +521,10 @@ export function SeriesWithMatches({
                     key={match.id || `match-${index}`}
                     className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
-                    <CardContent>
-                      <div className="flex items-start justify-between">
+                    <CardContent className="flex flex-col">
+                      <div className="flex  justify-between">
                         <div
-                          className="space-y-5 cursor-pointer flex-1 group"
+                          className="space-y-5 cursor-pointer flex w-full justify-between group"
                           onClick={() =>
                             onViewScorecard?.(match.id, series.created_by || '')
                           }
@@ -499,35 +532,39 @@ export function SeriesWithMatches({
                           {/* Match Header */}
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex gap-2">
-                              <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-xl">
-                                Match #{match.match_number}
-                              </h4>
-                                <div>
-                              <Badge
-                                variant={
-                                  match.status === 'live'
-                                    ? 'default'
-                                    : match.status === 'completed'
-                                      ? 'secondary'
-                                      : match.status === 'not_started'
-                                        ? 'outline'
-                                        : 'outline'
-                                }
-                                className={
-                                  match.status === 'live'
-                                    ? 'bg-green-500 text-white border-green-500 font-semibold px-3 py-1'
-                                    : match.status === 'completed'
-                                      ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold px-3 py-1'
-                                      : match.status === 'not_started'
-                                        ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold px-3 py-1'
-                                        : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold px-3 py-1'
-                                }
-                              >
-                                {match.status === 'not_started' ? 'NOT STARTED' : match.status.toUpperCase()}
-                              </Badge>
-                            </div>
+                              <div className="flex items-center ">
+                                {' '}
+                                <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-xl">
+                                  Match #{match.match_number}
+                                </h4>{' '}
+                                <div className="ml-4">
+                                  <Badge
+                                    variant={
+                                      match.status === 'live'
+                                        ? 'default'
+                                        : match.status === 'completed'
+                                          ? 'secondary'
+                                          : match.status === 'not_started'
+                                            ? 'outline'
+                                            : 'outline'
+                                    }
+                                    className={
+                                      match.status === 'live'
+                                        ? 'bg-green-500 text-white border-green-500 font-semibold px-3 py-1'
+                                        : match.status === 'completed'
+                                          ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold px-3 py-1'
+                                          : match.status === 'not_started'
+                                            ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold px-3 py-1'
+                                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold px-3 py-1'
+                                    }
+                                  >
+                                    {match.status === 'not_started'
+                                      ? 'NOT STARTED'
+                                      : match.status.toUpperCase()}
+                                  </Badge>
+                                </div>
                               </div>
+
                               <p className="text-sm text-gray-600 mt-1">
                                 {new Date(match.date).toLocaleDateString(
                                   'en-US',
@@ -540,280 +577,311 @@ export function SeriesWithMatches({
                                 )}
                               </p>
                             </div>
-                            <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="hover:bg-gray-100"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                onViewScorecard?.(
-                                  match.id,
-                                  series.created_by || ''
-                                )
-                              }
-                            >
-                              <Play className="h-4 w-4 mr-2" />
-                              View Scorecard
-                            </DropdownMenuItem>
-                            {isOwner && (
-                              <>
-                                {match.status === 'not_started' && (
+                          </div>
+
+                          {/* Match Actions Dropdown */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="hover:bg-gray-100"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  onViewScorecard?.(
+                                    match.id,
+                                    series.created_by || ''
+                                  )
+                                }
+                              >
+                                <Play className="h-4 w-4 mr-2" />
+                                View Scorecard
+                              </DropdownMenuItem>
+                              {isOwner && (
+                                <>
+                                  {match.status === 'not_started' && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleStartMatch(match.id)}
+                                      className="text-green-600 focus:text-green-600"
+                                    >
+                                      <Play className="h-4 w-4 mr-2" />
+                                      Start Match
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
-                                    onClick={() => handleStartMatch(match.id)}
-                                    className="text-green-600 focus:text-green-600"
+                                    onClick={() => handleEditMatch(match)}
                                   >
-                                    <Play className="h-4 w-4 mr-2" />
-                                    Start Match
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit Match
                                   </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  onClick={() => handleEditMatch(match)}
-                                >
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit Match
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteMatch(match.id)}
-                                  className="text-red-600 focus:text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete Match
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                          
-                          </div>
-
-                          {/* Team Names - Show if available */}
-                          {(match.team_a_name || match.team_b_name) && (
-                            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 mb-3">
-                              <div className="flex items-center justify-center space-x-4">
-                                <div className="flex-1 text-center">
-                                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
-                                    Team A
-                                  </span>
-                                  <p className="text-md font-bold text-blue-900">
-                                    {match.team_a_name || 'Team A'}
-                                  </p>
-                                </div>
-                                <span className="text-2xl font-bold text-gray-400">vs</span>
-                                <div className="flex-1 text-center">
-                                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
-                                    Team B
-                                  </span>
-                                  <p className="text-md font-bold text-purple-900">
-                                    {match.team_b_name || 'Team B'}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Match Quick Info */}
-                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg py-3 px-4 border border-blue-100">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Teams</span>
-                                <p className="text-lg font-bold text-blue-900">
-                                  {match.team_a_player_count}v{match.team_b_player_count}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Format</span>
-                                <p className="text-lg font-bold text-purple-900">
-                                  {match.total_overs} Over{match.total_overs !== 1 ? 's' : ''}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Show More Info Button */}
-                          <div className="mt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedMatchDetails(prev => ({
-                                  ...prev,
-                                  [match.id]: !prev[match.id]
-                                }));
-                              }}
-                              className="w-full h-10 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                            >
-                              {expandedMatchDetails[match.id] ? (
-                                <>
-                                  <ChevronUp className="h-4 w-4 mr-2" />
-                                  Hide Details
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronDown className="h-4 w-4 mr-2" />
-                                  Show More Info
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteMatch(match.id)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Match
+                                  </DropdownMenuItem>
                                 </>
                               )}
-                            </Button>
-                          </div>
-
-                          {/* Expandable Details */}
-                          {expandedMatchDetails[match.id] && (
-                            <div className="space-y-4 mt-4">{/* Toss Information */}
-                          <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Trophy className="h-4 w-4 text-orange-600" />
-                              <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
-                                Toss Result
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium text-orange-900">
-                              Team {match.toss_winner} won and chose to{' '}
-                              {match.toss_type === 'H' ? 'bat first' : 'bowl first'}
-                            </p>
-                          </div>
-
-                          {/* Match Timing Information */}
-                          {(match.start_time || match.end_time) && (
-                            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <Clock className="h-4 w-4 text-green-600" />
-                                <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                                  Match Timing
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      <div>
+                        {/* Team Names - Show if available */}
+                        {(match.team_a_name || match.team_b_name) && (
+                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 mb-3">
+                            <div className="flex items-center justify-center space-x-4">
+                              <div className="flex-1 text-center">
+                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
+                                  Team A
                                 </span>
+                                <p className="text-md font-bold text-blue-900">
+                                  {match.team_a_name || 'Team A'}
+                                </p>
                               </div>
-                              <div className="space-y-1 text-sm">
-                                {match.start_time && (
-                                  <p className="text-green-800">
-                                    <span className="font-semibold">Started:</span>{' '}
-                                    {new Date(match.start_time).toLocaleString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </p>
-                                )}
-                                {match.end_time && (
-                                  <p className="text-green-800">
-                                    <span className="font-semibold">Ended:</span>{' '}
-                                    {new Date(match.end_time).toLocaleString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </p>
-                                )}
-                                {match.start_time && match.end_time && (
-                                  <p className="text-green-900 font-semibold">
-                                    Duration: {(() => {
-                                      const start = new Date(match.start_time);
-                                      const end = new Date(match.end_time);
-                                      const duration = end.getTime() - start.getTime();
-                                      const hours = Math.floor(duration / (1000 * 60 * 60));
-                                      const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
-                                      return `${hours}h ${minutes}m`;
-                                    })()}
-                                  </p>
-                                )}
+                              <span className="text-2xl font-bold text-gray-400">
+                                vs
+                              </span>
+                              <div className="flex-1 text-center">
+                                <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
+                                  Team B
+                                </span>
+                                <p className="text-md font-bold text-purple-900">
+                                  {match.team_b_name || 'Team B'}
+                                </p>
                               </div>
                             </div>
-                          )}
+                          </div>
+                        )}
 
-                          {/* Match Result - Only for Completed Matches */}
-                          {match.status === 'completed' &&
-                            (() => {
-                              const matchScorecard = scorecardData[match.id];
-                              if (
-                                matchScorecard &&
-                                matchScorecard.innings &&
-                                Array.isArray(matchScorecard.innings)
-                              ) {
-                                const teamAInnings =
-                                  matchScorecard.innings.find(
-                                    innings => innings.batting_team === 'A'
-                                  );
-                                const teamBInnings =
-                                  matchScorecard.innings.find(
-                                    innings => innings.batting_team === 'B'
-                                  );
-
-                                if (teamAInnings && teamBInnings) {
-                                  const teamARuns = teamAInnings.total_runs;
-                                  const teamBRuns = teamBInnings.total_runs;
-                                  const winner =
-                                    teamARuns > teamBRuns
-                                      ? matchScorecard.team_a
-                                      : matchScorecard.team_b;
-                                  const margin = Math.abs(
-                                    teamARuns - teamBRuns
-                                  );
-
-                                  return (
-                                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 shadow-sm">
-                                      <div className="flex items-center space-x-2 mb-3">
-                                        <Trophy className="h-5 w-5 text-green-600" />
-                                        <span className="text-sm font-bold text-green-700 uppercase tracking-wide">
-                                          Match Result
-                                        </span>
-                                      </div>
-                                      <div className="space-y-3">
-                                        <div className="bg-white rounded-md p-3 flex justify-between items-center">
-                                          <span className="text-base font-semibold text-gray-800">
-                                            {matchScorecard.team_a}
-                                          </span>
-                                          <span className="text-lg font-bold text-blue-900">
-                                            {teamARuns}/{teamAInnings.total_wickets}
-                                          </span>
-                                        </div>
-                                        <div className="bg-white rounded-md p-3 flex justify-between items-center">
-                                          <span className="text-base font-semibold text-gray-800">
-                                            {matchScorecard.team_b}
-                                          </span>
-                                          <span className="text-lg font-bold text-purple-900">
-                                            {teamBRuns}/{teamBInnings.total_wickets}
-                                          </span>
-                                        </div>
-                                        <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-md p-3">
-                                          <p className="text-base font-bold text-green-800 text-center">
-                                            🏆 {winner} won by {margin} run{margin !== 1 ? 's' : ''}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                              }
-
-                              // Fallback for when scorecard data is not available yet
-                              return (
-                                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <Trophy className="h-4 w-4 text-green-600" />
-                                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                                      Match Result
-                                    </span>
-                                  </div>
-                                  <p className="text-sm font-medium text-green-800">
-                                    Match completed - Loading scores...
-                                  </p>
-                                </div>
-                              );
-                            })()}
+                        {/* Match Quick Info */}
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-5 border border-blue-100">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                                Teams
+                              </span>
+                              <p className="text-lg font-bold text-blue-900">
+                                {match.team_a_player_count}v
+                                {match.team_b_player_count}
+                              </p>
                             </div>
-                          )}
+                            <div>
+                              <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                                Format
+                              </span>
+                              <p className="text-lg font-bold text-purple-900">
+                                {match.total_overs} Over
+                                {match.total_overs !== 1 ? 's' : ''}
+                              </p>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Match Actions Dropdown */}
-                       
+                        {/* Show More Info Button */}
+                        <div className="mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setExpandedMatchDetails(prev => ({
+                                ...prev,
+                                [match.id]: !prev[match.id],
+                              }));
+                            }}
+                            className="w-full h-10 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                          >
+                            {expandedMatchDetails[match.id] ? (
+                              <>
+                                <ChevronUp className="h-4 w-4 mr-2" />
+                                Hide Details
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="h-4 w-4 mr-2" />
+                                Show More Info
+                              </>
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Expandable Details */}
+                        {expandedMatchDetails[match.id] && (
+                          <div className="space-y-4 mt-4">
+                            {/* Toss Information */}
+                            <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Trophy className="h-4 w-4 text-orange-600" />
+                                <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                                  Toss Result
+                                </span>
+                              </div>
+                              <p className="text-sm font-medium text-orange-900">
+                                Team {match.toss_winner} won and chose to{' '}
+                                {match.toss_type === 'H'
+                                  ? 'bat first'
+                                  : 'bowl first'}
+                              </p>
+                            </div>
+
+                            {/* Match Timing Information */}
+                            {(match.start_time || match.end_time) && (
+                              <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Clock className="h-4 w-4 text-green-600" />
+                                  <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                    Match Timing
+                                  </span>
+                                </div>
+                                <div className="space-y-1 text-sm">
+                                  {match.start_time && (
+                                    <p className="text-green-800">
+                                      <span className="font-semibold">
+                                        Started:
+                                      </span>{' '}
+                                      {new Date(
+                                        match.start_time
+                                      ).toLocaleString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </p>
+                                  )}
+                                  {match.end_time && (
+                                    <p className="text-green-800">
+                                      <span className="font-semibold">
+                                        Ended:
+                                      </span>{' '}
+                                      {new Date(match.end_time).toLocaleString(
+                                        'en-US',
+                                        {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        }
+                                      )}
+                                    </p>
+                                  )}
+                                  {match.start_time && match.end_time && (
+                                    <p className="text-green-900 font-semibold">
+                                      Duration:{' '}
+                                      {(() => {
+                                        const start = new Date(
+                                          match.start_time
+                                        );
+                                        const end = new Date(match.end_time);
+                                        const duration =
+                                          end.getTime() - start.getTime();
+                                        const hours = Math.floor(
+                                          duration / (1000 * 60 * 60)
+                                        );
+                                        const minutes = Math.floor(
+                                          (duration % (1000 * 60 * 60)) /
+                                            (1000 * 60)
+                                        );
+                                        return `${hours}h ${minutes}m`;
+                                      })()}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Match Result - Only for Completed Matches */}
+                            {match.status === 'completed' &&
+                              (() => {
+                                const matchScorecard = scorecardData[match.id];
+                                if (
+                                  matchScorecard &&
+                                  matchScorecard.innings &&
+                                  Array.isArray(matchScorecard.innings)
+                                ) {
+                                  const teamAInnings =
+                                    matchScorecard.innings.find(
+                                      innings => innings.batting_team === 'A'
+                                    );
+                                  const teamBInnings =
+                                    matchScorecard.innings.find(
+                                      innings => innings.batting_team === 'B'
+                                    );
+
+                                  if (teamAInnings && teamBInnings) {
+                                    const teamARuns = teamAInnings.total_runs;
+                                    const teamBRuns = teamBInnings.total_runs;
+                                    const winner =
+                                      teamARuns > teamBRuns
+                                        ? matchScorecard.team_a
+                                        : matchScorecard.team_b;
+                                    const margin = Math.abs(
+                                      teamARuns - teamBRuns
+                                    );
+
+                                    return (
+                                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 shadow-sm">
+                                        <div className="flex items-center space-x-2 mb-3">
+                                          <Trophy className="h-5 w-5 text-green-600" />
+                                          <span className="text-sm font-bold text-green-700 uppercase tracking-wide">
+                                            Match Result
+                                          </span>
+                                        </div>
+                                        <div className="space-y-3">
+                                          <div className="bg-white rounded-md p-3 flex justify-between items-center">
+                                            <span className="text-base font-semibold text-gray-800">
+                                              {matchScorecard.team_a}
+                                            </span>
+                                            <span className="text-lg font-bold text-blue-900">
+                                              {teamARuns}/
+                                              {teamAInnings.total_wickets}
+                                            </span>
+                                          </div>
+                                          <div className="bg-white rounded-md p-3 flex justify-between items-center">
+                                            <span className="text-base font-semibold text-gray-800">
+                                              {matchScorecard.team_b}
+                                            </span>
+                                            <span className="text-lg font-bold text-purple-900">
+                                              {teamBRuns}/
+                                              {teamBInnings.total_wickets}
+                                            </span>
+                                          </div>
+                                          <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-md p-3">
+                                            <p className="text-base font-bold text-green-800 text-center">
+                                              🏆 {winner} won by {margin} run
+                                              {margin !== 1 ? 's' : ''}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                }
+
+                                // Fallback for when scorecard data is not available yet
+                                return (
+                                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <Trophy className="h-4 w-4 text-green-600" />
+                                      <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                        Match Result
+                                      </span>
+                                    </div>
+                                    <p className="text-sm font-medium text-green-800">
+                                      Match completed - Loading scores...
+                                    </p>
+                                  </div>
+                                );
+                              })()}
+                          </div>
+                        )}
                       </div>
                       
                     </CardContent>
