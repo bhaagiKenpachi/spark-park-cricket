@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { SeriesList } from '@/components/SeriesList';
+import { ScorecardView } from '@/components/ScorecardView';
 import { LoginButton } from '@/components/auth/LoginButton';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { useAppSelector } from '@/store/hooks';
@@ -12,10 +15,81 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Vote, Trophy, Home as HomeIcon, Menu } from 'lucide-react';
+import { Vote, Trophy, Home as HomeIcon, Menu, ArrowLeft } from 'lucide-react';
 
 export default function Home(): React.JSX.Element {
-  const { isAuthenticated } = useAppSelector(state => state.auth);
+  const { isAuthenticated, user: currentUser } = useAppSelector(state => state.auth);
+  const searchParams = useSearchParams();
+  const [viewingMatchId, setViewingMatchId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const matchId = searchParams.get('match');
+    if (matchId) {
+      setViewingMatchId(matchId);
+    } else {
+      setViewingMatchId(null);
+    }
+  }, [searchParams]);
+
+  const handleBackFromScorecard = () => {
+    setViewingMatchId(null);
+    // Remove the match parameter from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('match');
+    window.history.replaceState({}, '', url.toString());
+  };
+
+  // If viewing a specific match, show the scorecard
+  if (viewingMatchId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Top Navigation Bar */}
+        <nav className="bg-white border-b sticky top-0 z-50 shadow-sm">
+          <div className="w-full max-w-md mx-auto px-3 py-2">
+            <div className="flex items-center justify-between">
+              {/* Left: Back Button + Logo */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackFromScorecard}
+                  className="h-8 px-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="bg-blue-600 p-1.5 rounded-lg">
+                  <HomeIcon className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-900">Spark Park</span>
+              </div>
+
+              {/* Right: Auth */}
+              <div className="flex items-center gap-2">
+                {isAuthenticated ? <UserMenu /> : <LoginButton />}
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <main className="w-full max-w-md mx-auto">
+          <ScorecardView
+            matchId={viewingMatchId}
+            onBack={handleBackFromScorecard}
+            currentUser={currentUser}
+            isAuthenticated={isAuthenticated}
+          />
+        </main>
+
+        <footer className="bg-white border-t">
+          <div className="w-full max-w-md mx-auto py-3 px-4">
+            <p className="text-center text-gray-500 text-xs">
+              © 2024 Spark Park Cricket. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

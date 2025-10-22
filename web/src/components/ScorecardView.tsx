@@ -637,7 +637,7 @@ export function ScorecardView({
             {scorecardData.team_a} vs {scorecardData.team_b}
           </p>
         </div>
-        <div className="flex justify-center space-x-2">
+        <div className="flex justify-start space-x-2">
           <Button variant="outline" onClick={onBack} title="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
