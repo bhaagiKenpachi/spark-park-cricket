@@ -114,8 +114,8 @@ export function MatchForm({
 
     if (formData.total_overs === 0) {
       errors.total_overs = 'Total overs is required';
-    } else if (formData.total_overs < 1 || formData.total_overs > 20) {
-      errors.total_overs = 'Total overs must be between 1 and 20';
+    } else if (formData.total_overs < 1 || formData.total_overs > 50) {
+      errors.total_overs = 'Total overs must be between 1 and 50';
     }
 
     if (!formData.toss_winner) {
@@ -280,7 +280,7 @@ export function MatchForm({
                   )
                 }
                 min="1"
-                max="20"
+                max="50"
                 data-cy="total-overs"
                 className={formErrors.total_overs ? 'border-red-500' : ''}
               />
@@ -346,7 +346,7 @@ export function MatchForm({
                 }
               >
                 <Save className="h-4 w-4 mr-2" />
-                {loading ? 'Saving...' : 'Match'}
+                {loading ? 'Saving...' : 'Save'}
               </Button>
 
               {onCancel && (

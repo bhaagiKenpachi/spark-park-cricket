@@ -288,7 +288,7 @@ export function SeriesWithMatches({
               onClick={() => onToggleExpanded?.(!expanded)}
               className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
             >
-              {expanded ? 'Hide Matches' : 'Show Matches'}
+              {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
             {isOwner && (
               <DropdownMenu>
@@ -445,7 +445,7 @@ export function SeriesWithMatches({
                     className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Match
+                    New
                   </Button>
                 )}
               </div>

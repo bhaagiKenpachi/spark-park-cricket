@@ -1585,6 +1585,34 @@ func (s *ScorecardService) GetBallsByOver(ctx context.Context, overID string) ([
 	return balls, nil
 }
 
+// GetInningsByMatchAndNumber gets innings by match ID and innings number
+func (s *ScorecardService) GetInningsByMatchAndNumber(ctx context.Context, matchID string, inningsNumber int) (*models.Innings, error) {
+	log.Printf("Getting innings for match %s, innings number %d", matchID, inningsNumber)
+
+	innings, err := s.scorecardRepo.GetInningsByMatchAndNumber(ctx, matchID, inningsNumber)
+	if err != nil {
+		log.Printf("Error getting innings: %v", err)
+		return nil, fmt.Errorf("failed to get innings: %w", err)
+	}
+
+	log.Printf("Found innings %d for match %s", inningsNumber, matchID)
+	return innings, nil
+}
+
+// GetOversByInnings gets all overs for a specific innings
+func (s *ScorecardService) GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error) {
+	log.Printf("Getting overs for innings %s", inningsID)
+
+	overs, err := s.scorecardRepo.GetOversByInnings(ctx, inningsID)
+	if err != nil {
+		log.Printf("Error getting overs for innings: %v", err)
+		return nil, fmt.Errorf("failed to get overs for innings: %w", err)
+	}
+
+	log.Printf("Found %d overs for innings %s", len(overs), inningsID)
+	return overs, nil
+}
+
 // ValidateInningsOrder validates that balls can only be added to the correct innings
 func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
 	log.Printf("DEBUG: validateInningsOrder called - matchID: %s, inningsNumber: %d, battingTeam: %s, tossWinner: %s",
