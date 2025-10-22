@@ -1576,7 +1576,7 @@ export function ScorecardView({
           <CardContent>
             {/* Enhanced Live Scorecard Display */}
             {scorecardData.innings && Array.isArray(scorecardData.innings) && (
-              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-200">
                 {scorecardData.innings
                   .filter((innings: InningsSummary) => innings.status === 'in_progress')
                   .map((innings: InningsSummary) => {
