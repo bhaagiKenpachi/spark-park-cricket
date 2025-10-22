@@ -378,7 +378,7 @@ export function SeriesWithMatches({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="px-3 pt-0">
         {/* Team Names Section - Show if either team name is provided */}
         {(series.team_a_name || series.team_b_name) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100 mb-4">
@@ -521,7 +521,7 @@ export function SeriesWithMatches({
                     key={match.id || `match-${index}`}
                     className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
-                    <CardContent className="p-6 flex flex-col">
+                    <CardContent className="p-4 flex flex-col">
                       <div className="flex  justify-between">
                         <div
                           className="space-y-5 cursor-pointer flex w-full justify-between group"
