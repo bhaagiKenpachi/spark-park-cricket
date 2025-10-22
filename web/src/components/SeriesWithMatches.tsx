@@ -233,11 +233,11 @@ export function SeriesWithMatches({
     // Prevent navigation when clicking share
     event.stopPropagation();
     
-    const url = `${window.location.origin}/?match=${matchId}`;
+    const url = `${window.location.origin}/match/${matchId}`;
     
     try {
       await navigator.clipboard.writeText(url);
-      alert('MatchURL copied!');
+      alert('Match URL copied!');
     } catch (error) {
       // If clipboard API fails, use the old method
       const textArea = document.createElement('textarea');

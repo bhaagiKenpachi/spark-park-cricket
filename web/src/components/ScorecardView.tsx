@@ -160,13 +160,16 @@ export function ScorecardView({
     }
   }, [scoring, showLiveScoring]);
 
-  // Handle ball scoring success
+  // Handle ball scoring success - only show when scoring transitions from true to false
+  const [wasScoring, setWasScoring] = useState(false);
+  
   useEffect(() => {
-    if (scoring === false && showLiveScoring && scorecard) {
+    if (wasScoring && scoring === false && showLiveScoring && scorecard) {
       setScoringMessage('Ball scored successfully!');
       setTimeout(() => setScoringMessage(null), 2000);
     }
-  }, [scoring, showLiveScoring, scorecard]);
+    setWasScoring(scoring);
+  }, [scoring, showLiveScoring, scorecard, wasScoring]);
 
   const handleStartScoring = () => {
     // Check if scoring is available (ownership + match not completed)
