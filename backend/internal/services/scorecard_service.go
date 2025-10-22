@@ -1331,7 +1331,7 @@ func (s *ScorecardService) publishBallEvent(req *models.BallEventRequest, ball *
 		"wicket_type":     string(req.WicketType),
 		"innings_runs":    innings.TotalRuns,
 		"innings_wickets": innings.TotalWickets,
-		"innings_overs":   fmt.Sprintf("%.1f", float64(innings.TotalBalls)/6.0),
+		"innings_overs":   fmt.Sprintf("%.1f", innings.TotalOvers),
 		"timestamp":       time.Now().Format(time.RFC3339),
 	}
 
