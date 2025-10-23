@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -33,6 +34,9 @@ type Config struct {
 	// Monitoring Configuration
 	PrometheusURL string
 	GrafanaURL    string
+	// SSE Configuration
+	SSEConnectionTimeout time.Duration
+	SSEHeartbeatInterval time.Duration
 }
 
 func Load() *Config {
@@ -66,6 +70,9 @@ func Load() *Config {
 		// Monitoring Configuration
 		PrometheusURL: getEnv("PROMETHEUS_URL", ""),
 		GrafanaURL:    getEnv("GRAFANA_URL", ""),
+		// SSE Configuration
+		SSEConnectionTimeout: getEnvDuration("SSE_CONNECTION_TIMEOUT", 20*time.Minute),
+		SSEHeartbeatInterval: getEnvDuration("SSE_HEARTBEAT_INTERVAL", 30*time.Second),
 	}
 
 	// Log database configuration
@@ -165,6 +172,15 @@ func getEnvBool(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if boolValue, err := strconv.ParseBool(value); err == nil {
 			return boolValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
 		}
 	}
 	return defaultValue

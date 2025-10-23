@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/cache"
+	"spark-park-cricket-backend/internal/config"
 	"spark-park-cricket-backend/internal/monitoring"
 	"time"
 
@@ -17,13 +18,15 @@ import (
 type SSEHandler struct {
 	redisClient *cache.RedisClient
 	metrics     *monitoring.Metrics
+	config      *config.Config
 }
 
 // NewSSEHandler creates a new SSE handler
-func NewSSEHandler(redisClient *cache.RedisClient, metrics *monitoring.Metrics) *SSEHandler {
+func NewSSEHandler(redisClient *cache.RedisClient, metrics *monitoring.Metrics, cfg *config.Config) *SSEHandler {
 	return &SSEHandler{
 		redisClient: redisClient,
 		metrics:     metrics,
+		config:      cfg,
 	}
 }
 
@@ -88,12 +91,12 @@ func (h *SSEHandler) StreamBallEvents(w http.ResponseWriter, r *http.Request) {
 	// Start reading from the latest event
 	lastID := "$" // $ means start from the latest event
 
-	// Create context with cancellation
-	ctx, cancel := context.WithCancel(r.Context())
+	// Create context with cancellation and timeout
+	ctx, cancel := context.WithTimeout(r.Context(), h.config.SSEConnectionTimeout)
 	defer cancel()
 
-	// Create ticker for periodic heartbeat
-	heartbeatTicker := time.NewTicker(30 * time.Second)
+	// Create ticker for periodic heartbeat using config
+	heartbeatTicker := time.NewTicker(h.config.SSEHeartbeatInterval)
 	defer heartbeatTicker.Stop()
 
 	// Stream events
@@ -101,7 +104,20 @@ func (h *SSEHandler) StreamBallEvents(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("📡 SSE: Client disconnected for match %s", matchID)
+			// Check if this is a timeout or client disconnect
+			if ctx.Err() == context.DeadlineExceeded {
+				disconnectReason = "timeout"
+				log.Printf("⏰ SSE TIMEOUT: Connection timeout after %v for match %s", h.config.SSEConnectionTimeout, matchID)
+
+				// Send timeout notification to client before closing
+				fmt.Fprintf(w, "event: timeout\n")
+				fmt.Fprintf(w, "data: {\"message\":\"Connection timeout\",\"timeout_duration\":\"%v\",\"timestamp\":\"%s\"}\n\n",
+					h.config.SSEConnectionTimeout, time.Now().Format(time.RFC3339))
+				flusher.Flush()
+			} else {
+				log.Printf("📡 SSE: Client disconnected for match %s", matchID)
+			}
+
 			if h.metrics != nil {
 				h.metrics.RecordSSEDisconnection(matchID, endpoint, disconnectReason, time.Since(connectionStart))
 			}
@@ -244,12 +260,12 @@ func (h *SSEHandler) StreamMatchEvents(w http.ResponseWriter, r *http.Request) {
 	// Start reading from the latest event
 	lastID := "$"
 
-	// Create context with cancellation
-	ctx, cancel := context.WithCancel(r.Context())
+	// Create context with cancellation and timeout
+	ctx, cancel := context.WithTimeout(r.Context(), h.config.SSEConnectionTimeout)
 	defer cancel()
 
-	// Create ticker for periodic heartbeat
-	heartbeatTicker := time.NewTicker(30 * time.Second)
+	// Create ticker for periodic heartbeat using config
+	heartbeatTicker := time.NewTicker(h.config.SSEHeartbeatInterval)
 	defer heartbeatTicker.Stop()
 
 	// Stream events
@@ -257,7 +273,20 @@ func (h *SSEHandler) StreamMatchEvents(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("📡 SSE: Client disconnected for match %s", matchID)
+			// Check if this is a timeout or client disconnect
+			if ctx.Err() == context.DeadlineExceeded {
+				disconnectReason = "timeout"
+				log.Printf("⏰ SSE TIMEOUT: Connection timeout after %v for match %s", h.config.SSEConnectionTimeout, matchID)
+
+				// Send timeout notification to client before closing
+				fmt.Fprintf(w, "event: timeout\n")
+				fmt.Fprintf(w, "data: {\"message\":\"Connection timeout\",\"timeout_duration\":\"%v\",\"timestamp\":\"%s\"}\n\n",
+					h.config.SSEConnectionTimeout, time.Now().Format(time.RFC3339))
+				flusher.Flush()
+			} else {
+				log.Printf("📡 SSE: Client disconnected for match %s", matchID)
+			}
+
 			if h.metrics != nil {
 				h.metrics.RecordSSEDisconnection(matchID, endpoint, disconnectReason, time.Since(connectionStart))
 			}

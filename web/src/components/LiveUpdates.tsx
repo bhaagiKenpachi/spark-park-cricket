@@ -118,7 +118,12 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
         lastEvent,
         eventCount,
         connect,
-        disconnect
+        disconnect,
+        manualReconnect,
+        isIdle,
+        needsManualRefresh,
+        disconnectReason,
+        lastEventTime,
     } = useSSE(matchId, {
         onEvent: (event) => {
             setEvents(prev => [event, ...prev.slice(0, 49)]); // Keep last 50 events
@@ -210,6 +215,22 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
             return {
                 icon: <RefreshCw className="h-4 w-4 animate-spin" />,
                 text: 'Connecting...',
+                color: 'text-blue-600',
+                bgColor: 'bg-blue-50 border-blue-200',
+            };
+        }
+        if (needsManualRefresh) {
+            return {
+                icon: <WifiOff className="h-4 w-4" />,
+                text: 'Paused',
+                color: 'text-orange-600',
+                bgColor: 'bg-orange-50 border-orange-200',
+            };
+        }
+        if (isConnected && isIdle) {
+            return {
+                icon: <Wifi className="h-4 w-4" />,
+                text: 'Connected - Idle',
                 color: 'text-yellow-600',
                 bgColor: 'bg-yellow-50 border-yellow-200',
             };
@@ -231,6 +252,16 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
     };
 
     const status = getConnectionStatus();
+
+    // Debug logging for inactivity states
+    console.log('🔍 LiveUpdates DEBUG: Current states:', {
+        isConnected,
+        isIdle,
+        needsManualRefresh,
+        disconnectReason,
+        lastEventTime: lastEventTime?.toISOString(),
+        status: status.text
+    });
 
     return (
         <div className={`space-y-4 ${className}`}>
@@ -294,10 +325,15 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={isConnected ? disconnect : connect}
+                                onClick={needsManualRefresh ? manualReconnect : (isConnected ? disconnect : connect)}
                                 disabled={isConnecting}
                             >
-                                {isConnected ? (
+                                {needsManualRefresh ? (
+                                    <>
+                                        <RefreshCw className="h-4 w-4 mr-1" />
+                                        Reconnect
+                                    </>
+                                ) : isConnected ? (
                                     <>
                                         <WifiOff className="h-4 w-4 mr-1" />
                                         Disconnect
@@ -318,6 +354,65 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                     )}
                 </CardContent>
             </Card>
+
+            {/* Inactivity Warning Banner */}
+            {isIdle && !needsManualRefresh && (
+                <Card className="bg-yellow-50 border-yellow-200 border">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Clock className="h-5 w-5 text-yellow-600" />
+                                <div>
+                                    <h3 className="font-medium text-yellow-800">Connection Idle</h3>
+                                    <p className="text-sm text-yellow-700">
+                                        No recent ball events. Connection will pause automatically to save resources.
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={manualReconnect}
+                                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                            >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                Reconnect Now
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Manual Refresh Prompt */}
+            {needsManualRefresh && (
+                <Card className="bg-orange-50 border-orange-200 border">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Zap className="h-5 w-5 text-orange-600" />
+                                <div>
+                                    <h3 className="font-medium text-orange-800">Connection Paused</h3>
+                                    <p className="text-sm text-orange-700">
+                                        Connection paused to save resources. {disconnectReason === 'inactivity' ? 'No recent activity detected.' : 'Click to reconnect.'}
+                                    </p>
+                                    {lastEventTime && (
+                                        <p className="text-xs text-orange-600 mt-1">
+                                            Last update: {lastEventTime.toLocaleTimeString()}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <Button
+                                onClick={manualReconnect}
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                Reconnect
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Events List */}
             {events.length > 0 && (

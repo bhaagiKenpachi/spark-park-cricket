@@ -155,7 +155,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		r.Route("/sse", func(r chi.Router) {
 			// Get Redis client from cache manager
 			redisClient := dbClient.CacheManager.GetRedisClient()
-			sseHandler := NewSSEHandler(redisClient, serviceContainer.Metrics)
+			sseHandler := NewSSEHandler(redisClient, serviceContainer.Metrics, cfg)
 
 			// Public SSE routes (no authentication required for real-time streaming)
 			// These endpoints stream ball events in real-time using Server-Sent Events
