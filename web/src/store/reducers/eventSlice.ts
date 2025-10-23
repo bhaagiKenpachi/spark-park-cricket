@@ -86,17 +86,11 @@ export const eventSlice = createSlice({
                 return;
             }
 
-            // If we have loaded previous events (more than 10), append new events to maintain chronological order
-            // Otherwise, add to the beginning for real-time event priority
-            if (currentEvents.length > 10) {
-                // Append to end for chronological order when we have historical events
-                state.eventsByMatchId[matchId].events = [...currentEvents, event].slice(-50);
-                console.log(`📥 Appended new event to match ${matchId}, total events: ${state.eventsByMatchId[matchId].events.length}`);
-            } else {
-                // Add to beginning for real-time priority when we have fewer events
-                state.eventsByMatchId[matchId].events = [event, ...currentEvents.slice(0, 49)];
-                console.log(`📥 Added new event to match ${matchId}, total events: ${state.eventsByMatchId[matchId].events.length}`);
-            }
+            // Append new events to the END of the array
+            // Events are stored in reverse chronological order (oldest at end, newest at beginning after loading)
+            // But for real-time updates, we add to the end so when reversed for display, it appears at top
+            // Keep only the last 50 events to prevent memory issues
+            state.eventsByMatchId[matchId].events = [...currentEvents, event].slice(-50);
         },
 
         // Add multiple events (for loading previous events - replaces all existing events)
