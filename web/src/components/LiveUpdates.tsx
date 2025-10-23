@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,18 @@ import {
 import { useSSE, BallEvent } from '@/hooks/useSSE';
 import { ApiService } from '@/services/api';
 import { fetchInningsScoreSummaryThunk, fetchLatestOverThunk } from '@/store/reducers/scorecardSlice';
+import {
+    initializeMatchEvents,
+    clearMatchEvents,
+    addEvent,
+    addPreviousEvents,
+    setMatchLoading,
+    setMatchError,
+    selectEventsForMatch,
+    selectIsLoadingEventsForMatch,
+    selectErrorForMatch,
+    BallEvent as ReduxBallEvent
+} from '@/store/reducers/eventSlice';
 
 interface LiveUpdatesProps {
     matchId: string;
@@ -30,10 +42,13 @@ interface LiveUpdatesProps {
 
 export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesProps) {
     const dispatch = useDispatch<AppDispatch>();
-    const [events, setEvents] = useState<BallEvent[]>([]);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showRawData, setShowRawData] = useState(false);
-    const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
+
+    // Use Redux selectors for events
+    const events = useSelector((state: RootState) => selectEventsForMatch(state, matchId));
+    const isLoadingPrevious = useSelector((state: RootState) => selectIsLoadingEventsForMatch(state, matchId));
+    const error = useSelector((state: RootState) => selectErrorForMatch(state, matchId));
 
     // Function to convert scorecard ball data to BallEvent format
     const convertScorecardBallToEvent = (ball: any, overNumber: number, inningsNumber: number): BallEvent => {
@@ -61,13 +76,15 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
     const fetchPreviousEvents = async () => {
         if (isLoadingPrevious) return;
 
-        setIsLoadingPrevious(true);
+        dispatch(setMatchLoading({ matchId, loading: true }));
+        dispatch(setMatchError({ matchId, error: null }));
+
         try {
             const apiService = new ApiService();
             const response = await apiService.getScorecard(matchId);
             const scorecard = response.data.data; // Extract the actual scorecard data
 
-            const previousEvents: BallEvent[] = [];
+            const previousEvents: ReduxBallEvent[] = [];
 
             // Extract ball events from all innings
             if (scorecard.innings && Array.isArray(scorecard.innings)) {
@@ -102,19 +119,21 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                 return a.ball_number - b.ball_number;
             });
 
-            setEvents(prev => [...previousEvents, ...prev]); // Add previous events to the beginning
+            // Dispatch the previous events to Redux store
+            dispatch(addPreviousEvents({ matchId, events: previousEvents }));
 
         } catch (error) {
             console.error('❌ Error fetching previous ball events:', error);
+            dispatch(setMatchError({ matchId, error: 'Failed to fetch previous events' }));
         } finally {
-            setIsLoadingPrevious(false);
+            dispatch(setMatchLoading({ matchId, loading: false }));
         }
     };
 
     const {
         isConnected,
         isConnecting,
-        error,
+        error: sseError,
         lastEvent,
         eventCount,
         connect,
@@ -126,7 +145,8 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
         lastEventTime,
     } = useSSE(matchId, {
         onEvent: (event) => {
-            setEvents(prev => [event, ...prev.slice(0, 49)]); // Keep last 50 events
+            // Add event to Redux store for this specific match
+            dispatch(addEvent({ matchId, event }));
 
             // Trigger optimized API calls to refresh scorecard data
             // Same as what happens after manual ball addition
@@ -159,12 +179,13 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
         },
     });
 
-    // Fetch previous events when component mounts
+    // Initialize match events when component mounts
     useEffect(() => {
         if (matchId) {
+            dispatch(initializeMatchEvents(matchId));
             fetchPreviousEvents();
         }
-    }, [matchId]);
+    }, [matchId, dispatch]);
 
     const formatTimestamp = (timestamp: string) => {
         try {
@@ -338,9 +359,9 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                             </Button>
                         </div>
                     </div>
-                    {error && (
+                    {(error || sseError) && (
                         <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                            {error}
+                            {error || sseError}
                         </div>
                     )}
                 </CardContent>
@@ -422,7 +443,7 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setEvents([])}
+                                    onClick={() => dispatch(clearMatchEvents(matchId))}
                                 >
                                     <X className="h-4 w-4 mr-1" />
                                     Clear
