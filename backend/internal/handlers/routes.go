@@ -144,6 +144,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
 			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
+			r.Get("/{match_id}/events", scorecardHandler.GetBallEvents) // New endpoint for ball events
 
 			// Protected routes (require authentication and ownership)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)

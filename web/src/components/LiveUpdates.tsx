@@ -19,7 +19,7 @@ import {
     X
 } from 'lucide-react';
 import { useSSE, BallEvent } from '@/hooks/useSSE';
-import { ApiService } from '@/services/api';
+import { ApiService, BallEventResponse } from '@/services/api';
 import { fetchInningsScoreSummaryThunk, fetchLatestOverThunk } from '@/store/reducers/scorecardSlice';
 import {
     initializeMatchEvents,
@@ -50,77 +50,52 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
     const isLoadingPrevious = useSelector((state: RootState) => selectIsLoadingEventsForMatch(state, matchId));
     const error = useSelector((state: RootState) => selectErrorForMatch(state, matchId));
 
-    // Function to convert scorecard ball data to BallEvent format
-    const convertScorecardBallToEvent = (ball: any, overNumber: number, inningsNumber: number): BallEvent => {
-        return {
-            event_type: 'ball_added',
-            match_id: matchId,
-            innings_number: inningsNumber,
-            ball_number: ball.ball_number,
-            ball_type: ball.ball_type,
-            run_type: ball.run_type,
-            runs: ball.runs,
-            byes: ball.byes,
-            total_runs: ball.runs + ball.byes,
-            is_wicket: ball.is_wicket,
-            wicket_type: ball.wicket_type || '',
-            innings_runs: 0, // Will be calculated from scorecard
-            innings_wickets: 0, // Will be calculated from scorecard
-            innings_overs: `${overNumber}.${ball.ball_number}`, // Approximate
-            timestamp: new Date().toISOString(), // Use current time as we don't have exact timestamp
-            stream_id: `scorecard-${inningsNumber}-${overNumber}-${ball.ball_number}`
-        };
-    };
 
-    // Function to fetch previous ball events from scorecard
+    // Function to fetch previous ball events from the dedicated ball events API
     const fetchPreviousEvents = async () => {
         if (isLoadingPrevious) return;
 
         dispatch(setMatchLoading({ matchId, loading: true }));
         dispatch(setMatchError({ matchId, error: null }));
 
+        // Clear existing events for this match before loading new ones
+        dispatch(clearMatchEvents(matchId));
+
         try {
             const apiService = new ApiService();
-            const response = await apiService.getScorecard(matchId);
-            const scorecard = response.data.data; // Extract the actual scorecard data
+            const response = await apiService.getBallEvents(matchId);
+            // The response structure is { data: { data: [...], success: true }, success: true }
+            // We need to extract the actual ball events array from response.data.data
+            const ballEventsResponse = response.data as any;
+            const ballEventsArray = Array.isArray(ballEventsResponse?.data)
+                ? ballEventsResponse.data
+                : (Array.isArray(ballEventsResponse) ? ballEventsResponse : []);
 
-            const previousEvents: ReduxBallEvent[] = [];
+            console.log(`✅ Loaded ${ballEventsArray.length} previous events for match ${matchId}`);
 
-            // Extract ball events from all innings
-            if (scorecard.innings && Array.isArray(scorecard.innings)) {
-                scorecard.innings.forEach((innings: any) => {
-                    if (innings.overs && Array.isArray(innings.overs)) {
-                        innings.overs.forEach((over: any) => {
-                            if (over.balls && Array.isArray(over.balls)) {
-                                over.balls.forEach((ball: any) => {
-                                    const event = convertScorecardBallToEvent(ball, over.over_number, innings.innings_number);
-                                    // Update innings totals
-                                    event.innings_runs = innings.total_runs;
-                                    event.innings_wickets = innings.total_wickets;
-                                    event.innings_overs = innings.total_overs.toString();
-                                    previousEvents.push(event);
-                                });
-                            }
-                        });
-                    }
-                });
-            }
+            // Convert API response to Redux ball events
+            const previousEvents: ReduxBallEvent[] = ballEventsArray.map((event: BallEventResponse) => ({
+                event_type: event.event_type,
+                match_id: event.match_id,
+                innings_number: event.innings_number,
+                ball_number: event.ball_number,
+                ball_type: event.ball_type,
+                run_type: event.run_type,
+                runs: event.runs,
+                byes: event.byes,
+                total_runs: event.total_runs,
+                is_wicket: event.is_wicket,
+                wicket_type: event.wicket_type,
+                innings_runs: event.innings_runs,
+                innings_wickets: event.innings_wickets,
+                innings_overs: event.innings_overs,
+                timestamp: event.timestamp,
+                stream_id: event.stream_id,
+            }));
 
-            // Sort by innings number, then by over number, then by ball number
-            previousEvents.sort((a, b) => {
-                if (a.innings_number !== b.innings_number) {
-                    return a.innings_number - b.innings_number;
-                }
-                const aOver = parseFloat(a.innings_overs);
-                const bOver = parseFloat(b.innings_overs);
-                if (aOver !== bOver) {
-                    return aOver - bOver;
-                }
-                return a.ball_number - b.ball_number;
-            });
-
-            // Dispatch the previous events to Redux store
+            // Dispatch the previous events to Redux store (replaces all existing events)
             dispatch(addPreviousEvents({ matchId, events: previousEvents }));
+            console.log(`📡 Dispatched ${previousEvents.length} events to Redux for match ${matchId}`);
 
         } catch (error) {
             console.error('❌ Error fetching previous ball events:', error);
@@ -179,13 +154,13 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
         },
     });
 
-    // Initialize match events when component mounts
+    // Initialize match events when component mounts or matchId changes
     useEffect(() => {
         if (matchId) {
+            console.log(`🔄 Initializing events for match: ${matchId}`);
             dispatch(initializeMatchEvents(matchId));
-            fetchPreviousEvents();
         }
-    }, [matchId, dispatch]);
+    }, [matchId]);
 
     const formatTimestamp = (timestamp: string) => {
         try {
@@ -454,7 +429,7 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                     <CardContent>
                         <ScrollArea className={`${isExpanded ? 'h-96' : 'h-48'} w-full`}>
                             <div className="space-y-2">
-                                {events.map((event, index) => {
+                                {[...events].reverse().map((event, index) => {
                                     const isPreviousEvent = event.stream_id.startsWith('scorecard-');
                                     return (
                                         <div key={`${event.stream_id}-${index}`} className={`p-3 rounded-lg ${isPreviousEvent ? 'bg-blue-50 border-l-4 border-blue-300' : 'bg-gray-50'}`}>

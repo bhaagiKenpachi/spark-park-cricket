@@ -354,6 +354,29 @@ func (r *RedisClient) GetStreamKey(matchID string) string {
 	return fmt.Sprintf("stream:match:%s:balls", matchID)
 }
 
+// ReadStreamEvents reads all events from a Redis stream
+func (r *RedisClient) ReadStreamEvents(streamKey string, start, end string) ([]redis.XMessage, error) {
+	ctx, cancel := context.WithTimeout(r.ctx, 5*time.Second)
+	defer cancel()
+
+	// Read all events from the stream using XRANGE
+	streams, err := r.client.XRange(ctx, streamKey, start, end).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read stream events: %w", err)
+	}
+
+	// Convert to XMessage format for consistency
+	var messages []redis.XMessage
+	for _, stream := range streams {
+		messages = append(messages, redis.XMessage{
+			ID:     stream.ID,
+			Values: stream.Values,
+		})
+	}
+
+	return messages, nil
+}
+
 // extractKeyPattern extracts the pattern from a cache key for metrics
 func extractKeyPattern(key string) string {
 	if len(key) == 0 {

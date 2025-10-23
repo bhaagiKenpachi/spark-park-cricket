@@ -153,20 +153,24 @@ describe('Event Slice', () => {
             expect(match2Error).toBe(null);
         });
 
-        it('should add previous events to the correct match', () => {
+        it('should add previous events to the correct match and replace existing events', () => {
             store.dispatch(initializeMatchEvents('match-1'));
             store.dispatch(initializeMatchEvents('match-2'));
 
-            const previousEvents = [mockBallEvent, mockBallEvent2];
+            // Add some existing events to match-1
+            store.dispatch(addEvent({ matchId: 'match-1', event: mockBallEvent }));
 
-            // Add previous events to match-1
+            const previousEvents = [mockBallEvent2];
+
+            // Add previous events to match-1 (should replace existing events)
             store.dispatch(addPreviousEvents({ matchId: 'match-1', events: previousEvents }));
 
             const state = store.getState() as { events: EventState };
             const match1Events = selectEventsForMatch(state, 'match-1');
             const match2Events = selectEventsForMatch(state, 'match-2');
 
-            expect(match1Events).toHaveLength(2);
+            expect(match1Events).toHaveLength(1);
+            expect(match1Events[0]).toEqual(mockBallEvent2);
             expect(match2Events).toHaveLength(0);
         });
 

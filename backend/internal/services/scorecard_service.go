@@ -11,6 +11,7 @@ import (
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -1724,4 +1725,90 @@ func (s *ScorecardService) GetNonTossWinner(tossWinner models.TeamType) models.T
 		return models.TeamTypeB
 	}
 	return models.TeamTypeA
+}
+
+// GetBallEvents retrieves ball events for a match from Redis streams
+func (s *ScorecardService) GetBallEvents(ctx context.Context, matchID string) ([]*models.BallEventResponse, error) {
+	// Get Redis client from cache manager
+	redisClient := s.getRedisClient()
+	if redisClient == nil {
+		log.Printf("⚠️  Redis client not available, returning empty events for match: %s", matchID)
+		return []*models.BallEventResponse{}, nil
+	}
+
+	// Get stream key for this match
+	streamKey := redisClient.GetStreamKey(matchID)
+
+	// Read all events from the Redis stream
+	events, err := redisClient.ReadStreamEvents(streamKey, "-", "+")
+	if err != nil {
+		log.Printf("⚠️  Failed to read stream events for match %s: %v", matchID, err)
+		return []*models.BallEventResponse{}, nil
+	}
+
+	// Convert Redis stream events to BallEventResponse models
+	var ballEvents []*models.BallEventResponse
+	for _, event := range events {
+		// Helper function to safely get string values
+		getString := func(key string) string {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					return str
+				}
+			}
+			return ""
+		}
+
+		// Helper function to safely get int values
+		getInt := func(key string) int {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					// Try to parse as int
+					if intVal, err := strconv.Atoi(str); err == nil {
+						return intVal
+					}
+				}
+				if floatVal, ok := val.(float64); ok {
+					return int(floatVal)
+				}
+			}
+			return 0
+		}
+
+		// Helper function to safely get bool values
+		getBool := func(key string) bool {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					return str == "true" || str == "1"
+				}
+				if boolVal, ok := val.(bool); ok {
+					return boolVal
+				}
+			}
+			return false
+		}
+
+		ballEvent := &models.BallEventResponse{
+			EventType:      getString("event_type"),
+			MatchID:        getString("match_id"),
+			InningsNumber:  getInt("innings_number"),
+			BallNumber:     getInt("ball_number"),
+			BallType:       getString("ball_type"),
+			RunType:        getString("run_type"),
+			Runs:           getInt("runs"),
+			Byes:           getInt("byes"),
+			TotalRuns:      getInt("total_runs"),
+			IsWicket:       getBool("is_wicket"),
+			WicketType:     getString("wicket_type"),
+			InningsRuns:    getInt("innings_runs"),
+			InningsWickets: getInt("innings_wickets"),
+			InningsOvers:   getString("innings_overs"),
+			Timestamp:      getString("timestamp"),
+			StreamID:       event.ID,
+		}
+		ballEvents = append(ballEvents, ballEvent)
+	}
+
+	log.Printf("✅ Retrieved %d ball events for match %s from Redis streams", len(ballEvents), matchID)
+	return ballEvents, nil
 }

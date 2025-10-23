@@ -77,11 +77,29 @@ export const eventSlice = createSlice({
                 };
             }
 
-            // Add event to the beginning and keep only last 50 events
-            state.eventsByMatchId[matchId].events = [event, ...state.eventsByMatchId[matchId].events.slice(0, 49)];
+            const currentEvents = state.eventsByMatchId[matchId].events;
+
+            // Check if event already exists by stream_id to avoid duplicates
+            const eventExists = currentEvents.some(e => e.stream_id === event.stream_id);
+            if (eventExists) {
+                console.log(`⚠️  Event ${event.stream_id} already exists, skipping duplicate`);
+                return;
+            }
+
+            // If we have loaded previous events (more than 10), append new events to maintain chronological order
+            // Otherwise, add to the beginning for real-time event priority
+            if (currentEvents.length > 10) {
+                // Append to end for chronological order when we have historical events
+                state.eventsByMatchId[matchId].events = [...currentEvents, event].slice(-50);
+                console.log(`📥 Appended new event to match ${matchId}, total events: ${state.eventsByMatchId[matchId].events.length}`);
+            } else {
+                // Add to beginning for real-time priority when we have fewer events
+                state.eventsByMatchId[matchId].events = [event, ...currentEvents.slice(0, 49)];
+                console.log(`📥 Added new event to match ${matchId}, total events: ${state.eventsByMatchId[matchId].events.length}`);
+            }
         },
 
-        // Add multiple events (for loading previous events)
+        // Add multiple events (for loading previous events - replaces all existing events)
         addPreviousEvents: (state, action: PayloadAction<{ matchId: string; events: BallEvent[] }>) => {
             const { matchId, events } = action.payload;
 
@@ -94,8 +112,8 @@ export const eventSlice = createSlice({
                 };
             }
 
-            // Add previous events to the end (they are already sorted chronologically)
-            state.eventsByMatchId[matchId].events = [...events, ...state.eventsByMatchId[matchId].events];
+            // Replace all existing events with the new previous events
+            state.eventsByMatchId[matchId].events = [...events];
         },
 
         // Set loading state for a match

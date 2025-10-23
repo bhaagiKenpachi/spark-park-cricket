@@ -340,3 +340,35 @@ func (h *ScorecardHandler) GetOver(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully retrieved over %d for innings %d, match %s", overNumber, inningsNumber, matchID)
 	utils.WriteSuccessResponse(w, over)
 }
+
+// GetBallEvents retrieves ball events for a match from Redis streams
+func (h *ScorecardHandler) GetBallEvents(w http.ResponseWriter, r *http.Request) {
+	matchID := chi.URLParam(r, "match_id")
+
+	if matchID == "" {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "INVALID_REQUEST", "Match ID is required")
+		return
+	}
+
+	log.Printf("📡 Getting ball events for match: %s", matchID)
+
+	// Get ball events from the scorecard service
+	events, err := h.scorecardService.GetBallEvents(r.Context(), matchID)
+	if err != nil {
+		log.Printf("❌ Error getting ball events for match %s: %v", matchID, err)
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	log.Printf("✅ Retrieved %d ball events for match: %s", len(events), matchID)
+
+	// Write response
+	response := map[string]interface{}{
+		"success": true,
+		"data":    events,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
