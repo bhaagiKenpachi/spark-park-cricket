@@ -210,7 +210,6 @@ export function SeriesWithMatches({
 
   // Smart refresh that respects cache
   const handleSmartRefresh = () => {
-    console.log('🔄 Smart Refresh - Checking cache for completed matches');
 
     // Always refresh matches list (this is lightweight)
     dispatch(fetchMatchesBySeriesRequest(series.id));
@@ -248,7 +247,6 @@ export function SeriesWithMatches({
 
   // Force refresh that bypasses cache
   const handleForceRefresh = () => {
-    console.log('🔄 Force Refresh - Bypassing cache for all completed matches');
 
     // Always refresh matches list
     dispatch(fetchMatchesBySeriesRequest(series.id));
@@ -787,7 +785,7 @@ export function SeriesWithMatches({
                                         );
                                         const minutes = Math.floor(
                                           (duration % (1000 * 60 * 60)) /
-                                            (1000 * 60)
+                                          (1000 * 60)
                                         );
                                         return `${hours}h ${minutes}m`;
                                       })()}
@@ -883,7 +881,7 @@ export function SeriesWithMatches({
                           </div>
                         )}
                       </div>
-                      
+
                     </CardContent>
                   </Card>
                 ))}

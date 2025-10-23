@@ -45,7 +45,6 @@ export function useUserActivity(options: UseUserActivityOptions = {}): UserActiv
             setLastActivityTime(now);
             setIsUserActive(true);
 
-            console.log('👤 USER ACTIVITY: User became active at', now.toISOString());
 
             // Clear existing activity timeout
             if (activityTimeoutRef.current) {
@@ -57,7 +56,6 @@ export function useUserActivity(options: UseUserActivityOptions = {}): UserActiv
                 if (!isMountedRef.current) return;
 
                 setIsUserActive(false);
-                console.log('👤 USER ACTIVITY: User became inactive after', activityTimeout / 1000, 'seconds');
             }, activityTimeout);
 
         }, debounceMs);
@@ -72,7 +70,6 @@ export function useUserActivity(options: UseUserActivityOptions = {}): UserActiv
         // When window loses focus, mark as inactive immediately
         if (!isMountedRef.current) return;
         setIsUserActive(false);
-        console.log('👤 USER ACTIVITY: User became inactive (window blur)');
     }, []);
 
     // Update time since last activity
@@ -115,7 +112,6 @@ export function useUserActivity(options: UseUserActivityOptions = {}): UserActiv
         activityTimeoutRef.current = setTimeout(() => {
             if (!isMountedRef.current) return;
             setIsUserActive(false);
-            console.log('👤 USER ACTIVITY: Initial activity timeout reached');
         }, activityTimeout);
 
         // Cleanup function

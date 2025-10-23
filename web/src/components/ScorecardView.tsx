@@ -1022,21 +1022,6 @@ export function ScorecardView({
                               const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                               const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
 
-                              // Debug logging
-                              console.log('Required runs calculation (Team A):', {
-                                firstInningsRuns: firstInnings.total_runs,
-                                target,
-                                currentRuns: innings.total_runs,
-                                runsRequired,
-                                totalBalls,
-                                currentOversDecimal,
-                                ballsBowledFromOvers,
-                                ballsRemainingFromOvers,
-                                ballsBowled,
-                                ballsBowledCorrected,
-                                ballsRemaining,
-                                ballsRemainingCorrected
-                              });
 
                               // Calculate run rates with error handling
                               let currentRunRate = '0.00';
@@ -1354,21 +1339,6 @@ export function ScorecardView({
                               const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                               const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
 
-                              // Debug logging
-                              console.log('Required runs calculation (Team B):', {
-                                firstInningsRuns: firstInnings.total_runs,
-                                target,
-                                currentRuns: innings.total_runs,
-                                runsRequired,
-                                totalBalls,
-                                currentOversDecimal,
-                                ballsBowledFromOvers,
-                                ballsRemainingFromOvers,
-                                ballsBowled,
-                                ballsBowledCorrected,
-                                ballsRemaining,
-                                ballsRemainingCorrected
-                              });
 
                               // Calculate run rates with error handling
                               let currentRunRate = '0.00';
@@ -1972,13 +1942,6 @@ export function ScorecardView({
                                 return bNum - aNum; // Descending order (newest first)
                               });
 
-                              // Debug logging
-                              console.log('Show All Overs Debug:', {
-                                inningsNumber: innings.innings_number,
-                                originalOverNumbers: innings.overs.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                                filteredOverNumbers: filteredOvers.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                                sortedOverNumbers: sortedOvers.map(o => ({ number: o.over_number, type: typeof o.over_number }))
-                              });
 
                               return sortedOvers;
                             })()

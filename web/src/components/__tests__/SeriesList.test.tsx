@@ -378,7 +378,6 @@ describe('SeriesList', () => {
     );
 
     if (dropdownTrigger) {
-      console.log('DEBUG: Dropdown trigger found, clicking it');
       fireEvent.click(dropdownTrigger);
 
       // Wait a bit for the dropdown to potentially open
@@ -395,7 +394,6 @@ describe('SeriesList', () => {
         expect(dropdownTrigger).toBeInTheDocument();
       }
     } else {
-      console.log('DEBUG: No dropdown trigger found');
       // If no dropdown trigger is found, the ownership check might be failing
       expect(false).toBe(true); // Fail the test
     }
@@ -502,7 +500,6 @@ describe('SeriesList', () => {
     );
 
     if (dropdownTrigger) {
-      console.log('DEBUG: Dropdown trigger found, clicking it');
       fireEvent.click(dropdownTrigger);
 
       // Wait a bit for the dropdown to potentially open
@@ -523,7 +520,6 @@ describe('SeriesList', () => {
         expect(dropdownTrigger).toBeInTheDocument();
       }
     } else {
-      console.log('DEBUG: No dropdown trigger found');
       // If no dropdown trigger is found, the ownership check might be failing
       expect(false).toBe(true); // Fail the test
     }

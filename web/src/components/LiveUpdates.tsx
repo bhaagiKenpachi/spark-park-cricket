@@ -149,10 +149,10 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
             onEvent?.(event);
         },
         onConnect: () => {
-            console.log('✅ LiveUpdates: Connected to SSE for match:', matchId);
+            // Connected to SSE
         },
         onDisconnect: () => {
-            console.log('❌ LiveUpdates: Disconnected from SSE for match:', matchId);
+            // Disconnected from SSE
         },
         onError: (error) => {
             console.error('❌ LiveUpdates: SSE error for match:', matchId, error);
@@ -253,15 +253,6 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
 
     const status = getConnectionStatus();
 
-    // Debug logging for inactivity states
-    console.log('🔍 LiveUpdates DEBUG: Current states:', {
-        isConnected,
-        isIdle,
-        needsManualRefresh,
-        disconnectReason,
-        lastEventTime: lastEventTime?.toISOString(),
-        status: status.text
-    });
 
     return (
         <div className={`space-y-4 ${className}`}>
