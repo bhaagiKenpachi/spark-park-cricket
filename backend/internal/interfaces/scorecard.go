@@ -19,4 +19,5 @@ type ScorecardServiceInterface interface {
 	ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error
 	GetNonTossWinner(tossWinner models.TeamType) models.TeamType
 	GetBallEvents(ctx context.Context, matchID string) ([]*models.BallEventResponse, error)
+	GetTimeTracking(ctx context.Context, matchID string) (*models.TimeTrackingResponse, error)
 }

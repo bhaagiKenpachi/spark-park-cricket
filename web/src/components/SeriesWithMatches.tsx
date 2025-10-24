@@ -33,6 +33,9 @@ import {
   ChevronUp,
   Clock,
   Trophy,
+  Share2,
+  CheckCircle,
+  Circle,
 } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
@@ -128,11 +131,29 @@ export function SeriesWithMatches({
     [dispatch, scorecardData, getCachedData]
   );
 
-  // Filter matches for this series
-  const seriesMatches = useMemo(
-    () => matches?.filter(match => match.series_id === series.id) || [],
-    [matches, series.id]
-  );
+  // Filter and sort matches for this series
+  const seriesMatches = useMemo(() => {
+    const filteredMatches = matches?.filter(match => match.series_id === series.id) || [];
+    
+    // Sort matches by status priority: live first, then completed, then not_started
+    return filteredMatches.sort((a, b) => {
+      const statusPriority = {
+        'live': 0,
+        'completed': 1,
+        'not_started': 2
+      };
+      
+      const aPriority = statusPriority[a.status as keyof typeof statusPriority] ?? 3;
+      const bPriority = statusPriority[b.status as keyof typeof statusPriority] ?? 3;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // If same status, sort by match number
+      return a.match_number - b.match_number;
+    });
+  }, [matches, series.id]);
 
   // Check if current user owns this series
   const isOwner =
@@ -206,6 +227,27 @@ export function SeriesWithMatches({
   const handleMatchFormCancel = () => {
     setShowMatchForm(false);
     setEditingMatch(undefined);
+  };
+
+  const handleShareMatch = async (matchId: string, matchNumber: number, event: React.MouseEvent) => {
+    // Prevent navigation when clicking share
+    event.stopPropagation();
+    
+    const url = `${window.location.origin}/match/${matchId}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Match URL copied!');
+    } catch (error) {
+      // If clipboard API fails, use the old method
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Match URL copied!');
+    }
   };
 
   // Smart refresh that respects cache
@@ -520,9 +562,9 @@ export function SeriesWithMatches({
                     className="bg-white border border-gray-200 hover:border-gray-300 transition-colors duration-200 shadow-sm hover:shadow-md"
                   >
                     <CardContent className="flex flex-col">
-                      <div className="flex  justify-between">
+                      <div className="flex justify-between">
                         <div
-                          className="space-y-5 cursor-pointer flex w-full justify-between group"
+                          className="space-y-5 cursor-pointer flex items-start w-full justify-between group"
                           onClick={() =>
                             onViewScorecard?.(match.id, series.created_by || '')
                           }
@@ -530,38 +572,29 @@ export function SeriesWithMatches({
                           {/* Match Header */}
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center ">
-                                {' '}
-                                <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-xl">
-                                  Match #{match.match_number}
-                                </h4>{' '}
-                                <div className="ml-4">
-                                  <Badge
-                                    variant={
-                                      match.status === 'live'
-                                        ? 'default'
-                                        : match.status === 'completed'
-                                          ? 'secondary'
-                                          : match.status === 'not_started'
-                                            ? 'outline'
-                                            : 'outline'
-                                    }
-                                    className={
-                                      match.status === 'live'
-                                        ? 'bg-green-500 text-white border-green-500 font-semibold px-3 py-1'
-                                        : match.status === 'completed'
-                                          ? 'bg-gray-100 text-gray-800 border-gray-200 font-semibold px-3 py-1'
-                                          : match.status === 'not_started'
-                                            ? 'bg-blue-100 text-blue-800 border-blue-200 font-semibold px-3 py-1'
-                                            : 'bg-yellow-100 text-yellow-800 border-yellow-200 font-semibold px-3 py-1'
-                                    }
-                                  >
-                                    {match.status === 'not_started'
-                                      ? 'NOT STARTED'
-                                      : match.status.toUpperCase()}
-                                  </Badge>
+                          <div className="flex items-center ">
+                            {' '}
+                            <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-xl">
+                              Match #{match.match_number}
+                            </h4>{' '}
+                            <div className="ml-4">
+                              {match.status === 'live' && (
+                                <div title="Live">
+                                  <Circle className="h-3 w-3 text-green-500 fill-green-500" />
                                 </div>
-                              </div>
+                              )}
+                              {match.status === 'completed' && (
+                                <div title="Completed">
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </div>
+                              )}
+                              {match.status === 'not_started' && (
+                                <div title="Not Started">
+                                  <Circle className="h-3 w-3 text-blue-500" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
                               <p className="text-sm text-gray-600 mt-1">
                                 {new Date(match.date).toLocaleDateString(
@@ -577,17 +610,27 @@ export function SeriesWithMatches({
                             </div>
                           </div>
 
-                          {/* Match Actions Dropdown */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="hover:bg-gray-100"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                          {/* Match Actions */}
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleShareMatch(match.id, match.match_number, e)}
+                              className="hover:bg-green-50 text-green-600 hover:text-green-700"
+                              title="Share Match"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="hover:bg-gray-100"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() =>
@@ -628,6 +671,7 @@ export function SeriesWithMatches({
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          </div>
                         </div>
                       </div>
                       <div>

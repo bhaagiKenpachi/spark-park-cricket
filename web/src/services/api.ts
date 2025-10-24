@@ -427,6 +427,20 @@ class ApiService {
     );
   }
 
+  // Time Tracking API methods
+  async getTimeTracking(matchId: string): Promise<ApiResponse<any>> {
+    const response = await this.request<any>(`/scorecard/${matchId}/time-tracking`);
+    // Extract the nested data from the API response
+    const result: ApiResponse<any> = {
+      data: response.data.data,
+      success: response.success
+    };
+    if (response.message) {
+      result.message = response.message;
+    }
+    return result;
+  }
+
   // Vote API methods
   async getVotes(filters?: { status?: string; type?: string; created_by?: string; limit?: number; offset?: number; page?: number; page_size?: number }): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();

@@ -23,6 +23,9 @@ import {
   startMatchRequest,
   startMatchSuccess,
   startMatchFailure,
+  fetchMatchByIdRequest,
+  fetchMatchByIdSuccess,
+  fetchMatchByIdFailure,
 } from '../reducers/matchSlice';
 import { ApiService, ApiError, ApiResponse } from '@/services/api';
 import { Match } from '../reducers/matchSlice';
@@ -139,9 +142,33 @@ export function* startMatchSaga(
   }
 }
 
+export function* fetchMatchByIdSaga(
+  action: ReturnType<typeof fetchMatchByIdRequest>
+): Generator<CallEffect | PutEffect, void, any> {
+  try {
+    const apiService = new ApiService();
+    const response = yield call(
+      apiService.getMatchById.bind(apiService),
+      action.payload
+    );
+
+    // Extract the match data from the response (handle nested structure)
+    const match = (response.data as any).data || response.data;
+
+    yield put(fetchMatchByIdSuccess(match));
+  } catch (error) {
+    console.error('Saga: Error fetching match:', error);
+    const errorMessage =
+      error instanceof ApiError ? error.message : 'Failed to fetch match';
+
+    yield put(fetchMatchByIdFailure(errorMessage));
+  }
+}
+
 export function* matchSaga() {
   yield takeLatest(fetchMatchesRequest.type, fetchMatchesSaga);
   yield takeLatest(fetchMatchesBySeriesRequest.type, fetchMatchesBySeriesSaga);
+  yield takeLatest(fetchMatchByIdRequest.type, fetchMatchByIdSaga);
   yield takeEvery(createMatchRequest.type, createMatchSaga);
   yield takeEvery(updateMatchRequest.type, updateMatchSaga);
   yield takeEvery(deleteMatchRequest.type, deleteMatchSaga);

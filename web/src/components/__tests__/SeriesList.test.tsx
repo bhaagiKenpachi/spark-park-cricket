@@ -359,16 +359,11 @@ describe('SeriesList', () => {
     const showMatchesButton = screen.getByText('Show Matches');
     fireEvent.click(showMatchesButton);
 
-    // Debug: Check what buttons are available
+    // Check what buttons are available
     const buttons = screen.getAllByRole('button');
-    console.log(
-      'Available buttons:',
-      buttons.map(b => b.textContent)
-    );
 
     // Try clicking on the empty buttons (dropdown triggers)
     const emptyButtons = buttons.filter(b => !b.textContent?.trim());
-    console.log('Empty buttons found:', emptyButtons.length);
 
     // Find the dropdown trigger button (should have hover:bg-gray-100 class)
     const dropdownTrigger = emptyButtons.find(
@@ -388,9 +383,6 @@ describe('SeriesList', () => {
         expect(screen.getByText('Edit Series')).toBeInTheDocument();
       } catch {
         // If dropdown menu doesn't open in test environment, just verify the trigger exists
-        console.log(
-          'DEBUG: Dropdown menu not opening in test environment, but trigger exists'
-        );
         expect(dropdownTrigger).toBeInTheDocument();
       }
     } else {
