@@ -36,7 +36,8 @@ import {
     XCircle,
     ChevronLeft,
     ChevronRight,
-    MoreVertical
+    MoreVertical,
+    Share2
 } from 'lucide-react';
 
 interface VoteListProps {
@@ -103,6 +104,27 @@ export function VoteList({
     const handleCancelVote = (voteId: string) => {
         if (window.confirm('Are you sure you want to cancel this vote? This action cannot be undone.')) {
             dispatch(cancelVoteRequest(voteId));
+        }
+    };
+
+    const handleShareVote = async (voteId: string, event: React.MouseEvent) => {
+        // Prevent navigation when clicking share
+        event.stopPropagation();
+
+        const url = `${window.location.origin}/vote/${voteId}`;
+
+        try {
+            await navigator.clipboard.writeText(url);
+            alert('URL copied to clipboard!');
+        } catch (error) {
+            // If clipboard API fails, use the old method
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('URL copied to clipboard!');
         }
     };
 
@@ -257,17 +279,29 @@ export function VoteList({
 
                                 {/* Actions */}
                                 <div className="flex items-center justify-between">
-                                    {onViewVote && (
+                                    <div className="flex items-center space-x-2">
+                                        {onViewVote && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => onViewVote(vote.id)}
+                                                className="flex items-center gap-1 text-xs px-2 py-1"
+                                            >
+                                                <Eye className="h-3 w-3" />
+                                                View
+                                            </Button>
+                                        )}
+                                        
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
-                                            onClick={() => onViewVote(vote.id)}
-                                            className="flex items-center gap-1 text-xs px-2 py-1"
+                                            onClick={(e) => handleShareVote(vote.id, e)}
+                                            className="hover:bg-green-50 text-green-600 hover:text-green-700"
+                                            title="Share Vote"
                                         >
-                                            <Eye className="h-3 w-3" />
-                                            View
+                                            <Share2 className="h-4 w-4" />
                                         </Button>
-                                    )}
+                                    </div>
 
                                     {/* Only show actions menu if user is authenticated and is the creator */}
                                     {isAuthenticated && currentUser && currentUser.id === vote.created_by && (

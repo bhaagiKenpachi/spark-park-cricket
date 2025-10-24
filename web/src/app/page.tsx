@@ -69,7 +69,7 @@ export default function Home(): React.JSX.Element {
         </div>
       </div>
 
-      <main className="w-full max-w-md mx-auto px-4 py-4">
+      <main className="w-full max-w-md mx-auto">
         <SeriesList />
       </main>
 

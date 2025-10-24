@@ -289,6 +289,94 @@ const (
 	VersionTTL = 1 * time.Hour
 )
 
+// PublishToStream publishes an event to a Redis stream
+func (r *RedisClient) PublishToStream(streamKey string, data map[string]interface{}) (string, error) {
+	ctx, cancel := context.WithTimeout(r.ctx, 3*time.Second)
+	defer cancel()
+
+	// Convert data to string map as required by Redis streams
+	stringData := make(map[string]interface{})
+	for k, v := range data {
+		switch val := v.(type) {
+		case string:
+			stringData[k] = val
+		default:
+			// Marshal non-string values to JSON
+			jsonBytes, err := json.Marshal(val)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal field %s: %w", k, err)
+			}
+			stringData[k] = string(jsonBytes)
+		}
+	}
+
+	// Use XADD to add event to stream with automatic ID generation
+	id, err := r.client.XAdd(ctx, &redis.XAddArgs{
+		Stream: streamKey,
+		MaxLen: 1000, // Keep last 1000 events per stream
+		Approx: true, // Use approximate trimming for better performance
+		Values: stringData,
+	}).Result()
+
+	if err != nil {
+		log.Printf("⚠️  Failed to publish to stream %s: %v", streamKey, err)
+		return "", fmt.Errorf("failed to publish to stream: %w", err)
+	}
+
+	return id, nil
+}
+
+// ReadFromStream reads events from a Redis stream
+func (r *RedisClient) ReadFromStream(ctx context.Context, streamKey string, lastID string, count int64, block time.Duration) ([]redis.XMessage, error) {
+	streams, err := r.client.XRead(ctx, &redis.XReadArgs{
+		Streams: []string{streamKey, lastID},
+		Count:   count,
+		Block:   block,
+	}).Result()
+
+	if err != nil {
+		if err == redis.Nil {
+			// No new messages
+			return []redis.XMessage{}, nil
+		}
+		return nil, fmt.Errorf("failed to read from stream: %w", err)
+	}
+
+	if len(streams) == 0 {
+		return []redis.XMessage{}, nil
+	}
+
+	return streams[0].Messages, nil
+}
+
+// GetStreamKey generates a stream key for match ball events
+func (r *RedisClient) GetStreamKey(matchID string) string {
+	return fmt.Sprintf("stream:match:%s:balls", matchID)
+}
+
+// ReadStreamEvents reads all events from a Redis stream
+func (r *RedisClient) ReadStreamEvents(streamKey string, start, end string) ([]redis.XMessage, error) {
+	ctx, cancel := context.WithTimeout(r.ctx, 5*time.Second)
+	defer cancel()
+
+	// Read all events from the stream using XRANGE
+	streams, err := r.client.XRange(ctx, streamKey, start, end).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read stream events: %w", err)
+	}
+
+	// Convert to XMessage format for consistency
+	var messages []redis.XMessage
+	for _, stream := range streams {
+		messages = append(messages, redis.XMessage{
+			ID:     stream.ID,
+			Values: stream.Values,
+		})
+	}
+
+	return messages, nil
+}
+
 // extractKeyPattern extracts the pattern from a cache key for metrics
 func extractKeyPattern(key string) string {
 	if len(key) == 0 {

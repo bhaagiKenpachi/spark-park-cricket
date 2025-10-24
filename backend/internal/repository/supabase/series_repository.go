@@ -66,8 +66,6 @@ func (r *seriesRepository) GetByID(ctx context.Context, id string) (*models.Seri
 }
 
 func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFilters) (*interfaces.PaginatedSeriesResult, error) {
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Starting with filters: %+v\n", filters)
-
 	var result []models.Series
 	query := r.client.From("series").Select("*", "", false).Order("created_at", &postgrest.OrderOpts{
 		Ascending: false, // DESC order - newest first
@@ -75,14 +73,10 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 
 	// Always fetch all results and paginate in application layer
 	// This ensures consistent ordering and proper pagination
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Executing query to database (fetching all for pagination)\n")
 	_, err := query.ExecuteTo(&result)
 	if err != nil {
-		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database query error: %v\n", err)
 		return nil, err
 	}
-
-	fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Database returned %d total series\n", len(result))
 
 	// Apply pagination in application layer
 	var paginatedResult []models.Series
@@ -100,15 +94,8 @@ func (r *seriesRepository) GetAll(ctx context.Context, filters *models.SeriesFil
 			paginatedResult = result[start:end]
 		}
 
-		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - Applied pagination: offset=%d, limit=%d, result=%d\n",
-			start, filters.Limit, len(paginatedResult))
 	} else {
 		paginatedResult = result
-	}
-
-	for i, s := range paginatedResult {
-		fmt.Printf("DEBUG: SupabaseSeriesRepository.GetAll - DB Series %d: ID=%s, Name=%s, CreatedBy=%s, CreatedAt=%s\n",
-			i+1, s.ID, s.Name, s.CreatedBy, s.CreatedAt.Format("2006-01-02 15:04:05"))
 	}
 
 	// Convert to slice of pointers

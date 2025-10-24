@@ -26,8 +26,7 @@ class AuthService {
   private baseURL: string;
 
   constructor(
-    baseURL: string = process.env.NEXT_PUBLIC_API_URL ||
-      'https://spark-park.dojima.foundation/api/v1'
+    baseURL: string = process.env.NEXT_PUBLIC_API_URL!
   ) {
     this.baseURL = baseURL;
   }

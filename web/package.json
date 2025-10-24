@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --port 3000",
     "build": "next build --turbopack",
-    "start": "next start",
+    "start": "next start --port 3000",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
@@ -25,7 +25,9 @@
     "playwright:install": "playwright install",
     "playwright:update-snapshots": "playwright test --update-snapshots",
     "type-check": "tsc --noEmit",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "posthog:dashboard:create": "node scripts/posthog/create-series-dashboard.js",
+    "posthog:dashboard:manage": "node scripts/posthog/manage-dashboard.js"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
@@ -41,6 +43,7 @@
     "graphql": "^16.11.0",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
+    "posthog-js": "^1.100.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
@@ -63,6 +66,9 @@
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
+    "chalk": "^4.1.2",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "eslint-config-prettier": "^10.1.8",

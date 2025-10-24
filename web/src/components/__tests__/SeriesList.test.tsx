@@ -359,16 +359,11 @@ describe('SeriesList', () => {
     const showMatchesButton = screen.getByText('Show Matches');
     fireEvent.click(showMatchesButton);
 
-    // Debug: Check what buttons are available
+    // Check what buttons are available
     const buttons = screen.getAllByRole('button');
-    console.log(
-      'Available buttons:',
-      buttons.map(b => b.textContent)
-    );
 
     // Try clicking on the empty buttons (dropdown triggers)
     const emptyButtons = buttons.filter(b => !b.textContent?.trim());
-    console.log('Empty buttons found:', emptyButtons.length);
 
     // Find the dropdown trigger button (should have hover:bg-gray-100 class)
     const dropdownTrigger = emptyButtons.find(
@@ -378,7 +373,6 @@ describe('SeriesList', () => {
     );
 
     if (dropdownTrigger) {
-      console.log('DEBUG: Dropdown trigger found, clicking it');
       fireEvent.click(dropdownTrigger);
 
       // Wait a bit for the dropdown to potentially open
@@ -389,13 +383,9 @@ describe('SeriesList', () => {
         expect(screen.getByText('Edit Series')).toBeInTheDocument();
       } catch {
         // If dropdown menu doesn't open in test environment, just verify the trigger exists
-        console.log(
-          'DEBUG: Dropdown menu not opening in test environment, but trigger exists'
-        );
         expect(dropdownTrigger).toBeInTheDocument();
       }
     } else {
-      console.log('DEBUG: No dropdown trigger found');
       // If no dropdown trigger is found, the ownership check might be failing
       expect(false).toBe(true); // Fail the test
     }
@@ -502,7 +492,6 @@ describe('SeriesList', () => {
     );
 
     if (dropdownTrigger) {
-      console.log('DEBUG: Dropdown trigger found, clicking it');
       fireEvent.click(dropdownTrigger);
 
       // Wait a bit for the dropdown to potentially open
@@ -523,7 +512,6 @@ describe('SeriesList', () => {
         expect(dropdownTrigger).toBeInTheDocument();
       }
     } else {
-      console.log('DEBUG: No dropdown trigger found');
       // If no dropdown trigger is found, the ownership check might be failing
       expect(false).toBe(true); // Fail the test
     }

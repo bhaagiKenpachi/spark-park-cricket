@@ -143,6 +143,18 @@ export const matchSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    fetchMatchByIdRequest: (state, _action: PayloadAction<string>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchMatchByIdSuccess: (state, action: PayloadAction<Match>) => {
+      state.loading = false;
+      state.currentMatch = action.payload;
+    },
+    fetchMatchByIdFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
     // Cache management for completed matches
     cacheCompletedMatchData: (
       state,
@@ -196,6 +208,9 @@ export const {
   startMatchRequest,
   startMatchSuccess,
   startMatchFailure,
+  fetchMatchByIdRequest,
+  fetchMatchByIdSuccess,
+  fetchMatchByIdFailure,
   cacheCompletedMatchData,
   clearExpiredCache,
   clearMatchCache,

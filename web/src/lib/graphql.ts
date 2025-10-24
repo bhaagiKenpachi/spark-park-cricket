@@ -6,8 +6,7 @@ import {
 } from '@apollo/client';
 
 // GraphQL endpoint
-const GRAPHQL_ENDPOINT =
-  process.env.NEXT_PUBLIC_GRAPHQL_URL || 'https://spark-park.dojima.foundation/api/v1/graphql';
+const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_URL!;
 
 // Create HTTP link
 const httpLink = createHttpLink({
