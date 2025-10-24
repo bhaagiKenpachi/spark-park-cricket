@@ -79,8 +79,6 @@ func (r *matchRepository) GetByID(ctx context.Context, id string) (*models.Match
 	var result []models.Match
 	_, err := r.client.From("matches").Select("*", "", false).Eq("id", id).ExecuteTo(&result)
 	if err != nil {
-		// Log the error for debugging
-		fmt.Printf("DEBUG: Database error in GetByID for match %s: %v\n", id, err)
 		return nil, fmt.Errorf("database error fetching match %s: %w", id, err)
 	}
 	if len(result) == 0 {

@@ -1959,13 +1959,6 @@ export function ScorecardView({
                                 return bNum - aNum; // Descending order (newest first)
                               });
 
-                              // Debug logging
-                              console.log('Show All Overs Debug:', {
-                                inningsNumber: innings.innings_number,
-                                originalOverNumbers: innings.overs.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                                filteredOverNumbers: filteredOvers.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                                sortedOverNumbers: sortedOvers.map(o => ({ number: o.over_number, type: typeof o.over_number }))
-                              });
 
                               return sortedOvers;
                             })()

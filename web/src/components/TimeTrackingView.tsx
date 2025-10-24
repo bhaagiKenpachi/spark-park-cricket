@@ -134,12 +134,6 @@ export function TimeTrackingView({ matchId, onBack }: TimeTrackingViewProps): Re
                                 <Clock className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                                 <h3 className="text-lg font-semibold text-gray-800 mb-2">No Time Tracking Data</h3>
                                 <p className="text-gray-600">Time tracking data is not available for this match.</p>
-                                {/* Debug information */}
-                                <div className="mt-4 p-4 bg-gray-100 rounded text-left text-sm">
-                                    <p><strong>Debug Info:</strong></p>
-                                    <p>timeTracking: {JSON.stringify(timeTracking, null, 2)}</p>
-                                    <p>innings: {timeTracking?.innings ? 'exists' : 'missing'}</p>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>
