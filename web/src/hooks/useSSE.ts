@@ -141,7 +141,6 @@ export function useSSE(
     }, [cleanup]);
 
     const connect = useCallback(() => {
-
         if (!matchId || !isMountedRef.current) {
             return;
         }

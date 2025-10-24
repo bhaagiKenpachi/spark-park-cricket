@@ -16,7 +16,8 @@ import {
     Target,
     Zap,
     RefreshCw,
-    X
+    X,
+    Download
 } from 'lucide-react';
 import { useSSE, BallEvent } from '@/hooks/useSSE';
 import { ApiService, BallEventResponse } from '@/services/api';
@@ -42,8 +43,6 @@ interface LiveUpdatesProps {
 
 export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesProps) {
     const dispatch = useDispatch<AppDispatch>();
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [showRawData, setShowRawData] = useState(false);
 
     // Use Redux selectors for events
     const events = useSelector((state: RootState) => selectEventsForMatch(state, matchId));
@@ -252,95 +251,115 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
 
     return (
         <div className={`space-y-4 ${className}`}>
-            {/* Connection Status Card */}
-            <Card className={`${status.bgColor} border`}>
-                <CardHeader className="pb-3">
+            {/* Mobile-First Control Panel - Compact */}
+            <div className="bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-200 rounded-lg p-2 sm:p-3">
+                {/* Mobile Layout */}
+                <div className="flex flex-col space-y-2 sm:hidden">
+                    {/* Status Row */}
                     <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Activity className="h-5 w-5" />
-                            Live Updates
-                        </CardTitle>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`${status.color} ${status.bgColor}`}>
+                            <div className={`p-1.5 rounded-full ${status.bgColor}`}>
                                 {status.icon}
-                                <span className="ml-1">{status.text}</span>
-                            </Badge>
-                            {eventCount > 0 && (
-                                <Badge variant="secondary">
-                                    {eventCount} events
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span className="text-sm text-gray-600">
-                                    Match ID: {matchId}
-                                </span>
                             </div>
-                            {lastEvent && (
-                                <div className="flex items-center gap-2">
-                                    <Target className="h-4 w-4 text-gray-500" />
-                                    <span className="text-sm text-gray-600">
-                                        Last: {formatTimestamp(lastEvent.timestamp)}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={fetchPreviousEvents}
-                                disabled={isLoadingPrevious}
-                            >
-                                <RefreshCw className={`h-4 w-4 mr-1 ${isLoadingPrevious ? 'animate-spin' : ''}`} />
-                                {isLoadingPrevious ? 'Loading...' : 'Load Previous'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowRawData(!showRawData)}
-                            >
-                                <Zap className="h-4 w-4 mr-1" />
-                                {showRawData ? 'Hide' : 'Show'} Raw
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={needsManualRefresh ? manualReconnect : (isConnected ? disconnect : connect)}
-                                disabled={isConnecting}
-                            >
-                                {needsManualRefresh ? (
-                                    <>
-                                        <RefreshCw className="h-4 w-4 mr-1" />
-                                        Reconnect
-                                    </>
-                                ) : isConnected ? (
-                                    <>
-                                        <WifiOff className="h-4 w-4 mr-1" />
-                                        Disconnect
-                                    </>
-                                ) : (
-                                    <>
-                                        <Wifi className="h-4 w-4 mr-1" />
-                                        Connect
-                                    </>
+                            <div>
+                                <span className={`text-sm font-semibold ${status.color}`}>{status.text}</span>
+                                {eventCount > 0 && (
+                                    <Badge variant="secondary" className="ml-2 text-xs">
+                                        {eventCount}
+                                    </Badge>
                                 )}
-                            </Button>
+                            </div>
                         </div>
+
+                        {/* Action Button */}
+                        <button
+                            onClick={needsManualRefresh ? manualReconnect : (isConnected ? disconnect : connect)}
+                            disabled={isConnecting}
+                            className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isConnected
+                                ? 'bg-red-50 hover:bg-red-100 border border-red-200 text-red-700'
+                                : 'bg-green-50 hover:bg-green-100 border border-green-200 text-green-700'
+                                }`}
+                            title={needsManualRefresh ? 'Reconnect to Live Events' : isConnected ? 'Disconnect from Live Events' : 'Connect to Live Events'}
+                        >
+                            {needsManualRefresh ? (
+                                <RefreshCw className={`h-4 w-4 ${isConnecting ? 'animate-spin' : ''}`} />
+                            ) : isConnected ? (
+                                <WifiOff className="h-4 w-4" />
+                            ) : (
+                                <Wifi className="h-4 w-4" />
+                            )}
+                        </button>
                     </div>
-                    {(error || sseError) && (
-                        <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                            {error || sseError}
+
+                    {/* Last Event Info */}
+                    {lastEvent && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <Clock className="h-3 w-3" />
+                            <span>Last: {formatTimestamp(lastEvent.timestamp)}</span>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex items-center justify-between">
+                    {/* Status and Info */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full ${status.bgColor}`}>
+                                {status.icon}
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`font-semibold ${status.color}`}>{status.text}</span>
+                                    {eventCount > 0 && (
+                                        <Badge variant="secondary" className="ml-2">
+                                            {eventCount} events
+                                        </Badge>
+                                    )}
+                                </div>
+                                {lastEvent && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <Clock className="h-3 w-3 text-gray-400" />
+                                        <span className="text-xs text-gray-500">
+                                            Last: {formatTimestamp(lastEvent.timestamp)}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Connect/Disconnect Icon Only */}
+                    <div className="flex items-center">
+                        <button
+                            onClick={needsManualRefresh ? manualReconnect : (isConnected ? disconnect : connect)}
+                            disabled={isConnecting}
+                            className={`p-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isConnected
+                                ? 'bg-red-50 hover:bg-red-100 border border-red-200 text-red-700'
+                                : 'bg-green-50 hover:bg-green-100 border border-green-200 text-green-700'
+                                }`}
+                            title={needsManualRefresh ? 'Reconnect' : isConnected ? 'Disconnect' : 'Connect'}
+                        >
+                            {needsManualRefresh ? (
+                                <RefreshCw className="h-4 w-4" />
+                            ) : isConnected ? (
+                                <WifiOff className="h-4 w-4" />
+                            ) : (
+                                <Wifi className="h-4 w-4" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {(error || sseError) && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <div className="flex items-center gap-2">
+                            <X className="h-4 w-4" />
+                            <span>{error || sseError}</span>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Inactivity Warning Banner */}
             {isIdle && !needsManualRefresh && (
@@ -401,113 +420,190 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                 </Card>
             )}
 
-            {/* Events List */}
+            {/* Live Events List - Compact */}
             {events.length > 0 && (
-                <Card>
-                    <CardHeader className="pb-3">
+                <Card className="bg-white shadow-sm border-gray-200">
+                    <CardHeader className="pb-1 pt-2 px-2">
                         <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">Recent Events</CardTitle>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setIsExpanded(!isExpanded)}
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                <Activity className="h-4 w-4 text-blue-600" />
+                                Live Events
+                            </CardTitle>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={fetchPreviousEvents}
+                                    disabled={isLoadingPrevious}
+                                    className="p-1.5 rounded-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    title="Load Previous Events"
                                 >
-                                    {isExpanded ? 'Collapse' : 'Expand'}
-                                </Button>
+                                    <Download className={`h-3 w-3 ${isLoadingPrevious ? 'animate-pulse' : ''}`} />
+                                </button>
+
+                                <button
+                                    onClick={needsManualRefresh ? manualReconnect : (isConnected ? disconnect : connect)}
+                                    disabled={isConnecting}
+                                    className={`p-1.5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isConnected
+                                        ? 'bg-red-50 hover:bg-red-100 border border-red-200 text-red-700'
+                                        : 'bg-green-50 hover:bg-green-100 border border-green-200 text-green-700'
+                                        }`}
+                                    title={needsManualRefresh ? 'Reconnect to Live Events' : isConnected ? 'Disconnect from Live Events' : 'Connect to Live Events'}
+                                >
+                                    {needsManualRefresh ? (
+                                        <RefreshCw className={`h-3 w-3 ${isConnecting ? 'animate-spin' : ''}`} />
+                                    ) : isConnected ? (
+                                        <WifiOff className="h-3 w-3" />
+                                    ) : (
+                                        <Wifi className="h-3 w-3" />
+                                    )}
+                                </button>
+
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => dispatch(clearMatchEvents(matchId))}
+                                    className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700 h-7 px-2"
+                                    title="Clear All Events"
                                 >
-                                    <X className="h-4 w-4 mr-1" />
-                                    Clear
+                                    <X className="h-3 w-3 mr-1" />
+                                    <span className="text-xs">Clear</span>
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <ScrollArea className={`${isExpanded ? 'h-96' : 'h-48'} w-full`}>
-                            <div className="space-y-2">
+                    <CardContent className="p-1 px-2 pb-2">
+                        <ScrollArea className="h-48 sm:h-64 w-full">
+                            {/* Header */}
+                            <div className="bg-gray-100 p-1 border-b border-gray-300 sticky top-0">
+                                <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+                                    <div className="w-20 text-center">Runs</div>
+                                    <div className="w-16 text-center">Over</div>
+                                    <div className="w-20 text-center">Score</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-0.5">
                                 {[...events].reverse().map((event, index) => {
                                     const isPreviousEvent = event.stream_id.startsWith('scorecard-');
+                                    const isLatestEvent = index === 0; // First item in reversed array is latest
                                     return (
-                                        <div key={`${event.stream_id}-${index}`} className={`p-3 rounded-lg ${isPreviousEvent ? 'bg-blue-50 border-l-4 border-blue-300' : 'bg-gray-50'}`}>
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    {isPreviousEvent && (
-                                                        <Badge variant="outline" className="text-blue-600 border-blue-300">
-                                                            Previous
-                                                        </Badge>
-                                                    )}
-                                                    <Badge className={getBallTypeColor(event.ball_type)}>
-                                                        {event.ball_type.toUpperCase()}
-                                                    </Badge>
-                                                    <Badge className={getRunTypeColor(event.run_type)}>
-                                                        {event.run_type.toUpperCase()}
-                                                    </Badge>
-                                                    {event.is_wicket && (
-                                                        <Badge variant="destructive">
-                                                            WICKET
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                                <span className="text-xs text-gray-500">
-                                                    {formatTimestamp(event.timestamp)}
-                                                </span>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                                                <div>
-                                                    <span className="text-gray-600">Ball:</span>
-                                                    <span className="ml-1 font-medium">{event.ball_number}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-600">Runs:</span>
-                                                    <span className="ml-1 font-medium">{event.runs}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-600">Byes:</span>
-                                                    <span className="ml-1 font-medium">{event.byes}</span>
-                                                </div>
-                                                <div>
-                                                    <span className="text-gray-600">Total:</span>
-                                                    <span className="ml-1 font-medium">{event.total_runs}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-2 pt-2 border-t border-gray-200">
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                                                    <div>
-                                                        <span className="text-gray-600">Innings:</span>
-                                                        <span className="ml-1 font-medium">{event.innings_number}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-gray-600">Score:</span>
-                                                        <span className="ml-1 font-medium">
-                                                            {event.innings_runs}/{event.innings_wickets}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-gray-600">Overs:</span>
-                                                        <span className="ml-1 font-medium">{event.innings_overs}</span>
+                                        <div key={`${event.stream_id}-${index}`} className={`p-1.5 border-l-4 transition-all duration-200 relative ${isLatestEvent
+                                            ? 'bg-green-50 border-green-400 shadow-sm ring-1 ring-green-200'
+                                            : isPreviousEvent
+                                                ? 'bg-blue-50 border-blue-400'
+                                                : 'bg-gray-50 border-gray-300'
+                                            }`}>
+                                            {/* Latest Event Badge */}
+                                            {isLatestEvent && (
+                                                <div className="absolute -top-1 -right-1">
+                                                    <div className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold animate-pulse">
+                                                        LATEST
                                                     </div>
                                                 </div>
-                                            </div>
-
-                                            {showRawData && (
-                                                <>
-                                                    <Separator className="my-2" />
-                                                    <details className="text-xs">
-                                                        <summary className="cursor-pointer text-gray-600 hover:text-gray-800">
-                                                            Raw Event Data
-                                                        </summary>
-                                                        <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
-                                                            {JSON.stringify(event, null, 2)}
-                                                        </pre>
-                                                    </details>
-                                                </>
                                             )}
+                                            {/* Compact horizontal layout */}
+                                            <div className="flex items-center justify-between">
+                                                {/* Latest Event Indicator */}
+                                                {isLatestEvent && (
+                                                    <div className="absolute -left-1 top-1/2 transform -translate-y-1/2">
+                                                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                    </div>
+                                                )}
+
+                                                {/* Runs - Circular ball */}
+                                                <div className="w-20 flex justify-center relative">
+                                                    <div className={`w-8 h-8 rounded-full border-2 flex flex-col items-center justify-center text-xs font-medium ${isLatestEvent
+                                                        ? 'bg-green-100 border-green-400 shadow-md'
+                                                        : 'bg-gray-100 border-gray-300'
+                                                        }`}>
+                                                        {(() => {
+                                                            // Follow the same logic as scorecard ball display
+                                                            if (event.is_wicket) {
+                                                                return <span className="text-[11px] leading-none font-bold">W</span>;
+                                                            }
+
+                                                            // Handle byes with different ball types
+                                                            if (event.byes > 0) {
+                                                                const byeText = `B${event.byes}`;
+
+                                                                if (event.ball_type === 'NO_BALL' || event.ball_type === 'no_ball') {
+                                                                    return (
+                                                                        <div className="text-[9px] leading-none text-gray-700 font-bold">
+                                                                            <div>{byeText}</div>
+                                                                            <div className="text-[6px] leading-none text-gray-600">+</div>
+                                                                            <div className="text-[9px] leading-none text-gray-700 font-bold">nb</div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                if (event.ball_type === 'WIDE' || event.ball_type === 'wide') {
+                                                                    return (
+                                                                        <div className="text-[9px] leading-none text-gray-700 font-bold">
+                                                                            <div>{byeText}</div>
+                                                                            <div className="text-[6px] leading-none text-gray-600">+</div>
+                                                                            <div className="text-[9px] leading-none text-gray-700 font-bold">wd</div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                if (event.run_type === 'LB') {
+                                                                    return (
+                                                                        <div className="text-[9px] leading-none text-gray-700 font-bold">
+                                                                            <div>{byeText}</div>
+                                                                            <div className="text-[6px] leading-none text-gray-600">+</div>
+                                                                            <div className="text-[9px] leading-none text-gray-700 font-bold">lb</div>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                // Regular byes on good ball
+                                                                return <span className="text-[11px] leading-none text-gray-700 font-bold">{byeText}</span>;
+                                                            }
+
+                                                            // Handle other ball types without byes
+                                                            switch (event.ball_type) {
+                                                                case 'WIDE':
+                                                                case 'wide':
+                                                                    return <span className="text-[10px] leading-none font-bold">Wd</span>;
+                                                                case 'NO_BALL':
+                                                                case 'no_ball':
+                                                                    return <span className="text-[10px] leading-none font-bold">nb</span>;
+                                                                case 'DEAD_BALL':
+                                                                case 'dead_ball':
+                                                                    return <span className="text-[10px] leading-none font-bold">Db</span>;
+                                                                default:
+                                                                    // Handle run types
+                                                                    switch (event.run_type) {
+                                                                        case 'LB':
+                                                                            return (
+                                                                                <div className="text-[10px] leading-none font-bold">
+                                                                                    <div>Lb</div>
+                                                                                    <div className="text-[8px] leading-none text-gray-600">+</div>
+                                                                                    <div className="text-[10px] leading-none font-bold">{event.runs || 0}</div>
+                                                                                </div>
+                                                                            );
+                                                                        case 'WC':
+                                                                            return <span className="text-[10px] leading-none font-bold">W</span>;
+                                                                        default:
+                                                                            return <span className="text-[11px] leading-none font-bold">{event.runs?.toString() || '0'}</span>;
+                                                                    }
+                                                            }
+                                                        })()}
+                                                    </div>
+                                                </div>
+
+                                                {/* Over */}
+                                                <div className="w-16 text-center">
+                                                    <span className={`text-sm font-bold ${isLatestEvent ? 'text-green-700' : 'text-blue-700'
+                                                        }`}>
+                                                        {event.innings_overs}
+                                                    </span>
+                                                </div>
+
+                                                {/* Score */}
+                                                <div className="w-20 text-center">
+                                                    <span className={`text-sm font-bold ${isLatestEvent ? 'text-green-700' : 'text-purple-700'
+                                                        }`}>
+                                                        {event.innings_runs}/{event.innings_wickets}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -517,15 +613,36 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                 </Card>
             )}
 
-            {/* No Events Message */}
-            {events.length === 0 && isConnected && (
-                <Card>
-                    <CardContent className="py-8 text-center">
-                        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">Waiting for ball events...</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Events will appear here when balls are added to the match
-                        </p>
+            {/* No Events Message - Mobile First */}
+            {events.length === 0 && (
+                <Card className="bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200">
+                    <CardContent className="py-6 sm:py-8 text-center">
+                        <div className="flex flex-col items-center">
+                            <div className="relative">
+                                <Activity className="h-10 w-10 sm:h-12 sm:w-12 text-gray-300 mb-3 animate-pulse" />
+                                {isConnected && (
+                                    <div className="absolute -top-1 -right-1">
+                                        <div className="w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
+                                    </div>
+                                )}
+                            </div>
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                                {isConnected ? 'Waiting for Ball Events' : 'Connect to See Live Events'}
+                            </h3>
+                            <p className="text-gray-500 max-w-md text-sm px-4">
+                                {isConnected
+                                    ? 'Live ball events will appear here automatically when balls are added to the match.'
+                                    : 'Click the Connect button above to start receiving live ball events.'
+                                }
+                            </p>
+                            {isConnected && (
+                                <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
+                                    <Wifi className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Live connection established</span>
+                                    <span className="sm:hidden">Connected</span>
+                                </div>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             )}
