@@ -947,8 +947,26 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	return nil
 }
 
-// GetTimeTracking retrieves time tracking data for a match
+// GetTimeTracking retrieves time tracking data for a match with Redis caching
+// Caching Strategy:
+// - Cache Key: "time_tracking:{matchID}"
+// - TTL: 2 minutes for live matches, 10 minutes for completed matches
+// - Invalidation: Triggered on any ball addition/removal, over/innings status changes
+// - Performance: Reduces database queries for frequently accessed time tracking data
 func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) (*models.TimeTrackingResponse, error) {
+	// Try to get from cache first
+	cacheKey := fmt.Sprintf("time_tracking:%s", matchID)
+	if s.cache != nil {
+		var cachedResponse models.TimeTrackingResponse
+		err := s.cache.Get(cacheKey, &cachedResponse)
+		if err == nil {
+			log.Printf("Time tracking data retrieved from cache for match %s", matchID)
+			return &cachedResponse, nil
+		}
+		// Cache miss or error - continue with database query
+		log.Printf("Cache miss for time tracking data, fetching from database for match %s", matchID)
+	}
+
 	// Get all innings for the match
 	innings, err := s.scorecardRepo.GetInningsByMatchID(ctx, matchID)
 	if err != nil {
@@ -956,11 +974,18 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 	}
 
 	if len(innings) == 0 {
-		return &models.TimeTrackingResponse{
+		response := &models.TimeTrackingResponse{
 			MatchID:        matchID,
 			Innings:        []models.InningsTimeTracking{},
 			TotalMatchTime: 0,
-		}, nil
+		}
+
+		// Cache the empty response
+		if s.cache != nil {
+			_ = s.cache.Set(cacheKey, response, 5*time.Minute)
+		}
+
+		return response, nil
 	}
 
 	var inningsTimeTracking []models.InningsTimeTracking
@@ -1005,6 +1030,18 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 		MatchID:        matchID,
 		Innings:        inningsTimeTracking,
 		TotalMatchTime: totalMatchTime,
+	}
+
+	// Cache the response with appropriate TTL
+	if s.cache != nil {
+		// Cache for 2 minutes for live matches (time tracking changes frequently)
+		// Cache for 10 minutes for completed matches (time tracking is static)
+		ttl := 2 * time.Minute
+		if len(innings) > 0 && innings[0].Status == string(models.InningsStatusCompleted) {
+			ttl = 10 * time.Minute
+		}
+		_ = s.cache.Set(cacheKey, response, ttl)
+		log.Printf("Time tracking data cached for match %s with TTL: %v", matchID, ttl)
 	}
 
 	return response, nil
@@ -1139,6 +1176,8 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		if previousOver != nil {
 			s.invalidateOverCaches(innings.ID, previousOver.ID)
 		}
+		// Invalidate time tracking cache since over structure changed
+		s.invalidateTimeTrackingCache(ctx, matchID)
 
 		log.Printf("Successfully deleted over %d and reverted to over %d", lastOver.OverNumber, previousOver.OverNumber)
 		return nil
@@ -1281,6 +1320,8 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	// Invalidate caches including the specific over that was modified
 	s.invalidateScorecardCacheForMatch(matchID, innings.ID)
 	s.invalidateOverCaches(innings.ID, lastOver.ID)
+	// Invalidate time tracking cache since over/innings time tracking may have changed
+	s.invalidateTimeTrackingCache(ctx, matchID)
 
 	log.Printf("Successfully undone ball: %s %d runs, byes: %d, total: %d, wicket: %v", lastBall.RunType, runs, byes, totalRuns, lastBall.IsWicket)
 	return nil
@@ -1433,6 +1474,7 @@ func (s *ScorecardService) invalidateMatchCachesBeforeWrite(ctx context.Context,
 		fmt.Sprintf("match_innings_over:%s:%d", matchID, 2), // Second innings
 		fmt.Sprintf("balls:over:%s", overID),
 		fmt.Sprintf("last_ball:over:%s", overID),
+		fmt.Sprintf("time_tracking:%s", matchID), // Time tracking cache
 	}
 
 	for _, key := range cacheKeys {
@@ -1481,6 +1523,10 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 	lastBallKey := fmt.Sprintf("ball:last:over:%s", overID)
 	_ = s.cache.Invalidate(lastBallKey)
 
+	// Invalidate time tracking cache
+	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
+	_ = s.cache.Invalidate(timeTrackingKey)
+
 	log.Printf("Invalidated all caches for match %s, innings %s, over %s", matchID, inningsID, overID)
 }
 
@@ -1523,6 +1569,10 @@ func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID s
 	_ = s.cache.Invalidate(fmt.Sprintf("match_innings_over:%s:%d", matchID, 1))
 	_ = s.cache.Invalidate(fmt.Sprintf("match_innings_over:%s:%d", matchID, 2))
 
+	// Invalidate time tracking cache
+	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
+	_ = s.cache.Invalidate(timeTrackingKey)
+
 	log.Printf("Scorecard cache invalidation completed for match %s", matchID)
 }
 
@@ -1556,6 +1606,22 @@ func (s *ScorecardService) invalidateOverCaches(inningsID, overID string) {
 	_ = s.cache.Invalidate(lastOverKey)
 
 	log.Printf("Over-specific cache invalidation completed for over %s", overID)
+}
+
+// invalidateTimeTrackingCache invalidates time tracking cache for a specific match
+func (s *ScorecardService) invalidateTimeTrackingCache(ctx context.Context, matchID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	log.Printf("Invalidating time tracking cache for match %s", matchID)
+
+	// Invalidate time tracking cache
+	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
+	_ = s.cache.Invalidate(timeTrackingKey)
+
+	log.Printf("Time tracking cache invalidation completed for match %s", matchID)
 }
 
 // calculateOversInMemory performs optimized overs calculation in memory
