@@ -304,6 +304,24 @@ export function ScorecardView({
     dispatch(addBallRequest(ballEvent));
     setCurrentByes(0); // Reset byes after scoring
 
+    // Check if over is complete (6 balls) and track over completion
+    const currentBallCount = (currentOver?.balls?.length || 0) + 1;
+    if (currentBallCount === 6) {
+      // Calculate over totals
+      const overRuns = currentOver?.total_runs || 0;
+      const overWickets = currentOver?.total_wickets || 0;
+      const ballCount = currentOver?.balls?.length || 0;
+
+      trackOverCompleted({
+        match_id: matchId,
+        innings_number: currentInn,
+        over_number: currentOver?.over_number || 1,
+        total_runs: overRuns,
+        total_wickets: overWickets,
+        total_balls: ballCount
+      });
+    }
+
     // Ball counting is handled by the backend
   };
 

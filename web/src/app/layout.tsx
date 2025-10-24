@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { GraphQLProvider } from '@/providers/GraphQLProvider';
 import { PostHogProvider } from '@/providers/PostHogProvider';
 import { AdSenseScript } from '@/components/ads/AdSenseScript';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,13 +37,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AdSenseScript />
-        <PostHogProvider>
-          <ReduxProvider>
-            <GraphQLProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </GraphQLProvider>
-          </ReduxProvider>
-        </PostHogProvider>
+        <ErrorBoundary>
+          <PostHogProvider>
+            <ReduxProvider>
+              <GraphQLProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </GraphQLProvider>
+            </ReduxProvider>
+          </PostHogProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

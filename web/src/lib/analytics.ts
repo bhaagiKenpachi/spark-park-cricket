@@ -1,34 +1,34 @@
 import { posthog } from './posthog';
 import {
-    PostHogEvent,
-    SeriesEventProperties,
-    SeriesPaginationProperties,
-    MatchEventProperties,
-    ScorecardEventProperties,
-    BallEventProperties,
-    OverEventProperties,
-    WebSocketEventProperties,
-    UserEventProperties,
-    UserProperties,
+  PostHogEvent,
+  SeriesEventProperties,
+  SeriesPaginationProperties,
+  MatchEventProperties,
+  ScorecardEventProperties,
+  BallEventProperties,
+  OverEventProperties,
+  WebSocketEventProperties,
+  UserEventProperties,
+  UserProperties,
 } from '@/types/posthog';
 
 // Helper to check if PostHog is available
 const isPostHogAvailable = (): boolean => {
-    return typeof window !== 'undefined' && posthog !== null;
+  return typeof window !== 'undefined' && posthog !== null;
 };
 
 // Generic event tracking function
 export const trackEvent = (
-    eventName: PostHogEvent | string,
-    properties?: Record<string, unknown>
+  eventName: PostHogEvent | string,
+  properties?: Record<string, unknown>
 ): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.capture(eventName, properties);
-    } catch (error) {
-        console.error('Failed to track event:', eventName, error);
-    }
+  try {
+    posthog.capture(eventName, properties);
+  } catch (error) {
+    console.error('Failed to track event:', eventName, error);
+  }
 };
 
 // Series Events
@@ -140,55 +140,136 @@ export const trackUserProfileUpdated = (
 
 // User Identification
 export const identifyUser = (userId: string, properties?: UserProperties): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.identify(userId, properties);
-    } catch (error) {
-        console.error('Failed to identify user:', error);
-    }
+  try {
+    posthog.identify(userId, properties);
+  } catch (error) {
+    console.error('Failed to identify user:', error);
+  }
 };
 
 export const resetUser = (): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.reset();
-    } catch (error) {
-        console.error('Failed to reset user:', error);
-    }
+  try {
+    posthog.reset();
+  } catch (error) {
+    console.error('Failed to reset user:', error);
+  }
 };
 
 // Set user properties
 export const setUserProperties = (properties: Partial<UserProperties>): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.setPersonProperties(properties);
-    } catch (error) {
-        console.error('Failed to set user properties:', error);
-    }
+  try {
+    posthog.setPersonProperties(properties);
+  } catch (error) {
+    console.error('Failed to set user properties:', error);
+  }
 };
 
 // Group analytics (for teams/organizations in future)
 export const setGroup = (groupType: string, groupId: string): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.group(groupType, groupId);
-    } catch (error) {
-        console.error('Failed to set group:', error);
-    }
+  try {
+    posthog.group(groupType, groupId);
+  } catch (error) {
+    console.error('Failed to set group:', error);
+  }
 };
 
 // Page view tracking (if manual tracking needed)
 export const trackPageView = (path?: string): void => {
-    if (!isPostHogAvailable()) return;
+  if (!isPostHogAvailable()) return;
 
-    try {
-        posthog.capture('$pageview', { path: path || window.location.pathname });
-    } catch (error) {
-        console.error('Failed to track page view:', error);
-    }
+  try {
+    posthog.capture('$pageview', { path: path || window.location.pathname });
+  } catch (error) {
+    console.error('Failed to track page view:', error);
+  }
+};
+
+// Error Events
+export const trackError = (properties: {
+  error_type: string;
+  error_message: string;
+  error_stack?: string;
+  component?: string;
+  user_action?: string;
+}): void => {
+  trackEvent('error_occurred', properties);
+};
+
+export const trackApiError = (properties: {
+  endpoint: string;
+  status_code: number;
+  error_message: string;
+  request_duration?: number;
+}): void => {
+  trackEvent('api_error', properties);
+};
+
+// Performance Events
+export const trackPerformance = (properties: {
+  metric_name: string;
+  metric_value: number;
+  page?: string;
+  component?: string;
+}): void => {
+  trackEvent('performance_metric', properties);
+};
+
+// User Engagement Events
+export const trackFeatureUsage = (feature: string, metadata?: Record<string, unknown>): void => {
+  trackEvent('feature_used', { feature, ...metadata });
+};
+
+export const trackUserAction = (action: string, metadata?: Record<string, unknown>): void => {
+  trackEvent('user_action', { action, ...metadata });
+};
+
+export const trackTimeOnPage = (page: string, duration: number): void => {
+  trackEvent('time_on_page', { page, duration });
+};
+
+// Funnel and Journey Tracking
+export const trackFunnelStep = (
+  funnelName: string,
+  step: string,
+  stepNumber: number,
+  metadata?: Record<string, unknown>
+): void => {
+  trackEvent('funnel_step', {
+    funnel_name: funnelName,
+    step,
+    step_number: stepNumber,
+    ...metadata
+  });
+};
+
+// Business Intelligence Events
+export const trackConversion = (
+  conversionType: string,
+  value?: number,
+  metadata?: Record<string, unknown>
+): void => {
+  trackEvent('conversion', {
+    conversion_type: conversionType,
+    value,
+    ...metadata
+  });
+};
+
+export const trackAchievement = (
+  achievement: string,
+  metadata?: Record<string, unknown>
+): void => {
+  trackEvent('achievement_unlocked', {
+    achievement,
+    ...metadata
+  });
 };
 

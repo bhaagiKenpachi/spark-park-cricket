@@ -42,13 +42,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Track user authentication state changes
   useEffect(() => {
     if (isAuthenticated && user) {
-      // User logged in - identify them in PostHog
-      identifyUser(user.id, {
+      // Calculate user properties
+      const userProperties = {
         id: user.id,
         email: user.email,
         name: user.name,
         created_at: user.created_at,
-      });
+        // Add calculated properties
+        total_series_created: 0, // This would need to be calculated from user data
+        total_matches_scored: 0, // This would need to be calculated from user data
+        user_role: 'standard', // Default role, could be enhanced with actual roles
+        signup_date: user.created_at,
+        last_active: new Date().toISOString(),
+        // Add session information
+        session_start: new Date().toISOString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'unknown',
+        screen_resolution: typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : 'unknown',
+        language: typeof window !== 'undefined' ? window.navigator.language : 'unknown'
+      };
+
+      // User logged in - identify them in PostHog
+      identifyUser(user.id, userProperties);
 
       // Track login event
       trackUserLogin({

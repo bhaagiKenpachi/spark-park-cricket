@@ -34,6 +34,27 @@ export enum PostHogEvent {
     // Navigation Events
     PAGE_VIEWED = '$pageview',
     PAGE_LEFT = '$pageleave',
+
+    // Error Events
+    ERROR_OCCURRED = 'error_occurred',
+    API_ERROR = 'api_error',
+
+    // Performance Events
+    PERFORMANCE_METRIC = 'performance_metric',
+    PAGE_LOAD_TIME = 'page_load_time',
+    API_RESPONSE_TIME = 'api_response_time',
+
+    // User Engagement Events
+    FEATURE_USED = 'feature_used',
+    USER_ACTION = 'user_action',
+    TIME_ON_PAGE = 'time_on_page',
+
+    // Funnel and Journey Events
+    FUNNEL_STEP = 'funnel_step',
+
+    // Business Intelligence Events
+    CONVERSION = 'conversion',
+    ACHIEVEMENT_UNLOCKED = 'achievement_unlocked',
 }
 
 // Series Event Properties

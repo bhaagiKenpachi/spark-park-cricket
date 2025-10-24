@@ -23,38 +23,14 @@ export const initPostHog = (): void => {
     }
 
     try {
+
         posthog.init(posthogKey, {
             api_host: posthogHost,
-
-            // Session Recording Configuration
-            session_recording: {
-                recordCrossOriginIframes: true,
-                maskAllInputs: false,
-                maskInputOptions: {
-                    password: true,
-                },
-            },
-
-            // Auto-capture configuration
             capture_pageview: true,
             capture_pageleave: true,
             autocapture: true,
-
-            // Performance and privacy settings
             persistence: 'localStorage+cookie',
             disable_session_recording: false,
-
-            // Advanced options
-            sanitize_properties: (properties) => {
-                // Remove sensitive data
-                const sanitized = { ...properties };
-                if (sanitized.password) delete sanitized.password;
-                if (sanitized.token) delete sanitized.token;
-                if (sanitized.api_key) delete sanitized.api_key;
-                return sanitized;
-            },
-
-            // Debug mode based on environment
             loaded: (posthogInstance) => {
                 const debug = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
                 if (debug && process.env.NODE_ENV === 'development') {
