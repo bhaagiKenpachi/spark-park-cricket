@@ -149,6 +149,7 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 	}
 
 	// Create first innings with toss winner as batting team
+	now := time.Now()
 	firstInnings := &models.Innings{
 		MatchID:       matchID,
 		InningsNumber: 1,
@@ -158,6 +159,7 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 		TotalOvers:    0.0,
 		TotalBalls:    0,
 		Status:        string(models.InningsStatusInProgress),
+		StartTime:     &now,
 	}
 
 	err = s.scorecardRepo.CreateInnings(ctx, firstInnings)
@@ -455,6 +457,12 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 		if shouldCompleteMatch {
 			// Complete the innings first
 			innings.Status = string(models.InningsStatusCompleted)
+			// Set end time and calculate duration
+			now := time.Now()
+			innings.EndTime = &now
+			if innings.StartTime != nil {
+				innings.DurationSeconds = int(now.Sub(*innings.StartTime).Seconds())
+			}
 			err = s.scorecardRepo.UpdateInnings(ctx, innings)
 			if err != nil {
 				return fmt.Errorf("failed to update innings status: %w", err)
@@ -468,7 +476,7 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 				return fmt.Errorf("failed to fetch match data: %w", err)
 			}
 
-			now := time.Now()
+			now = time.Now()
 			completeMatch.Status = models.MatchStatusCompleted
 			completeMatch.EndTime = &now
 			completeMatch.UpdatedAt = now
@@ -549,6 +557,7 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	if err != nil {
 		log.Printf("Innings not found, creating new innings: %v", err)
 		// Create innings if it doesn't exist
+		now := time.Now()
 		innings = &models.Innings{
 			MatchID:       req.MatchID,
 			InningsNumber: req.InningsNumber,
@@ -558,6 +567,7 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 			TotalOvers:    0.0,
 			TotalBalls:    0,
 			Status:        string(models.InningsStatusInProgress),
+			StartTime:     &now,
 		}
 		err = monitoring.WithDatabaseMonitoringContext(
 			ctx, s.metrics, "INSERT", "innings", req.MatchID,
@@ -709,6 +719,12 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	// Note: Removed hardcoded wicket check - innings completion is handled separately
 	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
+		// Set end time and calculate duration
+		now := time.Now()
+		over.EndTime = &now
+		if over.StartTime != nil {
+			over.DurationSeconds = int(now.Sub(*over.StartTime).Seconds())
+		}
 	}
 
 	err = monitoring.WithDatabaseMonitoringContext(
@@ -768,6 +784,12 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	if req.InningsNumber == 1 {
 		if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(match.TotalOvers) {
 			innings.Status = string(models.InningsStatusCompleted)
+			// Set end time and calculate duration
+			now := time.Now()
+			innings.EndTime = &now
+			if innings.StartTime != nil {
+				innings.DurationSeconds = int(now.Sub(*innings.StartTime).Seconds())
+			}
 			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
 				innings.InningsNumber, match.ID, innings.TotalWickets, maxWickets, innings.TotalOvers, match.TotalOvers)
 		}
@@ -802,21 +824,27 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 		if shouldCompleteMatch {
 			// Complete the innings first
 			innings.Status = string(models.InningsStatusCompleted)
+			// Set end time and calculate duration
+			now := time.Now()
+			innings.EndTime = &now
+			if innings.StartTime != nil {
+				innings.DurationSeconds = int(now.Sub(*innings.StartTime).Seconds())
+			}
 			err = s.scorecardRepo.UpdateInnings(ctx, innings)
 			if err != nil {
 				return fmt.Errorf("failed to update innings status: %w", err)
 			}
 
 			// Complete the match
-			now := time.Now()
+			matchEndTime := time.Now()
 			match.Status = models.MatchStatusCompleted
-			match.EndTime = &now
-			match.UpdatedAt = now
+			match.EndTime = &matchEndTime
+			match.UpdatedAt = matchEndTime
 			err = s.matchRepo.Update(ctx, req.MatchID, match)
 			if err != nil {
 				return fmt.Errorf("failed to complete match: %w", err)
 			}
-			log.Printf("Match %s completed at %s - %s", req.MatchID, now.Format(time.RFC3339), reason)
+			log.Printf("Match %s completed at %s - %s", req.MatchID, matchEndTime.Format(time.RFC3339), reason)
 		}
 	}
 
@@ -825,6 +853,74 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
+}
+
+// GetTimeTracking retrieves time tracking data for a match
+func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) (*models.TimeTrackingResponse, error) {
+	log.Printf("Getting time tracking data for match %s", matchID)
+
+	// Get all innings for the match
+	innings, err := s.scorecardRepo.GetInningsByMatchID(ctx, matchID)
+	if err != nil {
+		log.Printf("Error getting innings: %v", err)
+		return nil, fmt.Errorf("failed to get innings: %w", err)
+	}
+
+	if len(innings) == 0 {
+		return &models.TimeTrackingResponse{
+			MatchID:        matchID,
+			Innings:        []models.InningsTimeTracking{},
+			TotalMatchTime: 0,
+		}, nil
+	}
+
+	var inningsTimeTracking []models.InningsTimeTracking
+	var totalMatchTime int
+
+	for _, innings := range innings {
+		// Get overs for this innings
+		overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
+		if err != nil {
+			log.Printf("Error getting overs for innings %s: %v", innings.ID, err)
+			continue
+		}
+
+		var overTimeTracking []models.OverTimeTracking
+		for _, over := range overs {
+			overTimeTracking = append(overTimeTracking, models.OverTimeTracking{
+				OverNumber:      over.OverNumber,
+				StartTime:       over.StartTime,
+				EndTime:         over.EndTime,
+				DurationSeconds: over.DurationSeconds,
+				Status:          over.Status,
+				TotalRuns:       over.TotalRuns,
+				TotalBalls:      over.TotalBalls,
+				TotalWickets:    over.TotalWickets,
+			})
+		}
+
+		inningsTimeTracking = append(inningsTimeTracking, models.InningsTimeTracking{
+			InningsNumber:   innings.InningsNumber,
+			BattingTeam:     innings.BattingTeam,
+			StartTime:       innings.StartTime,
+			EndTime:         innings.EndTime,
+			DurationSeconds: innings.DurationSeconds,
+			Status:          innings.Status,
+			Overs:           overTimeTracking,
+		})
+
+		// Add to total match time
+		totalMatchTime += innings.DurationSeconds
+	}
+
+	response := &models.TimeTrackingResponse{
+		MatchID:        matchID,
+		Innings:        inningsTimeTracking,
+		TotalMatchTime: totalMatchTime,
+	}
+
+	log.Printf("Successfully retrieved time tracking data for match %s", matchID)
+	return response, nil
 }
 
 // UndoBall removes the last ball from the current over and updates statistics
@@ -1128,6 +1224,7 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 	}
 
 	// Create new over with retry logic for constraint violations
+	now := time.Now()
 	newOver := &models.ScorecardOver{
 		InningsID:    inningsID,
 		OverNumber:   nextOverNumber,
@@ -1135,6 +1232,7 @@ func (s *ScorecardService) getCurrentOverWithOvers(ctx context.Context, inningsI
 		TotalBalls:   0,
 		TotalWickets: 0,
 		Status:       string(models.OverStatusInProgress),
+		StartTime:    &now,
 	}
 
 	// Use improved retry logic with exponential backoff and jitter
@@ -1448,6 +1546,7 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 	}
 
 	// Create second innings
+	now := time.Now()
 	secondInnings := &models.Innings{
 		MatchID:       matchID,
 		InningsNumber: 2,
@@ -1457,6 +1556,7 @@ func (s *ScorecardService) startSecondInnings(ctx context.Context, matchID strin
 		TotalOvers:    0.0,
 		TotalBalls:    0,
 		Status:        string(models.InningsStatusInProgress),
+		StartTime:     &now,
 	}
 
 	err = s.scorecardRepo.CreateInnings(ctx, secondInnings)
