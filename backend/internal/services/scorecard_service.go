@@ -1012,9 +1012,11 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 
 // UndoBall removes the last ball from the current over and updates statistics
 // Handles edge cases:
-// 1. First ball of first over: prevents undo
-// 2. First ball of any over: deletes the over and reverts to previous over
-// 3. Last ball of innings: properly reverts innings status
+//  1. First ball of first over: prevents undo
+//  2. First ball of any over: deletes the over and reverts to previous over
+//  3. Last ball of innings: properly reverts innings status
+//  4. CRITICAL TIME TRACKING: When over/innings status is reverted from completed to in_progress,
+//     the end_time and duration_seconds are cleared to maintain data consistency
 func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, inningsNumber int) error {
 	log.Printf("Undoing last ball for match %s, innings %d", matchID, inningsNumber)
 
@@ -1189,7 +1191,11 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 	// Check if over should be marked as in progress (if it was completed)
 	if lastOver.Status == string(models.OverStatusCompleted) && lastOver.TotalBalls < 6 {
 		lastOver.Status = string(models.OverStatusInProgress)
-		log.Printf("Reverting over %d status from completed to in_progress", lastOver.OverNumber)
+		// CRITICAL: Clear time tracking when over is reverted to in_progress
+		// When over is no longer completed, it shouldn't have an end_time
+		lastOver.EndTime = nil
+		lastOver.DurationSeconds = 0
+		log.Printf("Reverting over %d status from completed to in_progress and clearing time tracking", lastOver.OverNumber)
 	}
 
 	err = s.scorecardRepo.UpdateOver(ctx, lastOver)
@@ -1247,7 +1253,11 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		maxWickets := match.TeamAPlayerCount - 1
 		if innings.TotalWickets < maxWickets && innings.TotalOvers < float64(match.TotalOvers) {
 			innings.Status = string(models.InningsStatusInProgress)
-			log.Printf("Reverting innings %d status from completed to in_progress", innings.InningsNumber)
+			// CRITICAL: Clear time tracking when innings is reverted to in_progress
+			// When innings is no longer completed, it shouldn't have an end_time
+			innings.EndTime = nil
+			innings.DurationSeconds = 0
+			log.Printf("Reverting innings %d status from completed to in_progress and clearing time tracking", innings.InningsNumber)
 		}
 	}
 
