@@ -608,6 +608,67 @@
       ]
     },
     {
+      "name": "Server-Sent Events (SSE)",
+      "item": [
+        {
+          "name": "Stream Ball Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sse/matches/{{match_id}}/balls",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sse",
+                "matches",
+                "{{match_id}}",
+                "balls"
+              ]
+            },
+            "description": "Stream ball events in real-time for a specific match using Server-Sent Events (SSE). This endpoint streams ball additions as they happen via Redis Streams. Connect using EventSource in JavaScript:\n\n```javascript\nconst eventSource = new EventSource('http://localhost:8080/api/v1/sse/matches/{match_id}/balls');\n\neventSource.addEventListener('connected', (e) => {\n  console.log('Connected:', JSON.parse(e.data));\n});\n\neventSource.addEventListener('ball_added', (e) => {\n  const ballEvent = JSON.parse(e.data);\n  console.log('Ball added:', ballEvent);\n  // Update your UI with the ball event data\n});\n\neventSource.onerror = (err) => {\n  console.error('SSE Error:', err);\n};\n```\n\nEvent types:\n- `connected`: Initial connection confirmation\n- `ball_added`: Ball event with all ball details\n- `: heartbeat`: Keep-alive message (every 30 seconds)\n\nNote: This is a streaming endpoint that keeps the connection open. In Postman, you'll see the connection remain active until you cancel it."
+          },
+          "response": []
+        },
+        {
+          "name": "Stream All Match Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/sse/matches/{{match_id}}/events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sse",
+                "matches",
+                "{{match_id}}",
+                "events"
+              ]
+            },
+            "description": "Stream all match events in real-time for a specific match using Server-Sent Events (SSE). This endpoint streams all types of match events via Redis Streams. Connect using EventSource in JavaScript:\n\n```javascript\nconst eventSource = new EventSource('http://localhost:8080/api/v1/sse/matches/{match_id}/events');\n\neventSource.addEventListener('connected', (e) => {\n  console.log('Connected:', JSON.parse(e.data));\n});\n\neventSource.addEventListener('ball_added', (e) => {\n  const ballEvent = JSON.parse(e.data);\n  console.log('Ball added:', ballEvent);\n});\n\neventSource.addEventListener('match_event', (e) => {\n  const matchEvent = JSON.parse(e.data);\n  console.log('Match event:', matchEvent);\n});\n\neventSource.onerror = (err) => {\n  console.error('SSE Error:', err);\n};\n```\n\nEvent types:\n- `connected`: Initial connection confirmation\n- `ball_added`: Ball event with all ball details\n- `match_event`: Generic match events\n- `: heartbeat`: Keep-alive message (every 30 seconds)\n\nNote: This is a streaming endpoint that keeps the connection open. In Postman, you'll see the connection remain active until you cancel it."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Scorecard Management",
       "item": [
         {

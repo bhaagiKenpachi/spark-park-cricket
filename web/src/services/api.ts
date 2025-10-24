@@ -18,11 +18,30 @@ import {
   RunType,
 } from '@/store/reducers/scorecardSlice';
 
+// Ball event response from the API
+export interface BallEventResponse {
+  event_type: string;
+  match_id: string;
+  innings_number: number;
+  ball_number: number;
+  ball_type: string;
+  run_type: string;
+  runs: number;
+  byes: number;
+  total_runs: number;
+  is_wicket: boolean;
+  wicket_type: string;
+  innings_runs: number;
+  innings_wickets: number;
+  innings_overs: string;
+  timestamp: string;
+  stream_id: string;
+}
+
 // Backend API Configuration
 // Set NEXT_PUBLIC_API_URL in .env.local file or environment variables
 // Default: https://spark-park.dojima.foundation/api/v1
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://spark-park.dojima.foundation/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export interface ApiResponse<T> {
   data: T;
@@ -632,6 +651,13 @@ class ApiService {
   async removePlayerFromTeam(teamId: string, playerId: string): Promise<ApiResponse<{ message: string }>> {
     return this.request<{ message: string }>(`/teams/${teamId}/players/${playerId}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Get ball events for a match
+  async getBallEvents(matchId: string): Promise<ApiResponse<BallEventResponse[]>> {
+    return this.request<BallEventResponse[]>(`/scorecard/${matchId}/events`, {
+      method: 'GET',
     });
   }
 }

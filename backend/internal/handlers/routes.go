@@ -144,12 +144,25 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.Get("/{match_id}/current-over", scorecardHandler.GetCurrentOver)
 			r.Get("/{match_id}/innings/{innings_number}", scorecardHandler.GetInnings)
 			r.Get("/{match_id}/innings/{innings_number}/over/{over_number}", scorecardHandler.GetOver)
+			r.Get("/{match_id}/events", scorecardHandler.GetBallEvents) // New endpoint for ball events
 			r.Get("/{match_id}/time-tracking", scorecardHandler.GetTimeTracking)
 
 			// Protected routes (require authentication and ownership)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+		})
+
+		// Server-Sent Events (SSE) routes for real-time updates
+		r.Route("/sse", func(r chi.Router) {
+			// Get Redis client from cache manager
+			redisClient := dbClient.CacheManager.GetRedisClient()
+			sseHandler := NewSSEHandler(redisClient, serviceContainer.Metrics, cfg)
+
+			// Public SSE routes (no authentication required for real-time streaming)
+			// These endpoints stream ball events in real-time using Server-Sent Events
+			r.Get("/matches/{match_id}/balls", sseHandler.StreamBallEvents)
+			r.Get("/matches/{match_id}/events", sseHandler.StreamMatchEvents)
 		})
 
 		// Vote routes

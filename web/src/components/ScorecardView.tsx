@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
+import { LiveUpdates } from '@/components/LiveUpdates';
+import { BallEvent } from '@/hooks/useSSE';
 import {
   trackScorecardViewed,
   trackLiveScoringStarted,
@@ -40,6 +42,7 @@ import {
   trackOverCompleted,
 } from '@/lib/analytics';
 import { TimeTrackingView } from '@/components/TimeTrackingView';
+import { HorizontalBallList } from '@/components/HorizontalBallDisplay';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -72,7 +75,9 @@ export function ScorecardView({
     inningsKey: string;
     overNumber: number;
   } | null>(null);
+  const showLiveUpdates = true; // Always show live events
   const [showTimeTracking, setShowTimeTracking] = useState(false);
+  const horizontalDisplay = true; // Always use horizontal display
   const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
@@ -114,6 +119,7 @@ export function ScorecardView({
       setShowLiveScoring(true);
     }
   }, [scorecard]);
+
 
   // Auto-detect current innings from scorecard data
   useEffect(() => {
@@ -520,12 +526,8 @@ export function ScorecardView({
           key={ball.ball_number}
           className="w-8 h-8 rounded-full border-2 border-orange-500 bg-orange-100 flex flex-col items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-orange-700 font-bold">
+          <div className="text-[11px] leading-none text-orange-700 font-bold">
             nb
-          </div>
-          <div className="text-[6px] leading-none text-orange-600">+</div>
-          <div className="text-[8px] leading-none text-orange-700 font-bold">
-            {noBallRuns + noBallByes}
           </div>
         </div>
       );
@@ -639,27 +641,54 @@ export function ScorecardView({
     );
   };
 
-  const renderOverDetails = (over: OverSummary) => (
-    <div key={over.over_number} className="mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <h5 className="font-medium text-sm">Over {over.over_number}</h5>
-        <div className="text-xs text-gray-600">
-          {over.total_runs} runs, {over.total_wickets} wickets
+  const renderOverDetails = (over: OverSummary) => {
+    if (horizontalDisplay && over.balls && Array.isArray(over.balls) && over.balls.length > 0) {
+      // Calculate running totals for horizontal display
+      let runningScore = 0;
+      let runningWickets = 0;
+
+      const sortedBalls = [...over.balls].sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number);
+
+      return (
+        <div key={over.over_number} className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h5 className="font-medium text-sm">Over {over.over_number}</h5>
+            <div className="text-xs text-gray-600">
+              {over.total_runs} runs, {over.total_wickets} wickets
+            </div>
+          </div>
+          <HorizontalBallList
+            balls={sortedBalls}
+            overNumber={over.over_number}
+            currentScore={over.total_runs}
+            currentWickets={over.total_wickets}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div key={over.over_number} className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h5 className="font-medium text-sm">Over {over.over_number}</h5>
+          <div className="text-xs text-gray-600">
+            {over.total_runs} runs, {over.total_wickets} wickets
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {over.balls && Array.isArray(over.balls) && over.balls.length > 0 ? (
+            [...over.balls]
+              .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
+              .map((ball: BallSummary, index: number) =>
+                renderBallCircle(ball, index)
+              )
+          ) : (
+            <div className="text-xs text-gray-400">Over not started</div>
+          )}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1">
-        {over.balls && Array.isArray(over.balls) && over.balls.length > 0 ? (
-          [...over.balls]
-            .sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number)
-            .map((ball: BallSummary, index: number) =>
-              renderBallCircle(ball, index)
-            )
-        ) : (
-          <div className="text-xs text-gray-400">Over not started</div>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   if (loading && !scorecard) {
     return (
@@ -691,6 +720,7 @@ export function ScorecardView({
 
   const scorecardData = scorecard;
 
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -721,7 +751,23 @@ export function ScorecardView({
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowTimeTracking(!showTimeTracking)}
+            onClick={() => {
+              const newShowTimeTracking = !showTimeTracking;
+              setShowTimeTracking(newShowTimeTracking);
+
+              // Scroll to time tracking view after a short delay to allow component to render
+              if (newShowTimeTracking) {
+                setTimeout(() => {
+                  const timeTrackingElement = document.getElementById('time-tracking-view');
+                  if (timeTrackingElement) {
+                    timeTrackingElement.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }, 100);
+              }
+            }}
             title="View Time Tracking"
             className="border-blue-300 text-blue-700 hover:bg-blue-50"
           >
@@ -798,6 +844,18 @@ export function ScorecardView({
           </div>
         )}
       </div>
+
+      {/* Live Updates Section */}
+      {scorecardData.match_status === 'live' && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Live Updates</h2>
+          </div>
+          <LiveUpdates
+            matchId={matchId}
+          />
+        </div>
+      )}
 
       {/* Match Completion Summary */}
       {isMatchCompleted &&
@@ -1069,21 +1127,6 @@ export function ScorecardView({
                               const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                               const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
 
-                              // Debug logging
-                              console.log('Required runs calculation (Team A):', {
-                                firstInningsRuns: firstInnings.total_runs,
-                                target,
-                                currentRuns: innings.total_runs,
-                                runsRequired,
-                                totalBalls,
-                                currentOversDecimal,
-                                ballsBowledFromOvers,
-                                ballsRemainingFromOvers,
-                                ballsBowled,
-                                ballsBowledCorrected,
-                                ballsRemaining,
-                                ballsRemainingCorrected
-                              });
 
                               // Calculate run rates with error handling
                               let currentRunRate = '0.00';
@@ -1401,21 +1444,6 @@ export function ScorecardView({
                               const ballsBowledFromOvers = Math.floor(currentOversDecimal) * 6 + Math.round((currentOversDecimal % 1) * 10);
                               const ballsRemainingFromOvers = Math.max(0, totalBalls - ballsBowledFromOvers);
 
-                              // Debug logging
-                              console.log('Required runs calculation (Team B):', {
-                                firstInningsRuns: firstInnings.total_runs,
-                                target,
-                                currentRuns: innings.total_runs,
-                                runsRequired,
-                                totalBalls,
-                                currentOversDecimal,
-                                ballsBowledFromOvers,
-                                ballsRemainingFromOvers,
-                                ballsBowled,
-                                ballsBowledCorrected,
-                                ballsRemaining,
-                                ballsRemainingCorrected
-                              });
 
                               // Calculate run rates with error handling
                               let currentRunRate = '0.00';
@@ -2107,10 +2135,12 @@ export function ScorecardView({
       {/* Time Tracking View */}
       {
         showTimeTracking && (
-          <TimeTrackingView
-            matchId={matchId}
-            onBack={() => setShowTimeTracking(false)}
-          />
+          <div id="time-tracking-view">
+            <TimeTrackingView
+              matchId={matchId}
+              onBack={() => setShowTimeTracking(false)}
+            />
+          </div>
         )
       }
     </div >

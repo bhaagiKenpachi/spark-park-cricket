@@ -68,6 +68,26 @@ type BallEventRequest struct {
 	Byes          int      `json:"byes,omitempty"` // Additional runs from byes (0-6)
 }
 
+// BallEventResponse represents a ball event with complete metadata for API responses
+type BallEventResponse struct {
+	EventType      string `json:"event_type"`
+	MatchID        string `json:"match_id"`
+	InningsNumber  int    `json:"innings_number"`
+	BallNumber     int    `json:"ball_number"`
+	BallType       string `json:"ball_type"`
+	RunType        string `json:"run_type"`
+	Runs           int    `json:"runs"`
+	Byes           int    `json:"byes"`
+	TotalRuns      int    `json:"total_runs"`
+	IsWicket       bool   `json:"is_wicket"`
+	WicketType     string `json:"wicket_type"`
+	InningsRuns    int    `json:"innings_runs"`
+	InningsWickets int    `json:"innings_wickets"`
+	InningsOvers   string `json:"innings_overs"`
+	Timestamp      string `json:"timestamp"`
+	StreamID       string `json:"stream_id"`
+}
+
 // ScorecardResponse represents the complete scorecard
 type ScorecardResponse struct {
 	MatchID        string           `json:"match_id"`

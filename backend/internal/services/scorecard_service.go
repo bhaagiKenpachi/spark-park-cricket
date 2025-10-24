@@ -11,6 +11,7 @@ import (
 	"spark-park-cricket-backend/internal/monitoring"
 	"spark-park-cricket-backend/internal/repository/interfaces"
 	"spark-park-cricket-backend/internal/utils"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -68,6 +69,14 @@ func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo
 		ballMutexes:   sync.Map{},
 		overMutexes:   sync.Map{},
 	}
+}
+
+// getRedisClient returns the Redis client from the cache manager if available
+func (s *ScorecardService) getRedisClient() *cache.RedisClient {
+	if s.cache != nil && s.cache.IsEnabled() {
+		return s.cache.GetRedisClient()
+	}
+	return nil
 }
 
 // getBallAdditionMutex returns a mutex for the specific match and innings combination
@@ -581,6 +590,9 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 
 	// Invalidate match-related caches after successful ball addition (async)
 	go s.invalidateMatchCachesAsync(req.MatchID, data.InningsID, data.OverID)
+
+	// Publish ball event to Redis stream for SSE (async, non-blocking)
+	go s.publishBallEvent(req, ball, totalRuns, innings)
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
@@ -1521,6 +1533,48 @@ func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID
 	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
 }
 
+// publishBallEvent publishes a ball event to Redis stream for SSE
+func (s *ScorecardService) publishBallEvent(req *models.BallEventRequest, ball *models.ScorecardBall, totalRuns int, innings *models.Innings) {
+	// Get Redis client from cache manager
+	redisClient := s.getRedisClient()
+	if redisClient == nil {
+		// Redis not available, skip publishing (fail gracefully)
+		log.Printf("📡 Redis client not available, skipping ball event publish for match %s", req.MatchID)
+		return
+	}
+
+	// Prepare event data
+	eventData := map[string]interface{}{
+		"event_type":      "ball_added",
+		"match_id":        req.MatchID,
+		"innings_number":  req.InningsNumber,
+		"ball_number":     ball.BallNumber,
+		"ball_type":       string(req.BallType),
+		"run_type":        string(req.RunType),
+		"runs":            ball.Runs,
+		"byes":            ball.Byes,
+		"total_runs":      totalRuns,
+		"is_wicket":       req.IsWicket,
+		"wicket_type":     string(req.WicketType),
+		"innings_runs":    innings.TotalRuns,
+		"innings_wickets": innings.TotalWickets,
+		"innings_overs":   fmt.Sprintf("%.1f", innings.TotalOvers),
+		"timestamp":       time.Now().Format(time.RFC3339),
+	}
+
+	// Get stream key for this match
+	streamKey := redisClient.GetStreamKey(req.MatchID)
+
+	// Publish to Redis stream
+	eventID, err := redisClient.PublishToStream(streamKey, eventData)
+	if err != nil {
+		log.Printf("⚠️  Failed to publish ball event to Redis stream for match %s: %v", req.MatchID, err)
+		return
+	}
+
+	log.Printf("📡 Published ball event to Redis stream for match %s (event ID: %s)", req.MatchID, eventID)
+}
+
 // invalidateScorecardCacheForMatch invalidates scorecard-related caches for a match
 func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID string) {
 	// Skip cache invalidation if cache is not available
@@ -1910,4 +1964,90 @@ func (s *ScorecardService) GetNonTossWinner(tossWinner models.TeamType) models.T
 		return models.TeamTypeB
 	}
 	return models.TeamTypeA
+}
+
+// GetBallEvents retrieves ball events for a match from Redis streams
+func (s *ScorecardService) GetBallEvents(ctx context.Context, matchID string) ([]*models.BallEventResponse, error) {
+	// Get Redis client from cache manager
+	redisClient := s.getRedisClient()
+	if redisClient == nil {
+		log.Printf("⚠️  Redis client not available, returning empty events for match: %s", matchID)
+		return []*models.BallEventResponse{}, nil
+	}
+
+	// Get stream key for this match
+	streamKey := redisClient.GetStreamKey(matchID)
+
+	// Read all events from the Redis stream
+	events, err := redisClient.ReadStreamEvents(streamKey, "-", "+")
+	if err != nil {
+		log.Printf("⚠️  Failed to read stream events for match %s: %v", matchID, err)
+		return []*models.BallEventResponse{}, nil
+	}
+
+	// Convert Redis stream events to BallEventResponse models
+	var ballEvents []*models.BallEventResponse
+	for _, event := range events {
+		// Helper function to safely get string values
+		getString := func(key string) string {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					return str
+				}
+			}
+			return ""
+		}
+
+		// Helper function to safely get int values
+		getInt := func(key string) int {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					// Try to parse as int
+					if intVal, err := strconv.Atoi(str); err == nil {
+						return intVal
+					}
+				}
+				if floatVal, ok := val.(float64); ok {
+					return int(floatVal)
+				}
+			}
+			return 0
+		}
+
+		// Helper function to safely get bool values
+		getBool := func(key string) bool {
+			if val, ok := event.Values[key]; ok {
+				if str, ok := val.(string); ok {
+					return str == "true" || str == "1"
+				}
+				if boolVal, ok := val.(bool); ok {
+					return boolVal
+				}
+			}
+			return false
+		}
+
+		ballEvent := &models.BallEventResponse{
+			EventType:      getString("event_type"),
+			MatchID:        getString("match_id"),
+			InningsNumber:  getInt("innings_number"),
+			BallNumber:     getInt("ball_number"),
+			BallType:       getString("ball_type"),
+			RunType:        getString("run_type"),
+			Runs:           getInt("runs"),
+			Byes:           getInt("byes"),
+			TotalRuns:      getInt("total_runs"),
+			IsWicket:       getBool("is_wicket"),
+			WicketType:     getString("wicket_type"),
+			InningsRuns:    getInt("innings_runs"),
+			InningsWickets: getInt("innings_wickets"),
+			InningsOvers:   getString("innings_overs"),
+			Timestamp:      getString("timestamp"),
+			StreamID:       event.ID,
+		}
+		ballEvents = append(ballEvents, ballEvent)
+	}
+
+	log.Printf("✅ Retrieved %d ball events for match %s from Redis streams", len(ballEvents), matchID)
+	return ballEvents, nil
 }

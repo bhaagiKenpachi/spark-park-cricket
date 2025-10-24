@@ -7,6 +7,7 @@ import scorecardReducer from './scorecardSlice';
 import authReducer from './authSlice';
 import voteReducer from './voteSlice';
 import voteTeamReducer from './voteTeamSlice';
+import eventReducer from './eventSlice';
 import timeTrackingReducer from './timeTrackingSlice';
 
 export const rootReducer = combineReducers({
@@ -18,6 +19,7 @@ export const rootReducer = combineReducers({
   auth: authReducer,
   vote: voteReducer,
   voteTeam: voteTeamReducer,
+  events: eventReducer,
   timeTracking: timeTrackingReducer,
 });
 
