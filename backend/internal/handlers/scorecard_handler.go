@@ -340,3 +340,26 @@ func (h *ScorecardHandler) GetOver(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully retrieved over %d for innings %d, match %s", overNumber, inningsNumber, matchID)
 	utils.WriteSuccessResponse(w, over)
 }
+
+// GetTimeTracking gets time tracking data for a match
+func (h *ScorecardHandler) GetTimeTracking(w http.ResponseWriter, r *http.Request) {
+	matchID := chi.URLParam(r, "match_id")
+	if matchID == "" {
+		log.Printf("Missing match_id parameter")
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "MISSING_PARAMETER", "match_id is required")
+		return
+	}
+
+	log.Printf("Getting time tracking data for match %s", matchID)
+
+	// Get time tracking data
+	timeTracking, err := h.scorecardService.GetTimeTracking(r.Context(), matchID)
+	if err != nil {
+		log.Printf("Error getting time tracking data: %v", err)
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+		return
+	}
+
+	log.Printf("Successfully retrieved time tracking data for match %s", matchID)
+	utils.WriteSuccessResponse(w, timeTracking)
+}

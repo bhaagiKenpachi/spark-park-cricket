@@ -13,7 +13,10 @@ type ScorecardServiceInterface interface {
 	GetScorecard(ctx context.Context, matchID string) (*models.ScorecardResponse, error)
 	GetCurrentOver(ctx context.Context, matchID string, inningsNumber int) (*models.ScorecardOver, error)
 	GetBallsByOver(ctx context.Context, overID string) ([]*models.ScorecardBall, error)
+	GetInningsByMatchAndNumber(ctx context.Context, matchID string, inningsNumber int) (*models.Innings, error)
+	GetOversByInnings(ctx context.Context, inningsID string) ([]*models.ScorecardOver, error)
 	ShouldCompleteMatch(ctx context.Context, matchID string, secondInnings *models.Innings, match *models.Match) (bool, string)
 	ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error
 	GetNonTossWinner(tossWinner models.TeamType) models.TeamType
+	GetTimeTracking(ctx context.Context, matchID string) (*models.TimeTrackingResponse, error)
 }

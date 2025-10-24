@@ -296,7 +296,7 @@ export function SeriesList(): React.JSX.Element {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6" data-cy="series-list">
+    <div className="w-full max-w-4xl mx-auto p-2" data-cy="series-list">
       <div className="flex flex-col items-center space-y-4 mb-6 sm:flex-row sm:justify-between sm:space-y-0">
         <h2 className="text-2xl font-bold text-center">Cricket Series</h2>
         <div className="flex space-x-2">

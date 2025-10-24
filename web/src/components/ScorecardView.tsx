@@ -27,6 +27,7 @@ import {
   ChevronUp,
   RefreshCw,
   Undo2,
+  Clock,
 } from 'lucide-react';
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
@@ -38,6 +39,7 @@ import {
   trackMatchCompleted,
   trackOverCompleted,
 } from '@/lib/analytics';
+import { TimeTrackingView } from '@/components/TimeTrackingView';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -70,6 +72,7 @@ export function ScorecardView({
     inningsKey: string;
     overNumber: number;
   } | null>(null);
+  const [showTimeTracking, setShowTimeTracking] = useState(false);
   const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
@@ -179,13 +182,16 @@ export function ScorecardView({
     }
   }, [scoring, showLiveScoring]);
 
-  // Handle ball scoring success
+  // Handle ball scoring success - only show when scoring transitions from true to false
+  const [wasScoring, setWasScoring] = useState(false);
+
   useEffect(() => {
-    if (scoring === false && showLiveScoring && scorecard) {
+    if (wasScoring && scoring === false && showLiveScoring && scorecard) {
       setScoringMessage('Ball scored successfully!');
       setTimeout(() => setScoringMessage(null), 2000);
     }
-  }, [scoring, showLiveScoring, scorecard]);
+    setWasScoring(scoring);
+  }, [scoring, showLiveScoring, scorecard, wasScoring]);
 
   const handleStartScoring = () => {
     // Check if scoring is available (ownership + match not completed)
@@ -425,6 +431,26 @@ export function ScorecardView({
   const renderBallCircle = (ball: BallSummary, index: number) => {
     const isWicket = ball.is_wicket;
 
+    // ============================================================================
+    // BYE DISPLAY STRATEGY - READ THIS BEFORE MAKING CHANGES
+    // ============================================================================
+    // RULE: Byes are ALWAYS prioritized and displayed first with CYAN color scheme
+    // Color Scheme: border-cyan-500, bg-cyan-100, text-cyan-700
+    // 
+    // Display Formats:
+    // 1. Byes on Good Ball:     "B{byes}" (e.g., "B2") - No ball type shown
+    // 2. Byes + No Ball:        "B{byes} + nb" (e.g., "B2 + nb")
+    // 3. Byes + Wide:           "B{byes} + wd" (e.g., "B1 + wd")
+    // 4. Byes + Wicket:         "B{byes} + W" (e.g., "B3 + W")
+    //
+    // WHY CYAN? To make byes visually distinct from all other ball types:
+    // - Regular runs: green/blue/purple
+    // - Wides (no byes): slate
+    // - No balls (no byes): orange
+    // - Wickets (no byes): red
+    // - Leg byes: slate
+    // ============================================================================
+
     // Determine display based on ball type and run type
     let display: string;
     if (isWicket) {
@@ -462,10 +488,33 @@ export function ScorecardView({
     }
 
     // Special handling for no ball display
+    // IMPORTANT: When byes are involved, ALWAYS prioritize showing byes first
+    // Format: "B{byes} + nb" with CYAN color scheme (not orange)
+    // This ensures byes are visually distinct and prioritized across all ball types
     if (ball.ball_type === 'NO_BALL' || ball.ball_type === 'no_ball') {
       const noBallRuns = ball.runs || 0;
       const noBallByes = ball.byes || 0;
 
+      // If there are byes, prioritize showing byes first with CYAN color
+      // Display format: Top line "B{byes}", middle "+", bottom "nb"
+      if (noBallByes > 0) {
+        return (
+          <div
+            key={ball.ball_number}
+            className="w-8 h-8 rounded-full border-2 border-cyan-500 bg-cyan-100 flex flex-col items-center justify-center text-xs font-medium"
+          >
+            <div className="text-[9px] leading-none text-cyan-700 font-bold">
+              B{noBallByes}
+            </div>
+            <div className="text-[6px] leading-none text-cyan-600">+</div>
+            <div className="text-[9px] leading-none text-cyan-700 font-bold">
+              nb
+            </div>
+          </div>
+        );
+      }
+
+      // No byes, show regular no ball with orange color
       return (
         <div
           key={ball.ball_number}
@@ -483,40 +532,42 @@ export function ScorecardView({
     }
 
     // Special handling for wide balls with byes
+    // IMPORTANT: Byes are prioritized over wide ball type
+    // Format: "B{byes} + wd" with CYAN color scheme (not slate)
+    // This maintains consistency with all bye displays across different ball types
     if ((ball.ball_type === 'WIDE' || ball.ball_type === 'wide') && ball.byes > 0) {
-      const totalRuns = ball.runs + ball.byes;
-
       return (
         <div
           key={ball.ball_number}
-          className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
+          className="w-8 h-8 rounded-full border-2 border-cyan-500 bg-cyan-100 flex flex-col items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-slate-700 font-bold">
-            wd
+          <div className="text-[9px] leading-none text-cyan-700 font-bold">
+            B{ball.byes}
           </div>
-          <div className="text-[8px] leading-none text-slate-600">+</div>
-          <div className="text-[10px] leading-none text-slate-700 font-bold">
-            {totalRuns}
+          <div className="text-[6px] leading-none text-cyan-600">+</div>
+          <div className="text-[9px] leading-none text-cyan-700 font-bold">
+            wd
           </div>
         </div>
       );
     }
 
     // Special handling for wickets with byes
+    // IMPORTANT: Byes are prioritized over wicket display
+    // Format: "B{byes} + W" with CYAN color scheme (not red)
+    // Even though it's a wicket, byes take visual priority with cyan color
     if (isWicket && ball.byes > 0) {
-      const totalRuns = ball.runs + ball.byes;
-
       return (
         <div
           key={ball.ball_number}
-          className="w-8 h-8 rounded-full border-2 border-red-500 bg-red-100 flex flex-col items-center justify-center text-xs font-medium"
+          className="w-8 h-8 rounded-full border-2 border-cyan-500 bg-cyan-100 flex flex-col items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-red-700 font-bold">
-            W
+          <div className="text-[9px] leading-none text-cyan-700 font-bold">
+            B{ball.byes}
           </div>
-          <div className="text-[8px] leading-none text-red-600">+</div>
-          <div className="text-[10px] leading-none text-red-700 font-bold">
-            {totalRuns}
+          <div className="text-[6px] leading-none text-cyan-600">+</div>
+          <div className="text-[9px] leading-none text-cyan-700 font-bold">
+            W
           </div>
         </div>
       );
@@ -542,21 +593,21 @@ export function ScorecardView({
       );
     }
 
-    // Special handling for regular balls with byes (no special ball type)
-    if (ball.byes > 0 && !ball.ball_type && ball.run_type !== 'LB') {
-      const totalRuns = ball.runs + ball.byes;
+    // Special handling for regular balls with byes (good ball or no special ball type)
+    // IMPORTANT: Byes on good balls show ONLY "B{byes}" without "+ gd" suffix
+    // Format: Just "B{byes}" with CYAN color scheme
+    // Good ball is implied, no need to show ball type for clean display
+    // All bye scenarios use CYAN (border-cyan-500, bg-cyan-100, text-cyan-700) for consistency
+    if (ball.byes > 0 && (ball.ball_type === 'GOOD' || ball.ball_type === 'good' || !ball.ball_type) && ball.run_type !== 'LB') {
+      const byeRuns = ball.byes;
 
       return (
         <div
           key={ball.ball_number}
-          className="w-8 h-8 rounded-full border-2 border-slate-400 bg-slate-100 flex flex-col items-center justify-center text-xs font-medium"
+          className="w-8 h-8 rounded-full border-2 border-cyan-500 bg-cyan-100 flex items-center justify-center text-xs font-medium"
         >
-          <div className="text-[10px] leading-none text-slate-700 font-bold">
-            B
-          </div>
-          <div className="text-[8px] leading-none text-slate-600">+</div>
-          <div className="text-[10px] leading-none text-slate-700 font-bold">
-            {totalRuns}
+          <div className="text-[11px] leading-none text-cyan-700 font-bold">
+            B{byeRuns}
           </div>
         </div>
       );
@@ -652,7 +703,7 @@ export function ScorecardView({
             {scorecardData.team_a} vs {scorecardData.team_b}
           </p>
         </div>
-        <div className="flex justify-center space-x-2">
+        <div className="flex justify-start space-x-2">
           <Button variant="outline" onClick={onBack} title="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -667,6 +718,15 @@ export function ScorecardView({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTimeTracking(!showTimeTracking)}
+            title="View Time Tracking"
+            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Time Tracking
           </Button>
         </div>
       </div>
@@ -844,7 +904,11 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
+<<<<<<< HEAD
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+=======
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
+>>>>>>> origin/dev
           {/* Team A */}
           <Card>
             <CardHeader className="pb-3">
@@ -860,6 +924,11 @@ export function ScorecardView({
                   )
                   .map((innings: InningsSummary) => {
                     const inningsKey = `A-${innings.innings_number}`;
+<<<<<<< HEAD
+=======
+                    // Get latest over - backend now returns the last over with balls
+                    // instead of an empty newly created over
+>>>>>>> origin/dev
                     const latestOver =
                       innings.overs &&
                         Array.isArray(innings.overs) &&
@@ -1192,6 +1261,11 @@ export function ScorecardView({
                   )
                   .map((innings: InningsSummary) => {
                     const inningsKey = `B-${innings.innings_number}`;
+<<<<<<< HEAD
+=======
+                    // Get latest over - backend now returns the last over with balls
+                    // instead of an empty newly created over
+>>>>>>> origin/dev
                     const latestOver =
                       innings.overs &&
                         Array.isArray(innings.overs) &&
@@ -1554,7 +1628,7 @@ export function ScorecardView({
                     className="flex items-center space-x-2"
                   >
                     <span>Inn {innings.innings_number}:</span>
-                    <Badge
+                    {/* <Badge
                       variant={
                         innings.status === 'in_progress'
                           ? 'default'
@@ -1567,16 +1641,17 @@ export function ScorecardView({
                       {innings.status === 'in_progress'
                         ? 'In Progress'
                         : 'Completed'}
-                    </Badge>
+                    </Badge> */}
                     <span className="flex items-center">
                       {scoring ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                       ) : null}
+
+                      {innings.total_runs}/{innings.total_wickets} (
+                      {innings.total_overs} overs) -
                       {innings.batting_team === 'A'
                         ? scorecardData.team_a
                         : scorecardData.team_b}
-                      - {innings.total_runs}/{innings.total_wickets} (
-                      {innings.total_overs} overs)
                     </span>
                   </div>
                 ))}
@@ -1586,7 +1661,7 @@ export function ScorecardView({
           <CardContent>
             {/* Enhanced Live Scorecard Display */}
             {scorecardData.innings && Array.isArray(scorecardData.innings) && (
-              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+              <div className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 border border-green-200">
                 {scorecardData.innings
                   .filter((innings: InningsSummary) => innings.status === 'in_progress')
                   .map((innings: InningsSummary) => {
@@ -1826,12 +1901,21 @@ export function ScorecardView({
                           {byes}
                         </button>
                       ))}
+<<<<<<< HEAD
                     </div>
                     <div className="text-sm text-gray-600 text-center font-medium">
                       {currentByes > 0
                         ? `+${currentByes} byes selected`
                         : 'No byes selected'}
                     </div>
+=======
+                    </div>
+                    <div className="text-sm text-gray-600 text-center font-medium">
+                      {currentByes > 0
+                        ? `+${currentByes} byes selected`
+                        : 'No byes selected'}
+                    </div>
+>>>>>>> origin/dev
                   </div>
                 </div>
 
@@ -1894,7 +1978,7 @@ export function ScorecardView({
                   <div>
                     <h4 className="font-semibold text-blue-800">Read-Only View</h4>
                     <p className="text-sm text-blue-600">
-                      You're viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
+                      You&apos;re viewing the live scorecard in read-only mode. Only the series creator can make scoring changes.
                     </p>
                   </div>
                 </div>
@@ -1954,6 +2038,7 @@ export function ScorecardView({
                                 return bNum - aNum; // Descending order (newest first)
                               });
 
+<<<<<<< HEAD
                               // Debug logging
                               console.log('Show All Overs Debug:', {
                                 inningsNumber: innings.innings_number,
@@ -1961,6 +2046,8 @@ export function ScorecardView({
                                 filteredOverNumbers: filteredOvers.map(o => ({ number: o.over_number, type: typeof o.over_number })),
                                 sortedOverNumbers: sortedOvers.map(o => ({ number: o.over_number, type: typeof o.over_number }))
                               });
+=======
+>>>>>>> origin/dev
 
                               return sortedOvers;
                             })()
@@ -2032,6 +2119,14 @@ export function ScorecardView({
           onClose={handleCloseOverAd}
           adSlot="5949756909"
           overNumber={currentOverAd.overNumber}
+        />
+      )}
+
+      {/* Time Tracking View */}
+      {showTimeTracking && (
+        <TimeTrackingView
+          matchId={matchId}
+          onBack={() => setShowTimeTracking(false)}
         />
       )}
     </div>

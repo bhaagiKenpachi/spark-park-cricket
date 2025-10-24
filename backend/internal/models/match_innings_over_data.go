@@ -21,6 +21,9 @@ type MatchInningsOverData struct {
 	InningsTotalWickets int           `json:"innings_total_wickets"`
 	InningsTotalOvers   float64       `json:"innings_total_overs"`
 	InningsTotalBalls   int           `json:"innings_total_balls"`
+	InningsStartTime    *time.Time    `json:"innings_start_time"`
+	InningsEndTime      *time.Time    `json:"innings_end_time"`
+	InningsDuration     int           `json:"innings_duration_seconds"`
 
 	// Over data (current over)
 	OverID           string     `json:"over_id"`
@@ -29,6 +32,9 @@ type MatchInningsOverData struct {
 	OverTotalRuns    int        `json:"over_total_runs"`
 	OverTotalBalls   int        `json:"over_total_balls"`
 	OverTotalWickets int        `json:"over_total_wickets"`
+	OverStartTime    *time.Time `json:"over_start_time"`
+	OverEndTime      *time.Time `json:"over_end_time"`
+	OverDuration     int        `json:"over_duration_seconds"`
 
 	// Ball data (for next ball number calculation)
 	BallCount      int `json:"ball_count"`

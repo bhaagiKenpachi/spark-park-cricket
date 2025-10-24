@@ -6,30 +6,36 @@ import (
 
 // Innings represents a cricket innings
 type Innings struct {
-	ID            string    `json:"id" db:"id"`
-	MatchID       string    `json:"match_id" db:"match_id"`
-	InningsNumber int       `json:"innings_number" db:"innings_number"`
-	BattingTeam   TeamType  `json:"batting_team" db:"batting_team"`
-	TotalRuns     int       `json:"total_runs" db:"total_runs"`
-	TotalWickets  int       `json:"total_wickets" db:"total_wickets"`
-	TotalOvers    float64   `json:"total_overs" db:"total_overs"`
-	TotalBalls    int       `json:"total_balls" db:"total_balls"`
-	Status        string    `json:"status" db:"status"` // "in_progress", "completed"
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+	ID              string     `json:"id" db:"id"`
+	MatchID         string     `json:"match_id" db:"match_id"`
+	InningsNumber   int        `json:"innings_number" db:"innings_number"`
+	BattingTeam     TeamType   `json:"batting_team" db:"batting_team"`
+	TotalRuns       int        `json:"total_runs" db:"total_runs"`
+	TotalWickets    int        `json:"total_wickets" db:"total_wickets"`
+	TotalOvers      float64    `json:"total_overs" db:"total_overs"`
+	TotalBalls      int        `json:"total_balls" db:"total_balls"`
+	Status          string     `json:"status" db:"status"` // "in_progress", "completed"
+	StartTime       *time.Time `json:"start_time" db:"start_time"`
+	EndTime         *time.Time `json:"end_time" db:"end_time"`
+	DurationSeconds int        `json:"duration_seconds" db:"duration_seconds"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // ScorecardOver represents a cricket over in scorecard
 type ScorecardOver struct {
-	ID           string    `json:"id" db:"id"`
-	InningsID    string    `json:"innings_id" db:"innings_id"`
-	OverNumber   int       `json:"over_number" db:"over_number"`
-	TotalRuns    int       `json:"total_runs" db:"total_runs"`
-	TotalBalls   int       `json:"total_balls" db:"total_balls"`
-	TotalWickets int       `json:"total_wickets" db:"total_wickets"`
-	Status       string    `json:"status" db:"status"` // "in_progress", "completed"
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	ID              string     `json:"id" db:"id"`
+	InningsID       string     `json:"innings_id" db:"innings_id"`
+	OverNumber      int        `json:"over_number" db:"over_number"`
+	TotalRuns       int        `json:"total_runs" db:"total_runs"`
+	TotalBalls      int        `json:"total_balls" db:"total_balls"`
+	TotalWickets    int        `json:"total_wickets" db:"total_wickets"`
+	Status          string     `json:"status" db:"status"` // "in_progress", "completed"
+	StartTime       *time.Time `json:"start_time" db:"start_time"`
+	EndTime         *time.Time `json:"end_time" db:"end_time"`
+	DurationSeconds int        `json:"duration_seconds" db:"duration_seconds"`
+	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // ScorecardBall represents a cricket ball in scorecard
@@ -147,3 +153,33 @@ const (
 	OverStatusInProgress OverStatus = "in_progress"
 	OverStatusCompleted  OverStatus = "completed"
 )
+
+// TimeTrackingResponse represents time tracking data for a match
+type TimeTrackingResponse struct {
+	MatchID        string                `json:"match_id"`
+	Innings        []InningsTimeTracking `json:"innings"`
+	TotalMatchTime int                   `json:"total_match_time_seconds"`
+}
+
+// InningsTimeTracking represents time tracking for an innings
+type InningsTimeTracking struct {
+	InningsNumber   int                `json:"innings_number"`
+	BattingTeam     TeamType           `json:"batting_team"`
+	StartTime       *time.Time         `json:"start_time"`
+	EndTime         *time.Time         `json:"end_time"`
+	DurationSeconds int                `json:"duration_seconds"`
+	Status          string             `json:"status"`
+	Overs           []OverTimeTracking `json:"overs"`
+}
+
+// OverTimeTracking represents time tracking for an over
+type OverTimeTracking struct {
+	OverNumber      int        `json:"over_number"`
+	StartTime       *time.Time `json:"start_time"`
+	EndTime         *time.Time `json:"end_time"`
+	DurationSeconds int        `json:"duration_seconds"`
+	Status          string     `json:"status"`
+	TotalRuns       int        `json:"total_runs"`
+	TotalBalls      int        `json:"total_balls"`
+	TotalWickets    int        `json:"total_wickets"`
+}

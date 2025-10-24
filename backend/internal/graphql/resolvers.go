@@ -257,6 +257,8 @@ func resolveInningsScore(p graphql.ResolveParams) (interface{}, error) {
 }
 
 // resolveLatestOver resolves the latest over query
+// IMPORTANT: Returns the last over with balls for display, not an empty newly created over
+// When 6th ball completes an over, backend creates a new empty over, but we want to show the completed one
 func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 	matchID, ok := p.Args["match_id"].(string)
 	if !ok {
@@ -277,18 +279,66 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 	// Get the current over
 	scorecardOver, err := resolverCtx.ScorecardService.GetCurrentOver(p.Context, matchID, inningsNumber)
 	if err != nil {
-		// If no current over exists (e.g., scoring just started, no balls added yet),
-		// return a default over structure
+		// If no current over exists, it might be because the last over just completed
+		// Try to get the last completed over instead
 		log.Printf("No current over found for match %s, innings %d: %v", matchID, inningsNumber, err)
 
-		// Return a default over structure indicating no over exists yet
+		innings, err := resolverCtx.ScorecardService.GetInningsByMatchAndNumber(p.Context, matchID, inningsNumber)
+		if err == nil {
+			allOvers, err := resolverCtx.ScorecardService.GetOversByInnings(p.Context, innings.ID)
+			if err == nil && len(allOvers) > 0 {
+				// Find the last over (highest over_number)
+				var lastOver *models.ScorecardOver
+				for _, over := range allOvers {
+					if lastOver == nil || over.OverNumber > lastOver.OverNumber {
+						lastOver = over
+					}
+				}
+
+				if lastOver != nil {
+					// Get balls for the last over
+					balls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, lastOver.ID)
+					if err == nil {
+						log.Printf("No in-progress over, returning last completed over %d with %d balls", lastOver.OverNumber, len(balls))
+						scorecardOver = lastOver
+
+						// Convert balls and return
+						ballSummaries := make([]models.BallSummary, len(balls))
+						for i, ball := range balls {
+							ballSummaries[i] = models.BallSummary{
+								BallNumber: ball.BallNumber,
+								BallType:   ball.BallType,
+								RunType:    ball.RunType,
+								Runs:       ball.Runs,
+								Byes:       ball.Byes,
+								IsWicket:   ball.IsWicket,
+								WicketType: ball.WicketType,
+							}
+						}
+
+						overSummary := map[string]interface{}{
+							"over_number":   lastOver.OverNumber,
+							"total_runs":    lastOver.TotalRuns,
+							"total_balls":   lastOver.TotalBalls,
+							"total_wickets": lastOver.TotalWickets,
+							"status":        lastOver.Status,
+							"balls":         ballSummaries,
+						}
+
+						return overSummary, nil
+					}
+				}
+			}
+		}
+
+		// If we couldn't find any over, return a default structure
 		overSummary := map[string]interface{}{
-			"over_number":   1, // Default to over 1
+			"over_number":   1,
 			"total_runs":    0,
 			"total_balls":   0,
 			"total_wickets": 0,
-			"status":        "not_started",          // Indicate over hasn't started yet
-			"balls":         []models.BallSummary{}, // Empty balls array
+			"status":        "not_started",
+			"balls":         []models.BallSummary{},
 		}
 
 		return overSummary, nil
@@ -298,6 +348,32 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 	balls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, scorecardOver.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get balls for over: %w", err)
+	}
+
+	// IMPORTANT FIX: If current over has no balls and it's not over 1, return the previous over with balls
+	// This happens when an over just completed and a new empty over was created
+	// We want to show the completed over with balls, not the empty new one
+	if len(balls) == 0 && scorecardOver.OverNumber > 1 {
+		// Get the previous over (should have balls)
+		innings, err := resolverCtx.ScorecardService.GetInningsByMatchAndNumber(p.Context, matchID, inningsNumber)
+		if err == nil {
+			allOvers, err := resolverCtx.ScorecardService.GetOversByInnings(p.Context, innings.ID)
+			if err == nil && len(allOvers) > 1 {
+				// Find the previous over (over_number - 1)
+				for _, over := range allOvers {
+					if over.OverNumber == scorecardOver.OverNumber-1 {
+						// Get balls for the previous over
+						prevBalls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, over.ID)
+						if err == nil && len(prevBalls) > 0 {
+							log.Printf("Current over %d is empty, returning previous over %d with %d balls", scorecardOver.OverNumber, over.OverNumber, len(prevBalls))
+							scorecardOver = over
+							balls = prevBalls
+							break
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Convert ScorecardBall to BallSummary
