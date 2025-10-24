@@ -39,6 +39,12 @@ import {
 } from 'lucide-react';
 import { Series } from '@/store/reducers/seriesSlice';
 import { User } from '@/services/authService';
+import {
+  trackMatchViewed,
+  trackMatchCreated,
+  trackMatchDeleted,
+  trackScorecardViewed,
+} from '@/lib/analytics';
 
 interface ScorecardData {
   match_id: string;
@@ -567,9 +573,17 @@ export function SeriesWithMatches({
                       <div className="flex justify-between">
                         <div
                           className="space-y-5 cursor-pointer flex items-start w-full justify-between group"
-                          onClick={() =>
-                            onViewScorecard?.(match.id, series.created_by || '')
-                          }
+                          onClick={() => {
+                            // Track match view
+                            trackMatchViewed({
+                              match_id: match.id,
+                              series_id: series.id,
+                              match_number: match.match_number,
+                              match_status: match.status,
+                              total_overs: match.total_overs,
+                            });
+                            onViewScorecard?.(match.id, series.created_by || '');
+                          }}
                         >
                           {/* Match Header */}
                           <div className="flex items-start justify-between">
