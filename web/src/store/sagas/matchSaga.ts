@@ -146,17 +146,14 @@ export function* fetchMatchByIdSaga(
   action: ReturnType<typeof fetchMatchByIdRequest>
 ): Generator<CallEffect | PutEffect, void, any> {
   try {
-    console.log('Saga: Fetching match with ID:', action.payload);
     const apiService = new ApiService();
     const response = yield call(
       apiService.getMatchById.bind(apiService),
       action.payload
     );
 
-    console.log('Saga: API response:', response);
     // Extract the match data from the response (handle nested structure)
     const match = (response.data as any).data || response.data;
-    console.log('Saga: Extracted match data:', match);
 
     yield put(fetchMatchByIdSuccess(match));
   } catch (error) {

@@ -20,15 +20,11 @@ export default function MatchPage(): React.JSX.Element {
 
   useEffect(() => {
     if (matchId) {
-      console.log('Fetching match with ID:', matchId);
       dispatch(fetchMatchByIdRequest(matchId));
     }
   }, [dispatch, matchId]);
 
   useEffect(() => {
-    console.log('Current match state:', currentMatch);
-    console.log('Loading state:', loading);
-    console.log('Error state:', error);
     if (currentMatch && currentMatch.id === matchId) {
       setLocalMatch(currentMatch);
     }

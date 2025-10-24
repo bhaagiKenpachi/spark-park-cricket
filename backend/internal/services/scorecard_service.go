@@ -199,7 +199,6 @@ func (s *ScorecardService) StartScoring(ctx context.Context, matchID string) err
 		return fmt.Errorf("failed to start scoring: %w", err)
 	}
 
-	log.Printf("Successfully started scoring for match %s, first innings batting team: %s", matchID, match.TossWinner)
 	return nil
 }
 
@@ -617,7 +616,6 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	}
 
 	// Check ownership - user must be the creator of the match
-	log.Printf("Ownership check - User ID: %s, Match CreatedBy: %s", userID, match.CreatedBy)
 	if match.CreatedBy != userID {
 		return fmt.Errorf("access denied: you can only score balls for matches you created")
 	}
@@ -628,13 +626,9 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	}
 
 	// Validate innings order
-	log.Printf("DEBUG: Starting innings validation for match %s, innings %d, batting team %s, toss winner %s",
-		req.MatchID, req.InningsNumber, match.BattingTeam, match.TossWinner)
 	if err := s.ValidateInningsOrder(ctx, req.MatchID, match, req.InningsNumber); err != nil {
-		log.Printf("DEBUG: Innings validation failed: %v", err)
 		return fmt.Errorf("innings validation failed: %w", err)
 	}
-	log.Printf("DEBUG: Innings validation passed for match %s, innings %d", req.MatchID, req.InningsNumber)
 
 	// Get innings or create if doesn't exist with monitoring
 	var innings *models.Innings
@@ -960,11 +954,9 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 		var cachedResponse models.TimeTrackingResponse
 		err := s.cache.Get(cacheKey, &cachedResponse)
 		if err == nil {
-			log.Printf("Time tracking data retrieved from cache for match %s", matchID)
 			return &cachedResponse, nil
 		}
 		// Cache miss or error - continue with database query
-		log.Printf("Cache miss for time tracking data, fetching from database for match %s", matchID)
 	}
 
 	// Get all innings for the match
@@ -1041,7 +1033,6 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 			ttl = 10 * time.Minute
 		}
 		_ = s.cache.Set(cacheKey, response, ttl)
-		log.Printf("Time tracking data cached for match %s with TTL: %v", matchID, ttl)
 	}
 
 	return response, nil
@@ -1234,7 +1225,6 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 		// When over is no longer completed, it shouldn't have an end_time
 		lastOver.EndTime = nil
 		lastOver.DurationSeconds = 0
-		log.Printf("Reverting over %d status from completed to in_progress and clearing time tracking", lastOver.OverNumber)
 	}
 
 	err = s.scorecardRepo.UpdateOver(ctx, lastOver)
@@ -1296,7 +1286,6 @@ func (s *ScorecardService) UndoBall(ctx context.Context, matchID string, innings
 			// When innings is no longer completed, it shouldn't have an end_time
 			innings.EndTime = nil
 			innings.DurationSeconds = 0
-			log.Printf("Reverting innings %d status from completed to in_progress and clearing time tracking", innings.InningsNumber)
 		}
 	}
 
@@ -1462,8 +1451,6 @@ func (s *ScorecardService) invalidateMatchCachesBeforeWrite(ctx context.Context,
 		return
 	}
 
-	log.Printf("Invalidating caches BEFORE write for match %s, innings %s, over %s", matchID, inningsID, overID)
-
 	// Invalidate all related caches to prevent stale data reads during concurrent operations
 	cacheKeys := []string{
 		fmt.Sprintf("scorecard:%s", matchID),
@@ -1481,7 +1468,6 @@ func (s *ScorecardService) invalidateMatchCachesBeforeWrite(ctx context.Context,
 		_ = s.cache.Invalidate(key)
 	}
 
-	log.Printf("Pre-write cache invalidation completed for match %s", matchID)
 }
 
 // invalidateMatchCaches invalidates all caches related to a match after ball addition
@@ -1527,7 +1513,6 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
 	_ = s.cache.Invalidate(timeTrackingKey)
 
-	log.Printf("Invalidated all caches for match %s, innings %s, over %s", matchID, inningsID, overID)
 }
 
 // invalidateMatchCachesAsync invalidates caches asynchronously
@@ -1542,8 +1527,6 @@ func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID s
 	if s.cache == nil {
 		return
 	}
-
-	log.Printf("Invalidating scorecard caches for match %s", matchID)
 
 	// Invalidate scorecard cache
 	scorecardKey := fmt.Sprintf("scorecard:%s", matchID)
@@ -1573,7 +1556,6 @@ func (s *ScorecardService) invalidateScorecardCacheForMatch(matchID, inningsID s
 	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
 	_ = s.cache.Invalidate(timeTrackingKey)
 
-	log.Printf("Scorecard cache invalidation completed for match %s", matchID)
 }
 
 // invalidateOverCaches invalidates all caches related to a specific over
@@ -1582,8 +1564,6 @@ func (s *ScorecardService) invalidateOverCaches(inningsID, overID string) {
 	if s.cache == nil {
 		return
 	}
-
-	log.Printf("Invalidating over-specific caches for over %s", overID)
 
 	// Invalidate balls cache for this over
 	ballsKey := fmt.Sprintf("balls:over:%s", overID)
@@ -1605,7 +1585,6 @@ func (s *ScorecardService) invalidateOverCaches(inningsID, overID string) {
 	lastOverKey := fmt.Sprintf("over:last:innings:%s", inningsID)
 	_ = s.cache.Invalidate(lastOverKey)
 
-	log.Printf("Over-specific cache invalidation completed for over %s", overID)
 }
 
 // invalidateTimeTrackingCache invalidates time tracking cache for a specific match
@@ -1615,13 +1594,10 @@ func (s *ScorecardService) invalidateTimeTrackingCache(ctx context.Context, matc
 		return
 	}
 
-	log.Printf("Invalidating time tracking cache for match %s", matchID)
-
 	// Invalidate time tracking cache
 	timeTrackingKey := fmt.Sprintf("time_tracking:%s", matchID)
 	_ = s.cache.Invalidate(timeTrackingKey)
 
-	log.Printf("Time tracking cache invalidation completed for match %s", matchID)
 }
 
 // calculateOversInMemory performs optimized overs calculation in memory
@@ -1834,32 +1810,23 @@ func (s *ScorecardService) GetOversByInnings(ctx context.Context, inningsID stri
 
 // ValidateInningsOrder validates that balls can only be added to the correct innings
 func (s *ScorecardService) ValidateInningsOrder(ctx context.Context, matchID string, match *models.Match, inningsNumber int) error {
-	log.Printf("DEBUG: validateInningsOrder called - matchID: %s, inningsNumber: %d, battingTeam: %s, tossWinner: %s",
-		matchID, inningsNumber, match.BattingTeam, match.TossWinner)
 
 	// Get all innings for this match to determine current state
 	innings, err := s.scorecardRepo.GetInningsByMatchID(ctx, matchID)
 	if err != nil {
-		log.Printf("DEBUG: No existing innings found for match %s, error: %v", matchID, err)
 		// If no innings exist, this is the first ball of the match
 		// The first innings should always be the toss-winning team
 		if inningsNumber == 1 {
 			// Check if the batting team matches the toss winner
 			if match.BattingTeam != match.TossWinner {
-				log.Printf("DEBUG: Validation failed - first innings must be played by toss winner %s, but batting team is %s",
-					match.TossWinner, match.BattingTeam)
 				return fmt.Errorf("first innings must be played by the toss-winning team (%s), but current batting team is %s",
 					match.TossWinner, match.BattingTeam)
 			}
-			log.Printf("DEBUG: Validation passed - first innings with correct team")
 			return nil
 		} else {
-			log.Printf("DEBUG: Validation failed - cannot start with innings %d, first innings must be played first", inningsNumber)
 			return fmt.Errorf("cannot start with innings %d, first innings must be played first", inningsNumber)
 		}
 	}
-
-	log.Printf("DEBUG: Found %d existing innings for match %s", len(innings), matchID)
 
 	// Determine which innings exist
 	firstInningsExists := false
