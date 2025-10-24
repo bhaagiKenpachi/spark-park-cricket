@@ -135,7 +135,6 @@ func (r *scorecardRepository) GetInningsByMatchAndNumber(ctx context.Context, ma
 
 // UpdateInnings updates an innings
 func (r *scorecardRepository) UpdateInnings(ctx context.Context, innings *models.Innings) error {
-	log.Printf("Updating innings %s", innings.ID)
 
 	// Add timeout to prevent hanging queries
 	_, cancel := context.WithTimeout(ctx, 60*time.Second)
@@ -198,7 +197,6 @@ func (r *scorecardRepository) CompleteInnings(ctx context.Context, inningsID str
 
 // CreateOver creates a new over
 func (r *scorecardRepository) CreateOver(ctx context.Context, over *models.ScorecardOver) error {
-	log.Printf("Creating over %d for innings %s", over.OverNumber, over.InningsID)
 
 	// Add timeout to prevent hanging queries
 	_, cancel := context.WithTimeout(ctx, 60*time.Second)
@@ -368,7 +366,6 @@ func (r *scorecardRepository) GetOversByInnings(ctx context.Context, inningsID s
 
 // UpdateOver updates an over
 func (r *scorecardRepository) UpdateOver(ctx context.Context, over *models.ScorecardOver) error {
-	log.Printf("Updating over %s", over.ID)
 
 	// Add timeout to prevent hanging queries
 	_, cancel := context.WithTimeout(ctx, 60*time.Second)
@@ -895,6 +892,7 @@ func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Contex
 		}
 
 		overNumber := len(allOvers) + 1
+		now := time.Now()
 		newOver := &models.ScorecardOver{
 			InningsID:    innings.ID,
 			OverNumber:   overNumber,
@@ -902,6 +900,7 @@ func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Contex
 			TotalBalls:   0,
 			TotalWickets: 0,
 			Status:       string(models.OverStatusInProgress),
+			StartTime:    &now,
 		}
 
 		// Try to create the over in the database
@@ -981,6 +980,9 @@ func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Contex
 		InningsTotalWickets: innings.TotalWickets,
 		InningsTotalOvers:   innings.TotalOvers,
 		InningsTotalBalls:   innings.TotalBalls,
+		InningsStartTime:    innings.StartTime,
+		InningsEndTime:      innings.EndTime,
+		InningsDuration:     innings.DurationSeconds,
 
 		// Over data
 		OverID:           over.ID,
@@ -989,6 +991,9 @@ func (r *scorecardRepository) getMatchInningsOverDataFallback(ctx context.Contex
 		OverTotalRuns:    over.TotalRuns,
 		OverTotalBalls:   over.TotalBalls,
 		OverTotalWickets: over.TotalWickets,
+		OverStartTime:    over.StartTime,
+		OverEndTime:      over.EndTime,
+		OverDuration:     over.DurationSeconds,
 
 		// Ball data
 		BallCount:      ballCount,

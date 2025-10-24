@@ -27,9 +27,11 @@ import {
   ChevronUp,
   RefreshCw,
   Undo2,
+  Clock,
 } from 'lucide-react';
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
+import { TimeTrackingView } from '@/components/TimeTrackingView';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -62,6 +64,7 @@ export function ScorecardView({
     inningsKey: string;
     overNumber: number;
   } | null>(null);
+  const [showTimeTracking, setShowTimeTracking] = useState(false);
   const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
@@ -162,7 +165,7 @@ export function ScorecardView({
 
   // Handle ball scoring success - only show when scoring transitions from true to false
   const [wasScoring, setWasScoring] = useState(false);
-  
+
   useEffect(() => {
     if (wasScoring && scoring === false && showLiveScoring && scorecard) {
       setScoringMessage('Ball scored successfully!');
@@ -655,6 +658,15 @@ export function ScorecardView({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTimeTracking(!showTimeTracking)}
+            title="View Time Tracking"
+            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Time Tracking
           </Button>
         </div>
       </div>
@@ -1564,7 +1576,7 @@ export function ScorecardView({
                       {scoring ? (
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-500 mr-2"></div>
                       ) : null}
-                     
+
                       {innings.total_runs}/{innings.total_wickets} (
                       {innings.total_overs} overs) -
                       {innings.batting_team === 'A'
@@ -2025,6 +2037,14 @@ export function ScorecardView({
           onClose={handleCloseOverAd}
           adSlot="5949756909"
           overNumber={currentOverAd.overNumber}
+        />
+      )}
+
+      {/* Time Tracking View */}
+      {showTimeTracking && (
+        <TimeTrackingView
+          matchId={matchId}
+          onBack={() => setShowTimeTracking(false)}
         />
       )}
     </div>

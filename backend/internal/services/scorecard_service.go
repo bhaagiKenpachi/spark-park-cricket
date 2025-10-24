@@ -16,6 +16,37 @@ import (
 	"time"
 )
 
+/*
+CRITICAL TIME TRACKING LOGIC - DO NOT MODIFY WITHOUT UNDERSTANDING
+
+This service handles time tracking for cricket matches with the following key principles:
+
+1. INNINGS COMPLETION IN MIDDLE OF OVER:
+   - Innings can complete in the middle of an over (when all wickets are taken)
+   - When this happens, the current over MUST have its end_time set immediately
+   - This prevents overs from having null end_time when innings completes early
+   - See: lines 433-462 (first innings) and lines 508-535 (second innings)
+
+2. OVER COMPLETION LOGIC:
+   - Overs normally complete when 6 legal balls are bowled
+   - But if innings completes early, the over must be marked as completed with end_time
+   - This ensures accurate time tracking for all overs
+
+3. TIME TRACKING FIELDS:
+   - StartTime: Set when over/innings is created
+   - EndTime: Set when over/innings is completed
+   - DurationSeconds: Calculated as EndTime - StartTime
+
+4. CRITICAL SCENARIOS TO HANDLE:
+   - First innings completes due to all wickets falling (before 6 balls in current over)
+   - Second innings completes due to all wickets falling (before 6 balls in current over)
+   - Second innings completes due to target reached (before 6 balls in current over)
+   - Second innings completes due to all overs completed (before 6 balls in current over)
+
+DO NOT REMOVE OR MODIFY THE INNINGS COMPLETION LOGIC WITHOUT UNDERSTANDING THE IMPACT
+ON TIME TRACKING ACCURACY.
+*/
+
 type ScorecardService struct {
 	scorecardRepo interfaces.ScorecardRepository
 	matchRepo     interfaces.MatchRepository
@@ -347,13 +378,16 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 
 	// Update over statistics (optimized in-memory calculation)
 	over := &models.ScorecardOver{
-		ID:           data.OverID,
-		InningsID:    data.InningsID,
-		OverNumber:   data.OverNumber,
-		TotalRuns:    data.OverTotalRuns + totalRuns,
-		TotalBalls:   data.OverTotalBalls,
-		TotalWickets: data.OverTotalWickets,
-		Status:       string(data.OverStatus),
+		ID:              data.OverID,
+		InningsID:       data.InningsID,
+		OverNumber:      data.OverNumber,
+		TotalRuns:       data.OverTotalRuns + totalRuns,
+		TotalBalls:      data.OverTotalBalls,
+		TotalWickets:    data.OverTotalWickets,
+		Status:          string(data.OverStatus),
+		StartTime:       data.OverStartTime,
+		EndTime:         data.OverEndTime,
+		DurationSeconds: data.OverDuration,
 	}
 
 	// Only count legal balls (good balls) for over completion
@@ -368,6 +402,12 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 	// Note: Removed hardcoded wicket check - innings completion is handled separately
 	if over.TotalBalls >= 6 {
 		over.Status = string(models.OverStatusCompleted)
+		// Set end time and calculate duration
+		now := time.Now()
+		over.EndTime = &now
+		if over.StartTime != nil {
+			over.DurationSeconds = int(now.Sub(*over.StartTime).Seconds())
+		}
 	}
 
 	err = monitoring.WithDatabaseMonitoringContext(
@@ -383,15 +423,18 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 
 	// Update innings statistics (in-memory calculation)
 	innings := &models.Innings{
-		ID:            data.InningsID,
-		MatchID:       req.MatchID,
-		InningsNumber: data.InningsNumber,
-		BattingTeam:   data.BattingTeam,
-		TotalRuns:     data.InningsTotalRuns + totalRuns,
-		TotalWickets:  data.InningsTotalWickets,
-		TotalOvers:    data.InningsTotalOvers,
-		TotalBalls:    data.InningsTotalBalls,
-		Status:        string(data.InningsStatus),
+		ID:              data.InningsID,
+		MatchID:         req.MatchID,
+		InningsNumber:   data.InningsNumber,
+		BattingTeam:     data.BattingTeam,
+		TotalRuns:       data.InningsTotalRuns + totalRuns,
+		TotalWickets:    data.InningsTotalWickets,
+		TotalOvers:      data.InningsTotalOvers,
+		TotalBalls:      data.InningsTotalBalls,
+		Status:          string(data.InningsStatus),
+		StartTime:       data.InningsStartTime,
+		EndTime:         data.InningsEndTime,
+		DurationSeconds: data.InningsDuration,
 	}
 
 	// Only count legal balls for innings overs calculation
@@ -410,7 +453,34 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 	// Check if innings is complete (optimized in-memory calculation)
 	maxWickets := data.TeamAPlayerCount - 1 // n-1 wickets for n players
 	if req.InningsNumber == 1 {
+		previousStatus := innings.Status
 		innings.Status = s.calculateInningsStatusInMemory(innings, maxWickets, data.TotalOvers)
+
+		// CRITICAL: Handle innings completion in the middle of an over
+		// When innings completes (all wickets taken), we need to set end_time for the current over
+		// even if it hasn't completed 6 balls, because innings ended due to all wickets falling
+		if innings.Status == string(models.InningsStatusCompleted) && previousStatus != string(models.InningsStatusCompleted) {
+			// Set end_time for the current over since innings completed
+			// This handles the case where innings ends due to all wickets falling before over completion
+			now := time.Now()
+			over.EndTime = &now
+			if over.StartTime != nil {
+				over.DurationSeconds = int(now.Sub(*over.StartTime).Seconds())
+			}
+
+			// Update the over with end_time since innings completed
+			err = monitoring.WithDatabaseMonitoringContext(
+				ctx, s.metrics, "UPDATE", "overs", req.MatchID,
+				func(ctx context.Context) error {
+					return s.scorecardRepo.UpdateOver(ctx, over)
+				},
+			)
+			if err != nil {
+				log.Printf("Error updating over after innings completion: %v", err)
+				// Don't return error here as innings completion is more important
+			}
+		}
+
 		if innings.Status == string(models.InningsStatusCompleted) {
 			log.Printf("First innings %d completed for match %s: wickets=%d/%d, overs=%.1f/%d",
 				innings.InningsNumber, req.MatchID, innings.TotalWickets, maxWickets, innings.TotalOvers, data.TotalOvers)
@@ -455,10 +525,32 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 			TeamAPlayerCount: data.TeamAPlayerCount,
 		})
 		if shouldCompleteMatch {
+			// CRITICAL: Handle second innings completion in the middle of an over
+			// When second innings completes (all wickets taken, target reached, or all overs completed),
+			// we need to set end_time for the current over even if it hasn't completed 6 balls
+			// Set end_time for the current over since innings completed
+			// This handles the case where innings ends due to all wickets falling, target reached, or overs completed
+			now := time.Now()
+			over.EndTime = &now
+			if over.StartTime != nil {
+				over.DurationSeconds = int(now.Sub(*over.StartTime).Seconds())
+			}
+
+			// Update the over with end_time since innings completed
+			err = monitoring.WithDatabaseMonitoringContext(
+				ctx, s.metrics, "UPDATE", "overs", req.MatchID,
+				func(ctx context.Context) error {
+					return s.scorecardRepo.UpdateOver(ctx, over)
+				},
+			)
+			if err != nil {
+				log.Printf("Error updating over after second innings completion: %v", err)
+				// Don't return error here as innings completion is more important
+			}
+
 			// Complete the innings first
 			innings.Status = string(models.InningsStatusCompleted)
 			// Set end time and calculate duration
-			now := time.Now()
 			innings.EndTime = &now
 			if innings.StartTime != nil {
 				innings.DurationSeconds = int(now.Sub(*innings.StartTime).Seconds())
@@ -857,12 +949,9 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 
 // GetTimeTracking retrieves time tracking data for a match
 func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) (*models.TimeTrackingResponse, error) {
-	log.Printf("Getting time tracking data for match %s", matchID)
-
 	// Get all innings for the match
 	innings, err := s.scorecardRepo.GetInningsByMatchID(ctx, matchID)
 	if err != nil {
-		log.Printf("Error getting innings: %v", err)
 		return nil, fmt.Errorf("failed to get innings: %w", err)
 	}
 
@@ -881,7 +970,6 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 		// Get overs for this innings
 		overs, err := s.scorecardRepo.GetOversByInnings(ctx, innings.ID)
 		if err != nil {
-			log.Printf("Error getting overs for innings %s: %v", innings.ID, err)
 			continue
 		}
 
@@ -919,7 +1007,6 @@ func (s *ScorecardService) GetTimeTracking(ctx context.Context, matchID string) 
 		TotalMatchTime: totalMatchTime,
 	}
 
-	log.Printf("Successfully retrieved time tracking data for match %s", matchID)
 	return response, nil
 }
 
@@ -1480,6 +1567,15 @@ func (s *ScorecardService) calculateOversInMemory(completedOvers int, currentOve
 func (s *ScorecardService) calculateInningsStatusInMemory(innings *models.Innings, maxWickets int, totalOvers int) string {
 	// Check if innings is complete
 	if innings.TotalWickets >= maxWickets || innings.TotalOvers >= float64(totalOvers) {
+		// Set time tracking when innings is completed
+		if innings.Status != string(models.InningsStatusCompleted) {
+			// Set end time and calculate duration
+			now := time.Now()
+			innings.EndTime = &now
+			if innings.StartTime != nil {
+				innings.DurationSeconds = int(now.Sub(*innings.StartTime).Seconds())
+			}
+		}
 		return string(models.InningsStatusCompleted)
 	}
 	return string(models.InningsStatusInProgress)
