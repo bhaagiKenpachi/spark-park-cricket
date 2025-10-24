@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchVoteWithResultsRequest } from '@/store/reducers/voteSlice';
 import { VoteView } from '@/components/VoteView';
 import { Button } from '@/components/ui/button';
+import { LoginButton } from '@/components/auth/LoginButton';
 import { ArrowLeft, Home } from 'lucide-react';
 
 export default function VoteDetailPage(): React.JSX.Element {
@@ -70,7 +71,7 @@ export default function VoteDetailPage(): React.JSX.Element {
                 {isAuthenticated ? (
                   <span className="text-sm text-gray-600">{currentUser?.name}</span>
                 ) : (
-                  <span className="text-sm text-gray-600">Guest</span>
+                  <LoginButton />
                 )}
               </div>
             </div>
@@ -125,7 +126,7 @@ export default function VoteDetailPage(): React.JSX.Element {
                 {isAuthenticated ? (
                   <span className="text-sm text-gray-600">{currentUser?.name}</span>
                 ) : (
-                  <span className="text-sm text-gray-600">Guest</span>
+                  <LoginButton />
                 )}
               </div>
             </div>
@@ -197,7 +198,7 @@ export default function VoteDetailPage(): React.JSX.Element {
                 {isAuthenticated ? (
                   <span className="text-sm text-gray-600">{currentUser?.name}</span>
                 ) : (
-                  <span className="text-sm text-gray-600">Guest</span>
+                  <LoginButton />
                 )}
               </div>
             </div>
@@ -251,7 +252,7 @@ export default function VoteDetailPage(): React.JSX.Element {
               {isAuthenticated ? (
                 <span className="text-sm text-gray-600">{currentUser?.name}</span>
               ) : (
-                <span className="text-sm text-gray-600">Guest</span>
+                <LoginButton />
               )}
             </div>
           </div>
