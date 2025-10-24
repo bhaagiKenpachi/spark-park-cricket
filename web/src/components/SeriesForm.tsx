@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Save, X } from 'lucide-react';
+import { trackSeriesCreated, trackSeriesEdited } from '@/lib/analytics';
 
 interface SeriesFormProps {
   series?: Series | undefined;
@@ -151,8 +152,22 @@ export function SeriesForm({
           seriesData: apiData,
         })
       );
+      // Track series edited event
+      trackSeriesEdited({
+        series_id: series.id,
+        series_name: apiData.name,
+        start_date: apiData.start_date,
+        end_date: apiData.end_date,
+      });
     } else {
       dispatch(createSeriesRequest(apiData));
+      // Track series created event
+      trackSeriesCreated({
+        series_id: '', // Will be set after creation
+        series_name: apiData.name,
+        start_date: apiData.start_date,
+        end_date: apiData.end_date,
+      });
     }
 
     if (onSuccess) {

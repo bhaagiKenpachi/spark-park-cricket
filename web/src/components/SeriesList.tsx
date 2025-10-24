@@ -16,6 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { RefreshCw, Plus } from 'lucide-react';
 import { InFeedAd } from '@/components/ads/InFeedAd';
+import {
+  trackSeriesViewed,
+  trackSeriesDeleted,
+  trackSeriesPaginationChanged,
+} from '@/lib/analytics';
 
 export function SeriesList(): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -43,8 +48,30 @@ export function SeriesList(): React.JSX.Element {
     );
   }, [dispatch, pagination.currentPage, pagination.pageSize]);
 
+  // Track series view when component mounts or series data changes
+  useEffect(() => {
+    if (series && series.length > 0) {
+      series.forEach(seriesItem => {
+        trackSeriesViewed({
+          series_id: seriesItem.id,
+          series_name: seriesItem.name,
+          start_date: seriesItem.start_date,
+          end_date: seriesItem.end_date,
+        });
+      });
+    }
+  }, [series]);
+
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this series?')) {
+      // Track deletion
+      const seriesToDelete = series.find(s => s.id === id);
+      if (seriesToDelete) {
+        trackSeriesDeleted({
+          series_id: id,
+          series_name: seriesToDelete.name,
+        });
+      }
       dispatch(deleteSeriesRequest(id));
     }
   };
@@ -172,10 +199,20 @@ export function SeriesList(): React.JSX.Element {
   };
 
   const handlePageChange = (page: number) => {
+    trackSeriesPaginationChanged({
+      page,
+      page_size: pagination.pageSize,
+      total_items: pagination.totalItems,
+    });
     dispatch(setPage(page));
   };
 
   const handlePageSizeChange = (pageSize: number) => {
+    trackSeriesPaginationChanged({
+      page: pagination.currentPage,
+      page_size: pageSize,
+      total_items: pagination.totalItems,
+    });
     dispatch(setPageSize(pageSize));
   };
 
@@ -315,15 +352,15 @@ export function SeriesList(): React.JSX.Element {
                     }}
                   />
                   {/* Insert ad after every 3 series items (only if ads enabled) */}
-                  {process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false' && 
-                   (index + 1) % 3 === 0 && 
-                   index < series.length - 1 && (
-                    <InFeedAd
-                      adSlot="9963510764"
-                      adLayout="in-article"
-                      className="my-6"
-                    />
-                  )}
+                  {process.env.NEXT_PUBLIC_ENABLE_ADS !== 'false' &&
+                    (index + 1) % 3 === 0 &&
+                    index < series.length - 1 && (
+                      <InFeedAd
+                        adSlot="9963510764"
+                        adLayout="in-article"
+                        className="my-6"
+                      />
+                    )}
                 </div>
               ))}
           </div>

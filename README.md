@@ -418,7 +418,8 @@ sequenceDiagram
 - **Language**: TypeScript with strict configuration
 - **State Management**: Redux Toolkit + Redux Saga
 - **Styling**: Tailwind CSS
-- **Testing**: Jest, React Testing Library, Cypress
+- **Analytics**: PostHog (Self-hosted)
+- **Testing**: Jest, React Testing Library, Playwright
 
 ### Project Structure
 
@@ -528,9 +529,18 @@ PORT=8080
 #### Frontend (.env.local)
 
 ```env
+# API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8080/api/v1/graphql
 NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
+
+# PostHog Analytics (optional, but recommended)
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_api_key
+NEXT_PUBLIC_POSTHOG_HOST=http://localhost:8001
+NEXT_PUBLIC_POSTHOG_DEBUG=false
 ```
+
+See [Environment Setup Guide](web/ENV_SETUP.md) for detailed configuration instructions.
 
 ## 🧪 Testing
 
@@ -625,7 +635,51 @@ CMD ["./main"]
 - **Request Timeout**: 60-second request timeout
 - **CORS Configuration**: Cross-origin resource sharing
 
-## 📊 Monitoring & Observability
+## 📊 Analytics & Monitoring
+
+### PostHog Analytics
+
+The application includes comprehensive analytics tracking using self-hosted PostHog:
+
+#### Features Tracked
+- **User Behavior**: Page views, user journeys, session recordings
+- **Series Operations**: Create, edit, delete, and view events
+- **Match Management**: Match creation, deletion, and viewing
+- **Live Scoring**: Ball-by-ball tracking, innings completion, match completion
+- **Authentication**: User login, logout, and identification
+- **Feature Flags**: A/B testing and gradual feature rollouts
+
+#### Setup PostHog
+
+1. **Docker Compose (Local Testing)**:
+   ```bash
+   docker compose up -d
+   # PostHog will be available at http://localhost:8001
+   ```
+
+2. **Get API Key**:
+   - Access PostHog at http://localhost:8001
+   - Create account and project
+   - Copy API key from Settings
+
+3. **Configure Environment**:
+   ```env
+   NEXT_PUBLIC_POSTHOG_KEY=your_api_key
+   NEXT_PUBLIC_POSTHOG_HOST=http://localhost:8001
+   ```
+
+4. **Documentation**:
+   - [Testing Guide](web/docs/posthog-testing.md)
+   - [Deployment Guide](web/docs/posthog-deployment.md)
+   - [Environment Setup](web/ENV_SETUP.md)
+
+#### Event Types
+- **Series Events**: `series_viewed`, `series_created`, `series_edited`, `series_deleted`
+- **Match Events**: `match_viewed`, `match_created`, `match_deleted`
+- **Scorecard Events**: `scorecard_viewed`, `live_scoring_started`, `ball_added`
+- **Auth Events**: `user_logged_in`, `user_logged_out`
+
+### System Monitoring
 
 - **Health Checks**: Database, WebSocket, and system health
 - **Request Logging**: Structured logging with request IDs

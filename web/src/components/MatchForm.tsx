@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Save, X, Calendar, Users, Target, Trophy, Coins } from 'lucide-react';
+import { trackMatchCreated, trackMatchEdited } from '@/lib/analytics';
 
 interface MatchFormProps {
   match?: Match | undefined;
@@ -35,6 +36,7 @@ interface FormData {
   total_overs: number;
   toss_winner: 'A' | 'B';
   toss_type: 'H' | 'T';
+  match_number?: number;
 }
 
 interface FormErrors {
@@ -44,6 +46,7 @@ interface FormErrors {
   total_overs?: string;
   toss_winner?: string;
   toss_type?: string;
+  match_number?: string;
 }
 
 export function MatchForm({
@@ -163,8 +166,28 @@ export function MatchForm({
           matchData: apiData,
         })
       );
+      // Track match edit
+      trackMatchEdited({
+        match_id: match.id,
+        series_id: formData.series_id,
+        match_number: formData.match_number || 1,
+        match_status: 'scheduled',
+        total_overs: formData.total_overs,
+        team_a_player_count: formData.team_player_count,
+        team_b_player_count: formData.team_player_count
+      });
     } else {
       dispatch(createMatchRequest(apiData));
+      // Track match creation
+      trackMatchCreated({
+        match_id: 'new', // Will be updated when match is created
+        series_id: formData.series_id,
+        match_number: formData.match_number || 1,
+        match_status: 'scheduled',
+        total_overs: formData.total_overs,
+        team_a_player_count: formData.team_player_count,
+        team_b_player_count: formData.team_player_count
+      });
     }
 
     if (onSuccess) {

@@ -1,5 +1,6 @@
 import { Series } from '@/store/reducers/seriesSlice';
 import { Match } from '@/store/reducers/matchSlice';
+import { trackApiError, trackPerformance } from '@/lib/analytics';
 
 export interface PaginatedSeriesResult {
   series: Series[];
@@ -96,11 +97,30 @@ class ApiService {
       credentials: 'include',
     };
 
+    const startTime = performance.now();
+
     try {
       const response = await fetch(url, config);
+      const endTime = performance.now();
+      const requestDuration = endTime - startTime;
+
+      // Track API response time
+      trackPerformance({
+        metric_name: 'api_response_time',
+        metric_value: requestDuration,
+        component: 'api_service'
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Track API error
+        trackApiError({
+          endpoint,
+          status_code: response.status,
+          error_message: errorData.message || `HTTP error! status: ${response.status}`,
+          request_duration: requestDuration
+        });
 
         // Retry logic for 503 errors
         if (response.status === 503 && retryCount < 3) {
@@ -124,6 +144,9 @@ class ApiService {
         message: data.message,
       };
     } catch (error) {
+      const endTime = performance.now();
+      const requestDuration = endTime - startTime;
+
       // Retry logic for network errors
       if (
         retryCount < 3 &&
@@ -136,9 +159,25 @@ class ApiService {
         return this.request<T>(endpoint, options, retryCount + 1);
       }
 
+      // Track API error for network errors
       if (error instanceof ApiError) {
+        trackApiError({
+          endpoint,
+          status_code: error.status,
+          error_message: error.message,
+          request_duration: requestDuration
+        });
         throw error;
       }
+
+      // Track network errors
+      trackApiError({
+        endpoint,
+        status_code: 0,
+        error_message: error instanceof Error ? error.message : 'Network error',
+        request_duration: requestDuration
+      });
+
       throw new ApiError(
         error instanceof Error ? error.message : 'Network error',
         0,
@@ -168,11 +207,31 @@ class ApiService {
       },
     };
 
+    const startTime = performance.now();
+
     try {
       const response = await fetch(url, config);
+      const endTime = performance.now();
+      const requestDuration = endTime - startTime;
+
+      // Track API response time
+      trackPerformance({
+        metric_name: 'api_response_time',
+        metric_value: requestDuration,
+        component: 'scorecard_api_service'
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Track API error
+        trackApiError({
+          endpoint,
+          status_code: response.status,
+          error_message: errorData.message || `HTTP error! status: ${response.status}`,
+          request_duration: requestDuration
+        });
+
         throw new ApiError(
           errorData.message || `HTTP error! status: ${response.status}`,
           response.status,
@@ -187,6 +246,9 @@ class ApiService {
         message: data.message,
       };
     } catch (error) {
+      const endTime = performance.now();
+      const requestDuration = endTime - startTime;
+
       // Retry logic for network errors
       if (retryCount < 3 && error instanceof TypeError) {
         await new Promise(resolve =>
@@ -196,8 +258,23 @@ class ApiService {
       }
 
       if (error instanceof ApiError) {
+        // Track API error for existing ApiError
+        trackApiError({
+          endpoint,
+          status_code: error.status,
+          error_message: error.message,
+          request_duration: requestDuration
+        });
         throw error;
       }
+
+      // Track network errors
+      trackApiError({
+        endpoint,
+        status_code: 0,
+        error_message: error instanceof Error ? error.message : 'Unknown error occurred',
+        request_duration: requestDuration
+      });
 
       throw new ApiError(
         error instanceof Error ? error.message : 'Unknown error occurred',
