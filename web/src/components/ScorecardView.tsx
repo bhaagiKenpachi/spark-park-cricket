@@ -904,11 +904,6 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
-<<<<<<< HEAD
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-=======
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
->>>>>>> origin/dev
             {/* Team A */}
             <Card>
               <CardHeader className="pb-3">
@@ -924,11 +919,6 @@ export function ScorecardView({
                     )
                     .map((innings: InningsSummary) => {
                       const inningsKey = `A-${innings.innings_number}`;
-<<<<<<< HEAD
-=======
-                    // Get latest over - backend now returns the last over with balls
-                    // instead of an empty newly created over
->>>>>>> origin/dev
                       const latestOver =
                         innings.overs &&
                           Array.isArray(innings.overs) &&
@@ -1261,11 +1251,6 @@ export function ScorecardView({
                     )
                     .map((innings: InningsSummary) => {
                       const inningsKey = `B-${innings.innings_number}`;
-<<<<<<< HEAD
-=======
-                    // Get latest over - backend now returns the last over with balls
-                    // instead of an empty newly created over
->>>>>>> origin/dev
                       const latestOver =
                         innings.overs &&
                           Array.isArray(innings.overs) &&
@@ -1901,21 +1886,6 @@ export function ScorecardView({
                               {byes}
                             </button>
                           ))}
-<<<<<<< HEAD
-                    </div >
-    <div className="text-sm text-gray-600 text-center font-medium">
-      {currentByes > 0
-        ? `+${currentByes} byes selected`
-        : 'No byes selected'}
-    </div>
-=======
-                    </div>
-                    <div className="text-sm text-gray-600 text-center font-medium">
-                      {currentByes > 0
-                        ? `+${currentByes} byes selected`
-                        : 'No byes selected'}
-                    </div>
->>>>>>> origin/dev
                   </div >
                 </div >
 
@@ -2044,16 +2014,6 @@ export function ScorecardView({
                       return bNum - aNum; // Descending order (newest first)
                     });
 
-<<<<<<< HEAD
-                    // Debug logging
-                    console.log('Show All Overs Debug:', {
-                      inningsNumber: innings.innings_number,
-                      originalOverNumbers: innings.overs.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                      filteredOverNumbers: filteredOvers.map(o => ({ number: o.over_number, type: typeof o.over_number })),
-                      sortedOverNumbers: sortedOvers.map(o => ({ number: o.over_number, type: typeof o.over_number }))
-                    });
-=======
->>>>>>> origin/dev
 
                     return sortedOvers;
                   })()
