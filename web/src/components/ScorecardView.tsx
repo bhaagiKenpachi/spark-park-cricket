@@ -904,6 +904,7 @@ export function ScorecardView({
 
       {/* Teams Scorecard - Horizontal Layout - Hidden when live scoring is active */}
       {!showLiveScoring && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             {/* Team A */}
             <Card>
               <CardHeader className="pb-3">
@@ -919,6 +920,8 @@ export function ScorecardView({
                     )
                     .map((innings: InningsSummary) => {
                       const inningsKey = `A-${innings.innings_number}`;
+                    // Get latest over - backend now returns the last over with balls
+                    // instead of an empty newly created over
                       const latestOver =
                         innings.overs &&
                           Array.isArray(innings.overs) &&
@@ -1251,6 +1254,8 @@ export function ScorecardView({
                     )
                     .map((innings: InningsSummary) => {
                       const inningsKey = `B-${innings.innings_number}`;
+                    // Get latest over - backend now returns the last over with balls
+                    // instead of an empty newly created over
                       const latestOver =
                         innings.overs &&
                           Array.isArray(innings.overs) &&
@@ -1886,8 +1891,14 @@ export function ScorecardView({
                               {byes}
                             </button>
                           ))}
-                  </div >
-                </div >
+                    </div>
+                    <div className="text-sm text-gray-600 text-center font-medium">
+                      {currentByes > 0
+                        ? `+${currentByes} byes selected`
+                        : 'No byes selected'}
+                    </div>
+                  </div>
+                </div>
 
     {/* Undo Ball Action - Only show if there are balls to undo */ }
   {
