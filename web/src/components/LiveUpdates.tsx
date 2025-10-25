@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useSSE, BallEvent } from '@/hooks/useSSE';
 import { ApiService, BallEventResponse } from '@/services/api';
+import { sseConfig } from '@/config/sseConfig';
 import { fetchInningsScoreSummaryThunk, fetchLatestOverThunk } from '@/store/reducers/scorecardSlice';
 import {
     initializeMatchEvents,
@@ -117,6 +118,7 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
         needsManualRefresh,
         disconnectReason,
         lastEventTime,
+        timeUntilDisconnect,
     } = useSSE(matchId, {
         onEvent: (event) => {
             // Add event to Redux store for this specific match
@@ -360,6 +362,18 @@ export function LiveUpdates({ matchId, onEvent, className = '' }: LiveUpdatesPro
                     </div>
                 )}
             </div>
+
+            {/* Timeout Countdown Timer */}
+            {isConnected && timeUntilDisconnect !== null && (
+                <div className="text-xs text-gray-500 text-center flex items-center justify-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                        {timeUntilDisconnect > 0
+                            ? `Auto-disconnect in ${timeUntilDisconnect}s`
+                            : 'Disconnecting...'}
+                    </span>
+                </div>
+            )}
 
             {/* Inactivity Warning Banner */}
             {isIdle && !needsManualRefresh && (
