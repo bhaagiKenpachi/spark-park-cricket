@@ -36,6 +36,7 @@ export interface SSEConnectionState {
     disconnectReason: string | null;
     lastEventTime: Date | null;
     connectionStartTime: Date | null;
+    timeUntilDisconnect: number | null; // Time remaining until disconnect in seconds
 }
 
 export interface UseSSEOptions {
@@ -74,6 +75,7 @@ export function useSSE(
         disconnectReason: null,
         lastEventTime: null,
         connectionStartTime: null,
+        timeUntilDisconnect: null,
     });
 
     const eventSourceRef = useRef<EventSource | null>(null);
@@ -120,23 +122,29 @@ export function useSSE(
 
             const timeSinceLastActivity = now - referenceTime.getTime();
 
+            // Calculate time until disconnect (in seconds)
+            // Use ballEventTimeoutSeconds for the actual disconnect threshold
+            const ballEventTimeoutMs = sseConfig.ballEventTimeoutSeconds * 1000;
+            const timeUntilDisconnectSeconds = Math.max(0, Math.floor((ballEventTimeoutMs - timeSinceLastActivity) / 1000));
+
             // Check for inactivity warning
             if (timeSinceLastActivity >= sseConfig.inactivityWarningThreshold && !currentState.isIdle) {
-                return { ...currentState, isIdle: true };
+                return { ...currentState, isIdle: true, timeUntilDisconnect: timeUntilDisconnectSeconds };
             }
 
             // Check for auto-disconnect
-            if (timeSinceLastActivity >= sseConfig.inactivityDisconnectThreshold && currentState.isConnected) {
+            if (timeSinceLastActivity >= ballEventTimeoutMs && currentState.isConnected) {
                 cleanup();
                 return {
                     ...currentState,
                     needsManualRefresh: true,
                     disconnectReason: 'inactivity',
-                    isConnected: false
+                    isConnected: false,
+                    timeUntilDisconnect: 0
                 };
             }
 
-            return currentState;
+            return { ...currentState, timeUntilDisconnect: timeUntilDisconnectSeconds };
         });
     }, [cleanup]);
 
@@ -160,6 +168,7 @@ export function useSSE(
             disconnectReason: null,
             connectionStartTime: null,
             lastEventTime: null,
+            timeUntilDisconnect: sseConfig.ballEventTimeoutSeconds, // Initialize with full timeout
         }));
 
         try {

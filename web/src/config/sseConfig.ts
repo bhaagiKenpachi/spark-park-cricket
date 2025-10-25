@@ -7,6 +7,7 @@ export interface SSEConfig {
     activityCheckInterval: number; // milliseconds
     userActivityTimeout: number; // milliseconds
     debounceMs: number; // milliseconds
+    ballEventTimeoutSeconds: number; // seconds - timeout for ball events
 }
 
 // Parse environment variables with fallbacks
@@ -67,15 +68,22 @@ export const sseConfig: SSEConfig = {
         process.env.NEXT_PUBLIC_SSE_DEBOUNCE_MS,
         1000 // 1 second
     ),
+
+    // Ball event timeout in seconds (default: 120 seconds / 2 minutes)
+    ballEventTimeoutSeconds: parseEnvNumber(
+        process.env.NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT,
+        120 // 120 seconds / 2 minutes
+    ),
 };
 
-// Log configuration on client side (development only)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+// Log configuration on client side (always show for debugging)
+if (typeof window !== 'undefined') {
     console.log('🔧 SSE Configuration:', {
         inactivityWarningThreshold: `${sseConfig.inactivityWarningThreshold / 1000}s`,
         inactivityDisconnectThreshold: `${sseConfig.inactivityDisconnectThreshold / 1000}s`,
         activityCheckInterval: `${sseConfig.activityCheckInterval / 1000}s`,
         userActivityTimeout: `${sseConfig.userActivityTimeout / 1000}s`,
         debounceMs: `${sseConfig.debounceMs}ms`,
+        ballEventTimeoutSeconds: `${sseConfig.ballEventTimeoutSeconds}s`,
     });
 }
