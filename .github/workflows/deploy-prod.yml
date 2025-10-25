@@ -127,6 +127,9 @@ jobs:
             --build-arg NEXT_PUBLIC_GRAPHQL_URL=${FRONTEND_URL}/api/v1/graphql \
             --build-arg NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS }} \
+            --build-arg NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT=${{ secrets.NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT }} \
+            --build-arg NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD }} \
+            --build-arg NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD }} \
             --build-arg NODE_ENV=production \
             --tag ${{ steps.image-name.outputs.web }}:prod \
             --tag ${{ steps.image-name.outputs.web }}:prod-$(git rev-parse --short HEAD) \
@@ -212,6 +215,8 @@ jobs:
           ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
           LOG_LEVEL=info
           DEBUG=false
+          SSE_CONNECTION_TIMEOUT=${{ secrets.SSE_CONNECTION_TIMEOUT }}
+          SSE_HEARTBEAT_INTERVAL=${{ secrets.SSE_HEARTBEAT_INTERVAL }}
           ENVFILE
 
             # Create frontend .env file
@@ -221,6 +226,9 @@ jobs:
           NEXT_PUBLIC_GRAPHQL_URL=${{ secrets.FRONTEND_URL }}/api/v1/graphql
           NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
           NEXT_PUBLIC_ENABLE_ADS=${{ secrets.NEXT_PUBLIC_ENABLE_ADS }}
+          NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT=${{ secrets.NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT }}
+          NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD }}
+          NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD }}
           ENVFILE
 
             # Create docker-compose .env file for image references
