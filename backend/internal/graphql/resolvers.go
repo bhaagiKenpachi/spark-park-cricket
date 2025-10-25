@@ -350,10 +350,9 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 		return nil, fmt.Errorf("failed to get balls for over: %w", err)
 	}
 
-	// IMPORTANT FIX: If current over has no balls and it's not over 1, return the previous over with balls
-	// This happens when an over just completed and a new empty over was created
-	// We want to show the completed over with balls, not the empty new one
-	if len(balls) == 0 && scorecardOver.OverNumber > 1 {
+	// IMPORTANT FIX: Only return previous over if current over is completed and has no balls
+	// This prevents showing previous over when user is trying to add balls to a new empty over
+	if len(balls) == 0 && scorecardOver.OverNumber > 1 && scorecardOver.Status == string(models.OverStatusCompleted) {
 		// Get the previous over (should have balls)
 		innings, err := resolverCtx.ScorecardService.GetInningsByMatchAndNumber(p.Context, matchID, inningsNumber)
 		if err == nil {
@@ -365,7 +364,6 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 						// Get balls for the previous over
 						prevBalls, err := resolverCtx.ScorecardService.GetBallsByOver(p.Context, over.ID)
 						if err == nil && len(prevBalls) > 0 {
-							log.Printf("Current over %d is empty, returning previous over %d with %d balls", scorecardOver.OverNumber, over.OverNumber, len(prevBalls))
 							scorecardOver = over
 							balls = prevBalls
 							break
@@ -374,6 +372,8 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 				}
 			}
 		}
+	} else if len(balls) == 0 && scorecardOver.Status == string(models.OverStatusInProgress) {
+		// Current over is in progress but empty - this is normal for new overs
 	}
 
 	// Convert ScorecardBall to BallSummary
@@ -391,10 +391,17 @@ func resolveLatestOver(p graphql.ResolveParams) (interface{}, error) {
 	}
 
 	// Convert ScorecardOver to OverSummary
+	// BUG FIX: For display purposes, total_balls should show the actual number of balls in the over
+	// (including no balls and wides), not just legal balls. This ensures the frontend displays
+	// the correct ball count when no balls are added at the start of a new over.
+	// Previously: used scorecardOver.TotalBalls (only legal balls)
+	// Now: use len(ballSummaries) (all balls including no balls/wides)
+	actualTotalBalls := len(ballSummaries)
+
 	overSummary := map[string]interface{}{
 		"over_number":   scorecardOver.OverNumber,
 		"total_runs":    scorecardOver.TotalRuns,
-		"total_balls":   scorecardOver.TotalBalls,
+		"total_balls":   actualTotalBalls, // Use actual ball count instead of database TotalBalls
 		"total_wickets": scorecardOver.TotalWickets,
 		"status":        scorecardOver.Status,
 		"balls":         ballSummaries,

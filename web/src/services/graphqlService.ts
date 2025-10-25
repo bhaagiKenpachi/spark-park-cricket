@@ -55,6 +55,7 @@ export class GraphQLService {
    */
   async getLatestOverOnly(matchId: string, inningsNumber: number) {
     try {
+
       const { data } = await apolloClient.query<LatestOverOnlyResponse>({
         query: GET_LATEST_OVER_ONLY,
         variables: {
@@ -63,6 +64,7 @@ export class GraphQLService {
         },
         fetchPolicy: 'network-only', // Always fetch fresh data
       });
+
 
       return {
         success: true,
