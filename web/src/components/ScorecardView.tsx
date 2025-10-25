@@ -1,5 +1,17 @@
 'use client';
 
+// ⚠️ CRITICAL BUG FIX DOCUMENTATION ⚠️
+// ==========================================
+// OVERS SORTING ORDER - DO NOT CHANGE
+// ==========================================
+// This component has been fixed 10+ times for the same issue:
+// - Overs MUST be displayed in DESCENDING order (higher over numbers first)
+// - Users expect to see latest overs at the top for better UX
+// - DO NOT change sorting from (b.over_number - a.over_number) to (a.over_number - b.over_number)
+// - This affects multiple locations in the code - search for "CRITICAL BUG FIX" comments
+// - If you change this, users will complain and it will need to be reverted
+// ==========================================
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
@@ -42,7 +54,6 @@ import {
   trackOverCompleted,
 } from '@/lib/analytics';
 import { TimeTrackingView } from '@/components/TimeTrackingView';
-import { HorizontalBallList } from '@/components/HorizontalBallDisplay';
 
 interface ScorecardViewProps {
   matchId: string;
@@ -77,7 +88,6 @@ export function ScorecardView({
   } | null>(null);
   const showLiveUpdates = true; // Always show live events
   const [showTimeTracking, setShowTimeTracking] = useState(false);
-  const horizontalDisplay = true; // Always use horizontal display
   const lastOverNumbersRef = useRef<{ [key: string]: number }>({});
 
   // Check if current user owns the series
@@ -642,31 +652,6 @@ export function ScorecardView({
   };
 
   const renderOverDetails = (over: OverSummary) => {
-    if (horizontalDisplay && over.balls && Array.isArray(over.balls) && over.balls.length > 0) {
-      // Calculate running totals for horizontal display
-      let runningScore = 0;
-      let runningWickets = 0;
-
-      const sortedBalls = [...over.balls].sort((a: BallSummary, b: BallSummary) => a.ball_number - b.ball_number);
-
-      return (
-        <div key={over.over_number} className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h5 className="font-medium text-sm">Over {over.over_number}</h5>
-            <div className="text-xs text-gray-600">
-              {over.total_runs} runs, {over.total_wickets} wickets
-            </div>
-          </div>
-          <HorizontalBallList
-            balls={sortedBalls}
-            overNumber={over.over_number}
-            currentScore={over.total_runs}
-            currentWickets={over.total_wickets}
-          />
-        </div>
-      );
-    }
-
     return (
       <div key={over.over_number} className="mb-4">
         <div className="flex items-center justify-between mb-2">
@@ -1257,9 +1242,14 @@ export function ScorecardView({
                                   // Remove duplicates by keeping only the first occurrence of each over number
                                   self.findIndex(o => o.over_number === over.over_number) === index
                                 )
+                                // ⚠️ CRITICAL BUG FIX - DO NOT CHANGE SORTING ORDER ⚠️
+                                // This sorting shows overs in DESCENDING order (higher over numbers first)
+                                // This has been fixed 10+ times - users expect to see latest overs first
+                                // DO NOT change to ascending order (a.over_number - b.over_number)
+                                // Latest overs should appear at the top for better UX
                                 .sort(
                                   (a: OverSummary, b: OverSummary) =>
-                                    a.over_number - b.over_number
+                                    b.over_number - a.over_number
                                 )
                                 .map((over: OverSummary) =>
                                   renderOverDetails(over)
@@ -1574,9 +1564,14 @@ export function ScorecardView({
                                   // Remove duplicates by keeping only the first occurrence of each over number
                                   self.findIndex(o => o.over_number === over.over_number) === index
                                 )
+                                // ⚠️ CRITICAL BUG FIX - DO NOT CHANGE SORTING ORDER ⚠️
+                                // This sorting shows overs in DESCENDING order (higher over numbers first)
+                                // This has been fixed 10+ times - users expect to see latest overs first
+                                // DO NOT change to ascending order (a.over_number - b.over_number)
+                                // Latest overs should appear at the top for better UX
                                 .sort(
                                   (a: OverSummary, b: OverSummary) =>
-                                    a.over_number - b.over_number
+                                    b.over_number - a.over_number
                                 )
                                 .map((over: OverSummary) =>
                                   renderOverDetails(over)
@@ -2049,6 +2044,11 @@ export function ScorecardView({
                                   self.findIndex(o => o.over_number === over.over_number) === index
                                 );
 
+                                // ⚠️ CRITICAL BUG FIX - DO NOT CHANGE SORTING ORDER ⚠️
+                                // This sorting shows overs in DESCENDING order (higher over numbers first)
+                                // This has been fixed 10+ times - users expect to see latest overs first
+                                // DO NOT change to ascending order (aNum - bNum)
+                                // Latest overs should appear at the top for better UX
                                 const sortedOvers = filteredOvers.sort((a: OverSummary, b: OverSummary) => {
                                   const aNum = Number(a.over_number);
                                   const bNum = Number(b.over_number);
