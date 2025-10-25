@@ -295,7 +295,6 @@ func (r *scorecardRepository) GetCurrentOver(ctx context.Context, inningsID stri
 		return nil, fmt.Errorf("no current over found")
 	}
 
-	log.Printf("Found current over %d for innings %s", overs[0].OverNumber, inningsID)
 	return overs[0], nil
 }
 
