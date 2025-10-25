@@ -6,6 +6,7 @@ import {
   take,
   select,
   fork,
+  delay,
   CallEffect,
   PutEffect,
   SelectEffect,
@@ -137,6 +138,10 @@ export function* addBallSaga(
     if (currentInningsData) {
       // Use optimized GraphQL methods to refresh specific data after adding ball
       try {
+        // Add a small delay to ensure backend cache invalidation is complete
+        yield delay(100);
+
+
         // Fetch innings score summary for the current innings
         yield put(
           fetchInningsScoreSummaryThunk({
@@ -145,15 +150,27 @@ export function* addBallSaga(
           })
         );
 
-        // Fetch latest over for the current innings
-        // Note: The reducer adds new overs to the array, so we'll have both
-        // the completed over and any newly created over in state
-        yield put(
-          fetchLatestOverThunk({
-            matchId: ballEvent.match_id,
-            inningsNumber: ballEvent.innings_number,
-          })
-        );
+        // Fetch latest over for the current innings with retry mechanism
+        // This ensures we get the updated over data after ball addition
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        while (retryCount < maxRetries) {
+
+          yield put(
+            fetchLatestOverThunk({
+              matchId: ballEvent.match_id,
+              inningsNumber: ballEvent.innings_number,
+            })
+          );
+
+          // If this is not the last retry, add a small delay
+          if (retryCount < maxRetries - 1) {
+            yield delay(50);
+          }
+
+          retryCount++;
+        }
 
         // Note: Full scorecard refresh is not needed on every ball
         // It will be called automatically when innings transitions occur

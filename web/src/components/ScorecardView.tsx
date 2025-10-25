@@ -1743,17 +1743,19 @@ export function ScorecardView({
 
                         {/* Current Over Display */}
                         {(() => {
-                          // Calculate what the current over number should be
-                          const totalOversPlayed = innings.total_overs || 0;
-                          const currentOverNumber = Math.ceil(totalOversPlayed) || 1;
-
-                          // Find the over object that matches the current over number
+                          // BUG FIX: Use the latest over data from the store instead of calculating from total_overs
+                          // This ensures we show the current over with no balls, not the previous completed over.
+                          // Previously: calculated currentOverNumber = Math.ceil(innings.total_overs) which only
+                          // counts completed overs (legal balls), causing display of previous over when no balls
+                          // are added at start of new over.
+                          // Now: use the latest over from store data which includes current over with no balls.
                           const currentInningsOver = innings.overs && Array.isArray(innings.overs) && innings.overs.length > 0
-                            ? innings.overs.find((over: OverSummary) => over.over_number === currentOverNumber) ||
-                            innings.overs.reduce((latest: OverSummary, current: OverSummary) =>
+                            ? innings.overs.reduce((latest: OverSummary, current: OverSummary) =>
                               current.over_number > latest.over_number ? current : latest
                             )
                             : null;
+
+                          const currentOverNumber = currentInningsOver?.over_number || 1;
 
                           return (
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
