@@ -92,7 +92,8 @@ func (h *SSEHandler) StreamBallEvents(w http.ResponseWriter, r *http.Request) {
 	lastID := "$" // $ means start from the latest event
 
 	// Create context with cancellation and timeout
-	ctx, cancel := context.WithTimeout(r.Context(), h.config.SSEConnectionTimeout)
+	// Use background context to avoid request context timeout issues
+	ctx, cancel := context.WithTimeout(context.Background(), h.config.SSEConnectionTimeout)
 	defer cancel()
 
 	// Create ticker for periodic heartbeat using config
@@ -261,7 +262,8 @@ func (h *SSEHandler) StreamMatchEvents(w http.ResponseWriter, r *http.Request) {
 	lastID := "$"
 
 	// Create context with cancellation and timeout
-	ctx, cancel := context.WithTimeout(r.Context(), h.config.SSEConnectionTimeout)
+	// Use background context to avoid request context timeout issues
+	ctx, cancel := context.WithTimeout(context.Background(), h.config.SSEConnectionTimeout)
 	defer cancel()
 
 	// Create ticker for periodic heartbeat using config
