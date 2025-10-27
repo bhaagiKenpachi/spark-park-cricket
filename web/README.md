@@ -2,6 +2,16 @@
 
 A modern Next.js frontend for the Spark Park Cricket tournament management system, built with TypeScript, Redux Toolkit, and Redux Saga.
 
+## 🔐 Security & Authorization
+
+### Team Management Authorization
+The application implements creator-based authorization for team management. See [TEAM_AUTHORIZATION.md](./TEAM_AUTHORIZATION.md) for detailed documentation.
+
+**Key Points:**
+- Only team creators can delete, add, or remove players from teams
+- Authorization is enforced at the component level using `team.created_by === currentUserId`
+- Critical security checks must not be removed or modified without understanding implications
+
 ## 🚀 Tech Stack
 
 - **Framework**: Next.js 15 with App Router
