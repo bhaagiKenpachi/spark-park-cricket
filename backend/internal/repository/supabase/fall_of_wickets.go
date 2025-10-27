@@ -26,7 +26,7 @@ func NewFallOfWicketsRepository(client *supabase.Client) interfaces.FallOfWicket
 // Create creates a new fall of wickets record
 func (r *fallOfWicketsRepository) Create(ctx context.Context, fallOfWickets *models.FallOfWickets) error {
 	var result []models.FallOfWickets
-	_, err := r.client.From("dev_v1.fall_of_wickets").Insert(fallOfWickets, false, "", "", "").ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").Insert(fallOfWickets, false, "", "", "").ExecuteTo(&result)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (r *fallOfWicketsRepository) Create(ctx context.Context, fallOfWickets *mod
 // GetByID retrieves a fall of wickets record by ID
 func (r *fallOfWicketsRepository) GetByID(ctx context.Context, id string) (*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("dev_v1.fall_of_wickets").Select("*", "", false).Eq("id", id).ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("id", id).ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (r *fallOfWicketsRepository) GetByID(ctx context.Context, id string) (*mode
 
 // List retrieves fall of wickets records with optional filters
 func (r *fallOfWicketsRepository) List(ctx context.Context, filters *models.FallOfWicketsFilters) ([]*models.FallOfWickets, error) {
-	query := r.client.From("dev_v1.fall_of_wickets").Select("*", "", false)
+	query := r.client.From("fall_of_wickets").Select("*", "", false)
 
 	if filters.MatchID != nil && *filters.MatchID != "" {
 		query = query.Eq("match_id", *filters.MatchID)
@@ -97,7 +97,7 @@ func (r *fallOfWicketsRepository) Update(ctx context.Context, id string, req *mo
 	}
 
 	// Update in database
-	_, err = r.client.From("dev_v1.fall_of_wickets").Update(existing, "", "").Eq("id", id).ExecuteTo(&[]models.FallOfWickets{})
+	_, err = r.client.From("fall_of_wickets").Update(existing, "", "").Eq("id", id).ExecuteTo(&[]models.FallOfWickets{})
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +107,14 @@ func (r *fallOfWicketsRepository) Update(ctx context.Context, id string, req *mo
 
 // Delete deletes a fall of wickets record
 func (r *fallOfWicketsRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.client.From("dev_v1.fall_of_wickets").Delete("", "").Eq("id", id).ExecuteTo(&[]models.FallOfWickets{})
+	_, err := r.client.From("fall_of_wickets").Delete("", "").Eq("id", id).ExecuteTo(&[]models.FallOfWickets{})
 	return err
 }
 
 // GetByMatchID retrieves all fall of wickets records for a match
 func (r *fallOfWicketsRepository) GetByMatchID(ctx context.Context, matchID string) ([]*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("dev_v1.fall_of_wickets").Select("*", "", false).Eq("match_id", matchID).Order("wicket_number", &postgrest.OrderOpts{
+	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("match_id", matchID).Order("wicket_number", &postgrest.OrderOpts{
 		Ascending: true,
 	}).ExecuteTo(&result)
 	if err != nil {
@@ -133,7 +133,7 @@ func (r *fallOfWicketsRepository) GetByMatchID(ctx context.Context, matchID stri
 // GetByInningsID retrieves all fall of wickets records for an innings
 func (r *fallOfWicketsRepository) GetByInningsID(ctx context.Context, inningsID string) ([]*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("dev_v1.fall_of_wickets").Select("*", "", false).Eq("innings_id", inningsID).Order("wicket_number", &postgrest.OrderOpts{
+	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("innings_id", inningsID).Order("wicket_number", &postgrest.OrderOpts{
 		Ascending: true,
 	}).ExecuteTo(&result)
 	if err != nil {
@@ -152,7 +152,7 @@ func (r *fallOfWicketsRepository) GetByInningsID(ctx context.Context, inningsID 
 // GetByBallID retrieves fall of wickets record for a specific ball
 func (r *fallOfWicketsRepository) GetByBallID(ctx context.Context, ballID string) (*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("dev_v1.fall_of_wickets").Select("*", "", false).Eq("ball_id", ballID).ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("ball_id", ballID).ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (r *fallOfWicketsRepository) GetWicketNumberForInnings(ctx context.Context,
 		Count int `json:"count"`
 	}
 
-	_, err := r.client.From("dev_v1.fall_of_wickets").Select("count", "", false).Eq("innings_id", inningsID).ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").Select("count", "", false).Eq("innings_id", inningsID).ExecuteTo(&result)
 	if err != nil {
 		return 0, err
 	}
@@ -180,14 +180,6 @@ func (r *fallOfWicketsRepository) GetWicketNumberForInnings(ctx context.Context,
 	}
 
 	return result[0].Count + 1, nil
-}
-
-// GetScoreAtWicket calculates the score at the time of wicket
-func (r *fallOfWicketsRepository) GetScoreAtWicket(ctx context.Context, inningsID string, overNumber int, ballNumber int) (int, error) {
-	// This is a simplified calculation - in a real implementation, you'd need to
-	// calculate the actual score based on all balls up to this point
-	// For now, we'll return a placeholder value
-	return 0, nil
 }
 
 // GetSummary retrieves a summary of fall of wickets for a match/innings

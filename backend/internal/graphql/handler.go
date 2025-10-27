@@ -291,7 +291,7 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 				},
 			},
 			"playerStatistics": &graphql.Field{
-				Type: graphql.NewList(playerStatisticsType),
+				Type: graphql.NewList(playerType),
 				Args: graphql.FieldConfigArgument{
 					"match_id": &graphql.ArgumentConfig{
 						Type: graphql.NewNonNull(graphql.String),

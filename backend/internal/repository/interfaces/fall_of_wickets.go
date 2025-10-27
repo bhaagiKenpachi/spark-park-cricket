@@ -37,7 +37,4 @@ type FallOfWicketsRepository interface {
 
 	// GetWicketNumberForInnings gets the next wicket number for an innings
 	GetWicketNumberForInnings(ctx context.Context, inningsID string) (int, error)
-
-	// GetScoreAtWicket calculates the score when a wicket fell
-	GetScoreAtWicket(ctx context.Context, inningsID string, overNumber int, ballNumber int) (int, error)
 }

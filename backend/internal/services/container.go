@@ -73,7 +73,6 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 			dbClient.Repositories.FallOfWickets,
 			dbClient.Repositories.Scorecard,
 			dbClient.Repositories.Match,
-			dbClient.Repositories.User, // Using User repository as Player repository for now
 		),
 		// Monitoring
 		Metrics: metrics,

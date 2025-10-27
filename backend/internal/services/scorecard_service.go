@@ -2065,7 +2065,7 @@ func (s *ScorecardService) GetBallEvents(ctx context.Context, matchID string) ([
 }
 
 // createFallOfWicketsRecord creates a fall of wickets record for the new AddBall method
-func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventRequest, ball *models.ScorecardBall, data *models.ScorecardData) {
+func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventRequest, ball *models.ScorecardBall, data *models.MatchInningsOverData) {
 	ctx := context.Background()
 
 	// Get the next wicket number for this innings
@@ -2075,12 +2075,9 @@ func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventReques
 		return
 	}
 
-	// Calculate score at wicket
-	scoreAtWicket, err := s.fallOfWicketsRepo.GetScoreAtWicket(ctx, data.InningsID, data.OverNumber, ball.BallNumber)
-	if err != nil {
-		log.Printf("Error calculating score at wicket: %v", err)
-		return
-	}
+	// Use the current innings total runs instead of calculating from scratch
+	// The data.InningsTotalRuns already contains the cumulative score up to this point
+	scoreAtWicket := data.InningsTotalRuns
 
 	// Create fall of wickets record
 	fallOfWickets := &models.FallOfWickets{
@@ -2105,7 +2102,7 @@ func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventReques
 }
 
 // createFallOfWicketsRecordLegacy creates a fall of wickets record for the legacy AddBall method
-func (s *ScorecardService) createFallOfWicketsRecordLegacy(ctx context.Context, req *models.BallEventRequest, ball *models.ScorecardBall, innings *models.ScorecardInnings, over *models.ScorecardOver) {
+func (s *ScorecardService) createFallOfWicketsRecordLegacy(ctx context.Context, req *models.BallEventRequest, ball *models.ScorecardBall, innings *models.Innings, over *models.ScorecardOver) {
 	// Get the next wicket number for this innings
 	wicketNumber, err := s.fallOfWicketsRepo.GetWicketNumberForInnings(ctx, innings.ID)
 	if err != nil {
@@ -2113,12 +2110,9 @@ func (s *ScorecardService) createFallOfWicketsRecordLegacy(ctx context.Context, 
 		return
 	}
 
-	// Calculate score at wicket
-	scoreAtWicket, err := s.fallOfWicketsRepo.GetScoreAtWicket(ctx, innings.ID, over.OverNumber, ball.BallNumber)
-	if err != nil {
-		log.Printf("Error calculating score at wicket: %v", err)
-		return
-	}
+	// Use the current innings total runs instead of calculating from scratch
+	// The innings.TotalRuns already contains the cumulative score up to this point
+	scoreAtWicket := innings.TotalRuns
 
 	// Create fall of wickets record
 	fallOfWickets := &models.FallOfWickets{

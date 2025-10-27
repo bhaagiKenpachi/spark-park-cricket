@@ -162,6 +162,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
 			// Public routes (view only)
 			r.Get("/", fallOfWicketsHandler.ListFallOfWickets)
+			r.Get("/summary", fallOfWicketsHandler.GetFallOfWicketsSummary)
 			r.Get("/{id}", fallOfWicketsHandler.GetFallOfWicketsByID)
 
 			// Protected routes (require authentication and ownership)
