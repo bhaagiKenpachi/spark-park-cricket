@@ -44,6 +44,7 @@ import {
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
 import { LiveUpdates } from '@/components/LiveUpdates';
+import { FallOfWicketsDisplay } from '@/components/FallOfWicketsDisplay';
 import { BallEvent } from '@/hooks/useSSE';
 import {
   trackScorecardViewed,
@@ -838,6 +839,16 @@ export function ScorecardView({
           </div>
           <LiveUpdates
             matchId={matchId}
+          />
+        </div>
+      )}
+
+      {/* Fall of Wickets Section */}
+      {scorecardData.match_status === 'live' && (
+        <div className="mb-6">
+          <FallOfWicketsDisplay
+            matchId={matchId}
+            className="w-full"
           />
         </div>
       )}

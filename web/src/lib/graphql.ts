@@ -221,6 +221,18 @@ export const GET_LIVE_SCORECARD = gql`
           }
         }
       }
+      fall_of_wickets {
+        match_id
+        innings_id
+        total_wickets
+        wickets {
+          wicket_number
+          score
+          over_number
+          ball_number
+          over_position
+        }
+      }
     }
   }
 `;
@@ -424,6 +436,18 @@ export interface LiveScorecardResponse {
         }>;
       }>;
     }>;
+    fall_of_wickets?: {
+      match_id: string;
+      innings_id: string;
+      total_wickets: number;
+      wickets: Array<{
+        wicket_number: number;
+        score: number;
+        over_number: number;
+        ball_number: number;
+        over_position: string;
+      }>;
+    };
   };
 }
 

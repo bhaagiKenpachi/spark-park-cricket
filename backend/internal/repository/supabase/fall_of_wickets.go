@@ -114,9 +114,12 @@ func (r *fallOfWicketsRepository) Delete(ctx context.Context, id string) error {
 // GetByMatchID retrieves all fall of wickets records for a match
 func (r *fallOfWicketsRepository) GetByMatchID(ctx context.Context, matchID string) ([]*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("match_id", matchID).Order("wicket_number", &postgrest.OrderOpts{
-		Ascending: true,
-	}).ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").
+		Select("*", "", false).
+		Eq("match_id", matchID).
+		Order("innings_number", &postgrest.OrderOpts{Ascending: true}).
+		Order("wicket_number", &postgrest.OrderOpts{Ascending: true}).
+		ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -133,9 +136,11 @@ func (r *fallOfWicketsRepository) GetByMatchID(ctx context.Context, matchID stri
 // GetByInningsID retrieves all fall of wickets records for an innings
 func (r *fallOfWicketsRepository) GetByInningsID(ctx context.Context, inningsID string) ([]*models.FallOfWickets, error) {
 	var result []models.FallOfWickets
-	_, err := r.client.From("fall_of_wickets").Select("*", "", false).Eq("innings_id", inningsID).Order("wicket_number", &postgrest.OrderOpts{
-		Ascending: true,
-	}).ExecuteTo(&result)
+	_, err := r.client.From("fall_of_wickets").
+		Select("*", "", false).
+		Eq("innings_id", inningsID).
+		Order("wicket_number", &postgrest.OrderOpts{Ascending: true}).
+		ExecuteTo(&result)
 	if err != nil {
 		return nil, err
 	}

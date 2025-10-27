@@ -2081,15 +2081,16 @@ func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventReques
 
 	// Create fall of wickets record
 	fallOfWickets := &models.FallOfWickets{
-		MatchID:      req.MatchID,
-		InningsID:    data.InningsID,
-		OverID:       data.OverID,
-		BallID:       ball.ID,
-		WicketNumber: wicketNumber,
-		Score:        scoreAtWicket,
-		OverNumber:   data.OverNumber,
-		BallNumber:   ball.BallNumber,
-		CreatedAt:    time.Now(),
+		MatchID:       req.MatchID,
+		InningsID:     data.InningsID,
+		InningsNumber: data.InningsNumber,
+		OverID:        data.OverID,
+		BallID:        ball.ID,
+		WicketNumber:  wicketNumber,
+		Score:         scoreAtWicket,
+		OverNumber:    data.OverNumber,
+		BallNumber:    ball.BallNumber,
+		CreatedAt:     time.Now(),
 	}
 
 	err = s.fallOfWicketsRepo.Create(ctx, fallOfWickets)
@@ -2116,15 +2117,16 @@ func (s *ScorecardService) createFallOfWicketsRecordLegacy(ctx context.Context, 
 
 	// Create fall of wickets record
 	fallOfWickets := &models.FallOfWickets{
-		MatchID:      req.MatchID,
-		InningsID:    innings.ID,
-		OverID:       over.ID,
-		BallID:       ball.ID,
-		WicketNumber: wicketNumber,
-		Score:        scoreAtWicket,
-		OverNumber:   over.OverNumber,
-		BallNumber:   ball.BallNumber,
-		CreatedAt:    time.Now(),
+		MatchID:       req.MatchID,
+		InningsID:     innings.ID,
+		InningsNumber: innings.InningsNumber,
+		OverID:        over.ID,
+		BallID:        ball.ID,
+		WicketNumber:  wicketNumber,
+		Score:         scoreAtWicket,
+		OverNumber:    over.OverNumber,
+		BallNumber:    ball.BallNumber,
+		CreatedAt:     time.Now(),
 	}
 
 	err = s.fallOfWicketsRepo.Create(ctx, fallOfWickets)

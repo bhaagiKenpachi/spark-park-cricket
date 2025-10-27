@@ -1,6 +1,13 @@
 import { Series } from '@/store/reducers/seriesSlice';
 import { Match } from '@/store/reducers/matchSlice';
 import { trackApiError, trackPerformance } from '@/lib/analytics';
+import {
+  FallOfWickets,
+  FallOfWicketsSummary,
+  CreateFallOfWicketsRequest,
+  UpdateFallOfWicketsRequest,
+  FallOfWicketsFilters,
+} from '@/types/fallOfWickets';
 
 export interface PaginatedSeriesResult {
   series: Series[];
@@ -658,6 +665,71 @@ class ApiService {
   async getBallEvents(matchId: string): Promise<ApiResponse<BallEventResponse[]>> {
     return this.request<BallEventResponse[]>(`/scorecard/${matchId}/events`, {
       method: 'GET',
+    });
+  }
+
+  // Fall of Wickets API methods
+  async createFallOfWickets(fallOfWicketsData: CreateFallOfWicketsRequest): Promise<ApiResponse<FallOfWickets>> {
+    return this.request<FallOfWickets>('/fall-of-wickets', {
+      method: 'POST',
+      body: JSON.stringify(fallOfWicketsData),
+    });
+  }
+
+  async getFallOfWicketsById(id: string): Promise<ApiResponse<FallOfWickets>> {
+    return this.request<FallOfWickets>(`/fall-of-wickets/${id}`);
+  }
+
+  async listFallOfWickets(filters?: FallOfWicketsFilters): Promise<ApiResponse<FallOfWickets[]>> {
+    const params = new URLSearchParams();
+    if (filters?.match_id) params.append('match_id', filters.match_id);
+    if (filters?.innings_id) params.append('innings_id', filters.innings_id);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/fall-of-wickets?${queryString}` : '/fall-of-wickets';
+
+    return this.request<FallOfWickets[]>(endpoint);
+  }
+
+  async updateFallOfWickets(id: string, updateData: UpdateFallOfWicketsRequest): Promise<ApiResponse<FallOfWickets>> {
+    return this.request<FallOfWickets>(`/fall-of-wickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  async deleteFallOfWickets(id: string): Promise<ApiResponse<void>> {
+    return this.request<void>(`/fall-of-wickets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getFallOfWicketsByMatch(matchId: string): Promise<ApiResponse<FallOfWickets[]>> {
+    return this.request<FallOfWickets[]>(`/matches/${matchId}/fall-of-wickets`);
+  }
+
+  async getFallOfWicketsByInnings(inningsId: string): Promise<ApiResponse<FallOfWickets[]>> {
+    return this.request<FallOfWickets[]>(`/innings/${inningsId}/fall-of-wickets`);
+  }
+
+  async getFallOfWicketsByBall(ballId: string): Promise<ApiResponse<FallOfWickets>> {
+    return this.request<FallOfWickets>(`/balls/${ballId}/fall-of-wickets`);
+  }
+
+  async getFallOfWicketsSummary(matchId: string, inningsId?: string): Promise<ApiResponse<FallOfWicketsSummary>> {
+    const params = new URLSearchParams();
+    params.append('match_id', matchId);
+    if (inningsId) params.append('innings_id', inningsId);
+
+    return this.request<FallOfWicketsSummary>(`/fall-of-wickets/summary?${params.toString()}`);
+  }
+
+  async createFallOfWicketsFromBall(ballId: string, score: number): Promise<ApiResponse<FallOfWickets>> {
+    return this.request<FallOfWickets>('/fall-of-wickets/from-ball', {
+      method: 'POST',
+      body: JSON.stringify({ ball_id: ballId, score }),
     });
   }
 }

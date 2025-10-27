@@ -73,14 +73,15 @@ func (s *FallOfWicketsService) CreateFallOfWickets(ctx context.Context, req *mod
 
 	// Create the fall of wickets record
 	fallOfWickets := &models.FallOfWickets{
-		MatchID:      req.MatchID,
-		InningsID:    req.InningsID,
-		OverID:       req.OverID,
-		BallID:       req.BallID,
-		WicketNumber: req.WicketNumber,
-		Score:        req.Score,
-		OverNumber:   req.OverNumber,
-		BallNumber:   req.BallNumber,
+		MatchID:       req.MatchID,
+		InningsID:     req.InningsID,
+		InningsNumber: req.InningsNumber,
+		OverID:        req.OverID,
+		BallID:        req.BallID,
+		WicketNumber:  req.WicketNumber,
+		Score:         req.Score,
+		OverNumber:    req.OverNumber,
+		BallNumber:    req.BallNumber,
 	}
 
 	err = s.fallOfWicketsRepo.Create(ctx, fallOfWickets)
@@ -220,14 +221,15 @@ func (s *FallOfWicketsService) CreateFallOfWicketsFromBall(ctx context.Context, 
 
 	// Create the fall of wickets request
 	req := &models.CreateFallOfWicketsRequest{
-		MatchID:      innings.MatchID,
-		InningsID:    innings.ID,
-		OverID:       over.ID,
-		BallID:       ball.ID,
-		WicketNumber: 1, // This should be calculated properly
-		Score:        score,
-		OverNumber:   1, // This should be retrieved from the ball
-		BallNumber:   1, // This should be retrieved from the ball
+		MatchID:       innings.MatchID,
+		InningsID:     innings.ID,
+		InningsNumber: 1, // Default to first innings
+		OverID:        over.ID,
+		BallID:        ball.ID,
+		WicketNumber:  1, // This should be calculated properly
+		Score:         score,
+		OverNumber:    1, // This should be retrieved from the ball
+		BallNumber:    1, // This should be retrieved from the ball
 	}
 
 	return s.CreateFallOfWickets(ctx, req)
