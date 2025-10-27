@@ -5,7 +5,7 @@ export interface VoteTeam {
     team_name: string;
     team_letter: 'A' | 'B';
     captain_id: string;
-    created_by: string;
+    created_by: string; // CRITICAL: Used for creator authorization in TeamCard
     created_at: string;
     updated_at: string;
 }
