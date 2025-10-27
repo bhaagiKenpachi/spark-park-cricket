@@ -1,5 +1,21 @@
 'use client';
 
+/**
+ * TeamManagement Component - Team Management Interface
+ * 
+ * AUTHORIZATION INTEGRATION:
+ * ==========================
+ * This component passes the currentUserId to TeamCard components for
+ * creator-based authorization. The TeamCard component uses this to:
+ * 
+ * 1. Check if current user is team creator (team.created_by === currentUserId)
+ * 2. Show/hide management buttons based on creator status
+ * 3. Display appropriate visual indicators
+ * 
+ * IMPORTANT: The currentUserId prop is critical for security.
+ * Without it, TeamCard cannot determine authorization levels.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/reducers';
@@ -148,12 +164,13 @@ export default function TeamManagement({
 
             {/* Teams Display */}
             <div className="space-y-3">
+                {/* TEAM A: Pass currentUserId for creator authorization */}
                 {teamA && (
                     <TeamCard
                         team={teamA}
                         voters={voters}
                         allTeams={teams}
-                        currentUserId={currentUserId}
+                        currentUserId={currentUserId} // CRITICAL: Required for authorization
                         isAuthenticated={isAuthenticated}
                         onAddPlayers={handleAddPlayers}
                         onRemovePlayer={handleRemovePlayer}
@@ -162,12 +179,13 @@ export default function TeamManagement({
                     />
                 )}
 
+                {/* TEAM B: Pass currentUserId for creator authorization */}
                 {teamB && (
                     <TeamCard
                         team={teamB}
                         voters={voters}
                         allTeams={teams}
-                        currentUserId={currentUserId}
+                        currentUserId={currentUserId} // CRITICAL: Required for authorization
                         isAuthenticated={isAuthenticated}
                         onAddPlayers={handleAddPlayers}
                         onRemovePlayer={handleRemovePlayer}

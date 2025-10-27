@@ -1,5 +1,37 @@
 'use client';
 
+/**
+ * TeamCard Component - Team Management with Creator Authorization
+ * 
+ * AUTHORIZATION SYSTEM:
+ * ====================
+ * This component implements creator-based authorization for team management:
+ * 
+ * 1. TEAM CREATOR PERMISSIONS:
+ *    - Can delete the entire team
+ *    - Can add players to the team
+ *    - Can remove players from the team (except captain)
+ *    - Sees "✓ You created this team" indicator
+ * 
+ * 2. NON-CREATOR PERMISSIONS:
+ *    - Can only view team information
+ *    - Cannot see management buttons (delete, add, remove)
+ *    - No visual indicators about management capabilities
+ * 
+ * 3. AUTHORIZATION CHECK:
+ *    - Uses: team.created_by === currentUserId
+ *    - All management operations are gated behind isTeamCreator check
+ *    - Prevents unauthorized team modifications
+ * 
+ * 4. CAPTAIN PROTECTION:
+ *    - Captain cannot be removed (player.id !== team.captain_id)
+ *    - This is separate from creator authorization
+ * 
+ * IMPORTANT: Do not remove or modify the isTeamCreator checks without
+ * understanding the security implications. All team management operations
+ * must be restricted to the team creator only.
+ */
+
 import React, { useState } from 'react';
 import { VoteTeamWithPlayers, User } from '@/types/team';
 import { Button } from '@/components/ui/button';
@@ -26,9 +58,13 @@ export default function TeamCard({
     isAuthenticated,
     onAddPlayers,
     onRemovePlayer,
-    onUpdateCaptain,
+    onUpdateCaptain: _onUpdateCaptain,
     onDeleteTeam,
 }: TeamCardProps) {
+    // AUTHORIZATION: Check if current user is the team creator
+    // Only team creators can delete teams, add/remove players
+    // This prevents unauthorized team modifications
+    const isTeamCreator = currentUserId && team.created_by === currentUserId;
     const [showPlayerSelection, setShowPlayerSelection] = useState(false);
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
 
@@ -61,7 +97,6 @@ export default function TeamCard({
         }
     };
 
-    const teamColor = team.team_letter === 'A' ? 'blue' : 'red';
     const bgColor = team.team_letter === 'A' ? 'bg-blue-50' : 'bg-red-50';
     const borderColor = team.team_letter === 'A' ? 'border-blue-200' : 'border-red-200';
     const textColor = team.team_letter === 'A' ? 'text-blue-700' : 'text-red-700';
@@ -73,12 +108,15 @@ export default function TeamCard({
                     <CardTitle className={`text-lg font-bold ${textColor}`}>
                         Team {team.team_letter}: {team.team_name}
                     </CardTitle>
-                    {isAuthenticated && (
+                    {/* DELETE TEAM BUTTON: Only visible to team creator */}
+                    {/* CRITICAL: This prevents unauthorized team deletion */}
+                    {isAuthenticated && isTeamCreator && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onDeleteTeam(team.id)}
                             className="h-8 w-8 p-0"
+                            title="Delete team (only team creator can delete)"
                         >
                             <Trash2 className="h-4 w-4 text-gray-500" />
                         </Button>
@@ -88,6 +126,13 @@ export default function TeamCard({
                     <Crown className="h-4 w-4" />
                     <span>Captain: {team.captain_name || 'Unknown'}</span>
                 </div>
+                {/* TEAM CREATOR INDICATOR: Shows who has management permissions */}
+                {/* This helps users understand why they can/cannot manage the team */}
+                {isTeamCreator && (
+                    <div className="flex items-center gap-2 text-xs text-blue-600 font-medium">
+                        <span>✓ You created this team</span>
+                    </div>
+                )}
             </CardHeader>
 
             <CardContent className="space-y-3">
@@ -113,12 +158,16 @@ export default function TeamCard({
                                         )}
                                         <span className="text-gray-800">{player.name}</span>
                                     </div>
-                                    {isAuthenticated && player.id !== team.captain_id && (
+                                    {/* REMOVE PLAYER BUTTON: Only visible to team creator */}
+                                    {/* CRITICAL: Prevents unauthorized player removal */}
+                                    {/* Captain cannot be removed (player.id !== team.captain_id) */}
+                                    {isAuthenticated && isTeamCreator && player.id !== team.captain_id && (
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => onRemovePlayer(team.id, player.id)}
                                             className="h-6 w-6 p-0"
+                                            title="Remove player (only team creator can remove players)"
                                         >
                                             <UserMinus className="h-3 w-3 text-red-500" />
                                         </Button>
@@ -129,8 +178,10 @@ export default function TeamCard({
                     </div>
                 )}
 
-                {/* Add Players Button */}
-                {isAuthenticated && team.player_count < 20 && (
+                {/* ADD PLAYERS BUTTON: Only visible to team creator */}
+                {/* CRITICAL: Prevents unauthorized player addition */}
+                {/* Also checks team capacity (player_count < 20) */}
+                {isAuthenticated && isTeamCreator && team.player_count < 20 && (
                     <div className="space-y-2">
                         {!showPlayerSelection ? (
                             <Button
@@ -190,8 +241,9 @@ export default function TeamCard({
                     </div>
                 )}
 
-                {/* No players available message */}
-                {isAuthenticated && availableVoters.length === 0 && team.player_count < 20 && (
+                {/* NO PLAYERS AVAILABLE MESSAGE: Only shown to team creator */}
+                {/* This message only makes sense for users who can add players */}
+                {isAuthenticated && isTeamCreator && availableVoters.length === 0 && team.player_count < 20 && (
                     <p className="text-xs text-gray-500 italic">
                         All voters have been assigned to teams
                     </p>

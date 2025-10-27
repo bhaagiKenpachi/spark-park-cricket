@@ -469,7 +469,7 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                                 vote={currentVote}
                                 voters={getVotersFromResults(currentVote)}
                                 isAuthenticated={isAuthenticated}
-                                currentUserId={user?.id || undefined}
+                                currentUserId={user?.id || undefined} // CRITICAL: Required for team creator authorization
                             />
                         )}
                     </div>
