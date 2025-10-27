@@ -125,10 +125,14 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Match routes
 		r.Route("/matches", func(r chi.Router) {
 			matchHandler := NewMatchHandler(serviceContainer.Match)
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+
 			// Public routes (view only)
 			r.Get("/", matchHandler.ListMatches)
 			r.Get("/{id}", matchHandler.GetMatch)
 			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
+			r.Get("/{match_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByMatchID)
+			r.Get("/{match_id}/fall-of-wickets/summary", fallOfWicketsHandler.GetFallOfWicketsSummary)
 
 			// Protected routes (require authentication and ownership)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
@@ -151,6 +155,36 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+		})
+
+		// Fall of wickets routes
+		r.Route("/fall-of-wickets", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/", fallOfWicketsHandler.ListFallOfWickets)
+			r.Get("/{id}", fallOfWicketsHandler.GetFallOfWicketsByID)
+
+			// Protected routes (require authentication and ownership)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", fallOfWicketsHandler.CreateFallOfWickets)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", fallOfWicketsHandler.UpdateFallOfWickets)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", fallOfWicketsHandler.DeleteFallOfWickets)
+		})
+
+		// Innings-specific fall of wickets routes
+		r.Route("/innings", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/{innings_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByInningsID)
+		})
+
+		// Ball-specific fall of wickets routes
+		r.Route("/balls", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/{ball_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByBallID)
+
+			// Protected routes (require authentication and ownership)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{ball_id}/fall-of-wickets", fallOfWicketsHandler.CreateFallOfWicketsFromBall)
 		})
 
 		// Server-Sent Events (SSE) routes for real-time updates
@@ -210,7 +244,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// GraphQL routes
 		r.Route("/graphql", func(r chi.Router) {
 			// Create GraphQL handler
-			graphqlHandler := graphql.NewGraphQLHandler(serviceContainer.Scorecard)
+			graphqlHandler := graphql.NewGraphQLHandler(serviceContainer.Scorecard, serviceContainer.FallOfWicketsService)
 			r.Post("/", graphqlHandler.ServeHTTP)
 			r.Get("/playground", graphqlHandler.GetPlaygroundHandler().ServeHTTP)
 		})

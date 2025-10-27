@@ -49,10 +49,11 @@ ON TIME TRACKING ACCURACY.
 */
 
 type ScorecardService struct {
-	scorecardRepo interfaces.ScorecardRepository
-	matchRepo     interfaces.MatchRepository
-	metrics       *monitoring.Metrics
-	cache         *cache.CacheManager
+	scorecardRepo     interfaces.ScorecardRepository
+	matchRepo         interfaces.MatchRepository
+	fallOfWicketsRepo interfaces.FallOfWicketsRepository
+	metrics           *monitoring.Metrics
+	cache             *cache.CacheManager
 	// Distributed mutex for ball addition to prevent race conditions
 	ballMutexes sync.Map // map[string]*sync.Mutex for match_innings keys
 	// Distributed mutex for over creation to prevent race conditions
@@ -60,14 +61,15 @@ type ScorecardService struct {
 }
 
 // NewScorecardService creates a new scorecard service
-func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, metrics *monitoring.Metrics, cache *cache.CacheManager) *ScorecardService {
+func NewScorecardService(scorecardRepo interfaces.ScorecardRepository, matchRepo interfaces.MatchRepository, fallOfWicketsRepo interfaces.FallOfWicketsRepository, metrics *monitoring.Metrics, cache *cache.CacheManager) *ScorecardService {
 	return &ScorecardService{
-		scorecardRepo: scorecardRepo,
-		matchRepo:     matchRepo,
-		metrics:       metrics,
-		cache:         cache,
-		ballMutexes:   sync.Map{},
-		overMutexes:   sync.Map{},
+		scorecardRepo:     scorecardRepo,
+		matchRepo:         matchRepo,
+		fallOfWicketsRepo: fallOfWicketsRepo,
+		metrics:           metrics,
+		cache:             cache,
+		ballMutexes:       sync.Map{},
+		overMutexes:       sync.Map{},
 	}
 }
 
@@ -594,6 +596,11 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 	// Publish ball event to Redis stream for SSE (async, non-blocking)
 	go s.publishBallEvent(req, ball, totalRuns, innings)
 
+	// Create fall of wickets record if this ball resulted in a wicket
+	if req.IsWicket {
+		go s.createFallOfWicketsRecord(req, ball, data)
+	}
+
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
 }
@@ -948,6 +955,11 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 
 	// Invalidate match-related caches after successful ball addition
 	s.invalidateMatchCaches(ctx, req.MatchID, innings.ID, over.ID)
+
+	// Create fall of wickets record if this ball resulted in a wicket
+	if req.IsWicket {
+		go s.createFallOfWicketsRecordLegacy(ctx, req, ball, innings, over)
+	}
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
 	return nil
@@ -2050,4 +2062,82 @@ func (s *ScorecardService) GetBallEvents(ctx context.Context, matchID string) ([
 
 	log.Printf("✅ Retrieved %d ball events for match %s from Redis streams", len(ballEvents), matchID)
 	return ballEvents, nil
+}
+
+// createFallOfWicketsRecord creates a fall of wickets record for the new AddBall method
+func (s *ScorecardService) createFallOfWicketsRecord(req *models.BallEventRequest, ball *models.ScorecardBall, data *models.ScorecardData) {
+	ctx := context.Background()
+
+	// Get the next wicket number for this innings
+	wicketNumber, err := s.fallOfWicketsRepo.GetWicketNumberForInnings(ctx, data.InningsID)
+	if err != nil {
+		log.Printf("Error getting wicket number for innings %s: %v", data.InningsID, err)
+		return
+	}
+
+	// Calculate score at wicket
+	scoreAtWicket, err := s.fallOfWicketsRepo.GetScoreAtWicket(ctx, data.InningsID, data.OverNumber, ball.BallNumber)
+	if err != nil {
+		log.Printf("Error calculating score at wicket: %v", err)
+		return
+	}
+
+	// Create fall of wickets record
+	fallOfWickets := &models.FallOfWickets{
+		MatchID:      req.MatchID,
+		InningsID:    data.InningsID,
+		OverID:       data.OverID,
+		BallID:       ball.ID,
+		WicketNumber: wicketNumber,
+		Score:        scoreAtWicket,
+		OverNumber:   data.OverNumber,
+		BallNumber:   ball.BallNumber,
+		CreatedAt:    time.Now(),
+	}
+
+	err = s.fallOfWicketsRepo.Create(ctx, fallOfWickets)
+	if err != nil {
+		log.Printf("Error creating fall of wickets record: %v", err)
+		return
+	}
+
+	log.Printf("✅ Created fall of wickets record: Wicket #%d for match %s, innings %s", wicketNumber, req.MatchID, data.InningsID)
+}
+
+// createFallOfWicketsRecordLegacy creates a fall of wickets record for the legacy AddBall method
+func (s *ScorecardService) createFallOfWicketsRecordLegacy(ctx context.Context, req *models.BallEventRequest, ball *models.ScorecardBall, innings *models.ScorecardInnings, over *models.ScorecardOver) {
+	// Get the next wicket number for this innings
+	wicketNumber, err := s.fallOfWicketsRepo.GetWicketNumberForInnings(ctx, innings.ID)
+	if err != nil {
+		log.Printf("Error getting wicket number for innings %s: %v", innings.ID, err)
+		return
+	}
+
+	// Calculate score at wicket
+	scoreAtWicket, err := s.fallOfWicketsRepo.GetScoreAtWicket(ctx, innings.ID, over.OverNumber, ball.BallNumber)
+	if err != nil {
+		log.Printf("Error calculating score at wicket: %v", err)
+		return
+	}
+
+	// Create fall of wickets record
+	fallOfWickets := &models.FallOfWickets{
+		MatchID:      req.MatchID,
+		InningsID:    innings.ID,
+		OverID:       over.ID,
+		BallID:       ball.ID,
+		WicketNumber: wicketNumber,
+		Score:        scoreAtWicket,
+		OverNumber:   over.OverNumber,
+		BallNumber:   ball.BallNumber,
+		CreatedAt:    time.Now(),
+	}
+
+	err = s.fallOfWicketsRepo.Create(ctx, fallOfWickets)
+	if err != nil {
+		log.Printf("Error creating fall of wickets record: %v", err)
+		return
+	}
+
+	log.Printf("✅ Created fall of wickets record: Wicket #%d for match %s, innings %s", wicketNumber, req.MatchID, innings.ID)
 }

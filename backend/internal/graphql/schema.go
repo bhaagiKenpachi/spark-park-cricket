@@ -260,6 +260,9 @@ var (
 			"innings": &graphql.Field{
 				Type: graphql.NewList(inningsSummaryType),
 			},
+			"fall_of_wickets": &graphql.Field{
+				Type: fallOfWicketsSummaryType,
+			},
 		},
 	})
 
@@ -381,39 +384,132 @@ var (
 		},
 	})
 
-	// PlayerStatistics type for player performance statistics
-	playerStatisticsType = graphql.NewObject(graphql.ObjectConfig{
-		Name: "PlayerStatistics",
+	// WicketType enum
+	wicketTypeEnum = graphql.NewEnum(graphql.EnumConfig{
+		Name: "WicketType",
+		Values: graphql.EnumValueConfigMap{
+			"BOWLED": &graphql.EnumValueConfig{
+				Value: "bowled",
+			},
+			"CAUGHT": &graphql.EnumValueConfig{
+				Value: "caught",
+			},
+			"LBW": &graphql.EnumValueConfig{
+				Value: "lbw",
+			},
+			"RUN_OUT": &graphql.EnumValueConfig{
+				Value: "run_out",
+			},
+			"STUMPED": &graphql.EnumValueConfig{
+				Value: "stumped",
+			},
+			"HIT_WICKET": &graphql.EnumValueConfig{
+				Value: "hit_wicket",
+			},
+		},
+	})
+
+	// WicketFall type
+	wicketFallType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "WicketFall",
 		Fields: graphql.Fields{
-			"player_id": &graphql.Field{
+			"wicket_number": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"score": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"over_number": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"ball_number": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"over_position": &graphql.Field{
 				Type: graphql.String,
 			},
-			"player_name": &graphql.Field{
+		},
+	})
+
+	// FallOfWicketsSummary type
+	fallOfWicketsSummaryType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "FallOfWicketsSummary",
+		Fields: graphql.Fields{
+			"match_id": &graphql.Field{
 				Type: graphql.String,
 			},
-			"team_id": &graphql.Field{
+			"innings_id": &graphql.Field{
 				Type: graphql.String,
 			},
-			"runs_scored": &graphql.Field{
+			"total_wickets": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"wickets": &graphql.Field{
+				Type: graphql.NewList(wicketFallType),
+			},
+		},
+	})
+
+	// FallOfWickets type
+	fallOfWicketsType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "FallOfWickets",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"match_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"innings_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"over_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"ball_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"wicket_number": &graphql.Field{
+				Type: graphql.Int,
+			},
+			"batsman_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"batsman_name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"runs": &graphql.Field{
 				Type: graphql.Int,
 			},
 			"balls_faced": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"wickets_taken": &graphql.Field{
+			"wicket_type": &graphql.Field{
+				Type: wicketTypeEnum,
+			},
+			"bowler_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"bowler_name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"fielder_id": &graphql.Field{
+				Type: graphql.String,
+			},
+			"fielder_name": &graphql.Field{
+				Type: graphql.String,
+			},
+			"over_number": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"overs_bowled": &graphql.Field{
-				Type: graphql.Float,
-			},
-			"runs_conceded": &graphql.Field{
+			"ball_number": &graphql.Field{
 				Type: graphql.Int,
 			},
-			"strike_rate": &graphql.Field{
-				Type: graphql.Float,
+			"score_at_wicket": &graphql.Field{
+				Type: graphql.Int,
 			},
-			"economy_rate": &graphql.Field{
-				Type: graphql.Float,
+			"created_at": &graphql.Field{
+				Type: graphql.String,
 			},
 		},
 	})
