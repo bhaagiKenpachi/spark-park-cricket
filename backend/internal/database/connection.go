@@ -111,7 +111,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			User:          baseRepositories.User, // Not cached yet
 			Vote:          cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
 			VoteTeam:      cacherepo.NewCachedVoteTeamRepository(baseRepositories.VoteTeam, cacheManager),
-			FallOfWickets: baseRepositories.FallOfWickets, // Not cached yet
+			FallOfWickets: cacherepo.NewCachedFallOfWicketsRepository(baseRepositories.FallOfWickets, cacheManager),
 		}
 		log.Printf("✅ Cached repositories initialized")
 	} else {

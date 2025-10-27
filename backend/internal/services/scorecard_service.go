@@ -599,6 +599,8 @@ func (s *ScorecardService) AddBallOptimized(ctx context.Context, req *models.Bal
 	// Create fall of wickets record if this ball resulted in a wicket
 	if req.IsWicket {
 		go s.createFallOfWicketsRecord(req, ball, data)
+		// Invalidate fall of wickets caches when a wicket falls
+		go s.invalidateFallOfWicketsCaches(req.MatchID, data.InningsID)
 	}
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
@@ -959,6 +961,8 @@ func (s *ScorecardService) AddBallLegacy(ctx context.Context, req *models.BallEv
 	// Create fall of wickets record if this ball resulted in a wicket
 	if req.IsWicket {
 		go s.createFallOfWicketsRecordLegacy(ctx, req, ball, innings, over)
+		// Invalidate fall of wickets caches when a wicket falls
+		go s.invalidateFallOfWicketsCaches(req.MatchID, innings.ID)
 	}
 
 	log.Printf("Successfully added ball: %s %d runs, byes: %d, total: %d, wicket: %v", req.RunType, runs, byes, totalRuns, req.IsWicket)
@@ -1543,6 +1547,39 @@ func (s *ScorecardService) invalidateMatchCaches(ctx context.Context, matchID, i
 func (s *ScorecardService) invalidateMatchCachesAsync(matchID, inningsID, overID string) {
 	ctx := context.Background()
 	s.invalidateMatchCaches(ctx, matchID, inningsID, overID)
+}
+
+// invalidateFallOfWicketsCaches invalidates fall of wickets related caches
+func (s *ScorecardService) invalidateFallOfWicketsCaches(matchID, inningsID string) {
+	// Skip cache invalidation if cache is not available
+	if s.cache == nil {
+		return
+	}
+
+	// Invalidate match-level fall of wickets caches
+	matchKey := fmt.Sprintf("fall_of_wickets:match:%s", matchID)
+	_ = s.cache.Invalidate(matchKey)
+
+	summaryKey := fmt.Sprintf("fall_of_wickets:summary:%s", matchID)
+	_ = s.cache.Invalidate(summaryKey)
+
+	// Invalidate innings-level fall of wickets caches
+	if inningsID != "" {
+		inningsKey := fmt.Sprintf("fall_of_wickets:innings:%s", inningsID)
+		_ = s.cache.Invalidate(inningsKey)
+
+		summaryInningsKey := fmt.Sprintf("fall_of_wickets:summary:%s:%s", matchID, inningsID)
+		_ = s.cache.Invalidate(summaryInningsKey)
+	}
+
+	// Invalidate pattern-based caches
+	pattern := fmt.Sprintf("fall_of_wickets:*%s*", matchID)
+	_ = s.cache.InvalidatePattern(pattern)
+
+	if inningsID != "" {
+		inningsPattern := fmt.Sprintf("fall_of_wickets:*%s*", inningsID)
+		_ = s.cache.InvalidatePattern(inningsPattern)
+	}
 }
 
 // publishBallEvent publishes a ball event to Redis stream for SSE

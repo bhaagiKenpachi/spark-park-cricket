@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"spark-park-cricket-backend/internal/models"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,28 +25,28 @@ func TestFallOfWicketsModel_OverPosition(t *testing.T) {
 
 func TestFallOfWicketsModel_OverPosition_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
-		overNumber  int
-		ballNumber  int
-		expected    string
+		name       string
+		overNumber int
+		ballNumber int
+		expected   string
 	}{
 		{
-			name:        "First over first ball",
-			overNumber:  1,
-			ballNumber:  1,
-			expected:    "1.1",
+			name:       "First over first ball",
+			overNumber: 1,
+			ballNumber: 1,
+			expected:   "1.1",
 		},
 		{
-			name:        "Last ball of over",
-			overNumber:  10,
-			ballNumber:  6,
-			expected:    "10.6",
+			name:       "Last ball of over",
+			overNumber: 10,
+			ballNumber: 6,
+			expected:   "10.6",
 		},
 		{
-			name:        "Zero over",
-			overNumber:  0,
-			ballNumber:  1,
-			expected:    "0.1",
+			name:       "Zero over",
+			overNumber: 0,
+			ballNumber: 1,
+			expected:   "0.1",
 		},
 	}
 
