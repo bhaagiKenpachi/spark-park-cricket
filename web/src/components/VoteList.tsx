@@ -10,7 +10,7 @@ import {
     setFilters,
 } from '@/store/reducers/voteSlice';
 import { VoteFilters } from '@/types/vote';
-import { Vote, VoteStatus, VoteType } from '@/types/vote';
+import { Vote, VoteStatus, VoteType, VoteWithCreator } from '@/types/vote';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -271,10 +271,16 @@ export function VoteList({
                                     </p>
                                 )}
 
-                                {/* Date */}
-                                <div className="flex items-center text-xs text-gray-500 mb-3">
-                                    <Calendar className="h-3 w-3 mr-1" />
-                                    Created {formatDate(vote.created_at)}
+                                {/* Date and Creator */}
+                                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                                    <div className="flex items-center">
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        Created {formatDate(vote.created_at)}
+                                    </div>
+                                    <div className="flex items-center">
+                                        <Users className="h-3 w-3 mr-1" />
+                                        by {(vote as VoteWithCreator).creator_name || 'Unknown User'}
+                                    </div>
                                 </div>
 
                                 {/* Actions */}
@@ -291,7 +297,7 @@ export function VoteList({
                                                 View
                                             </Button>
                                         )}
-                                        
+
                                         <Button
                                             variant="ghost"
                                             size="sm"

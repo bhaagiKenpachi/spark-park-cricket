@@ -91,7 +91,7 @@ func (r *CachedVoteRepository) GetVoteWithResults(ctx context.Context, id string
 }
 
 // ListVotes retrieves votes with caching
-func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) ([]*models.Vote, error) {
+func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) (*models.PaginatedVoteList, error) {
 	// Create cache key based on filters
 	cacheKey := "votes:list"
 	if filters != nil {
@@ -112,8 +112,8 @@ func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.Vo
 		}
 	}
 
-	var votes []*models.Vote
-	err := r.cache.GetOrSet(cacheKey, &votes, cache.MatchListTTL, func() (interface{}, error) {
+	var paginatedVotes models.PaginatedVoteList
+	err := r.cache.GetOrSet(cacheKey, &paginatedVotes, cache.MatchListTTL, func() (interface{}, error) {
 		return r.repo.ListVotes(ctx, filters)
 	})
 
@@ -121,7 +121,7 @@ func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.Vo
 		return nil, err
 	}
 
-	return votes, nil
+	return &paginatedVotes, nil
 }
 
 // CountVotes counts votes with caching
