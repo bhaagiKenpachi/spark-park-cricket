@@ -23,7 +23,7 @@ export interface WicketFall {
 
 export interface FallOfWicketsSummary {
     match_id: string;
-    innings_id: string;
+    innings_id?: string;
     total_wickets: number;
     wickets: WicketFall[];
 }
@@ -42,6 +42,8 @@ export interface CreateFallOfWicketsRequest {
 
 export interface UpdateFallOfWicketsRequest {
     score?: number;
+    over_number?: number;
+    ball_number?: number;
 }
 
 export interface FallOfWicketsFilters {

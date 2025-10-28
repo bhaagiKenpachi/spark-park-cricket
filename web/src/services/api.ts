@@ -125,7 +125,7 @@ class ApiService {
         trackApiError({
           endpoint,
           status_code: response.status,
-          error_message: errorData.message || `HTTP error! status: ${response.status}`,
+          error_message: (errorData && errorData.message) || `HTTP error! status: ${response.status}`,
           request_duration: requestDuration
         });
 
@@ -138,17 +138,26 @@ class ApiService {
         }
 
         throw new ApiError(
-          errorData.message || `HTTP error! status: ${response.status}`,
+          (errorData && errorData.message) || `HTTP error! status: ${response.status}`,
           response.status,
           errorData
         );
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
+
+      // Handle null response gracefully
+      if (data === null) {
+        return {
+          data: null as T,
+          success: true,
+        };
+      }
+
       return {
         data,
         success: true,
-        message: data.message,
+        message: data && typeof data === 'object' && 'message' in data ? data.message : undefined,
       };
     } catch (error) {
       const endTime = performance.now();

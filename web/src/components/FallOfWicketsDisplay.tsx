@@ -39,7 +39,15 @@ export const FallOfWicketsDisplay: React.FC<FallOfWicketsDisplayProps> = ({
 
             // Fetch fall of wickets for the entire match (both innings)
             const response = await apiService.getFallOfWicketsByMatch(matchId);
+
+            // Handle null response gracefully
             const allWickets: FallOfWickets[] = response.data || [];
+
+            // If no wickets data, show empty state
+            if (!allWickets || allWickets.length === 0) {
+                setInningsData([]);
+                return;
+            }
 
             // Group wickets by innings number
             const inningsMap = new Map<number, FallOfWickets[]>();
@@ -73,8 +81,24 @@ export const FallOfWicketsDisplay: React.FC<FallOfWicketsDisplayProps> = ({
             inningsArray.sort((a, b) => a.inningsNumber - b.inningsNumber);
             setInningsData(inningsArray);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to fetch fall of wickets');
-            console.error('Error fetching fall of wickets:', err);
+            // Improved error handling to prevent null reference errors
+            let errorMessage = 'Failed to fetch fall of wickets';
+
+            if (err) {
+                if (err instanceof Error) {
+                    errorMessage = err.message || errorMessage;
+                } else if (typeof err === 'object' && 'message' in err && err.message) {
+                    errorMessage = String(err.message);
+                } else if (typeof err === 'string') {
+                    errorMessage = err;
+                }
+            }
+
+            setError(errorMessage);
+            console.error('Error fetching fall of wickets:', errorMessage);
+
+            // Set empty state on error
+            setInningsData([]);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -154,6 +178,7 @@ export const FallOfWicketsDisplay: React.FC<FallOfWicketsDisplayProps> = ({
                 <CardContent>
                     <div className="text-center text-gray-500 py-4">
                         <p>No wickets have fallen yet</p>
+                        <p className="text-sm text-gray-400 mt-1">Wickets will appear here as they fall during the match</p>
                     </div>
                 </CardContent>
             </Card>

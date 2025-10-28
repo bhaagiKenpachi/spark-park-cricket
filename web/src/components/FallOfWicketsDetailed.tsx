@@ -43,11 +43,29 @@ export const FallOfWicketsDetailed: React.FC<FallOfWicketsDetailedProps> = ({
                 apiService.getFallOfWicketsSummary(matchId, inningsId)
             ]);
 
-            setFallOfWickets(listResponse.data);
-            setSummary(summaryResponse.data);
+            // Handle null responses gracefully
+            setFallOfWickets(listResponse.data || []);
+            setSummary(summaryResponse.data || null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to fetch fall of wickets');
-            console.error('Error fetching fall of wickets:', err);
+            // Improved error handling to prevent null reference errors
+            let errorMessage = 'Failed to fetch fall of wickets';
+
+            if (err) {
+                if (err instanceof Error) {
+                    errorMessage = err.message || errorMessage;
+                } else if (typeof err === 'object' && 'message' in err && err.message) {
+                    errorMessage = String(err.message);
+                } else if (typeof err === 'string') {
+                    errorMessage = err;
+                }
+            }
+
+            setError(errorMessage);
+            console.error('Error fetching fall of wickets:', errorMessage);
+
+            // Set empty state on error
+            setFallOfWickets([]);
+            setSummary(null);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -112,6 +130,7 @@ export const FallOfWicketsDetailed: React.FC<FallOfWicketsDetailedProps> = ({
                 <CardContent>
                     <div className="text-center text-gray-500 py-4">
                         <p>No wickets have fallen yet</p>
+                        <p className="text-sm text-gray-400 mt-1">Wickets will appear here as they fall during the match</p>
                     </div>
                 </CardContent>
             </Card>
