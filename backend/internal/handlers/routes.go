@@ -224,6 +224,15 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 
 			// Team routes (protected - any logged-in user can manage teams)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{vote_id}/teams", teamHandler.CreateTeam)
+
+			// Group routes (protected - require authentication)
+			groupHandler := NewGroupHandler(serviceContainer.GroupService)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{vote_id}/groups", groupHandler.AssignGroupsToVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{vote_id}/groups", groupHandler.RemoveGroupsFromVote)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{vote_id}/groups", groupHandler.GetVoteGroups)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{vote_id}/results/groups", groupHandler.GetVoteResultsByGroups)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{vote_id}/results/groups/{group_id}", groupHandler.GetGroupVoteResults)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Get("/{vote_id}/results/grouped", groupHandler.GetVoteWithGroupResults)
 		})
 
 		// Team management routes
@@ -240,6 +249,34 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{team_id}/players", teamHandler.AddPlayerToTeam)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{team_id}/players/bulk", teamHandler.AddPlayersToTeam)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{team_id}/players/{player_id}", teamHandler.RemovePlayerFromTeam)
+		})
+
+		// Group management routes
+		r.Route("/groups", func(r chi.Router) {
+			groupHandler := NewGroupHandler(serviceContainer.GroupService)
+
+			// Public routes (view only)
+			r.Get("/", groupHandler.ListGroups)
+			r.Get("/search", groupHandler.SearchGroups)
+			r.Get("/type/{type}", groupHandler.ListGroupsByType)
+			r.Get("/creator/{creator_id}", groupHandler.ListGroupsByCreator)
+			r.Get("/user/{user_id}", groupHandler.ListGroupsByUser)
+			r.Get("/{id}", groupHandler.GetGroup)
+			r.Get("/{id}/members", groupHandler.GetGroupMembers)
+			r.Get("/{id}/votes", groupHandler.GetGroupVotes)
+			r.Get("/{id}/stats", groupHandler.GetGroupStats)
+
+			// Protected routes (require authentication)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", groupHandler.CreateGroup)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", groupHandler.UpdateGroup)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", groupHandler.DeleteGroup)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/join", groupHandler.JoinGroup)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/leave", groupHandler.LeaveGroup)
+
+			// Admin routes (require group admin access)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{id}/members", groupHandler.AddGroupMember)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}/members", groupHandler.RemoveGroupMember)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}/members/{user_id}/role", groupHandler.UpdateGroupMemberRole)
 		})
 
 		// GraphQL routes

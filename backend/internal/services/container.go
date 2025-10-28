@@ -22,6 +22,7 @@ type Container struct {
 	// Voting services
 	VoteService     VoteServiceInterface
 	VoteTeamService VoteTeamServiceInterface
+	GroupService    GroupServiceInterface
 	// Fall of wickets service
 	FallOfWicketsService *FallOfWicketsService
 	// Monitoring
@@ -68,6 +69,7 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		// Voting services
 		VoteService:     NewVoteService(dbClient.Repositories.Vote),
 		VoteTeamService: NewVoteTeamService(dbClient.Repositories.VoteTeam, dbClient.Repositories.Vote),
+		GroupService:    NewGroupService(dbClient.Repositories.Group, dbClient.Repositories.User, dbClient.Repositories.Vote),
 		// Fall of wickets service
 		FallOfWicketsService: NewFallOfWicketsService(
 			dbClient.Repositories.FallOfWickets,
