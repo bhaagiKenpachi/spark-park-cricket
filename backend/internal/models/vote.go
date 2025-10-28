@@ -34,6 +34,12 @@ type Vote struct {
 	ClosedAt    *time.Time `json:"closed_at,omitempty" db:"closed_at"`
 }
 
+// VoteWithCreator represents a vote with creator information
+type VoteWithCreator struct {
+	Vote
+	CreatorName string `json:"creator_name"`
+}
+
 // VoteOption represents an option within a vote
 type VoteOption struct {
 	ID          string    `json:"id" db:"id"`
@@ -55,8 +61,9 @@ type UserVote struct {
 
 // VoteWithOptions represents a vote with its options
 type VoteWithOptions struct {
-	Vote    *Vote         `json:"vote"`
-	Options []*VoteOption `json:"options"`
+	Vote        *Vote         `json:"vote"`
+	Options     []*VoteOption `json:"options"`
+	CreatorName string        `json:"creator_name"`
 }
 
 // VoteWithResults represents a vote with results and user's vote
@@ -68,6 +75,7 @@ type VoteWithResults struct {
 	UserVote         *UserVote              `json:"user_vote,omitempty"`
 	TotalVotes       int                    `json:"total_votes"`
 	VotedUsers       []string               `json:"voted_users"` // List of user IDs who voted
+	CreatorName      string                 `json:"creator_name"`
 }
 
 // VoterInfo represents voter information for a vote option
@@ -114,9 +122,9 @@ type VoteResponse struct {
 
 // PaginatedVoteList represents a paginated list of votes
 type PaginatedVoteList struct {
-	Votes      []*Vote `json:"votes"`
-	TotalItems int     `json:"total_items"`
-	Page       int     `json:"page"`
-	PageSize   int     `json:"page_size"`
-	TotalPages int     `json:"total_pages"`
+	Votes      []*VoteWithCreator `json:"votes"`
+	TotalItems int                `json:"total_items"`
+	Page       int                `json:"page"`
+	PageSize   int                `json:"page_size"`
+	TotalPages int                `json:"total_pages"`
 }

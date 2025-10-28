@@ -74,6 +74,16 @@ func (r *VoteRepository) GetVoteWithOptions(ctx context.Context, id string) (*mo
 		return nil, err
 	}
 
+	// Get creator name separately
+	creatorName, err := r.getUserNameByID(ctx, vote.CreatedBy)
+	if err != nil {
+		utils.LogError(err, "Failed to get creator name", map[string]interface{}{
+			"vote_id":    id,
+			"created_by": vote.CreatedBy,
+		})
+		creatorName = "Unknown User" // Fallback
+	}
+
 	// Get options
 	options, err := r.GetVoteOptions(ctx, id)
 	if err != nil {
@@ -81,8 +91,9 @@ func (r *VoteRepository) GetVoteWithOptions(ctx context.Context, id string) (*mo
 	}
 
 	return &models.VoteWithOptions{
-		Vote:    vote,
-		Options: options,
+		Vote:        vote,
+		Options:     options,
+		CreatorName: creatorName,
 	}, nil
 }
 
@@ -132,6 +143,7 @@ func (r *VoteRepository) GetVoteWithResults(ctx context.Context, id string, user
 		UserVote:         userVote,
 		TotalVotes:       totalVotes,
 		VotedUsers:       votedUsers,
+		CreatorName:      voteWithOptions.CreatorName,
 	}, nil
 }
 
@@ -200,7 +212,7 @@ func (r *VoteRepository) CountVotes(ctx context.Context, filters *models.VoteFil
 }
 
 // ListVotes lists votes with filters
-func (r *VoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) ([]*models.Vote, error) {
+func (r *VoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) (*models.PaginatedVoteList, error) {
 	query := r.client.From("votes").Select("*", "", false)
 
 	// Add filters
@@ -234,13 +246,41 @@ func (r *VoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilt
 		return nil, fmt.Errorf("failed to list votes: %w", err)
 	}
 
-	// Convert to slice of pointers
-	votePointers := make([]*models.Vote, len(votes))
-	for i := range votes {
-		votePointers[i] = &votes[i]
+	// Convert to VoteWithCreator slice and get creator names
+	voteWithCreatorPointers := make([]*models.VoteWithCreator, len(votes))
+	for i, vote := range votes {
+		creatorName, err := r.getUserNameByID(ctx, vote.CreatedBy)
+		if err != nil {
+			utils.LogError(err, "Failed to get creator name for vote", map[string]interface{}{
+				"vote_id":    vote.ID,
+				"created_by": vote.CreatedBy,
+			})
+			creatorName = "Unknown User" // Fallback
+		}
+
+		voteWithCreatorPointers[i] = &models.VoteWithCreator{
+			Vote:        vote,
+			CreatorName: creatorName,
+		}
 	}
 
-	return votePointers, nil
+	// Get total count for pagination
+	totalItems, err := r.CountVotes(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate pagination info
+	totalPages := (totalItems + filters.Limit - 1) / filters.Limit
+	currentPage := (filters.Offset / filters.Limit) + 1
+
+	return &models.PaginatedVoteList{
+		Votes:      voteWithCreatorPointers,
+		TotalItems: totalItems,
+		Page:       currentPage,
+		PageSize:   filters.Limit,
+		TotalPages: totalPages,
+	}, nil
 }
 
 // CreateVoteOptions creates multiple vote options
@@ -525,4 +565,41 @@ func (r *VoteRepository) GetVoteResultsWithNames(ctx context.Context, voteID str
 	}
 
 	return resultsWithNames, nil
+}
+
+// getUserNameByID gets a user's name by their ID
+func (r *VoteRepository) getUserNameByID(ctx context.Context, userID string) (string, error) {
+	utils.LogInfo("Getting user name by ID", map[string]interface{}{
+		"user_id": userID,
+	})
+
+	var users []struct {
+		Name string `json:"name"`
+	}
+
+	_, err := r.client.From("users").
+		Select("name", "", false).
+		Eq("id", userID).
+		ExecuteTo(&users)
+
+	if err != nil {
+		utils.LogError(err, "Failed to get user name", map[string]interface{}{
+			"user_id": userID,
+		})
+		return "", fmt.Errorf("failed to get user name: %w", err)
+	}
+
+	if len(users) == 0 {
+		utils.LogError(fmt.Errorf("user not found"), "User not found", map[string]interface{}{
+			"user_id": userID,
+		})
+		return "", fmt.Errorf("user not found")
+	}
+
+	utils.LogInfo("User name retrieved", map[string]interface{}{
+		"user_id":   userID,
+		"user_name": users[0].Name,
+	})
+
+	return users[0].Name, nil
 }
