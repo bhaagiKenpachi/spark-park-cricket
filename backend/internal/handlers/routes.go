@@ -315,26 +315,50 @@ func corsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 				}
 			}
 
-			if allowed {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			// Allow ngrok URLs dynamically (for development/testing)
+			if !allowed && origin != "" && (strings.Contains(origin, ".ngrok.io") || strings.Contains(origin, ".ngrok-free.app") || strings.Contains(origin, ".ngrok.app")) {
+				allowed = true
 				if origin != "" {
-					fmt.Printf("DEBUG: CORS - Origin %s is allowed\n", origin)
-				}
-			} else {
-				// Fallback to wildcard for non-credential requests
-				w.Header().Set("Access-Control-Allow-Origin", "*")
-				if origin != "" {
-					fmt.Printf("DEBUG: CORS - Origin %s not allowed, using wildcard\n", origin)
+					fmt.Printf("DEBUG: CORS - Ngrok origin %s automatically allowed\n", origin)
 				}
 			}
 
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
-			w.Header().Set("Access-Control-Max-Age", "86400")
+			// Set CORS headers only for allowed origins
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+				if origin != "" {
+					fmt.Printf("DEBUG: CORS - Origin %s is allowed\n", origin)
+				}
+			} else if origin == "" {
+				// Same-origin request (no Origin header) - allow with wildcard
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+			}
+			// For non-allowed cross-origin requests, don't set CORS headers
+			// Browser will reject the request, which is the correct behavior
 
+			// Handle preflight OPTIONS requests
 			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
+				// Only respond successfully if origin is allowed
+				if allowed || origin == "" {
+					w.WriteHeader(http.StatusOK)
+				} else {
+					// Reject preflight for non-allowed origins
+					w.WriteHeader(http.StatusForbidden)
+				}
+				return
+			}
+
+			// For non-OPTIONS requests, reject early if origin is not allowed
+			if !allowed && origin != "" {
+				fmt.Printf("DEBUG: CORS - Origin %s not allowed, rejecting\n", origin)
+				w.WriteHeader(http.StatusForbidden)
 				return
 			}
 

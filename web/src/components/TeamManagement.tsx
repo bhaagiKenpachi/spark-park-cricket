@@ -32,7 +32,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Shield, RefreshCw } from 'lucide-react';
+import { Shield, RefreshCw, Share2 } from 'lucide-react';
 import {
     fetchTeamsRequest,
     createTeamRequest,
@@ -137,6 +137,54 @@ export default function TeamManagement({
     if (!teamA) availableLetters.push('A');
     if (!teamB) availableLetters.push('B');
 
+    // Generate share URL
+    const shareUrl = typeof window !== 'undefined' && vote?.vote?.id
+        ? `${window.location.origin}/share/vote/${vote.vote.id}/teams`
+        : '';
+
+    const handleCopyLink = async () => {
+        if (!shareUrl) return;
+
+        try {
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+                return;
+            }
+        } catch (err) {
+            // Fall through to fallback method
+        }
+
+        // Fallback: use execCommand for older browsers or when clipboard API fails
+        try {
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            if (successful) {
+                alert('Link copied to clipboard!');
+            } else {
+                throw new Error('Copy command failed');
+            }
+        } catch (err) {
+            // Last resort: show the URL in an alert for manual copying
+            prompt('Copy this link:', shareUrl);
+        }
+    };
+
+    const handleShare = async () => {
+        if (!shareUrl) return;
+        await handleCopyLink();
+    };
+
     return (
         <div className="space-y-4">
             {/* Header */}
@@ -145,14 +193,30 @@ export default function TeamManagement({
                     <Shield className="h-5 w-5" />
                     Team Division
                 </h3>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                >
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
+                <div className="flex items-center gap-2">
+                    {/* Share button - only show when both teams exist */}
+                    {teamA && teamB && shareUrl && (
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={handleShare}
+                            className="h-9 w-9"
+                            title="Share or copy link"
+                        >
+                            <Share2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="h-9 w-9"
+                        title="Refresh teams"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
+                </div>
             </div>
 
             {/* Error Message */}

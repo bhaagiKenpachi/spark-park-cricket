@@ -52,7 +52,7 @@ func (h *SSEHandler) StreamBallEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// CORS headers are handled by the CORS middleware, don't override here
 
 	// Get flusher for streaming
 	flusher, ok := w.(http.Flusher)
@@ -222,7 +222,7 @@ func (h *SSEHandler) StreamMatchEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// CORS headers are handled by the CORS middleware, don't override here
 
 	// Get flusher for streaming
 	flusher, ok := w.(http.Flusher)
