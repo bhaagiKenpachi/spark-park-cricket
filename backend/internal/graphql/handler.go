@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/interfaces"
+	"spark-park-cricket-backend/internal/services"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
@@ -52,12 +53,13 @@ type GraphQLErrorLocation struct {
 }
 
 // NewGraphQLHandler creates a new GraphQL handler
-func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface) *GraphQLHandler {
+func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface, fallOfWicketsService *services.FallOfWicketsService) *GraphQLHandler {
 	log.Printf("DEBUG: Creating new GraphQL handler")
 
 	// Create resolver context
 	resolverCtx := &ResolverContext{
-		ScorecardService: scorecardService,
+		ScorecardService:     scorecardService,
+		FallOfWicketsService: fallOfWicketsService,
 	}
 	log.Printf("DEBUG: Resolver context created")
 
@@ -289,7 +291,7 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 				},
 			},
 			"playerStatistics": &graphql.Field{
-				Type: graphql.NewList(playerStatisticsType),
+				Type: graphql.NewList(playerType),
 				Args: graphql.FieldConfigArgument{
 					"match_id": &graphql.ArgumentConfig{
 						Type: graphql.NewNonNull(graphql.String),

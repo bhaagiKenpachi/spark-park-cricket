@@ -2480,6 +2480,277 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Fall of Wickets Management",
+      "item": [
+        {
+          "name": "Create Fall of Wickets",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"match_id\": \"{{match_id}}\",\n  \"innings_id\": \"{{innings_id}}\",\n  \"over_id\": \"{{over_id}}\",\n  \"ball_id\": \"{{ball_id}}\",\n  \"wicket_number\": 1,\n  \"score\": 120,\n  \"over_number\": 15,\n  \"ball_number\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets"
+              ]
+            },
+            "description": "Create a new fall of wickets record"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fall of Wickets by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets/{{fall_of_wickets_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets",
+                "{{fall_of_wickets_id}}"
+              ]
+            },
+            "description": "Get a specific fall of wickets record by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "List Fall of Wickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets?match_id={{match_id}}&limit=10&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets"
+              ],
+              "query": [
+                {
+                  "key": "match_id",
+                  "value": "{{match_id}}"
+                },
+                {
+                  "key": "innings_id",
+                  "value": "{{innings_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "List fall of wickets records with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Fall of Wickets",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 125\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets/{{fall_of_wickets_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets",
+                "{{fall_of_wickets_id}}"
+              ]
+            },
+            "description": "Update a fall of wickets record"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Fall of Wickets",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets/{{fall_of_wickets_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets",
+                "{{fall_of_wickets_id}}"
+              ]
+            },
+            "description": "Delete a fall of wickets record"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fall of Wickets by Match",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/matches/{{match_id}}/fall-of-wickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "{{match_id}}",
+                "fall-of-wickets"
+              ]
+            },
+            "description": "Get all fall of wickets records for a specific match"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fall of Wickets by Innings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/innings/{{innings_id}}/fall-of-wickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "innings",
+                "{{innings_id}}",
+                "fall-of-wickets"
+              ]
+            },
+            "description": "Get all fall of wickets records for a specific innings"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fall of Wickets by Ball",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/balls/{{ball_id}}/fall-of-wickets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "balls",
+                "{{ball_id}}",
+                "fall-of-wickets"
+              ]
+            },
+            "description": "Get fall of wickets record for a specific ball"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fall of Wickets Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets/summary?match_id={{match_id}}&innings_id={{innings_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "match_id",
+                  "value": "{{match_id}}"
+                },
+                {
+                  "key": "innings_id",
+                  "value": "{{innings_id}}"
+                }
+              ]
+            },
+            "description": "Get a summary of fall of wickets for a match/innings"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Fall of Wickets from Ball",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ball_id\": \"{{ball_id}}\",\n  \"score\": 120\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fall-of-wickets/from-ball",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fall-of-wickets",
+                "from-ball"
+              ]
+            },
+            "description": "Create a fall of wickets record from a ball event"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [

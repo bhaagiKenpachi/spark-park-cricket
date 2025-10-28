@@ -38,6 +38,9 @@ type CacheInterface interface {
 	GetScorecardKey(matchID string) string
 	GetScorecardVersionKey(matchID string) string
 	GetMatchesBySeriesKey(seriesID string) string
+	GetFallOfWicketsKey(matchID string) string
+	GetFallOfWicketsByInningsKey(inningsID string) string
+	GetFallOfWicketsSummaryKey(matchID string) string
 
 	// Pattern-based operations
 	DeletePattern(pattern string) error

@@ -251,6 +251,21 @@ func (r *RedisClient) GetMatchesBySeriesKey(seriesID string) string {
 	return fmt.Sprintf("matches:series:%s", seriesID)
 }
 
+// GetFallOfWicketsKey generates cache key for fall of wickets by match
+func (r *RedisClient) GetFallOfWicketsKey(matchID string) string {
+	return fmt.Sprintf("fall_of_wickets:match:%s", matchID)
+}
+
+// GetFallOfWicketsByInningsKey generates cache key for fall of wickets by innings
+func (r *RedisClient) GetFallOfWicketsByInningsKey(inningsID string) string {
+	return fmt.Sprintf("fall_of_wickets:innings:%s", inningsID)
+}
+
+// GetFallOfWicketsSummaryKey generates cache key for fall of wickets summary
+func (r *RedisClient) GetFallOfWicketsSummaryKey(matchID string) string {
+	return fmt.Sprintf("fall_of_wickets:summary:%s", matchID)
+}
+
 // DeletePattern removes all keys matching a pattern using SCAN
 func (r *RedisClient) DeletePattern(pattern string) error {
 	ctx, cancel := context.WithTimeout(r.ctx, 10*time.Second)
@@ -284,6 +299,9 @@ const (
 
 	// Live/dynamic data (vote results, user votes) - cache for 5 minutes
 	LiveDataTTL = 5 * time.Minute
+
+	// Fall of wickets data - cache for 30 minutes (refreshed on wicket falls)
+	FallOfWicketsTTL = 30 * time.Minute
 
 	// Version counters - cache for 1 hour
 	VersionTTL = 1 * time.Hour

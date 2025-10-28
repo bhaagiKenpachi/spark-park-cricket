@@ -16,15 +16,16 @@ import (
 
 // Repositories holds all repository interfaces
 type Repositories struct {
-	Series     interfaces.SeriesRepository
-	Match      interfaces.MatchRepository
-	Scoreboard interfaces.ScoreboardRepository
-	Scorecard  interfaces.ScorecardRepository
-	Over       interfaces.OverRepository
-	Ball       interfaces.BallRepository
-	User       interfaces.UserRepository
-	Vote       interfaces.VoteRepositoryInterface
-	VoteTeam   interfaces.VoteTeamRepositoryInterface
+	Series        interfaces.SeriesRepository
+	Match         interfaces.MatchRepository
+	Scoreboard    interfaces.ScoreboardRepository
+	Scorecard     interfaces.ScorecardRepository
+	Over          interfaces.OverRepository
+	Ball          interfaces.BallRepository
+	User          interfaces.UserRepository
+	Vote          interfaces.VoteRepositoryInterface
+	VoteTeam      interfaces.VoteTeamRepositoryInterface
+	FallOfWickets interfaces.FallOfWicketsRepository
 }
 
 // Client wraps the Supabase client and repositories
@@ -83,15 +84,16 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	// Create repositories in order to handle dependencies
 	matchRepo := supabase.NewMatchRepository(client)
 	baseRepositories := &Repositories{
-		Series:     supabase.NewSeriesRepository(client),
-		Match:      matchRepo,
-		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client, cfg.DatabaseSchema, matchRepo),
-		Over:       supabase.NewOverRepository(client),
-		Ball:       supabase.NewBallRepository(client),
-		User:       supabase.NewUserRepository(client),
-		Vote:       supabase.NewVoteRepository(client),
-		VoteTeam:   supabase.NewVoteTeamRepository(client, cfg.DatabaseSchema),
+		Series:        supabase.NewSeriesRepository(client),
+		Match:         matchRepo,
+		Scoreboard:    supabase.NewScoreboardRepository(client),
+		Scorecard:     supabase.NewScorecardRepository(client, cfg.DatabaseSchema, matchRepo),
+		Over:          supabase.NewOverRepository(client),
+		Ball:          supabase.NewBallRepository(client),
+		User:          supabase.NewUserRepository(client),
+		Vote:          supabase.NewVoteRepository(client),
+		VoteTeam:      supabase.NewVoteTeamRepository(client, cfg.DatabaseSchema),
+		FallOfWickets: supabase.NewFallOfWicketsRepository(client),
 	}
 	log.Printf("✅ Base repositories initialized")
 
@@ -100,15 +102,16 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	if cacheManager != nil {
 		log.Printf("Wrapping repositories with cache layer...")
 		repositories = &Repositories{
-			Series:     cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
-			Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
-			Scoreboard: baseRepositories.Scoreboard, // Not cached yet
-			Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
-			Over:       baseRepositories.Over, // Not cached yet
-			Ball:       baseRepositories.Ball, // Not cached yet
-			User:       baseRepositories.User, // Not cached yet
-			Vote:       cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
-			VoteTeam:   cacherepo.NewCachedVoteTeamRepository(baseRepositories.VoteTeam, cacheManager),
+			Series:        cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
+			Match:         cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
+			Scoreboard:    baseRepositories.Scoreboard, // Not cached yet
+			Scorecard:     cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
+			Over:          baseRepositories.Over, // Not cached yet
+			Ball:          baseRepositories.Ball, // Not cached yet
+			User:          baseRepositories.User, // Not cached yet
+			Vote:          cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
+			VoteTeam:      cacherepo.NewCachedVoteTeamRepository(baseRepositories.VoteTeam, cacheManager),
+			FallOfWickets: cacherepo.NewCachedFallOfWicketsRepository(baseRepositories.FallOfWickets, cacheManager),
 		}
 		log.Printf("✅ Cached repositories initialized")
 	} else {
@@ -124,7 +127,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	} else {
 		log.Printf("Cache Layer: Disabled")
 	}
-	log.Printf("Repositories: Series, Match, Scoreboard, Scorecard, Over, Ball, User, Vote")
+	log.Printf("Repositories: Series, Match, Scoreboard, Scorecard, Over, Ball, User, Vote, VoteTeam, FallOfWickets")
 	log.Printf("==========================================")
 
 	return &Client{

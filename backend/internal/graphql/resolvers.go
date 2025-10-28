@@ -5,13 +5,15 @@ import (
 	"log"
 	"spark-park-cricket-backend/internal/interfaces"
 	"spark-park-cricket-backend/internal/models"
+	"spark-park-cricket-backend/internal/services"
 
 	"github.com/graphql-go/graphql"
 )
 
 // ResolverContext holds the services needed for GraphQL resolvers
 type ResolverContext struct {
-	ScorecardService interfaces.ScorecardServiceInterface
+	ScorecardService     interfaces.ScorecardServiceInterface
+	FallOfWicketsService *services.FallOfWicketsService
 }
 
 // resolveLiveScorecard resolves the live scorecard query
@@ -90,6 +92,7 @@ func resolveLiveScorecard(p graphql.ResolveParams) (interface{}, error) {
 		"current_score":   currentScore,
 		"current_over":    currentOver,
 		"innings":         scorecard.Innings,
+		"fall_of_wickets": resolveFallOfWickets(p, scorecard.MatchID),
 	}
 
 	return liveScorecard, nil
@@ -171,6 +174,7 @@ func resolveScorecardSubscription(p graphql.ResolveParams) (interface{}, error) 
 		"current_score":   currentScore,
 		"current_over":    currentOver,
 		"innings":         scorecard.Innings,
+		"fall_of_wickets": resolveFallOfWickets(p, scorecard.MatchID),
 	}
 
 	return liveScorecard, nil
@@ -814,4 +818,40 @@ func resolvePlayerStatistics(p graphql.ResolveParams) (interface{}, error) {
 	//    - Strike rates and economy rates
 
 	return playerStats, nil
+}
+
+// resolveFallOfWickets resolves the fall of wickets query
+func resolveFallOfWickets(p graphql.ResolveParams, matchID string) interface{} {
+	// Get resolver context from the context
+	resolverCtx, ok := p.Context.Value(resolverContextKey).(*ResolverContext)
+	if !ok {
+		log.Printf("Resolver context not found for fall of wickets")
+		return nil
+	}
+
+	// Get fall of wickets summary
+	summary, err := resolverCtx.FallOfWicketsService.GetFallOfWicketsSummary(p.Context, matchID, nil)
+	if err != nil {
+		log.Printf("Error getting fall of wickets summary: %v", err)
+		return nil
+	}
+
+	// Convert to GraphQL format
+	wickets := make([]map[string]interface{}, len(summary.Wickets))
+	for i, wicket := range summary.Wickets {
+		wickets[i] = map[string]interface{}{
+			"wicket_number": wicket.WicketNumber,
+			"score":         wicket.Score,
+			"over_number":   wicket.OverNumber,
+			"ball_number":   wicket.BallNumber,
+			"over_position": wicket.OverPosition,
+		}
+	}
+
+	return map[string]interface{}{
+		"match_id":      summary.MatchID,
+		"innings_id":    summary.InningsID,
+		"total_wickets": summary.TotalWickets,
+		"wickets":       wickets,
+	}
 }
