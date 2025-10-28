@@ -15,6 +15,10 @@ export interface Vote {
     closed_at?: string;
 }
 
+export interface VoteWithCreator extends Vote {
+    creator_name: string;
+}
+
 export interface VoteOption {
     id: string;
     vote_id: string;
@@ -45,6 +49,7 @@ export interface VoteWithResults {
     user_vote?: UserVote;
     total_votes: number;
     voted_users: string[];
+    creator_name: string;
 }
 
 export interface CreateVoteRequest {
@@ -75,7 +80,7 @@ export interface VoteFilters {
 }
 
 export interface PaginatedVotesResult {
-    votes: Vote[];
+    votes: VoteWithCreator[];
     total_items: number;
     page: number;
     page_size: number;

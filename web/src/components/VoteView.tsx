@@ -237,6 +237,12 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                                 {currentVote.total_votes} votes
                             </div>
                         </div>
+
+                        {/* Creator Info */}
+                        <div className="flex items-center text-xs text-gray-500">
+                            <Users className="h-3 w-3 mr-1" />
+                            Created by {currentVote.creator_name || 'Unknown User'}
+                        </div>
                     </div>
                 </div>
 

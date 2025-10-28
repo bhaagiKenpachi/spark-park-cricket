@@ -199,38 +199,14 @@ func (s *VoteService) ListVotes(ctx context.Context, filters *models.VoteFilters
 		filters.Limit = 20 // Default page size
 	}
 
-	// Get votes
-	votes, err := s.voteRepo.ListVotes(ctx, filters)
+	// Get votes with pagination info
+	paginatedVotes, err := s.voteRepo.ListVotes(ctx, filters)
 	if err != nil {
 		utils.LogError(err, "Failed to list votes", nil)
 		return nil, fmt.Errorf("failed to list votes: %w", err)
 	}
 
-	// Get total count
-	totalItems, err := s.voteRepo.CountVotes(ctx, filters)
-	if err != nil {
-		utils.LogError(err, "Failed to count votes", nil)
-		return nil, fmt.Errorf("failed to count votes: %w", err)
-	}
-
-	// Calculate pagination metadata
-	page := (filters.Offset / filters.Limit) + 1
-	if filters.Offset == 0 {
-		page = 1
-	}
-
-	totalPages := (totalItems + filters.Limit - 1) / filters.Limit
-	if totalPages == 0 {
-		totalPages = 1
-	}
-
-	return &models.PaginatedVoteList{
-		Votes:      votes,
-		TotalItems: totalItems,
-		Page:       page,
-		PageSize:   filters.Limit,
-		TotalPages: totalPages,
-	}, nil
+	return paginatedVotes, nil
 }
 
 // CastVote allows a user to cast their vote
