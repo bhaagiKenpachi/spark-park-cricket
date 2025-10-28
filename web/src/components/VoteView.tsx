@@ -458,8 +458,8 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                     </div>
                 </div>
 
-                {/* Team Management Section */}
-                {currentVote.total_votes > 0 && (
+                {/* Team Management Section - Only show if team formation is enabled */}
+                {currentVote.vote.team_formation_enabled && (
                     <div className="mt-6">
                         <Button
                             variant="outline"

@@ -123,7 +123,7 @@ export const voteSlice = createSlice({
     // Create vote
     createVoteRequest: (
       state,
-      _action: PayloadAction<{ title: string; description?: string; type: 'single' | 'multiple'; options: string[] }>
+      _action: PayloadAction<{ title: string; description?: string; type: 'single' | 'multiple'; options: string[]; team_formation_enabled?: boolean }>
     ) => {
       state.loading = true;
       state.error = null;
@@ -140,7 +140,7 @@ export const voteSlice = createSlice({
     // Update vote
     updateVoteRequest: (
       state,
-      _action: PayloadAction<{ id: string; voteData: { title?: string; description?: string; status?: 'active' | 'closed' | 'cancelled' } }>
+      _action: PayloadAction<{ id: string; voteData: { title?: string; description?: string; status?: 'active' | 'closed' | 'cancelled'; team_formation_enabled?: boolean } }>
     ) => {
       state.loading = true;
       state.error = null;

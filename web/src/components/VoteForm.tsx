@@ -27,6 +27,7 @@ interface FormData {
     description: string;
     type: VoteType;
     options: string[];
+    team_formation_enabled: boolean;
 }
 
 interface FormErrors {
@@ -48,6 +49,7 @@ export function VoteForm({
         description: vote?.description || '',
         type: vote?.type || 'single',
         options: ['', ''], // Start with 2 empty options
+        team_formation_enabled: vote?.team_formation_enabled ?? true,
     });
 
     const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -68,6 +70,7 @@ export function VoteForm({
                 description: vote.description || '',
                 type: vote.type,
                 options: voteOptions.length >= 2 ? voteOptions : ['', ''],
+                team_formation_enabled: vote.team_formation_enabled,
             });
         }
     }, [vote, currentVote]);
@@ -122,12 +125,14 @@ export function VoteForm({
             description: formData.description.trim() || undefined,
             type: formData.type,
             options: validOptions,
+            team_formation_enabled: formData.team_formation_enabled,
         };
 
         if (vote) {
-            // When editing, only update title and description (not options)
-            const updateData: { title?: string; description?: string } = {
+            // When editing, only update title, description, and team formation setting (not options)
+            const updateData: { title?: string; description?: string; team_formation_enabled?: boolean } = {
                 title: apiData.title,
+                team_formation_enabled: apiData.team_formation_enabled,
             };
             if (apiData.description) {
                 updateData.description = apiData.description;
@@ -145,6 +150,7 @@ export function VoteForm({
                 description: apiData.description || 'No description provided',
                 type: apiData.type,
                 options: apiData.options,
+                team_formation_enabled: apiData.team_formation_enabled,
             };
             dispatch(createVoteRequest(createData));
         }
@@ -154,7 +160,7 @@ export function VoteForm({
         }
     };
 
-    const handleInputChange = (field: keyof FormData, value: string | VoteType) => {
+    const handleInputChange = (field: keyof FormData, value: string | VoteType | boolean) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (field in formErrors) {
             setFormErrors(prev => {
@@ -255,6 +261,25 @@ export function VoteForm({
                                     <SelectItem value="multiple">Multiple Choice</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="team-formation" className="text-sm font-medium">
+                                    Enable Team Formation
+                                </Label>
+                                <input
+                                    id="team-formation"
+                                    type="checkbox"
+                                    checked={formData.team_formation_enabled}
+                                    onChange={(e) => handleInputChange('team_formation_enabled', e.target.checked)}
+                                    data-cy="team-formation-toggle"
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Allow users to create and manage teams from voted users
+                            </p>
                         </div>
 
                         <div className="space-y-3">
