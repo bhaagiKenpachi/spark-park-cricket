@@ -22,6 +22,8 @@ type Container struct {
 	// Voting services
 	VoteService     VoteServiceInterface
 	VoteTeamService VoteTeamServiceInterface
+	// Fall of wickets service
+	FallOfWicketsService *FallOfWicketsService
 	// Monitoring
 	Metrics *monitoring.Metrics
 }
@@ -32,7 +34,7 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 	metrics := monitoring.NewMetrics()
 
 	// Create base scorecard service
-	scorecardService := NewScorecardService(dbClient.Repositories.Scorecard, dbClient.Repositories.Match, metrics, dbClient.CacheManager)
+	scorecardService := NewScorecardService(dbClient.Repositories.Scorecard, dbClient.Repositories.Match, dbClient.Repositories.FallOfWickets, metrics, dbClient.CacheManager)
 
 	// Create authentication services
 	sessionService := NewSessionService(dbClient.Repositories.User, cfg)
@@ -66,6 +68,12 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		// Voting services
 		VoteService:     NewVoteService(dbClient.Repositories.Vote),
 		VoteTeamService: NewVoteTeamService(dbClient.Repositories.VoteTeam, dbClient.Repositories.Vote),
+		// Fall of wickets service
+		FallOfWicketsService: NewFallOfWicketsService(
+			dbClient.Repositories.FallOfWickets,
+			dbClient.Repositories.Scorecard,
+			dbClient.Repositories.Match,
+		),
 		// Monitoring
 		Metrics: metrics,
 	}

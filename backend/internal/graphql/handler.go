@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"spark-park-cricket-backend/internal/interfaces"
+	"spark-park-cricket-backend/internal/services"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
@@ -52,12 +53,13 @@ type GraphQLErrorLocation struct {
 }
 
 // NewGraphQLHandler creates a new GraphQL handler
-func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface) *GraphQLHandler {
+func NewGraphQLHandler(scorecardService interfaces.ScorecardServiceInterface, fallOfWicketsService *services.FallOfWicketsService) *GraphQLHandler {
 	log.Printf("DEBUG: Creating new GraphQL handler")
 
 	// Create resolver context
 	resolverCtx := &ResolverContext{
-		ScorecardService: scorecardService,
+		ScorecardService:     scorecardService,
+		FallOfWicketsService: fallOfWicketsService,
 	}
 	log.Printf("DEBUG: Resolver context created")
 
@@ -289,7 +291,7 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 				},
 			},
 			"playerStatistics": &graphql.Field{
-				Type: graphql.NewList(playerStatisticsType),
+				Type: graphql.NewList(playerType),
 				Args: graphql.FieldConfigArgument{
 					"match_id": &graphql.ArgumentConfig{
 						Type: graphql.NewNonNull(graphql.String),
@@ -348,11 +350,8 @@ func createSchemaWithContext(resolverCtx *ResolverContext) (*graphql.Schema, err
 
 // ServeHTTP handles HTTP requests for GraphQL
 func (h *GraphQLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Set CORS headers
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
+	// CORS headers are handled by the CORS middleware, don't override here
+	// Handle preflight OPTIONS requests (though middleware should handle this)
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
 		return

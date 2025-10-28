@@ -125,10 +125,14 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// Match routes
 		r.Route("/matches", func(r chi.Router) {
 			matchHandler := NewMatchHandler(serviceContainer.Match)
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+
 			// Public routes (view only)
 			r.Get("/", matchHandler.ListMatches)
 			r.Get("/{id}", matchHandler.GetMatch)
 			r.Get("/series/{series_id}", matchHandler.GetMatchesBySeries)
+			r.Get("/{match_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByMatchID)
+			r.Get("/{match_id}/fall-of-wickets/summary", fallOfWicketsHandler.GetFallOfWicketsSummary)
 
 			// Protected routes (require authentication and ownership)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", matchHandler.CreateMatch)
@@ -151,6 +155,37 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/start", scorecardHandler.StartScoring)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/ball", scorecardHandler.AddBall)
 			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{match_id}/ball", scorecardHandler.UndoBall)
+		})
+
+		// Fall of wickets routes
+		r.Route("/fall-of-wickets", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/", fallOfWicketsHandler.ListFallOfWickets)
+			r.Get("/summary", fallOfWicketsHandler.GetFallOfWicketsSummary)
+			r.Get("/{id}", fallOfWicketsHandler.GetFallOfWicketsByID)
+
+			// Protected routes (require authentication and ownership)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/", fallOfWicketsHandler.CreateFallOfWickets)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Put("/{id}", fallOfWicketsHandler.UpdateFallOfWickets)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Delete("/{id}", fallOfWicketsHandler.DeleteFallOfWickets)
+		})
+
+		// Innings-specific fall of wickets routes
+		r.Route("/innings", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/{innings_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByInningsID)
+		})
+
+		// Ball-specific fall of wickets routes
+		r.Route("/balls", func(r chi.Router) {
+			fallOfWicketsHandler := NewFallOfWicketsHandler(serviceContainer.FallOfWicketsService)
+			// Public routes (view only)
+			r.Get("/{ball_id}/fall-of-wickets", fallOfWicketsHandler.GetFallOfWicketsByBallID)
+
+			// Protected routes (require authentication and ownership)
+			r.With(services.AuthMiddleware(serviceContainer.SessionService)).Post("/{ball_id}/fall-of-wickets", fallOfWicketsHandler.CreateFallOfWicketsFromBall)
 		})
 
 		// Server-Sent Events (SSE) routes for real-time updates
@@ -210,7 +245,7 @@ func SetupRoutes(dbClient *database.Client, cfg *config.Config) *chi.Mux {
 		// GraphQL routes
 		r.Route("/graphql", func(r chi.Router) {
 			// Create GraphQL handler
-			graphqlHandler := graphql.NewGraphQLHandler(serviceContainer.Scorecard)
+			graphqlHandler := graphql.NewGraphQLHandler(serviceContainer.Scorecard, serviceContainer.FallOfWicketsService)
 			r.Post("/", graphqlHandler.ServeHTTP)
 			r.Get("/playground", graphqlHandler.GetPlaygroundHandler().ServeHTTP)
 		})
@@ -280,26 +315,50 @@ func corsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 				}
 			}
 
-			if allowed {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			// Allow ngrok URLs dynamically (for development/testing)
+			if !allowed && origin != "" && (strings.Contains(origin, ".ngrok.io") || strings.Contains(origin, ".ngrok-free.app") || strings.Contains(origin, ".ngrok.app")) {
+				allowed = true
 				if origin != "" {
-					fmt.Printf("DEBUG: CORS - Origin %s is allowed\n", origin)
-				}
-			} else {
-				// Fallback to wildcard for non-credential requests
-				w.Header().Set("Access-Control-Allow-Origin", "*")
-				if origin != "" {
-					fmt.Printf("DEBUG: CORS - Origin %s not allowed, using wildcard\n", origin)
+					fmt.Printf("DEBUG: CORS - Ngrok origin %s automatically allowed\n", origin)
 				}
 			}
 
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
-			w.Header().Set("Access-Control-Max-Age", "86400")
+			// Set CORS headers only for allowed origins
+			if allowed {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+				if origin != "" {
+					fmt.Printf("DEBUG: CORS - Origin %s is allowed\n", origin)
+				}
+			} else if origin == "" {
+				// Same-origin request (no Origin header) - allow with wildcard
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cache-Control, Pragma, Expires, Accept")
+				w.Header().Set("Access-Control-Max-Age", "86400")
+			}
+			// For non-allowed cross-origin requests, don't set CORS headers
+			// Browser will reject the request, which is the correct behavior
 
+			// Handle preflight OPTIONS requests
 			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
+				// Only respond successfully if origin is allowed
+				if allowed || origin == "" {
+					w.WriteHeader(http.StatusOK)
+				} else {
+					// Reject preflight for non-allowed origins
+					w.WriteHeader(http.StatusForbidden)
+				}
+				return
+			}
+
+			// For non-OPTIONS requests, reject early if origin is not allowed
+			if !allowed && origin != "" {
+				fmt.Printf("DEBUG: CORS - Origin %s not allowed, rejecting\n", origin)
+				w.WriteHeader(http.StatusForbidden)
 				return
 			}
 

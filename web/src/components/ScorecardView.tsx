@@ -44,7 +44,10 @@ import {
 import { User } from '@/services/authService';
 import { OverAdModal } from '@/components/ads/OverAdModal';
 import { LiveUpdates } from '@/components/LiveUpdates';
+import { FallOfWicketsDisplay } from '@/components/FallOfWicketsDisplay';
 import { BallEvent } from '@/hooks/useSSE';
+import { apiService } from '@/services/api';
+import { FallOfWickets } from '@/types/fallOfWickets';
 import {
   trackScorecardViewed,
   trackLiveScoringStarted,
@@ -82,6 +85,11 @@ export function ScorecardView({
   const [expandedOvers, setExpandedOvers] = useState<{
     [key: string]: boolean;
   }>({});
+  const [expandedFallOfWickets, setExpandedFallOfWickets] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [fallOfWicketsData, setFallOfWicketsData] = useState<FallOfWickets[]>([]);
+  const [loadingFallOfWickets, setLoadingFallOfWickets] = useState(false);
   const [currentOverAd, setCurrentOverAd] = useState<{
     inningsKey: string;
     overNumber: number;
@@ -425,24 +433,37 @@ export function ScorecardView({
       ...prev,
       [inningsKey]: !prev[inningsKey],
     }));
-
-    // If expanding (not collapsing), fetch all overs details
-    if (!isCurrentlyExpanded) {
-      // Extract innings number from the key (format: "A-1" or "B-1")
-      const inningsNumberStr = inningsKey.split('-')[1];
-      if (inningsNumberStr) {
-        const inningsNumber = parseInt(inningsNumberStr);
-
-        // Fetch all overs details for this innings
-        dispatch(
-          fetchAllOversDetailsThunk({
-            matchId,
-            inningsNumber,
-          })
-        );
-      }
-    }
   };
+
+  const toggleExpandedFallOfWickets = (inningsKey: string) => {
+    setExpandedFallOfWickets(prev => ({
+      ...prev,
+      [inningsKey]: !prev[inningsKey],
+    }));
+  };
+
+  // Fetch fall of wickets data for completed matches
+  const fetchFallOfWickets = useCallback(async () => {
+    if (!isMatchCompleted || !matchId) return;
+
+    try {
+      setLoadingFallOfWickets(true);
+      const response = await apiService.getFallOfWicketsByMatch(matchId);
+      setFallOfWicketsData(response.data || []);
+    } catch (err) {
+      console.error('Error fetching fall of wickets:', err);
+      setFallOfWicketsData([]);
+    } finally {
+      setLoadingFallOfWickets(false);
+    }
+  }, [isMatchCompleted, matchId]);
+
+  // Fetch fall of wickets for completed matches
+  useEffect(() => {
+    if (isMatchCompleted) {
+      fetchFallOfWickets();
+    }
+  }, [isMatchCompleted, fetchFallOfWickets]);
 
   const renderBallCircle = (ball: BallSummary, index: number) => {
     const isWicket = ball.is_wicket;
@@ -838,6 +859,16 @@ export function ScorecardView({
           </div>
           <LiveUpdates
             matchId={matchId}
+          />
+        </div>
+      )}
+
+      {/* Fall of Wickets Section */}
+      {scorecardData.match_status === 'live' && (
+        <div className="mb-6">
+          <FallOfWicketsDisplay
+            matchId={matchId}
+            className="w-full"
           />
         </div>
       )}
@@ -1256,6 +1287,75 @@ export function ScorecardView({
                                 )}
                             </div>
                           )}
+
+                        {/* Fall of Wickets Section (Only for completed matches) */}
+                        {isMatchCompleted && (
+                          <>
+                            {(() => {
+                              const isFOWExpanded = expandedFallOfWickets[inningsKey] || false;
+                              const inningsWickets = fallOfWicketsData.filter(
+                                (w) => w.innings_number === innings.innings_number
+                              );
+                              const hasWickets = inningsWickets.length > 0;
+
+                              return (
+                                <>
+                                  {/* Show Fall of Wickets Button */}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleExpandedFallOfWickets(inningsKey)}
+                                    className="text-xs h-6 px-2 mt-2"
+                                    disabled={loadingFallOfWickets}
+                                  >
+                                    {loadingFallOfWickets ? (
+                                      <>
+                                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                        Loading...
+                                      </>
+                                    ) : isFOWExpanded ? (
+                                      <>
+                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                        Hide Fall of Wickets
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                        Show Fall of Wickets ({inningsWickets.length})
+                                      </>
+                                    )}
+                                  </Button>
+
+                                  {/* Fall of Wickets (Expanded) */}
+                                  {isFOWExpanded && (
+                                    <div className="mt-2 space-y-2 border-t pt-2">
+                                      {hasWickets ? (
+                                        <div className="flex flex-wrap gap-2">
+                                          {inningsWickets
+                                            .sort((a, b) => a.wicket_number - b.wicket_number)
+                                            .map((wicket) => (
+                                              <div
+                                                key={wicket.id}
+                                                className="px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200 text-sm"
+                                              >
+                                                <span className="text-gray-700 font-medium">
+                                                  {wicket.score}/{wicket.wicket_number} - {wicket.over_number}.{wicket.ball_number}
+                                                </span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      ) : (
+                                        <div className="text-center text-gray-500 py-4 text-sm">
+                                          No wickets have fallen in this innings
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </>
+                        )}
                       </div>
                     );
                   })
@@ -1578,6 +1678,75 @@ export function ScorecardView({
                                 )}
                             </div>
                           )}
+
+                        {/* Fall of Wickets Section (Only for completed matches) */}
+                        {isMatchCompleted && (
+                          <>
+                            {(() => {
+                              const isFOWExpanded = expandedFallOfWickets[inningsKey] || false;
+                              const inningsWickets = fallOfWicketsData.filter(
+                                (w) => w.innings_number === innings.innings_number
+                              );
+                              const hasWickets = inningsWickets.length > 0;
+
+                              return (
+                                <>
+                                  {/* Show Fall of Wickets Button */}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleExpandedFallOfWickets(inningsKey)}
+                                    className="text-xs h-6 px-2 mt-2"
+                                    disabled={loadingFallOfWickets}
+                                  >
+                                    {loadingFallOfWickets ? (
+                                      <>
+                                        <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                        Loading...
+                                      </>
+                                    ) : isFOWExpanded ? (
+                                      <>
+                                        <ChevronUp className="h-3 w-3 mr-1" />
+                                        Hide Fall of Wickets
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="h-3 w-3 mr-1" />
+                                        Show Fall of Wickets ({inningsWickets.length})
+                                      </>
+                                    )}
+                                  </Button>
+
+                                  {/* Fall of Wickets (Expanded) */}
+                                  {isFOWExpanded && (
+                                    <div className="mt-2 space-y-2 border-t pt-2">
+                                      {hasWickets ? (
+                                        <div className="flex flex-wrap gap-2">
+                                          {inningsWickets
+                                            .sort((a, b) => a.wicket_number - b.wicket_number)
+                                            .map((wicket) => (
+                                              <div
+                                                key={wicket.id}
+                                                className="px-3 py-1.5 bg-gray-50 rounded-md border border-gray-200 text-sm"
+                                              >
+                                                <span className="text-gray-700 font-medium">
+                                                  {wicket.score}/{wicket.wicket_number} - {wicket.over_number}.{wicket.ball_number}
+                                                </span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      ) : (
+                                        <div className="text-center text-gray-500 py-4 text-sm">
+                                          No wickets have fallen in this innings
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </>
+                        )}
                       </div>
                     );
                   })

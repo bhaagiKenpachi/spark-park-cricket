@@ -34,28 +34,30 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 	// Initialize base repositories
 	matchRepo := supabase.NewMatchRepository(client)
 	baseRepositories := &Repositories{
-		Series:     supabase.NewSeriesRepository(client),
-		Match:      matchRepo,
-		Scoreboard: supabase.NewScoreboardRepository(client),
-		Scorecard:  supabase.NewScorecardRepository(client, "testing_db", matchRepo),
-		Over:       supabase.NewOverRepository(client),
-		Ball:       supabase.NewBallRepository(client),
-		User:       supabase.NewUserRepository(client),
-		Vote:       supabase.NewVoteRepository(client),
-		VoteTeam:   supabase.NewVoteTeamRepository(client, "testing_db"),
+		Series:        supabase.NewSeriesRepository(client),
+		Match:         matchRepo,
+		Scoreboard:    supabase.NewScoreboardRepository(client),
+		Scorecard:     supabase.NewScorecardRepository(client, "testing_db", matchRepo),
+		Over:          supabase.NewOverRepository(client),
+		Ball:          supabase.NewBallRepository(client),
+		User:          supabase.NewUserRepository(client),
+		Vote:          supabase.NewVoteRepository(client),
+		VoteTeam:      supabase.NewVoteTeamRepository(client, "testing_db"),
+		FallOfWickets: supabase.NewFallOfWicketsRepository(client),
 	}
 
 	// Wrap repositories with caching (same as production)
 	repositories := &Repositories{
-		Series:     cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
-		Match:      cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
-		Scoreboard: baseRepositories.Scoreboard, // Not cached yet
-		Scorecard:  cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
-		Over:       baseRepositories.Over, // Not cached yet
-		Ball:       baseRepositories.Ball, // Not cached yet
-		User:       baseRepositories.User, // Not cached yet
-		Vote:       baseRepositories.Vote,
-		VoteTeam:   baseRepositories.VoteTeam,
+		Series:        cacherepo.NewCachedSeriesRepository(baseRepositories.Series, cacheManager),
+		Match:         cacherepo.NewCachedMatchRepository(baseRepositories.Match, cacheManager),
+		Scoreboard:    baseRepositories.Scoreboard, // Not cached yet
+		Scorecard:     cacherepo.NewCachedScorecardRepository(baseRepositories.Scorecard, cacheManager),
+		Over:          baseRepositories.Over, // Not cached yet
+		Ball:          baseRepositories.Ball, // Not cached yet
+		User:          baseRepositories.User, // Not cached yet
+		Vote:          baseRepositories.Vote,
+		VoteTeam:      baseRepositories.VoteTeam,
+		FallOfWickets: cacherepo.NewCachedFallOfWicketsRepository(baseRepositories.FallOfWickets, cacheManager),
 	}
 
 	return &Client{
