@@ -37,6 +37,10 @@ const nextConfig: NextConfig = {
               "font-src 'self' data: https://fonts.gstatic.com; " +
               "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://*.adtrafficquality.google https://www.google.com;",
           },
+          {
+            key: 'ngrok-skip-browser-warning',
+            value: 'true',
+          },
         ],
       },
     ];
