@@ -33,14 +33,15 @@ func (s *VoteService) CreateVote(ctx context.Context, req *models.CreateVoteRequ
 
 	// Create vote
 	vote := &models.Vote{
-		ID:          uuid.New().String(),
-		Title:       req.Title,
-		Description: req.Description,
-		Type:        req.Type,
-		Status:      models.VoteStatusActive,
-		CreatedBy:   userID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:                   uuid.New().String(),
+		Title:                req.Title,
+		Description:          req.Description,
+		Type:                 req.Type,
+		Status:               models.VoteStatusActive,
+		CreatedBy:            userID,
+		TeamFormationEnabled: req.TeamFormationEnabled,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
 	}
 
 	// Create vote in database
@@ -142,6 +143,9 @@ func (s *VoteService) UpdateVote(ctx context.Context, id string, req *models.Upd
 			now := time.Now()
 			vote.ClosedAt = &now
 		}
+	}
+	if req.TeamFormationEnabled != nil {
+		vote.TeamFormationEnabled = *req.TeamFormationEnabled
 	}
 	vote.UpdatedAt = time.Now()
 
