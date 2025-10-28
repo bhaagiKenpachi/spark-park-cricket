@@ -89,6 +89,7 @@ export default function VotesPage(): React.JSX.Element {
         setViewMode('list');
         setSelectedVote(null);
         setSelectedVoteId(null);
+        window.history.replaceState(null, '', `/votes`)
     };
 
     const handleFormSuccess = () => {

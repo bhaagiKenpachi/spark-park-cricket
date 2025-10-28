@@ -62,6 +62,23 @@ export function SeriesList(): React.JSX.Element {
     }
   }, [series]);
 
+  useEffect(() => {
+  // Only run when not viewing scorecard
+  if (!viewingScorecard) {
+    const scrollId = sessionStorage.getItem('scrollToSeriesId');
+    if (scrollId) {
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => {
+        const el = document.getElementById(`series-card-${scrollId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        sessionStorage.removeItem('scrollToSeriesId');
+      }, 100);
+    }
+  }
+}, [series, viewingScorecard]);
+
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this series?')) {
       // Track deletion
@@ -238,6 +255,10 @@ export function SeriesList(): React.JSX.Element {
   const handleBackFromScorecard = () => {
     setViewingScorecard(null);
     setCurrentSeriesCreatedBy(null);
+    if (expandedSeriesId) {
+      sessionStorage.setItem('scrollToSeriesId', expandedSeriesId);
+      window.history.replaceState(null, '', `/series/${expandedSeriesId}`)
+    }
   };
 
   // Show loading state only when actually loading
@@ -338,7 +359,7 @@ export function SeriesList(): React.JSX.Element {
           <div className="space-y-4">
             {Array.isArray(series) &&
               series.map((seriesItem, index) => (
-                <div key={seriesItem.id || `series-${index}`}>
+                <div key={seriesItem.id || `series-${index}`} id={`series-card-${seriesItem.id}`}>
                   <SeriesWithMatches
                     series={seriesItem}
                     onEditSeries={handleEdit}

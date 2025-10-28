@@ -354,7 +354,11 @@ export function SeriesWithMatches({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onToggleExpanded?.(!expanded)}
+              onClick={() => {
+                onToggleExpanded?.(!expanded)
+                window.history.replaceState(null, '', !expanded ? `/series/${series.id}` : '/')
+              
+              }}
               className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 font-medium shadow-sm"
             >
               {expanded ? (
@@ -691,7 +695,19 @@ export function SeriesWithMatches({
                       <div>
                         {/* Team Names - Show if available */}
                         {(match.team_a_name || match.team_b_name) && (
-                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 mb-3">
+                          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100 mb-3 cursor-pointer" 
+                            onClick={() => {
+                            // Track match view
+                              trackMatchViewed({
+                                match_id: match.id,
+                                series_id: series.id,
+                                match_number: match.match_number,
+                                match_status: match.status,
+                                total_overs: match.total_overs,
+                              });
+                              onViewScorecard?.(match.id, series.created_by || '')
+                              window.history.replaceState(null, '', `/series/${series.id}/match/${match.id}`)
+                          }}>
                             <div className="flex items-center justify-center space-x-4">
                               <div className="flex-1 text-center">
                                 <span className="text-xs font-medium text-gray-600 uppercase tracking-wide block mb-1">
