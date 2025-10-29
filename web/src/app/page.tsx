@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Vote, Trophy, Home as HomeIcon, Menu } from 'lucide-react';
+import { Vote, Trophy, Home as HomeIcon, Menu, Users } from 'lucide-react';
 
 export default function Home(): React.JSX.Element {
   const { isAuthenticated } = useAppSelector(state => state.auth);
@@ -44,6 +44,12 @@ export default function Home(): React.JSX.Element {
                     <DropdownMenuItem className="cursor-pointer">
                       <Vote className="h-4 w-4 mr-2" />
                       <span className="text-sm">Votes</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/groups">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Users className="h-4 w-4 mr-2" />
+                      <span className="text-sm">Groups</span>
                     </DropdownMenuItem>
                   </Link>
                 </DropdownMenuContent>

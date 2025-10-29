@@ -51,6 +51,11 @@ export interface VoteWithResults {
     total_votes: number;
     voted_users: string[];
     creator_name: string;
+    groups?: Array<{
+        id: string;
+        name: string;
+        type: string;
+    }>;
 }
 
 export interface CreateVoteRequest {
@@ -76,6 +81,7 @@ export interface VoteFilters {
     status?: VoteStatus;
     type?: VoteType;
     created_by?: string;
+    group_id?: string;
     limit?: number;
     offset?: number;
     page?: number;

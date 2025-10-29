@@ -104,6 +104,9 @@ func (r *CachedVoteRepository) ListVotes(ctx context.Context, filters *models.Vo
 		if filters.CreatedBy != nil {
 			cacheKey += fmt.Sprintf(":creator:%s", *filters.CreatedBy)
 		}
+		if filters.GroupID != nil && *filters.GroupID != "" {
+			cacheKey += fmt.Sprintf(":group:%s", *filters.GroupID)
+		}
 		if filters.Limit > 0 {
 			cacheKey += fmt.Sprintf(":limit:%d", filters.Limit)
 		}
@@ -137,6 +140,9 @@ func (r *CachedVoteRepository) CountVotes(ctx context.Context, filters *models.V
 		}
 		if filters.CreatedBy != nil {
 			cacheKey += fmt.Sprintf(":creator:%s", *filters.CreatedBy)
+		}
+		if filters.GroupID != nil && *filters.GroupID != "" {
+			cacheKey += fmt.Sprintf(":group:%s", *filters.GroupID)
 		}
 	}
 

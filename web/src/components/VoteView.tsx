@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import TeamManagement from './TeamManagement';
 import { User } from '@/types/team';
+import { VoteResultsByGroups } from './VoteResultsByGroups';
 
 interface VoteViewProps {
     voteId: string;
@@ -42,6 +43,7 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showTeams, setShowTeams] = useState(false);
     const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+    const [activeTab, setActiveTab] = useState<'results' | 'groups' | 'teams'>('results');
 
     useEffect(() => {
         // Add a small delay to allow backend to initialize vote results
@@ -476,6 +478,37 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
                                 voters={getVotersFromResults(currentVote)}
                                 isAuthenticated={isAuthenticated}
                                 currentUserId={user?.id || undefined} // CRITICAL: Required for team creator authorization
+                            />
+                        )}
+                    </div>
+                )}
+
+                {/* Group Results Section */}
+                {currentVote.groups && currentVote.groups.length > 0 && (
+                    <div className="mt-6">
+                        <div className="flex gap-1 border-b mb-4">
+                            <Button
+                                variant={activeTab === 'results' ? 'default' : 'ghost'}
+                                onClick={() => setActiveTab('results')}
+                                size="sm"
+                            >
+                                <BarChart3 className="w-4 h-4 mr-2" />
+                                Results
+                            </Button>
+                            <Button
+                                variant={activeTab === 'groups' ? 'default' : 'ghost'}
+                                onClick={() => setActiveTab('groups')}
+                                size="sm"
+                            >
+                                <Users className="w-4 h-4 mr-2" />
+                                Group Results
+                            </Button>
+                        </div>
+
+                        {activeTab === 'groups' && (
+                            <VoteResultsByGroups
+                                voteId={voteId}
+                                showDetailed={true}
                             />
                         )}
                     </div>

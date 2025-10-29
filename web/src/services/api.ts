@@ -535,12 +535,13 @@ class ApiService {
   }
 
   // Vote API methods
-  async getVotes(filters?: { status?: string; type?: string; created_by?: string; limit?: number; offset?: number; page?: number; page_size?: number }): Promise<ApiResponse<any>> {
+  async getVotes(filters?: { status?: string; type?: string; created_by?: string; group_id?: string; limit?: number; offset?: number; page?: number; page_size?: number }): Promise<ApiResponse<any>> {
     const params = new URLSearchParams();
 
     if (filters?.status) params.append('status', filters.status);
     if (filters?.type) params.append('type', filters.type);
     if (filters?.created_by) params.append('created_by', filters.created_by);
+    if (filters?.group_id) params.append('group_id', filters.group_id);
 
     // Support both page-based and offset-based pagination
     if (filters?.page) params.append('page', filters.page.toString());
@@ -740,6 +741,120 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ ball_id: ballId, score }),
     });
+  }
+
+  // Group Management API methods
+  async getGroups(filters?: any): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const queryString = params.toString();
+    return this.request(`/groups${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getGroupById(id: string): Promise<any> {
+    return this.request(`/groups/${id}`);
+  }
+
+  async getGroupWithMembers(id: string): Promise<any> {
+    return this.request(`/groups/${id}/members`);
+  }
+
+  async createGroup(groupData: any): Promise<any> {
+    return this.request('/groups', {
+      method: 'POST',
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  async updateGroup(id: string, groupData: any): Promise<any> {
+    return this.request(`/groups/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(groupData),
+    });
+  }
+
+  async deleteGroup(id: string): Promise<any> {
+    return this.request(`/groups/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async joinGroup(groupId: string): Promise<any> {
+    return this.request(`/groups/${groupId}/join`, {
+      method: 'POST',
+    });
+  }
+
+  async leaveGroup(groupId: string): Promise<any> {
+    return this.request(`/groups/${groupId}/leave`, {
+      method: 'POST',
+    });
+  }
+
+  async addGroupMember(groupId: string, memberData: any): Promise<any> {
+    return this.request(`/groups/${groupId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(memberData),
+    });
+  }
+
+  async removeGroupMember(groupId: string, userId: string): Promise<any> {
+    return this.request(`/groups/${groupId}/members`, {
+      method: 'DELETE',
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
+
+  async updateGroupMemberRole(groupId: string, userId: string, roleData: any): Promise<any> {
+    return this.request(`/groups/${groupId}/members/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify(roleData),
+    });
+  }
+
+  async getGroupStats(groupId: string): Promise<any> {
+    return this.request(`/groups/${groupId}/stats`);
+  }
+
+  // Group Voting API methods
+  async assignGroupsToVote(voteId: string, groupIds: string[]): Promise<any> {
+    return this.request(`/votes/${voteId}/groups`, {
+      method: 'POST',
+      body: JSON.stringify({ group_ids: groupIds }),
+    });
+  }
+
+  async removeGroupsFromVote(voteId: string, groupIds: string[]): Promise<any> {
+    return this.request(`/votes/${voteId}/groups`, {
+      method: 'DELETE',
+      body: JSON.stringify({ group_ids: groupIds }),
+    });
+  }
+
+  async getVoteGroups(voteId: string): Promise<any> {
+    return this.request(`/votes/${voteId}/groups`);
+  }
+
+  async getVoteResultsByGroups(voteId: string): Promise<any> {
+    return this.request(`/votes/${voteId}/results/groups`);
+  }
+
+  async getGroupVoteResults(voteId: string, groupId: string): Promise<any> {
+    return this.request(`/votes/${voteId}/results/groups/${groupId}`);
+  }
+
+  async getVoteWithGroupResults(voteId: string): Promise<any> {
+    return this.request(`/votes/${voteId}/results/grouped`);
+  }
+
+  async getGroupVotes(groupId: string): Promise<any> {
+    return this.request(`/groups/${groupId}/votes`);
   }
 }
 

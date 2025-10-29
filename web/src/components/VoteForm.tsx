@@ -14,7 +14,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, X, Plus, Trash2 } from 'lucide-react';
+import { Save, X, Plus, Trash2, Users } from 'lucide-react';
+import { GroupVoting } from './GroupVoting';
+import { Checkbox } from '@/components/ui/checkbox';
+import { groupService } from '@/services/groupService';
+import voteService from '@/services/voteService';
+import { createVoteSuccess, createVoteFailure } from '@/store/reducers/voteSlice';
+import { assignGroupsToVoteRequest } from '@/store/reducers/groupSlice';
 
 interface VoteFormProps {
     vote?: Vote | undefined;
@@ -52,6 +58,11 @@ export function VoteForm({
         team_formation_enabled: vote?.team_formation_enabled ?? true,
     });
 
+    const [showGroupAssignment, setShowGroupAssignment] = useState(!!vote);
+    const [availableGroups, setAvailableGroups] = useState<any[]>([]);
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+    const [groupsLoading, setGroupsLoading] = useState(false);
+
     const [formErrors, setFormErrors] = useState<FormErrors>({});
 
     // Fetch vote with options when editing
@@ -74,6 +85,26 @@ export function VoteForm({
             });
         }
     }, [vote, currentVote]);
+
+    // Load groups for assignment in create mode
+    useEffect(() => {
+        const loadGroups = async () => {
+            setGroupsLoading(true);
+            try {
+                const res = await groupService.getGroups({ limit: 50, offset: 0 });
+                const groupsData = (res.data as any).data || res.data;
+                setAvailableGroups(Array.isArray(groupsData) ? groupsData : []);
+            } catch (e) {
+                // ignore load errors silently for now
+                setAvailableGroups([]);
+            } finally {
+                setGroupsLoading(false);
+            }
+        };
+        if (!vote) {
+            loadGroups();
+        }
+    }, [vote]);
 
     const validateForm = (): boolean => {
         const errors: FormErrors = {};
@@ -112,7 +143,7 @@ export function VoteForm({
         return Object.keys(errors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateForm()) {
@@ -144,7 +175,7 @@ export function VoteForm({
                 })
             );
         } else {
-            // When creating, include all fields
+            // Create and then assign groups if selected
             const createData = {
                 title: apiData.title,
                 description: apiData.description || 'No description provided',
@@ -152,11 +183,29 @@ export function VoteForm({
                 options: apiData.options,
                 team_formation_enabled: apiData.team_formation_enabled,
             };
-            dispatch(createVoteRequest(createData));
-        }
-
-        if (onSuccess) {
-            onSuccess();
+            try {
+                const response = await voteService.createVote(createData as any);
+                const created = (response.data as any).data || response.data;
+                // Handle nested vote structure: {message: '...', vote: {...}}
+                const voteObject = (created as any)?.vote || created;
+                const createdVote = Array.isArray(voteObject) ? voteObject[0] : voteObject;
+                if (createdVote?.id) {
+                    dispatch(createVoteSuccess(createdVote));
+                    // Only assign group if one is selected (not empty string or 'none')
+                    const shouldAssign = selectedGroupId && selectedGroupId.trim() !== '' && selectedGroupId !== 'none';
+                    if (shouldAssign) {
+                        await dispatch(assignGroupsToVoteRequest({
+                            voteId: createdVote.id,
+                            groupIds: [selectedGroupId],
+                        }));
+                    }
+                }
+                if (onSuccess) {
+                    onSuccess();
+                }
+            } catch (err: any) {
+                dispatch(createVoteFailure(err?.message || 'Failed to create vote'));
+            }
         }
     };
 
@@ -330,6 +379,73 @@ export function VoteForm({
                                 <p className="text-xs text-red-600">{formErrors.options}</p>
                             )}
                         </div>
+
+                        {/* Group Assignment Section */}
+                        {vote ? (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium">Assign Groups</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowGroupAssignment(!showGroupAssignment)}
+                                    >
+                                        <Users className="h-4 w-4 mr-2" />
+                                        {showGroupAssignment ? 'Hide' : 'Manage Groups'}
+                                    </Button>
+                                </div>
+
+                                {showGroupAssignment && (
+                                    <div className="border rounded-lg p-4 bg-gray-50">
+                                        <GroupVoting
+                                            voteId={vote.id}
+                                            onSuccess={() => {
+                                                // Optionally refresh vote data
+                                                dispatch(fetchVoteWithResultsRequest(vote.id));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> Assign to Group
+                                </Label>
+                                {groupsLoading ? (
+                                    <div className="rounded-md bg-gray-50 border p-3 text-xs text-gray-600 flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                                        Loading groups...
+                                    </div>
+                                ) : availableGroups.length === 0 ? (
+                                    <div className="rounded-md bg-gray-50 border p-3 text-xs text-gray-600">
+                                        No groups available.
+                                    </div>
+                                ) : (
+                                    <Select
+                                        value={selectedGroupId || 'none'}
+                                        onValueChange={(value) => {
+                                            const newValue = value === 'none' ? '' : value;
+                                            setSelectedGroupId(newValue);
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-9 text-sm">
+                                            <SelectValue placeholder="Select a group (optional)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No group</SelectItem>
+                                            {availableGroups.map((g: any) => (
+                                                <SelectItem key={g.id} value={g.id}>
+                                                    {g.name} ({g.type})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                <p className="text-[11px] text-gray-500">The vote will be assigned to this group when created.</p>
+                            </div>
+                        )}
 
                         <div className="flex gap-2 pt-4">
                             <Button

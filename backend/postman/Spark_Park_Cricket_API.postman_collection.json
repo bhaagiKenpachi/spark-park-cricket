@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "spark-park-cricket-api",
     "name": "Spark Park Cricket API",
-    "description": "Cricket Tournament Management System with Team A vs Team B matches, custom team naming, toss functionality, comprehensive ball-by-ball scoring with real-time WebSocket updates, and voting system for polls and surveys",
+    "description": "Cricket Tournament Management System with Team A vs Team B matches, custom team naming, toss functionality, comprehensive ball-by-ball scoring with real-time WebSocket updates, voting system for polls and surveys, and group-based voting for targeted audience engagement",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "spark-park-cricket"
   },
@@ -1957,6 +1957,628 @@
               ]
             },
             "description": "Remove a player from a team. Cannot remove the captain - must change captain first. Any logged-in user can remove players (requires authentication)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Group Management",
+      "item": [
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Cricket Enthusiasts\",\n    \"description\": \"A group for cricket fans and enthusiasts to discuss and vote on cricket-related topics\",\n    \"type\": \"custom\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups"
+              ]
+            },
+            "description": "Create a new group for voting. Group types: custom, team, series, match, location, skill. Creator is automatically added as admin member (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups?limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get all groups with pagination. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}"
+              ]
+            },
+            "description": "Get a specific group by ID with creator information. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group with Members",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/members",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "members"
+              ]
+            },
+            "description": "Get group members with their user details. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/search?q=cricket&limit=10&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "cricket"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Search groups by name or description. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "List Groups by Type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/type/custom?limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "type",
+                "custom"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Get groups filtered by type. Types: custom, team, series, match, location, skill. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Join Group",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/join",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "join"
+              ]
+            },
+            "description": "Join a group as a member. User is automatically added with 'member' role (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Leave Group",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/leave",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "leave"
+              ]
+            },
+            "description": "Leave a group. Cannot leave if you're the only admin (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Group Name\",\n    \"description\": \"Updated description for the group\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}"
+              ]
+            },
+            "description": "Update group details. Only group admins can update (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Group Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": \"{{user_id}}\",\n    \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/members",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "members"
+              ]
+            },
+            "description": "Add a user to a group. Only group admins can add members (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Group Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/members",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "members"
+              ]
+            },
+            "description": "Remove a user from a group. Only group admins can remove members (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Group Member Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/members/{{user_id}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "members",
+                "{{user_id}}",
+                "role"
+              ]
+            },
+            "description": "Update a group member's role. Roles: member, admin, moderator. Only group admins can update roles (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "stats"
+              ]
+            },
+            "description": "Get group statistics including member count and vote count. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}"
+              ]
+            },
+            "description": "Delete a group. Only group admins can delete groups (requires authentication)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Group Voting",
+      "item": [
+        {
+          "name": "Assign Groups to Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"group_ids\": [\"{{group_id}}\", \"{{group_id_2}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "groups"
+              ]
+            },
+            "description": "Assign groups to a vote for targeted voting. Only vote creators can assign groups (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Groups from Vote",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"group_ids\": [\"{{group_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "groups"
+              ]
+            },
+            "description": "Remove groups from a vote. Only vote creators can remove groups (requires authentication)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vote Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "groups"
+              ]
+            },
+            "description": "Get all groups assigned to a vote. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vote Results by Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/results/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "results",
+                "groups"
+              ]
+            },
+            "description": "Get voting results broken down by groups. Shows how each group voted. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Vote Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/results/groups/{{group_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "results",
+                "groups",
+                "{{group_id}}"
+              ]
+            },
+            "description": "Get voting results for a specific group. Shows how the group voted with voter names. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vote with Group Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/votes/{{vote_id}}/results/grouped",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "votes",
+                "{{vote_id}}",
+                "results",
+                "grouped"
+              ]
+            },
+            "description": "Get vote with results broken down by groups and overall results. Comprehensive view of group voting. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Group Votes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/groups/{{group_id}}/votes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "groups",
+                "{{group_id}}",
+                "votes"
+              ]
+            },
+            "description": "Get all votes assigned to a group. Public endpoint - no authentication required."
           },
           "response": []
         }
