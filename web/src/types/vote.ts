@@ -78,6 +78,7 @@ export interface VoteFilters {
     status?: VoteStatus;
     type?: VoteType;
     created_by?: string;
+    group_id?: string;
     limit?: number;
     offset?: number;
     page?: number;

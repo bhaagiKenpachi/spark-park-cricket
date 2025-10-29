@@ -11,21 +11,23 @@ import { GroupWithCreator, GroupType, GroupFilters } from '@/types/group';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
-    Plus,
     Search,
     Users,
     Calendar,
-    MoreHorizontal,
     Edit,
     Trash2,
-    Eye,
+    MoreHorizontal,
     Filter
 } from 'lucide-react';
-import { GroupForm } from './GroupForm';
-import { GroupView } from './GroupView';
 
 const GROUP_TYPES: { value: GroupType | 'all'; label: string }[] = [
     { value: 'all', label: 'All Types' },
@@ -45,16 +47,14 @@ const GROUP_STATUSES = [
 ];
 
 interface GroupListProps {
-    onGroupSelect?: (group: GroupWithCreator) => void;
+    onCreateGroup?: () => void;
+    onEditGroup?: (group: GroupWithCreator) => void;
 }
 
-export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element {
+export function GroupList({ onCreateGroup, onEditGroup }: GroupListProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const { groups, loading, error, pagination } = useAppSelector(state => state.group);
 
-    const [showForm, setShowForm] = useState(false);
-    const [editingGroup, setEditingGroup] = useState<GroupWithCreator | null>(null);
-    const [viewingGroup, setViewingGroup] = useState<GroupWithCreator | null>(null);
     const [filters, setFilters] = useState<GroupFilters>({
         limit: 20,
         offset: 0,
@@ -105,17 +105,6 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
         }
     };
 
-    const handleFormSuccess = () => {
-        setShowForm(false);
-        setEditingGroup(null);
-        dispatch(fetchGroupsRequest(filters));
-    };
-
-    const handleFormCancel = () => {
-        setShowForm(false);
-        setEditingGroup(null);
-    };
-
     const getTypeColor = (type: GroupType): string => {
         const colors = {
             custom: 'bg-blue-100 text-blue-800',
@@ -137,44 +126,12 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
         return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
     };
 
-    if (showForm || editingGroup) {
-        return (
-            <GroupForm
-                group={editingGroup || undefined}
-                onSuccess={handleFormSuccess}
-                onCancel={handleFormCancel}
-            />
-        );
-    }
-
-    if (viewingGroup) {
-        return (
-            <GroupView
-                group={viewingGroup}
-                onBack={() => setViewingGroup(null)}
-                onEdit={(group) => {
-                    setViewingGroup(null);
-                    setEditingGroup(group);
-                }}
-            />
-        );
-    }
-
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Groups</h1>
-                <Button onClick={() => setShowForm(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Group
-                </Button>
-            </div>
-
             {/* Filters */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row gap-4">
+                <CardContent className="pt-4">
+                    <div className="flex flex-col gap-3">
                         {/* Search */}
                         <div className="flex-1">
                             <div className="relative">
@@ -183,8 +140,8 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                                     placeholder="Search groups..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="pl-10"
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                                    className="pl-9 h-9 text-sm"
                                 />
                             </div>
                         </div>
@@ -194,7 +151,7 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                             value={filters.type || 'all'}
                             onValueChange={(value) => handleFilterChange('type', value)}
                         >
-                            <SelectTrigger className="w-full sm:w-40">
+                            <SelectTrigger className="h-9 text-sm">
                                 <SelectValue placeholder="Type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -211,7 +168,7 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                             value={filters.status || 'all'}
                             onValueChange={(value) => handleFilterChange('status', value)}
                         >
-                            <SelectTrigger className="w-full sm:w-40">
+                            <SelectTrigger className="h-9 text-sm">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -223,7 +180,7 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                             </SelectContent>
                         </Select>
 
-                        <Button onClick={handleSearch} variant="outline">
+                        <Button onClick={handleSearch} variant="outline" size="sm" className="h-8">
                             <Filter className="w-4 h-4 mr-2" />
                             Filter
                         </Button>
@@ -262,7 +219,7 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                         </Card>
                     ))}
                 </div>
-            ) : groups.length === 0 ? (
+            ) : (groups || []).length === 0 ? (
                 <Card>
                     <CardContent className="p-8 text-center">
                         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -270,58 +227,53 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                         <p className="text-gray-500 mb-4">
                             {searchQuery || filters.type || filters.status
                                 ? 'Try adjusting your search criteria'
-                                : 'Get started by creating your first group'
+                                : 'No groups found'
                             }
                         </p>
-                        {!searchQuery && !filters.type && !filters.status && (
-                            <Button onClick={() => setShowForm(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create Group
-                            </Button>
-                        )}
                     </CardContent>
                 </Card>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {groups.map((group) => (
-                            <Card key={group.id} className="hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
+                    <div className="grid grid-cols-1 gap-3">
+                        {(groups || []).map((group) => (
+                            <Card
+                                key={group.id}
+                                className="border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all"
+                            >
+                                <CardHeader className="pb-2 pt-3 px-4">
                                     <div className="flex justify-between items-start">
-                                        <CardTitle className="text-lg">{group.name}</CardTitle>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => setViewingGroup(group)}
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => setEditingGroup(group)}
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => handleDeleteGroup(group)}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-md bg-blue-50 flex items-center justify-center">
+                                                <Users className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <CardTitle className="text-base leading-tight">{group.name}</CardTitle>
                                         </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                    <span className="sr-only">Open menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-40">
+                                                <DropdownMenuItem onClick={() => onEditGroup?.(group)}>
+                                                    <Edit className="w-4 h-4 mr-2" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteGroup(group)} className="text-red-600 focus:text-red-600">
+                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="pt-0 px-4 pb-4">
                                     {group.description && (
-                                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                                        <p className="text-xs text-gray-600 mb-3 line-clamp-2">
                                             {group.description}
                                         </p>
                                     )}
 
-                                    <div className="flex flex-wrap gap-2 mb-3">
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
                                         <Badge className={getTypeColor(group.type)}>
                                             {GROUP_TYPES.find(t => t.value === group.type)?.label}
                                         </Badge>
@@ -331,17 +283,11 @@ export function GroupList({ onGroupSelect }: GroupListProps): React.JSX.Element 
                                     </div>
 
                                     <div className="flex items-center justify-between text-sm text-gray-500">
-                                        <span>Created by {group.creator.display_name}</span>
-                                        <span>{new Date(group.created_at).toLocaleDateString()}</span>
+                                        <span className="truncate text-xs">By {group.creator?.display_name ?? (group as any).creator_name ?? 'Unknown'}</span>
+                                        <span className="tabular-nums text-xs">{new Date(group.created_at).toLocaleDateString()}</span>
                                     </div>
 
-                                    <Button
-                                        className="w-full mt-3"
-                                        variant="outline"
-                                        onClick={() => onGroupSelect?.(group)}
-                                    >
-                                        View Details
-                                    </Button>
+                                    {/* View button removed as per request */}
                                 </CardContent>
                             </Card>
                         ))}

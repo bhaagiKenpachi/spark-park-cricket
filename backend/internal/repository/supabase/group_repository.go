@@ -522,13 +522,12 @@ func (r *groupRepository) GetUserGroups(ctx context.Context, userID string) ([]*
 
 // AssignGroupsToVote assigns groups to a vote
 func (r *groupRepository) AssignGroupsToVote(ctx context.Context, voteID string, groupIDs []string) error {
-	// Create vote-group associations
-	voteGroups := make([]models.VoteGroup, len(groupIDs))
+	// Create vote-group associations (let database generate UUID for ID)
+	voteGroups := make([]map[string]interface{}, len(groupIDs))
 	for i, groupID := range groupIDs {
-		voteGroups[i] = models.VoteGroup{
-			ID:      fmt.Sprintf("%s-%s", voteID, groupID), // Simple ID generation
-			VoteID:  voteID,
-			GroupID: groupID,
+		voteGroups[i] = map[string]interface{}{
+			"vote_id":  voteID,
+			"group_id": groupID,
 		}
 	}
 

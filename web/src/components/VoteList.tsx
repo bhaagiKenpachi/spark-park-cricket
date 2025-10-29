@@ -39,6 +39,7 @@ import {
     MoreVertical,
     Share2
 } from 'lucide-react';
+import { groupService } from '@/services/groupService';
 
 interface VoteListProps {
     onCreateVote?: () => void;
@@ -60,6 +61,8 @@ export function VoteList({
         page: 1,
         page_size: 20,
     });
+    const [availableGroups, setAvailableGroups] = useState<any[]>([]);
+    const [groupsLoading, setGroupsLoading] = useState(false);
 
     // Ensure votes is always an array
     const votesList = Array.isArray(votes) ? votes : [];
@@ -67,6 +70,23 @@ export function VoteList({
     useEffect(() => {
         dispatch(fetchVotesRequest(localFilters));
     }, [dispatch, localFilters]);
+
+    // Load groups for filtering
+    useEffect(() => {
+        const loadGroups = async () => {
+            setGroupsLoading(true);
+            try {
+                const res = await groupService.getGroups({ limit: 50, offset: 0 });
+                const groupsData = (res.data as any).data || res.data;
+                setAvailableGroups(Array.isArray(groupsData) ? groupsData : []);
+            } catch (e) {
+                setAvailableGroups([]);
+            } finally {
+                setGroupsLoading(false);
+            }
+        };
+        loadGroups();
+    }, []);
 
     const handleFilterChange = (key: keyof VoteFilters, value: string | undefined) => {
         const newFilters = { ...localFilters, page: 1 }; // Reset to page 1 when filters change
@@ -226,6 +246,34 @@ export function VoteList({
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+
+                    {/* Group Filter */}
+                    <div className="mt-2">
+                        <label className="block text-[10px] font-medium text-gray-600 mb-0.5">
+                            Group
+                        </label>
+                        <Select
+                            value={localFilters.group_id || 'all'}
+                            onValueChange={(value) => handleFilterChange('group_id', value === 'all' ? undefined : value)}
+                        >
+                            <SelectTrigger className="w-full h-8 text-xs">
+                                <SelectValue placeholder="All Groups" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Groups</SelectItem>
+                                <SelectItem value="unassigned">Unassigned (No Group)</SelectItem>
+                                {groupsLoading ? (
+                                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                ) : (
+                                    availableGroups.map((group: any) => (
+                                        <SelectItem key={group.id} value={group.id}>
+                                            {group.name} ({group.type})
+                                        </SelectItem>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

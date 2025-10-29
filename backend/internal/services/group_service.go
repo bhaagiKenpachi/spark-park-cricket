@@ -214,7 +214,7 @@ func (s *GroupService) UpdateGroup(ctx context.Context, groupID string, req *mod
 		"user_id":  userID,
 	})
 
-	return &group.Group, nil
+	return group, nil
 }
 
 // DeleteGroup deletes a group

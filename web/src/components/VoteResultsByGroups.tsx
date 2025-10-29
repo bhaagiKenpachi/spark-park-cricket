@@ -1,13 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-    fetchVoteResultsByGroupsRequest,
-    fetchVoteWithGroupResultsRequest,
-    clearError,
-} from '@/store/reducers/groupSlice';
 import { VoteGroupResults, VoteWithGroupResults } from '@/types/group';
+import { groupService } from '@/services/groupService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,30 +27,36 @@ const GROUP_TYPES: Record<string, string> = {
 };
 
 export function VoteResultsByGroups({ voteId, showDetailed = false }: VoteResultsByGroupsProps): React.JSX.Element {
-    const dispatch = useAppDispatch();
-    const {
-        voteGroupResults,
-        voteWithGroupResults,
-        loading,
-        error
-    } = useAppSelector(state => state.group);
-
+    const [voteGroupResults, setVoteGroupResults] = useState<VoteGroupResults | null>(null);
+    const [voteWithGroupResults, setVoteWithGroupResults] = useState<VoteWithGroupResults | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'groups'>('overview');
 
-    useEffect(() => {
-        if (showDetailed) {
-            dispatch(fetchVoteWithGroupResultsRequest(voteId));
-        } else {
-            dispatch(fetchVoteResultsByGroupsRequest(voteId));
+    const fetchResults = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            if (showDetailed) {
+                const response = await groupService.getVoteWithGroupResults(voteId);
+                setVoteWithGroupResults(response.data);
+            } else {
+                const response = await groupService.getVoteResultsByGroups(voteId);
+                setVoteGroupResults(response.data);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch results');
+        } finally {
+            setLoading(false);
         }
-    }, [dispatch, voteId, showDetailed]);
+    };
+
+    useEffect(() => {
+        fetchResults();
+    }, [voteId, showDetailed]);
 
     const handleRefresh = () => {
-        if (showDetailed) {
-            dispatch(fetchVoteWithGroupResultsRequest(voteId));
-        } else {
-            dispatch(fetchVoteResultsByGroupsRequest(voteId));
-        }
+        fetchResults();
     };
 
     const getTypeColor = (type: string): string => {
@@ -236,7 +237,7 @@ export function VoteResultsByGroups({ voteId, showDetailed = false }: VoteResult
                     <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => dispatch(clearError())}
+                        onClick={() => setError(null)}
                         className="mt-2"
                     >
                         Dismiss

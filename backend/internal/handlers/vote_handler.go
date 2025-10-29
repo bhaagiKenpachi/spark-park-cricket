@@ -249,6 +249,11 @@ func (h *VoteHandler) ListVotes(w http.ResponseWriter, r *http.Request) {
 		filters.CreatedBy = &createdBy
 	}
 
+	// Parse group_id filter
+	if groupID := r.URL.Query().Get("group_id"); groupID != "" {
+		filters.GroupID = &groupID
+	}
+
 	// Parse limit (page_size)
 	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 && limit <= 100 {

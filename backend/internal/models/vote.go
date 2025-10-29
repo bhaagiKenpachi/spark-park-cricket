@@ -110,6 +110,7 @@ type VoteFilters struct {
 	Status    *VoteStatus `json:"status,omitempty"`
 	CreatedBy *string     `json:"created_by,omitempty"`
 	Type      *VoteType   `json:"type,omitempty"`
+	GroupID   *string     `json:"group_id,omitempty"`
 	Limit     int         `json:"limit" validate:"min=1,max=100"`
 	Offset    int         `json:"offset" validate:"min=0"`
 }

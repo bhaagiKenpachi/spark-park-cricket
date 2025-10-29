@@ -180,11 +180,109 @@ func (r *VoteRepository) DeleteVote(ctx context.Context, id string) error {
 	return nil
 }
 
+// getUnassignedVoteIDs gets vote IDs that are NOT assigned to any group
+func (r *VoteRepository) getUnassignedVoteIDs(ctx context.Context) ([]string, error) {
+	// Get all vote IDs that ARE assigned to groups
+	var assignedVotes []struct {
+		VoteID string `json:"vote_id"`
+	}
+	_, err := r.client.From("vote_groups").
+		Select("vote_id", "", false).
+		ExecuteTo(&assignedVotes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get assigned vote IDs: %w", err)
+	}
+
+	// If no votes are assigned, all votes are unassigned - get all vote IDs
+	if len(assignedVotes) == 0 {
+		var allVotes []models.Vote
+		_, err = r.client.From("votes").Select("id", "", false).ExecuteTo(&allVotes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get all votes: %w", err)
+		}
+		voteIDs := make([]string, len(allVotes))
+		for i, vote := range allVotes {
+			voteIDs[i] = vote.ID
+		}
+		return voteIDs, nil
+	}
+
+	// Create a set of assigned vote IDs
+	assignedSet := make(map[string]bool)
+	for _, vg := range assignedVotes {
+		assignedSet[vg.VoteID] = true
+	}
+
+	// Get all votes
+	var allVotes []models.Vote
+	_, err = r.client.From("votes").Select("id", "", false).ExecuteTo(&allVotes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all votes: %w", err)
+	}
+
+	// Collect unassigned vote IDs
+	unassignedIDs := make([]string, 0)
+	for _, vote := range allVotes {
+		if !assignedSet[vote.ID] {
+			unassignedIDs = append(unassignedIDs, vote.ID)
+		}
+	}
+
+	return unassignedIDs, nil
+}
+
 // CountVotes counts votes with filters
 func (r *VoteRepository) CountVotes(ctx context.Context, filters *models.VoteFilters) (int, error) {
 	query := r.client.From("votes").Select("id", "exact", false)
 
-	// Add filters (same as ListVotes)
+	// Handle group_id filter first - if present, get vote IDs from vote_groups table
+	var voteIDs []string
+	var err error
+	if filters != nil && filters.GroupID != nil && *filters.GroupID != "" {
+		// Special case: "unassigned" means votes NOT assigned to any group
+		if *filters.GroupID == "unassigned" {
+			unassignedIDs, err := r.getUnassignedVoteIDs(ctx)
+			if err != nil {
+				utils.LogError(err, "Failed to get unassigned vote IDs", nil)
+				return 0, fmt.Errorf("failed to get unassigned votes: %w", err)
+			}
+			if len(unassignedIDs) == 0 {
+				return 0, nil
+			}
+			query = query.In("id", unassignedIDs)
+		} else {
+			// Regular group filter: get votes assigned to this specific group
+			var voteGroups []struct {
+				VoteID string `json:"vote_id"`
+			}
+			_, err = r.client.From("vote_groups").
+				Select("vote_id", "", false).
+				Eq("group_id", *filters.GroupID).
+				ExecuteTo(&voteGroups)
+			if err != nil {
+				utils.LogError(err, "Failed to get vote IDs for group", map[string]interface{}{
+					"group_id": *filters.GroupID,
+				})
+				return 0, fmt.Errorf("failed to get votes for group: %w", err)
+			}
+
+			// If no votes found for this group, return 0
+			if len(voteGroups) == 0 {
+				return 0, nil
+			}
+
+			// Extract vote IDs
+			voteIDs = make([]string, len(voteGroups))
+			for i, vg := range voteGroups {
+				voteIDs[i] = vg.VoteID
+			}
+
+			// Filter by vote IDs
+			query = query.In("id", voteIDs)
+		}
+	}
+
+	// Add other filters
 	if filters != nil {
 		if filters.Status != nil {
 			query = query.Eq("status", string(*filters.Status))
@@ -200,7 +298,7 @@ func (r *VoteRepository) CountVotes(ctx context.Context, filters *models.VoteFil
 	}
 
 	var votes []models.Vote
-	_, err := query.ExecuteTo(&votes)
+	_, err = query.ExecuteTo(&votes)
 	if err != nil {
 		utils.LogError(err, "Failed to count votes", map[string]interface{}{
 			"filters": filters,
@@ -215,32 +313,93 @@ func (r *VoteRepository) CountVotes(ctx context.Context, filters *models.VoteFil
 func (r *VoteRepository) ListVotes(ctx context.Context, filters *models.VoteFilters) (*models.PaginatedVoteList, error) {
 	query := r.client.From("votes").Select("*", "", false)
 
-	// Add filters
-	if filters.Status != nil {
-		query = query.Eq("status", string(*filters.Status))
+	// Handle group_id filter first - if present, get vote IDs from vote_groups table
+	var voteIDs []string
+	var err error
+	if filters != nil && filters.GroupID != nil && *filters.GroupID != "" {
+		// Special case: "unassigned" means votes NOT assigned to any group
+		if *filters.GroupID == "unassigned" {
+			unassignedIDs, err := r.getUnassignedVoteIDs(ctx)
+			if err != nil {
+				utils.LogError(err, "Failed to get unassigned vote IDs", nil)
+				return nil, fmt.Errorf("failed to get unassigned votes: %w", err)
+			}
+			if len(unassignedIDs) == 0 {
+				return &models.PaginatedVoteList{
+					Votes:      []*models.VoteWithCreator{},
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   filters.Limit,
+					TotalPages: 0,
+				}, nil
+			}
+			query = query.In("id", unassignedIDs)
+		} else {
+			// Regular group filter: get votes assigned to this specific group
+			var voteGroups []struct {
+				VoteID string `json:"vote_id"`
+			}
+			_, err = r.client.From("vote_groups").
+				Select("vote_id", "", false).
+				Eq("group_id", *filters.GroupID).
+				ExecuteTo(&voteGroups)
+			if err != nil {
+				utils.LogError(err, "Failed to get vote IDs for group", map[string]interface{}{
+					"group_id": *filters.GroupID,
+				})
+				return nil, fmt.Errorf("failed to get votes for group: %w", err)
+			}
+
+			// If no votes found for this group, return empty list
+			if len(voteGroups) == 0 {
+				return &models.PaginatedVoteList{
+					Votes:      []*models.VoteWithCreator{},
+					TotalItems: 0,
+					Page:       1,
+					PageSize:   filters.Limit,
+					TotalPages: 0,
+				}, nil
+			}
+
+			// Extract vote IDs
+			voteIDs = make([]string, len(voteGroups))
+			for i, vg := range voteGroups {
+				voteIDs[i] = vg.VoteID
+			}
+
+			// Filter by vote IDs
+			query = query.In("id", voteIDs)
+		}
 	}
 
-	if filters.CreatedBy != nil {
-		query = query.Eq("created_by", *filters.CreatedBy)
-	}
+	// Add other filters
+	if filters != nil {
+		if filters.Status != nil {
+			query = query.Eq("status", string(*filters.Status))
+		}
 
-	if filters.Type != nil {
-		query = query.Eq("type", string(*filters.Type))
+		if filters.CreatedBy != nil {
+			query = query.Eq("created_by", *filters.CreatedBy)
+		}
+
+		if filters.Type != nil {
+			query = query.Eq("type", string(*filters.Type))
+		}
 	}
 
 	// Add ordering and pagination
 	query = query.Order("created_at", &postgrest.OrderOpts{Ascending: false})
 
-	if filters.Limit > 0 {
+	if filters != nil && filters.Limit > 0 {
 		query = query.Limit(filters.Limit, "")
 	}
 
-	if filters.Offset > 0 {
+	if filters != nil && filters.Offset > 0 {
 		query = query.Range(filters.Offset, filters.Offset+filters.Limit-1, "")
 	}
 
 	var votes []models.Vote
-	_, err := query.ExecuteTo(&votes)
+	_, err = query.ExecuteTo(&votes)
 	if err != nil {
 		utils.LogError(err, "Failed to list votes", nil)
 		return nil, fmt.Errorf("failed to list votes: %w", err)

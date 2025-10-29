@@ -54,6 +54,9 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		dbClient.CacheManager.SetMetrics(metrics)
 	}
 
+	// Create group service first
+	groupService := NewGroupService(dbClient.Repositories.Group, dbClient.Repositories.User, dbClient.Repositories.Vote)
+
 	// Create container
 	container := &Container{
 		DBClient:   dbClient,
@@ -67,9 +70,9 @@ func NewContainer(dbClient *database.Client, cfg *config.Config) *Container {
 		// User services
 		UserService: NewUserService(dbClient.Repositories.User),
 		// Voting services
-		VoteService:     NewVoteService(dbClient.Repositories.Vote),
+		VoteService:     NewVoteService(dbClient.Repositories.Vote, groupService),
 		VoteTeamService: NewVoteTeamService(dbClient.Repositories.VoteTeam, dbClient.Repositories.Vote),
-		GroupService:    NewGroupService(dbClient.Repositories.Group, dbClient.Repositories.User, dbClient.Repositories.Vote),
+		GroupService:    groupService,
 		// Fall of wickets service
 		FallOfWicketsService: NewFallOfWicketsService(
 			dbClient.Repositories.FallOfWickets,

@@ -27,7 +27,9 @@
     "type-check": "tsc --noEmit",
     "prepare": "husky install",
     "posthog:dashboard:create": "node scripts/posthog/create-series-dashboard.js",
-    "posthog:dashboard:manage": "node scripts/posthog/manage-dashboard.js"
+    "posthog:dashboard:manage": "node scripts/posthog/manage-dashboard.js",
+    "kill:backend": "lsof -ti:8080 | xargs -r kill -9",
+    "kill:frontend": "lsof -ti:3000 | xargs -r kill -9"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
