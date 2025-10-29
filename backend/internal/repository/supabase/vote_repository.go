@@ -728,9 +728,6 @@ func (r *VoteRepository) GetVoteResultsWithNames(ctx context.Context, voteID str
 
 // getUserNameByID gets a user's name by their ID
 func (r *VoteRepository) getUserNameByID(ctx context.Context, userID string) (string, error) {
-	utils.LogInfo("Getting user name by ID", map[string]interface{}{
-		"user_id": userID,
-	})
 
 	var users []struct {
 		Name string `json:"name"`
@@ -754,11 +751,6 @@ func (r *VoteRepository) getUserNameByID(ctx context.Context, userID string) (st
 		})
 		return "", fmt.Errorf("user not found")
 	}
-
-	utils.LogInfo("User name retrieved", map[string]interface{}{
-		"user_id":   userID,
-		"user_name": users[0].Name,
-	})
 
 	return users[0].Name, nil
 }

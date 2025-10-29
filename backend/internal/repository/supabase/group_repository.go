@@ -33,12 +33,6 @@ func (r *groupRepository) CreateGroup(ctx context.Context, group *models.Group) 
 		return fmt.Errorf("failed to create group: %w", err)
 	}
 
-	utils.LogInfo("Group created successfully", map[string]interface{}{
-		"group_id": group.ID,
-		"name":     group.Name,
-		"type":     group.Type,
-	})
-
 	return nil
 }
 
@@ -306,10 +300,6 @@ func (r *groupRepository) UpdateGroup(ctx context.Context, group *models.Group) 
 		return fmt.Errorf("failed to update group: %w", err)
 	}
 
-	utils.LogInfo("Group updated successfully", map[string]interface{}{
-		"group_id": group.ID,
-	})
-
 	return nil
 }
 
@@ -322,10 +312,6 @@ func (r *groupRepository) DeleteGroup(ctx context.Context, groupID string) error
 		})
 		return fmt.Errorf("failed to delete group: %w", err)
 	}
-
-	utils.LogInfo("Group deleted successfully", map[string]interface{}{
-		"group_id": groupID,
-	})
 
 	return nil
 }
@@ -342,12 +328,6 @@ func (r *groupRepository) AddGroupMember(ctx context.Context, member *models.Gro
 		return fmt.Errorf("failed to add group member: %w", err)
 	}
 
-	utils.LogInfo("Group member added successfully", map[string]interface{}{
-		"group_id": member.GroupID,
-		"user_id":  member.UserID,
-		"role":     member.Role,
-	})
-
 	return nil
 }
 
@@ -361,11 +341,6 @@ func (r *groupRepository) RemoveGroupMember(ctx context.Context, groupID, userID
 		})
 		return fmt.Errorf("failed to remove group member: %w", err)
 	}
-
-	utils.LogInfo("Group member removed successfully", map[string]interface{}{
-		"group_id": groupID,
-		"user_id":  userID,
-	})
 
 	return nil
 }
@@ -459,12 +434,6 @@ func (r *groupRepository) UpdateGroupMemberRole(ctx context.Context, groupID, us
 		return fmt.Errorf("failed to update group member role: %w", err)
 	}
 
-	utils.LogInfo("Group member role updated successfully", map[string]interface{}{
-		"group_id": groupID,
-		"user_id":  userID,
-		"role":     role,
-	})
-
 	return nil
 }
 
@@ -541,11 +510,6 @@ func (r *groupRepository) AssignGroupsToVote(ctx context.Context, voteID string,
 		return fmt.Errorf("failed to assign groups to vote: %w", err)
 	}
 
-	utils.LogInfo("Groups assigned to vote successfully", map[string]interface{}{
-		"vote_id":   voteID,
-		"group_ids": groupIDs,
-	})
-
 	return nil
 }
 
@@ -559,11 +523,6 @@ func (r *groupRepository) RemoveGroupsFromVote(ctx context.Context, voteID strin
 		})
 		return fmt.Errorf("failed to remove groups from vote: %w", err)
 	}
-
-	utils.LogInfo("Groups removed from vote successfully", map[string]interface{}{
-		"vote_id":   voteID,
-		"group_ids": groupIDs,
-	})
 
 	return nil
 }

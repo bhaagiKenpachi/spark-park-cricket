@@ -21,15 +21,11 @@ export default function VoteDetailPage(): React.JSX.Element {
 
   useEffect(() => {
     if (voteId) {
-      console.log('Fetching vote with ID:', voteId);
       dispatch(fetchVoteWithResultsRequest(voteId));
     }
   }, [dispatch, voteId]);
 
   useEffect(() => {
-    console.log('Current vote state:', currentVote);
-    console.log('Loading state:', loading);
-    console.log('Error state:', error);
     if (currentVote && currentVote.vote && currentVote.vote.id === voteId) {
       setLocalVote(currentVote);
     }
