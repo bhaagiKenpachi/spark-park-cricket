@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, X, Plus, Trash2 } from 'lucide-react';
+import { Save, X, Plus, Trash2, Users } from 'lucide-react';
+import { GroupVoting } from './GroupVoting';
 
 interface VoteFormProps {
     vote?: Vote | undefined;
@@ -49,6 +50,8 @@ export function VoteForm({
         type: vote?.type || 'single',
         options: ['', ''], // Start with 2 empty options
     });
+
+    const [showGroupAssignment, setShowGroupAssignment] = useState(false);
 
     const [formErrors, setFormErrors] = useState<FormErrors>({});
 
@@ -305,6 +308,36 @@ export function VoteForm({
                                 <p className="text-xs text-red-600">{formErrors.options}</p>
                             )}
                         </div>
+
+                        {/* Group Assignment Section */}
+                        {vote && (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium">Group Assignment</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowGroupAssignment(!showGroupAssignment)}
+                                    >
+                                        <Users className="h-4 w-4 mr-2" />
+                                        {showGroupAssignment ? 'Hide' : 'Manage Groups'}
+                                    </Button>
+                                </div>
+
+                                {showGroupAssignment && (
+                                    <div className="border rounded-lg p-4 bg-gray-50">
+                                        <GroupVoting
+                                            voteId={vote.id}
+                                            onSuccess={() => {
+                                                // Optionally refresh vote data
+                                                dispatch(fetchVoteWithResultsRequest(vote.id));
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex gap-2 pt-4">
                             <Button

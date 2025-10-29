@@ -50,6 +50,11 @@ export interface VoteWithResults {
     total_votes: number;
     voted_users: string[];
     creator_name: string;
+    groups?: Array<{
+        id: string;
+        name: string;
+        type: string;
+    }>;
 }
 
 export interface CreateVoteRequest {
