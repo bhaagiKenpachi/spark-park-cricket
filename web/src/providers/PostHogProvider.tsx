@@ -21,8 +21,9 @@ function PostHogPageView() {
         url = url + `?${searchParams.toString()}`;
       }
 
-      // Capture pageview
-      if (process.env.NODE_ENV !== 'development' && posthog) {
+      // Capture pageview (allowed in dev when override flag is enabled)
+      const allowInDev = process.env.NODE_ENV !== 'development' || process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
+      if (allowInDev && posthog) {
         posthog.capture('$pageview', {
           $current_url: url,
         });

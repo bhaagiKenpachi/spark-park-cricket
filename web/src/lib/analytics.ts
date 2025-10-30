@@ -14,9 +14,10 @@ import {
 
 // Helper to check if PostHog is available and enabled
 const isPostHogAvailable = (): boolean => {
-  // Disable all tracking in development
+  // Disable all tracking in development unless explicitly enabled
   if (process.env.NODE_ENV === 'development') {
-    return false;
+    const enableInDev = process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
+    if (!enableInDev) return false;
   }
   return typeof window !== 'undefined' && posthog !== null;
 };
