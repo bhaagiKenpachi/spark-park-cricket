@@ -11,7 +11,9 @@ export function PostHogProvider({ children }: PostHogProviderProps) {
   // Initialize PostHog on mount (only on client side)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      initPostHog();
+      initPostHog().catch((error) => {
+        console.error('Failed to initialize PostHog:', error);
+      });
     }
   }, []);
 

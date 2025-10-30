@@ -1,4 +1,4 @@
-import { posthog } from './posthog';
+import { getPostHog } from './posthog';
 import {
   PostHogEvent,
   SeriesEventProperties,
@@ -19,7 +19,7 @@ const isPostHogAvailable = (): boolean => {
     const enableInDev = process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
     if (!enableInDev) return false;
   }
-  return typeof window !== 'undefined' && posthog !== null;
+  return typeof window !== 'undefined' && getPostHog() !== null;
 };
 
 // Generic event tracking function
@@ -30,7 +30,10 @@ export const trackEvent = (
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture(eventName, properties);
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.capture(eventName, properties);
+    }
   } catch (error) {
     console.error('Failed to track event:', eventName, error);
   }
@@ -148,7 +151,10 @@ export const identifyUser = (userId: string, properties?: UserProperties): void 
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.identify(userId, properties);
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.identify(userId, properties);
+    }
   } catch (error) {
     console.error('Failed to identify user:', error);
   }
@@ -158,7 +164,10 @@ export const resetUser = (): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.reset();
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.reset();
+    }
   } catch (error) {
     console.error('Failed to reset user:', error);
   }
@@ -169,7 +178,10 @@ export const setUserProperties = (properties: Partial<UserProperties>): void => 
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.setPersonProperties(properties);
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.setPersonProperties(properties);
+    }
   } catch (error) {
     console.error('Failed to set user properties:', error);
   }
@@ -180,7 +192,10 @@ export const setGroup = (groupType: string, groupId: string): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.group(groupType, groupId);
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.group(groupType, groupId);
+    }
   } catch (error) {
     console.error('Failed to set group:', error);
   }
@@ -191,7 +206,10 @@ export const trackPageView = (path?: string): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture('$pageview', { path: path || window.location.pathname });
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.capture('$pageview', { path: path || window.location.pathname });
+    }
   } catch (error) {
     console.error('Failed to track page view:', error);
   }

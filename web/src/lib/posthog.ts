@@ -1,8 +1,7 @@
-import posthog from 'posthog-js';
-
+let posthog: any = null;
 let isInitialized = false;
 
-export const initPostHog = (): void => {
+export const initPostHog = async (): Promise<void> => {
     // Only run on client side
     if (typeof window === 'undefined') {
         return;
@@ -31,6 +30,9 @@ export const initPostHog = (): void => {
     }
 
     try {
+        // Dynamically import posthog only on client side
+        const { default: posthogLib } = await import('posthog-js');
+        posthog = posthogLib;
 
         posthog.init(posthogKey, {
             api_host: posthogHost,
@@ -39,7 +41,7 @@ export const initPostHog = (): void => {
             autocapture: true,
             persistence: 'localStorage+cookie',
             disable_session_recording: false,
-            loaded: (posthogInstance) => {
+            loaded: (posthogInstance: any) => {
                 const debug = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
                 if (debug) {
                     posthogInstance.debug();
@@ -60,7 +62,5 @@ export const getPostHog = () => {
     }
     return posthog;
 };
-
-export { posthog };
 
 
