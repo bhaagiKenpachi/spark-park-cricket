@@ -1,13 +1,20 @@
-let posthog: any = null;
+import posthog from 'posthog-js';
+
 let isInitialized = false;
 
-export const initPostHog = async (): Promise<void> => {
+export const initPostHog = (): void => {
     // Only run on client side
     if (typeof window === 'undefined') {
         return;
     }
 
-    // Always allow initialization regardless of NODE_ENV
+    // Disable analytics entirely in development mode unless explicitly enabled
+    if (process.env.NODE_ENV === 'development') {
+        const enableInDev = process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
+        if (!enableInDev) {
+            return;
+        }
+    }
 
     // Prevent multiple initializations
     if (isInitialized) {
@@ -24,9 +31,6 @@ export const initPostHog = async (): Promise<void> => {
     }
 
     try {
-        // Dynamically import posthog only on client side
-        const { default: posthogLib } = await import('posthog-js');
-        posthog = posthogLib;
 
         posthog.init(posthogKey, {
             api_host: posthogHost,
@@ -35,7 +39,7 @@ export const initPostHog = async (): Promise<void> => {
             autocapture: true,
             persistence: 'localStorage+cookie',
             disable_session_recording: false,
-            loaded: (posthogInstance: any) => {
+            loaded: (posthogInstance) => {
                 const debug = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
                 if (debug) {
                     posthogInstance.debug();
@@ -56,5 +60,7 @@ export const getPostHog = () => {
     }
     return posthog;
 };
+
+export { posthog };
 
 

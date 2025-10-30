@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPostHog } from '@/lib/posthog';
+import { posthog } from '@/lib/posthog';
 import { FeatureFlag } from '@/types/posthog';
 
 /**
@@ -17,7 +17,6 @@ export function useFeatureFlag(
 
     useEffect(() => {
         // Only run on client side
-        const posthog = getPostHog();
         if (typeof window === 'undefined' || !posthog) {
             setEnabled(defaultValue);
             setLoading(false);
@@ -68,7 +67,6 @@ export function useFeatureFlags(
     const [flagValues, setFlagValues] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
-        const posthog = getPostHog();
         if (typeof window === 'undefined' || !posthog) {
             return;
         }
@@ -105,7 +103,6 @@ export function useFeatureFlagPayload(
     const [payload, setPayload] = useState<unknown | undefined>(undefined);
 
     useEffect(() => {
-        const posthog = getPostHog();
         if (typeof window === 'undefined' || !posthog) {
             return;
         }
