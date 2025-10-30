@@ -8,9 +8,12 @@ export const initPostHog = (): void => {
         return;
     }
 
-    // Disable analytics entirely in development mode
+    // Disable analytics entirely in development mode unless explicitly enabled
     if (process.env.NODE_ENV === 'development') {
-        return;
+        const enableInDev = process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
+        if (!enableInDev) {
+            return;
+        }
     }
 
     // Prevent multiple initializations
@@ -38,7 +41,7 @@ export const initPostHog = (): void => {
             disable_session_recording: false,
             loaded: (posthogInstance) => {
                 const debug = process.env.NEXT_PUBLIC_POSTHOG_DEBUG === 'true';
-                if (debug && process.env.NODE_ENV === 'development') {
+                if (debug) {
                     posthogInstance.debug();
                 }
             },
