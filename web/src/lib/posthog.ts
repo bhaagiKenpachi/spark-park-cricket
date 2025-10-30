@@ -7,13 +7,7 @@ export const initPostHog = async (): Promise<void> => {
         return;
     }
 
-    // Disable analytics entirely in development mode unless explicitly enabled
-    if (process.env.NODE_ENV === 'development') {
-        const enableInDev = process.env.NEXT_PUBLIC_POSTHOG_ENABLE_IN_DEV === 'true';
-        if (!enableInDev) {
-            return;
-        }
-    }
+    // Always allow initialization regardless of NODE_ENV
 
     // Prevent multiple initializations
     if (isInitialized) {
