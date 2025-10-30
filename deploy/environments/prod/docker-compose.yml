@@ -69,8 +69,8 @@ services:
         NEXT_PUBLIC_API_URL: https://spark-park.dojima.foundation/api/v1
         NEXT_PUBLIC_GRAPHQL_URL: https://spark-park.dojima.foundation/api/v1/graphql
         NEXT_PUBLIC_ADSENSE_CLIENT_ID: ca-pub-5474524579770573
-        NEXT_PUBLIC_POSTHOG_KEY: ${POSTHOG_KEY}
-        NEXT_PUBLIC_POSTHOG_HOST: ${POSTHOG_HOST}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY}
+        NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST}
         NEXT_PUBLIC_POSTHOG_DEBUG: false
         NODE_ENV: production
     depends_on:

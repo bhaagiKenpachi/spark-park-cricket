@@ -130,8 +130,8 @@ jobs:
             --build-arg NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT=${{ secrets.NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT }} \
             --build-arg NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD }} \
             --build-arg NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD }} \
-            --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY }} \
-            --build-arg NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.POSTHOG_HOST }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }} \
             --build-arg NEXT_PUBLIC_POSTHOG_DEBUG=false \
             --build-arg NODE_ENV=production \
             --tag ${{ steps.image-name.outputs.web }}:prod \
@@ -232,8 +232,8 @@ jobs:
           NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT=${{ secrets.NEXT_PUBLIC_SSE_BALL_EVENT_TIMEOUT }}
           NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_WARNING_THRESHOLD }}
           NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD }}
-          NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY }}
-          NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.POSTHOG_HOST }}
+          NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
           NEXT_PUBLIC_POSTHOG_DEBUG=false
           ENVFILE
 
