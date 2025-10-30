@@ -15,10 +15,7 @@ function PostHogPageView() {
 
   // Track page views on route change
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
-
-    if (pathname) {
+    if (pathname && typeof window !== 'undefined') {
       let url = window.origin + pathname;
       if (searchParams && searchParams.toString()) {
         url = url + `?${searchParams.toString()}`;
@@ -36,10 +33,7 @@ function PostHogPageView() {
 
   // Track page performance metrics
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
-
-    if ('performance' in window) {
+    if (typeof window !== 'undefined' && 'performance' in window) {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       if (navigation) {
         // Track page load time
