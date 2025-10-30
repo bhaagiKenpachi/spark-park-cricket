@@ -43,6 +43,7 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		User:          supabase.NewUserRepository(client),
 		Vote:          supabase.NewVoteRepository(client),
 		VoteTeam:      supabase.NewVoteTeamRepository(client, "testing_db"),
+		Group:         supabase.NewGroupRepository(client),
 		FallOfWickets: supabase.NewFallOfWicketsRepository(client),
 	}
 
@@ -57,6 +58,7 @@ func NewTestClient(cfg *config.TestConfig) (*Client, error) {
 		User:          baseRepositories.User, // Not cached yet
 		Vote:          baseRepositories.Vote,
 		VoteTeam:      baseRepositories.VoteTeam,
+		Group:         baseRepositories.Group, // Not cached yet
 		FallOfWickets: cacherepo.NewCachedFallOfWicketsRepository(baseRepositories.FallOfWickets, cacheManager),
 	}
 

@@ -22,7 +22,7 @@ function PostHogPageView() {
       }
 
       // Capture pageview
-      if (posthog) {
+      if (process.env.NODE_ENV !== 'development' && posthog) {
         posthog.capture('$pageview', {
           $current_url: url,
         });

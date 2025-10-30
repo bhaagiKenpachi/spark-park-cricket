@@ -27,11 +27,14 @@
     "type-check": "tsc --noEmit",
     "prepare": "husky install",
     "posthog:dashboard:create": "node scripts/posthog/create-series-dashboard.js",
-    "posthog:dashboard:manage": "node scripts/posthog/manage-dashboard.js"
+    "posthog:dashboard:manage": "node scripts/posthog/manage-dashboard.js",
+    "kill:backend": "lsof -ti:8080 | xargs -r kill -9",
+    "kill:frontend": "lsof -ti:3000 | xargs -r kill -9"
   },
   "dependencies": {
     "@apollo/client": "^4.0.5",
     "@hookform/resolvers": "^5.2.1",
+    "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",

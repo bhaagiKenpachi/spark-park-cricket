@@ -8,6 +8,11 @@ export const initPostHog = (): void => {
         return;
     }
 
+    // Disable analytics entirely in development mode
+    if (process.env.NODE_ENV === 'development') {
+        return;
+    }
+
     // Prevent multiple initializations
     if (isInitialized) {
         return;

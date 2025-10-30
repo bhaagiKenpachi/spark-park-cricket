@@ -136,10 +136,10 @@ export function* createVoteSaga(
 ): Generator<CallEffect | PutEffect, void, any> {
     try {
         const apiService = new ApiService();
-        const { title, description, type, options } = action.payload;
+        const { title, description, type, options, team_formation_enabled } = action.payload;
         const response = yield call(
             apiService.createVote.bind(apiService),
-            { title, description, type, options }
+            { title, description, type, options, team_formation_enabled }
         );
 
         const voteData = response.data.data || response.data;

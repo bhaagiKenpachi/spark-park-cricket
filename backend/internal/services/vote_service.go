@@ -14,13 +14,15 @@ import (
 
 // VoteService implements the VoteServiceInterface
 type VoteService struct {
-	voteRepo interfaces.VoteRepositoryInterface
+	voteRepo     interfaces.VoteRepositoryInterface
+	groupService GroupServiceInterface
 }
 
 // NewVoteService creates a new vote service
-func NewVoteService(voteRepo interfaces.VoteRepositoryInterface) VoteServiceInterface {
+func NewVoteService(voteRepo interfaces.VoteRepositoryInterface, groupService GroupServiceInterface) VoteServiceInterface {
 	return &VoteService{
-		voteRepo: voteRepo,
+		voteRepo:     voteRepo,
+		groupService: groupService,
 	}
 }
 
@@ -33,14 +35,15 @@ func (s *VoteService) CreateVote(ctx context.Context, req *models.CreateVoteRequ
 
 	// Create vote
 	vote := &models.Vote{
-		ID:          uuid.New().String(),
-		Title:       req.Title,
-		Description: req.Description,
-		Type:        req.Type,
-		Status:      models.VoteStatusActive,
-		CreatedBy:   userID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		ID:                   uuid.New().String(),
+		Title:                req.Title,
+		Description:          req.Description,
+		Type:                 req.Type,
+		Status:               models.VoteStatusActive,
+		CreatedBy:            userID,
+		TeamFormationEnabled: req.TeamFormationEnabled,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
 	}
 
 	// Create vote in database
@@ -143,6 +146,9 @@ func (s *VoteService) UpdateVote(ctx context.Context, id string, req *models.Upd
 			vote.ClosedAt = &now
 		}
 	}
+	if req.TeamFormationEnabled != nil {
+		vote.TeamFormationEnabled = *req.TeamFormationEnabled
+	}
 	vote.UpdatedAt = time.Now()
 
 	// Update in database
@@ -220,6 +226,38 @@ func (s *VoteService) CastVote(ctx context.Context, voteID string, req *models.V
 	// Check if vote is active
 	if vote.Status != models.VoteStatusActive {
 		return fmt.Errorf("voting is only allowed on active votes")
+	}
+
+	// Check group membership if vote is assigned to groups
+	voteGroups, err := s.groupService.GetVoteGroups(ctx, voteID)
+	if err != nil {
+		utils.LogError(err, "Failed to get vote groups", map[string]interface{}{
+			"vote_id": voteID,
+		})
+		return fmt.Errorf("failed to check vote group assignments: %w", err)
+	}
+
+	// If vote is assigned to groups, check if user is a member of any assigned group
+	if len(voteGroups) > 0 {
+		userIsMember := false
+		for _, group := range voteGroups {
+			isMember, err := s.groupService.ValidateGroupAccess(ctx, group.ID, userID)
+			if err != nil {
+				utils.LogError(err, "Failed to check group membership", map[string]interface{}{
+					"group_id": group.ID,
+					"user_id":  userID,
+				})
+				continue
+			}
+			if isMember {
+				userIsMember = true
+				break
+			}
+		}
+
+		if !userIsMember {
+			return fmt.Errorf("voting is restricted to group members only")
+		}
 	}
 
 	// Get vote options to validate selections

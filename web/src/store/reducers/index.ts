@@ -9,6 +9,7 @@ import voteReducer from './voteSlice';
 import voteTeamReducer from './voteTeamSlice';
 import eventReducer from './eventSlice';
 import timeTrackingReducer from './timeTrackingSlice';
+import groupReducer from './groupSlice';
 
 export const rootReducer = combineReducers({
   series: seriesSlice.reducer,
@@ -21,6 +22,7 @@ export const rootReducer = combineReducers({
   voteTeam: voteTeamReducer,
   events: eventReducer,
   timeTracking: timeTrackingReducer,
+  group: groupReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

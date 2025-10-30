@@ -23,15 +23,16 @@ const (
 
 // Vote represents a voting poll
 type Vote struct {
-	ID          string     `json:"id" db:"id"`
-	Title       string     `json:"title" db:"title"`
-	Description string     `json:"description" db:"description"`
-	Type        VoteType   `json:"type" db:"type"`
-	Status      VoteStatus `json:"status" db:"status"`
-	CreatedBy   string     `json:"created_by" db:"created_by"`
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
-	ClosedAt    *time.Time `json:"closed_at,omitempty" db:"closed_at"`
+	ID                   string     `json:"id" db:"id"`
+	Title                string     `json:"title" db:"title"`
+	Description          string     `json:"description" db:"description"`
+	Type                 VoteType   `json:"type" db:"type"`
+	Status               VoteStatus `json:"status" db:"status"`
+	CreatedBy            string     `json:"created_by" db:"created_by"`
+	TeamFormationEnabled bool       `json:"team_formation_enabled" db:"team_formation_enabled"`
+	CreatedAt            time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time  `json:"updated_at" db:"updated_at"`
+	ClosedAt             *time.Time `json:"closed_at,omitempty" db:"closed_at"`
 }
 
 // VoteWithCreator represents a vote with creator information
@@ -87,17 +88,19 @@ type VoterInfo struct {
 
 // CreateVoteRequest represents the request to create a new vote
 type CreateVoteRequest struct {
-	Title       string   `json:"title" validate:"required,min=3,max=255"`
-	Description string   `json:"description" validate:"required,min=10,max=1000"`
-	Type        VoteType `json:"type" validate:"required,oneof=single multiple"`
-	Options     []string `json:"options" validate:"required,min=2,dive,required,min=1,max=255"`
+	Title                string   `json:"title" validate:"required,min=3,max=255"`
+	Description          string   `json:"description" validate:"required,min=10,max=1000"`
+	Type                 VoteType `json:"type" validate:"required,oneof=single multiple"`
+	Options              []string `json:"options" validate:"required,min=2,dive,required,min=1,max=255"`
+	TeamFormationEnabled bool     `json:"team_formation_enabled"`
 }
 
 // UpdateVoteRequest represents the request to update a vote
 type UpdateVoteRequest struct {
-	Title       *string     `json:"title,omitempty" validate:"omitempty,min=3,max=255"`
-	Description *string     `json:"description,omitempty" validate:"omitempty,min=10,max=1000"`
-	Status      *VoteStatus `json:"status,omitempty" validate:"omitempty,oneof=active closed cancelled"`
+	Title                *string     `json:"title,omitempty" validate:"omitempty,min=3,max=255"`
+	Description          *string     `json:"description,omitempty" validate:"omitempty,min=10,max=1000"`
+	Status               *VoteStatus `json:"status,omitempty" validate:"omitempty,oneof=active closed cancelled"`
+	TeamFormationEnabled *bool       `json:"team_formation_enabled,omitempty"`
 }
 
 // VoteRequest represents the request to cast a vote
@@ -110,6 +113,7 @@ type VoteFilters struct {
 	Status    *VoteStatus `json:"status,omitempty"`
 	CreatedBy *string     `json:"created_by,omitempty"`
 	Type      *VoteType   `json:"type,omitempty"`
+	GroupID   *string     `json:"group_id,omitempty"`
 	Limit     int         `json:"limit" validate:"min=1,max=100"`
 	Offset    int         `json:"offset" validate:"min=0"`
 }

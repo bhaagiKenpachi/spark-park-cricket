@@ -25,6 +25,7 @@ type Repositories struct {
 	User          interfaces.UserRepository
 	Vote          interfaces.VoteRepositoryInterface
 	VoteTeam      interfaces.VoteTeamRepositoryInterface
+	Group         interfaces.GroupRepository
 	FallOfWickets interfaces.FallOfWicketsRepository
 }
 
@@ -93,6 +94,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		User:          supabase.NewUserRepository(client),
 		Vote:          supabase.NewVoteRepository(client),
 		VoteTeam:      supabase.NewVoteTeamRepository(client, cfg.DatabaseSchema),
+		Group:         supabase.NewGroupRepository(client),
 		FallOfWickets: supabase.NewFallOfWicketsRepository(client),
 	}
 	log.Printf("✅ Base repositories initialized")
@@ -111,6 +113,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			User:          baseRepositories.User, // Not cached yet
 			Vote:          cacherepo.NewCachedVoteRepository(baseRepositories.Vote, cacheManager),
 			VoteTeam:      cacherepo.NewCachedVoteTeamRepository(baseRepositories.VoteTeam, cacheManager),
+			Group:         baseRepositories.Group, // Not cached yet
 			FallOfWickets: cacherepo.NewCachedFallOfWicketsRepository(baseRepositories.FallOfWickets, cacheManager),
 		}
 		log.Printf("✅ Cached repositories initialized")

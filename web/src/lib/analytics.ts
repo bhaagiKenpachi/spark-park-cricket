@@ -12,8 +12,12 @@ import {
   UserProperties,
 } from '@/types/posthog';
 
-// Helper to check if PostHog is available
+// Helper to check if PostHog is available and enabled
 const isPostHogAvailable = (): boolean => {
+  // Disable all tracking in development
+  if (process.env.NODE_ENV === 'development') {
+    return false;
+  }
   return typeof window !== 'undefined' && posthog !== null;
 };
 

@@ -10,6 +10,7 @@ export interface Vote {
     type: VoteType;
     status: VoteStatus;
     created_by: string;
+    team_formation_enabled: boolean;
     created_at: string;
     updated_at: string;
     closed_at?: string;
@@ -50,6 +51,11 @@ export interface VoteWithResults {
     total_votes: number;
     voted_users: string[];
     creator_name: string;
+    groups?: Array<{
+        id: string;
+        name: string;
+        type: string;
+    }>;
 }
 
 export interface CreateVoteRequest {
@@ -57,12 +63,14 @@ export interface CreateVoteRequest {
     description?: string;
     type: VoteType;
     options: string[];
+    team_formation_enabled?: boolean;
 }
 
 export interface UpdateVoteRequest {
     title?: string;
     description?: string;
     status?: VoteStatus;
+    team_formation_enabled?: boolean;
 }
 
 export interface VoteRequest {
@@ -73,6 +81,7 @@ export interface VoteFilters {
     status?: VoteStatus;
     type?: VoteType;
     created_by?: string;
+    group_id?: string;
     limit?: number;
     offset?: number;
     page?: number;
