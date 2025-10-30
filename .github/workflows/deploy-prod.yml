@@ -132,8 +132,8 @@ jobs:
             --build-arg NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD=${{ secrets.NEXT_PUBLIC_SSE_INACTIVITY_DISCONNECT_THRESHOLD }} \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }} \
             --build-arg NEXT_PUBLIC_POSTHOG_HOST=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }} \
-            --build-arg NEXT_PUBLIC_POSTHOG_DEBUG=false \
-            --build-arg NODE_ENV=production \
+            --build-arg NEXT_PUBLIC_POSTHOG_DEBUG=${{ secrets.NEXT_PUBLIC_POSTHOG_DEBUG }} \
+            --build-arg NODE_ENV=${{ secrets.NODE_ENV }} \
             --tag ${{ steps.image-name.outputs.web }}:prod \
             --tag ${{ steps.image-name.outputs.web }}:prod-$(git rev-parse --short HEAD) \
             --tag ${{ steps.image-name.outputs.web }}:latest \
