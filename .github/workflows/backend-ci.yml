@@ -1,16 +1,9 @@
 name: Backend CI/CD
 
+# DISABLED: Auto-triggers disabled - workflow can only be run manually
 on:
-  push:
-    branches: [ '*' ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
-  pull_request:
-    branches: [ '*' ]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
+  # Removed push and pull_request triggers to disable automatic CI
+  # Can still be triggered manually via workflow_dispatch
   workflow_dispatch:
     inputs:
       test_type:

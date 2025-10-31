@@ -3,17 +3,10 @@ name: Frontend CI/CD
 # Frontend CI/CD workflow for Next.js application
 # Includes unit tests, Playwright e2e tests, mobile testing, and cross-browser testing
 
+# DISABLED: Auto-triggers disabled - workflow can only be run manually
 on:
-  push:
-    branches: [ main, develop, feat/*, fix/* ]
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'web/**'
-      - '.github/workflows/frontend-ci.yml'
+  # Removed push and pull_request triggers to disable automatic CI
+  # Can still be triggered manually via workflow_dispatch
   workflow_dispatch:
     inputs:
       environment:
