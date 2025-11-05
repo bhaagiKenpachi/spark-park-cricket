@@ -62,6 +62,7 @@ export default function TeamManagement({
     const [teamName, setTeamName] = useState('');
     const [teamLetter, setTeamLetter] = useState<'A' | 'B'>('A');
     const [captainId, setCaptainId] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
     // Fetch teams on mount
     useEffect(() => {
@@ -74,10 +75,9 @@ export default function TeamManagement({
     const teamB = teams.find((t: VoteTeamWithPlayers) => t.team_letter === 'B');
 
     const handleCreateTeam = () => {
-        if (!teamName.trim() || !captainId || !vote?.vote?.id) {
+        if (!teamName.trim() || !captainId || !vote?.vote?.id || errorMessage) {
             return;
         }
-
         dispatch(createTeamRequest({
             voteId: vote.vote.id,
             teamData: {
@@ -278,10 +278,21 @@ export default function TeamManagement({
                                 <Input
                                     id="teamName"
                                     value={teamName}
-                                    onChange={(e) => setTeamName(e.target.value)}
+                                    onChange={(e) => {
+                                        setTeamName(e.target.value);
+                                        if (e.target.value.length > 0 && e.target.value.length < 2) {
+                                            setErrorMessage('Minimum 2 characters required');
+                                        } else {
+                                            setErrorMessage('');
+                                            }
+                                    }}
                                     placeholder="e.g., Blue Warriors"
                                     maxLength={100}
                                 />
+                                    {errorMessage && 
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                            <p className="text-sm text-red-600">{errorMessage}</p>
+                                        </div>}
                             </div>
 
                             <div className="space-y-2">
