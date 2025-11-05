@@ -37,6 +37,11 @@ import { VoteTeamWithPlayers, User } from '@/types/team';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Crown, UserPlus, UserMinus, Trash2 } from 'lucide-react';
+import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 
 interface TeamCardProps {
     team: VoteTeamWithPlayers;
@@ -66,7 +71,9 @@ export default function TeamCard({
     // This prevents unauthorized team modifications
     const isTeamCreator = currentUserId && team.created_by === currentUserId;
     const [showPlayerSelection, setShowPlayerSelection] = useState(false);
-    const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
+    const [selectedPlayers, setSelectedPlayers] = useState<User[]>([]);
+    const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+    const checkedIcon = <CheckBoxIcon fontSize="small" />;
 
     // Get all player IDs from all teams
     const allPlayerIds = new Set<string>();
@@ -81,18 +88,12 @@ export default function TeamCard({
         voter => !allPlayerIds.has(voter.id)
     );
 
-    const handleTogglePlayer = (userId: string) => {
-        setSelectedPlayerIds(prev =>
-            prev.includes(userId)
-                ? prev.filter(id => id !== userId)
-                : [...prev, userId]
-        );
-    };
-
+    
+    const selectedPlayerIds = selectedPlayers.map(p => p.id);
     const handleAddPlayers = () => {
         if (selectedPlayerIds.length > 0) {
             onAddPlayers(team.id, selectedPlayerIds);
-            setSelectedPlayerIds([]);
+            setSelectedPlayers([]); // Reset the state
             setShowPlayerSelection(false);
         }
     };
@@ -200,20 +201,49 @@ export default function TeamCard({
                                     Select players to add:
                                 </p>
                                 <div className="max-h-32 overflow-y-auto space-y-1">
-                                    {availableVoters.map((voter) => (
-                                        <label
-                                            key={voter.id}
-                                            className="flex items-center gap-2 bg-white rounded px-2 py-1.5 cursor-pointer hover:bg-gray-50"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedPlayerIds.includes(voter.id)}
-                                                onChange={() => handleTogglePlayer(voter.id)}
-                                                className="h-4 w-4"
+                                    <Autocomplete
+                                        multiple
+                                        id="checkboxes-tags-demo"
+                                        options={availableVoters}
+                                        disableCloseOnSelect
+                                        getOptionLabel={(option) => option.name}
+                                        // FIX: Control the component with the `selectedPlayers` state
+                                        value={selectedPlayers}
+                                        // FIX: Use the top-level onChange to update state
+                                        onChange={(event, newValue) => {
+                                            setSelectedPlayers(newValue);
+                                        }}
+                                        renderOption={(props, option, { selected }) => (
+                                            <li {...props} key={option.id}>
+                                                <Checkbox
+                                                    icon={icon}
+                                                    checkedIcon={checkedIcon}
+                                                    style={{ marginRight: 8 }}
+                                                    // FIX: Use the 'selected' prop provided by renderOption
+                                                    checked={selected}
+                                                />
+                                                {option.name}
+                                            </li>
+                                        )}
+                                        // The style prop was causing width issues; it's often better to control width via parent containers.
+                                        // style={{ width: 500 }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                // By spreading params first, we can override specific props
+                                                label="Select Players"
+                                                placeholder="Voters"
+                                                size="small"
+                                                variant="outlined"
+                                                InputLabelProps={{
+                                                    ...params.InputLabelProps,
+                                                    className: params.InputLabelProps?.className ?? '',
+                                                    style: params.InputLabelProps?.style ?? {},
+                                                }}
                                             />
-                                            <span className="text-sm">{voter.name}</span>
-                                        </label>
-                                    ))}
+                                        )}
+                                        />
+ 
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
@@ -229,7 +259,7 @@ export default function TeamCard({
                                         variant="outline"
                                         onClick={() => {
                                             setShowPlayerSelection(false);
-                                            setSelectedPlayerIds([]);
+                                            setSelectedPlayers([]);
                                         }}
                                         className="flex-1"
                                     >
