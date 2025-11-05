@@ -6,6 +6,7 @@ import {
     fetchVoteWithResultsRequest,
     castVoteRequest,
     checkUserVotedRequest,
+    clearCurrentVote,
 } from '@/store/reducers/voteSlice';
 import { VoteWithResults, VoteOption } from '@/types/vote';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,10 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
             dispatch(checkUserVotedRequest(voteId));
         }, 300);
 
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            dispatch(clearCurrentVote());
+        };
     }, [dispatch, voteId]);
 
     useEffect(() => {
@@ -169,7 +173,26 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
         return Math.round((count / total) * 100);
     };
 
-    if (loading) {
+    if (loading || !currentVote) {
+        if (error) {
+            return (
+                <div className="w-full max-w-md mx-auto px-4 py-4">
+                    <div className="text-center">
+                        <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                        <h2 className="text-lg font-semibold text-gray-900 mb-2">Error loading vote</h2>
+                        <p className="text-sm text-gray-600 mb-4">
+                            {typeof error === 'string' ? error : 'Something went wrong. Please try again.'}
+                        </p>
+                        {onBack && (
+                            <Button onClick={onBack} variant="outline" size="sm">
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Go Back
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="w-full max-w-md mx-auto flex items-center justify-center p-8">
                 <div className="text-center">
@@ -180,23 +203,6 @@ export function VoteView({ voteId, onBack }: VoteViewProps): React.JSX.Element {
         );
     }
 
-    if (error || !currentVote) {
-        return (
-            <div className="w-full max-w-md mx-auto px-4 py-4">
-                <div className="text-center">
-                    <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Vote Not Found</h2>
-                    <p className="text-sm text-gray-600 mb-4">{error || 'The requested vote could not be found.'}</p>
-                    {onBack && (
-                        <Button onClick={onBack} variant="outline" size="sm">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Go Back
-                        </Button>
-                    )}
-                </div>
-            </div>
-        );
-    }
 
     const hasVoted = hasVotedStatus[voteId] || !!currentVote.user_vote;
     const canVote = currentVote.vote.status === 'active'; // Allow voting even if already voted (to update)
