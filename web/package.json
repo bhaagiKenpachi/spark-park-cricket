@@ -48,7 +48,7 @@
     "next": "15.5.3",
     "posthog-js": "^1.100.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.3",
     "react-hook-form": "^7.62.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.1",
