@@ -338,7 +338,10 @@ export function VoteList({
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => onViewVote(vote.id)}
+                                                onClick={() => {
+                                                    onViewVote(vote.id)
+                                                    window.history.replaceState(null, '', `votes/${vote.id}`)
+                                                }}
                                                 className="flex items-center gap-1 text-xs px-2 py-1"
                                             >
                                                 <Eye className="h-3 w-3" />
